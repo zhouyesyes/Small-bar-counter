@@ -1,0 +1,116 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--bg:#fff;--fg:#111;--dim:#8a8a8a;--line:#e6e6e6;--card:#fff;--soft:#f5f5f5;--me:#111;--meText:#fff;--shade:rgba(0,0,0,.28)}
+.dark{--bg:#0b0b0b;--fg:#f2f2f2;--dim:#7d7d7d;--line:#262626;--card:#111;--soft:#1a1a1a;--me:#f2f2f2;--meText:#111;--shade:rgba(0,0,0,.55)}
+*{box-sizing:border-box}
+body{margin:0;width:390px;height:844px;overflow:hidden;font:14px/1.5 -apple-system,"Helvetica Neue","PingFang SC",sans-serif;color:var(--fg);background:var(--bg);position:relative}
+.cap{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+/* 假的酒馆正文 */
+.st{position:absolute;inset:0;padding:64px 18px 0;color:var(--dim)}
+.st .bar{position:absolute;top:0;left:0;right:0;height:52px;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 14px;gap:10px}
+.st p{margin:0 0 14px;color:var(--fg);opacity:.75;font-size:14.5px}
+.st .name{font-weight:600;opacity:1;font-size:13px;margin-bottom:4px}
+.trigger{width:30px;height:30px;border-radius:50%;background:var(--fg);color:var(--bg);display:flex;align-items:center;justify-content:center;font-size:12px;letter-spacing:.05em}
+.trigger .dot{width:6px;height:6px;border-radius:50%;background:var(--bg);position:relative}
+.trigger{position:relative}.trigger .new{position:absolute;top:-1px;right:-1px;width:9px;height:9px;border-radius:50%;background:var(--fg);border:2px solid var(--bg)}
+/* 抽屉 */
+.shade{position:absolute;inset:0;background:var(--shade)}
+.drawer{position:absolute;top:0;bottom:0;left:0;width:318px;background:var(--bg);border-right:1px solid var(--line);padding:18px 16px;overflow:hidden;display:flex;flex-direction:column;gap:14px}
+.dhead{display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:13px;font-weight:600;letter-spacing:.32em}
+.x{font-size:18px;color:var(--dim)}
+.card{border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--card)}
+.row{display:flex;align-items:center;gap:10px}
+.av{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#bbb,#555);flex:0 0 auto}
+.dark .av{background:linear-gradient(135deg,#666,#222)}
+.av.sm{width:30px;height:30px}.av.xs{width:26px;height:26px}
+.nm{font-weight:600;font-size:15px;line-height:1.2}.hd{font-size:12px;color:var(--dim)}
+.meta{font-size:12px;color:var(--dim);margin:10px 0 2px;display:flex;gap:8px}
+.grid{display:grid;grid-template-columns:52px 1fr;gap:7px 10px;margin-top:10px;font-size:13.5px}
+.grid .k{color:var(--dim);font-size:11px;letter-spacing:.14em;padding-top:2px}
+.want{display:flex;align-items:center;gap:6px}.heart{font-size:11px}
+.voice{margin-top:12px;border-top:1px solid var(--line);padding-top:10px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;font-size:13.5px}
+.flip{font-size:10.5px;letter-spacing:.14em;color:var(--dim);white-space:nowrap;border:1px solid var(--line);border-radius:20px;padding:1px 8px}
+.sig{margin-top:10px;font-style:italic;color:var(--dim);font-size:12.5px;text-align:center}
+.post{display:flex;gap:10px}
+.post .body{font-size:13.5px;margin:3px 0 6px}
+.acts{display:flex;gap:16px;font-size:12px;color:var(--dim)}
+.media{height:96px;border-radius:10px;background:var(--soft);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--dim);margin-bottom:6px}
+.phonecard{display:flex;align-items:center;justify-content:space-between}
+.badge{min-width:18px;height:18px;border-radius:9px;background:var(--fg);color:var(--bg);font-size:11px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px}
+/* 小手机 */
+.phone{position:absolute;left:50%;transform:translateX(-50%);bottom:28px;width:300px;height:540px;border-radius:30px;border:1px solid var(--line);background:var(--bg);box-shadow:0 18px 50px rgba(0,0,0,.28);display:flex;flex-direction:column;overflow:hidden}
+.ph{display:flex;align-items:center;gap:9px;padding:14px 14px 10px;border-bottom:1px solid var(--line)}
+.ph .nm{font-size:14px}.ph .hd{font-size:11px}
+.ph .close{margin-left:auto;color:var(--dim);font-size:16px}
+.msgs{flex:1;padding:12px 12px 6px;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;overflow:hidden}
+.time{text-align:center;font-size:10.5px;color:var(--dim);letter-spacing:.1em;margin:4px 0}
+.b{flex:0 0 auto;max-width:76%;padding:7px 11px;border-radius:16px;font-size:13.5px;line-height:1.4}
+.b.c{align-self:flex-start;border:1px solid var(--line);border-bottom-left-radius:5px}
+.b.u{align-self:flex-end;background:var(--me);color:var(--meText);border-bottom-right-radius:5px}
+.b.v{display:flex;align-items:center;gap:8px}
+.wave{display:flex;gap:2px;align-items:center}.wave i{width:2px;border-radius:1px;background:var(--fg);display:block}
+.b.img{padding:0;overflow:hidden;width:150px}.b.img .pic{height:96px;background:var(--soft);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--dim)}
+.typing{align-self:flex-start;font-size:12px;color:var(--dim);letter-spacing:.2em}
+.pend{align-self:flex-end;font-size:10.5px;color:var(--dim)}
+.inp{display:flex;align-items:center;gap:8px;padding:8px 10px 12px;border-top:1px solid var(--line)}
+.plus{width:28px;height:28px;border-radius:50%;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:16px}
+.field{flex:1;height:32px;border-radius:16px;background:var(--soft);display:flex;align-items:center;padding:0 12px;font-size:13px;color:var(--dim)}
+.send{width:30px;height:30px;border-radius:50%;background:var(--fg);color:var(--bg);display:flex;align-items:center;justify-content:center;font-size:14px}
+</style></head><body>
+<div class="st">
+  <div class="bar"><span style="font-size:13px;color:var(--fg)">阎守峥</span></div>
+  <div class="name" style="color:var(--fg)">阎守峥</div>
+  <p>雨下得不大，檐角的水一滴一滴落在青石板上。他把伞往你那边偏了偏，自己半边肩膀湿透了也没说什么。</p>
+  <p>「回去吧。」他说，声音很低，「明天还要早起。」</p>
+  <div class="name" style="color:var(--fg)">你</div>
+  <p>我没动，抬头看他。</p>
+  <div class="name" style="color:var(--fg)">阎守峥</div>
+  <p>他沉默了一会儿，像是在等你先开口，又像是早就知道你不会走。巷子尽头的灯一盏一盏亮起来……</p>
+</div>
+<img id="cat" style="position:absolute;left:-6px;top:46%;image-rendering:pixelated;width:51px">
+<div id="extra"></div>
+<script>
+const q=new URLSearchParams(location.search);
+if(q.get('t')==='dark')document.body.classList.add('dark');
+const s=q.get('s');
+const drawer=`<div class="shade"></div><div class="drawer">
+ <div class="dhead"><span class="logo">SMALL BAR</span><span class="x">×</span></div>
+ <div class="card">
+  <div class="cap">now · 此刻</div>
+  <div class="row" style="margin-top:10px"><div class="av"></div><div><div class="nm">阎守峥</div><div class="hd">@yan.shouzheng</div></div></div>
+  <div class="meta"><span>11.09 周日</span><span>01:19</span><span>小雨</span></div>
+  <div class="grid">
+   <div class="k">在哪</div><div>巷口，伞下</div>
+   <div class="k">穿着</div><div>深灰大衣，袖口湿了一截</div>
+   <div class="k">想要</div><div class="want"><span class="heart">♥</span>她再待一会儿</div>
+  </div>
+  <div class="voice"><div><span class="k" style="color:var(--dim);font-size:11px;letter-spacing:.14em">心声</span><br>伞再偏一点她就看出来了。</div><span class="flip">翻面</span></div>
+  <div class="sig">the lighter burned down the world.</div>
+ </div>
+ <div class="card">
+  <div class="cap" style="margin-bottom:10px">posts · 动态</div>
+  <div class="post"><div class="av xs"></div><div style="flex:1"><div><b style="font-size:13px">阎守峥</b> <span class="hd">· 2h</span></div>
+   <div class="body">雨天适合早睡。</div><div class="media">[ 照片 · 窗台上的一把旧伞 ]</div>
+   <div class="acts"><span>♡ 128</span><span>○ 14</span><span>↻ 3</span></div></div></div>
+ </div>
+ <div class="card phonecard"><div class="row"><div class="av sm"></div><div><div style="font-weight:600;font-size:13.5px">小手机</div><div class="hd">早点睡 别熬了</div></div></div><span class="badge">2</span></div>
+</div>`;
+const phone=`<div class="shade"></div><div class="phone">
+ <div class="ph"><div class="av sm"></div><div><div class="nm">阎守峥</div><div class="hd">在线</div></div><span class="close">×</span></div>
+ <div class="msgs">
+  <div class="time">11月9日 00:52</div>
+  <div class="b u">到家了</div><div class="b u">你也快回去吧</div>
+  <div class="b c">嗯</div><div class="b c">刚到</div>
+  <div class="b c v"><span class="wave"><i style="height:6px"></i><i style="height:12px"></i><i style="height:8px"></i><i style="height:14px"></i><i style="height:7px"></i><i style="height:11px"></i><i style="height:5px"></i></span><span style="font-size:12px;color:var(--dim)">4″</span></div>
+  <div class="b c img"><div class="pic">[ 照片 · 湿掉的半边肩膀 ]</div></div>
+  <div class="b c">早点睡 别熬了</div>
+  <div class="b u">你也是</div>
+  <div class="pend">待发送 · 点 ↑ 他才回</div>
+  <div class="typing">· · ·</div>
+ </div>
+ <div class="inp"><div class="plus">+</div><div class="field">说点什么</div><div class="send">↑</div></div>
+</div>`;
+document.getElementById('cat').src='cat-'+(q.get('t')==='dark'?'dark':'light')+'-'+(q.get('c')||'idle')+'.png'; if(s) document.getElementById('cat').style.display='none';
+document.getElementById('extra').innerHTML = s==='drawer'?drawer : s==='phone'?phone : '';
+</script></body></html>
