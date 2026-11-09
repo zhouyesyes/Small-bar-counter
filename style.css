@@ -278,3 +278,6 @@
 #sb-root .sb-npage .sb-flip{margin-top:6px}
 #sb-root .sb-aitext{font-size:20px;font-weight:600;font-family:var(--sb-serif)}
 #sb-root .sb-memo.sm{font-size:12.5px;padding:4px 0;border-bottom:0}#sb-root .sb-memo.sm .sb-ck{width:13px;height:13px;font-size:9px}
+#sb-root .sb-nowpad{position:relative}
+#sb-root .sb-bookbtn{position:absolute;top:10px;right:12px;font-size:10.5px;color:var(--sb-dim);border:1px solid var(--sb-line);border-radius:10px;padding:1px 8px;background:var(--sb-bg)}
+#sb-root .sb-nowpad .sb-grid{margin-right:56px}
