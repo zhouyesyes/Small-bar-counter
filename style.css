@@ -139,9 +139,11 @@
 #sb-root .sb-home{flex:1;display:flex;flex-direction:column;background:linear-gradient(180deg,var(--sb-soft),var(--sb-bg) 60%);min-height:0}
 #sb-root .sb-sbar{display:flex;justify-content:space-between;align-items:center;padding:12px 18px 0;font-size:12px;font-weight:600}
 #sb-root .sb-clock{text-align:center;font-size:52px;font-weight:200;line-height:1;margin-top:14px}
-#sb-root .sb-cdate{text-align:center;font-size:12px;color:var(--sb-dim);margin-top:6px}
+#sb-root .sb-cdate{text-align:center;font-size:12px;color:var(--sb-dim);margin-top:6px;padding:0 20px}
 #sb-root .sb-widget{display:block;width:calc(100% - 36px);margin:16px 18px 0;border:1px solid var(--sb-line);border-radius:18px;padding:10px 12px;background:var(--sb-bg);text-align:left}
 #sb-root .sb-widget .sb-cap{margin:0 0 6px;font-size:9.5px}
+#sb-root .sb-wlyr{margin-top:7px;font-size:12px;line-height:1.5;color:var(--sb-dim);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:18px}
+#sb-root .sb-wlyr:empty{display:none}
 #sb-root .sb-wrow{display:flex;align-items:center;gap:10px}#sb-root .sb-wrow b{font-size:13px}
 #sb-root .sb-wcov{width:36px;height:36px;flex:0 0 auto;border-radius:6px;background:linear-gradient(135deg,#ccc,#555)}
 #sb-root .sb-apps{display:grid;grid-template-columns:repeat(4,1fr);gap:14px 0;padding:20px 12px 0}

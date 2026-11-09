@@ -74,6 +74,9 @@ export function createUI(host) {
     }
     // 每秒只改进度条和歌词那几个字，不整页重画
     function tickMusic() {
+        // 主页小卡片：放到哪句显示哪句
+        const wl = root?.querySelector('.sb-wlyr');
+        if (wl) { const i = player.line(); if (wl.dataset.i !== String(i)) { wl.dataset.i = i; wl.textContent = player.lyric()[i]?.text || ''; } }
         const a = player.audio, box = root?.querySelector('.sb-music'); if (!box) return;
         const bar = box.querySelector('.sb-mbar i'); if (bar) bar.style.width = (a.duration ? a.currentTime / a.duration * 100 : 0) + '%';
         const t = box.querySelector('.sb-mtime'); if (t) t.textContent = `${fmt(a.currentTime)} / ${fmt(a.duration)}`;
@@ -438,8 +441,8 @@ export function createUI(host) {
  <div class="sb-nowtop">${ver}${st.nowLog.length ? genBtn('now-redo', '重新生成') : ''}${genBtn('now', '刷新此刻')}${st.nowLog.length ? `<button class="sb-bookbtn" data-act="nowbook" title="以前的此刻">${Wd().book}</button>` : ''}</div>
  ${has ? `<div class="sb-grid">${row('在哪', n.where)}${row('穿着', n.wear)}${row('想要', n.want, '<span class="sb-heart">♥</span>')}</div>` : '<div class="sb-empty">还没有此刻的状态。<br>TA下一次回复后就会有。</div>'}
  ${n.voice ? `<div class="sb-voice"><div><span class="sb-k">${v.flip ? '心声 · 背面' : '心声'}</span><br>${esc(v.flip && n.voiceBack ? n.voiceBack : n.voice)}</div>${n.voiceBack ? '<button class="sb-flip" data-act="flip">翻面</button>' : ''}</div>` : ''}
- <div class="sb-cap sb-row"><span>memo · 备忘录</span><span>${st.memo.length} / 15</span></div>
- ${st.memo.length ? st.memo.map(m => `<div class="sb-memo${m.done ? ' done' : ''}"><span class="sb-ck">${m.done ? '✓' : ''}</span>${esc(m.text)}</div>`).join('') : '<div class="sb-empty sm">TA还没记要做的事</div>'}
+ ${(() => { const left = st.memo.filter(m => !m.done); return `<div class="sb-cap sb-row"><span>memo · 备忘录</span><span>${left.length ? left.length + ' 件没做完' : ''}</span></div>
+ ${left.length ? left.map(m => `<div class="sb-memo"><span class="sb-ck"></span>${esc(m.text)}</div>`).join('') : `<div class="sb-empty sm">${st.memo.length ? '记下的事都做完了' : 'TA还没记要做的事'}</div>`}`; })()}
 </div>`;
     }
     // 此刻的本子：每一轮的此刻一页，新的在上面，按日子分开
@@ -565,7 +568,7 @@ export function createUI(host) {
  <div class="sb-clock${clock ? '' : ' sm'}">${esc(clock || (era === 'modern' ? '--:--' : (n.time || '').split(/\s+/).pop() || '—'))}</div>
  <div class="sb-cdate">${esc([date, n.weather].filter(Boolean).join(' · ') || '时间跟着剧情走')}</div>
  ${(() => { const t = player.current(); return t
-    ? `<div class="sb-widget"><div class="sb-cap">正在放</div><div class="sb-wrow"><span class="sb-wcov" data-act="phone-go" data-to="music">${coverImg(t, 'sb-bigimg')}</span><span data-act="phone-go" data-to="music"><b>${esc(t.title)}</b><small>${esc(t.artist)}</small></span><button class="sb-wplay" data-act="mtoggle" aria-label="播放">${mi(player.playing() ? 'pause' : 'play')}</button></div></div>`
+    ? `<div class="sb-widget"><div class="sb-cap">正在放</div><div class="sb-wrow"><span class="sb-wcov" data-act="phone-go" data-to="music">${coverImg(t, 'sb-bigimg')}</span><span data-act="phone-go" data-to="music"><b>${esc(t.title)}</b><small>${esc(t.artist)}</small></span><button class="sb-wplay" data-act="mtoggle" aria-label="播放">${mi(player.playing() ? 'pause' : 'play')}</button></div><div class="sb-wlyr" data-i="${player.line()}">${esc(player.lyric()[player.line()]?.text || '')}</div></div>`
     : `<button class="sb-widget" data-act="phone-go" data-to="music"><div class="sb-cap">${Wd().listen}</div><div class="sb-wrow"><span class="sb-wcov"></span><span><b>${esc(st.music?.title || '还没在听歌')}</b><small>${esc(st.music?.lyric || st.music?.artist || '点这里去放歌')}</small></span></div></button>`; })()}
  <div class="sb-apps">${era === 'modern' ? app('x', 'x', Wd().x) : `<button class="sb-app" data-act="phone-go" data-to="x"><span class="sb-ai sb-aitext">${Wd().x.slice(0, 1)}</span><span class="sb-an">${Wd().x}</span></button>`}${`<button class="sb-app" data-act="phone-go" data-to="weibo"><span class="sb-ai sb-aitext">${Wd().weibo.slice(0, 1)}</span><span class="sb-an">${Wd().weibo}</span></button>`}${app('diary', 'diary', Wd().diary)}${app('memo', 'memo', Wd().memo)}${app('photos', 'photos', Wd().photos)}</div>
  <div class="sb-dock">${app('msg', 'wx-contacts', Wd().wechat, host.unread())}${app('music', 'music', Wd().music)}${app('set', 'settings', Wd().set)}</div>
