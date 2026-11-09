@@ -100,6 +100,19 @@ body{margin:0;width:390px;height:844px;overflow:hidden;font:14px/1.5 -apple-syst
 .xfeed{flex:1;overflow:hidden}.xfeed .post{padding:10px 14px;border-bottom:1px solid var(--line)}.xfeed .media{height:64px}.xfeed .body{font-size:13px}
 .xnav{display:flex;justify-content:space-around;padding:9px 0 12px;border-top:1px solid var(--line)}
 .xnav svg{width:21px;height:21px;fill:none;stroke:var(--fg);stroke-width:1.7;stroke-linejoin:round;stroke-linecap:round}
+.bgsheet{position:absolute;left:0;right:0;bottom:0;background:var(--bg);border-top:1px solid var(--line);border-radius:18px 18px 0 0;padding:14px 16px 20px;box-shadow:0 -10px 30px rgba(0,0,0,.18)}
+.bgsheet .grab{width:36px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 12px}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:12.5px;margin:10px 0 6px}
+.seg span{flex:1;text-align:center;padding:7px 0;color:var(--dim)}.seg .on{background:var(--fg);color:var(--bg);font-weight:600}
+.hint{font-size:11.5px;color:var(--dim);margin-bottom:12px}
+.thumbs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.th{border-radius:10px;height:62px;position:relative;overflow:hidden}
+.th.a{background:linear-gradient(160deg,#9a9a9a,#3c3c3c)}.th.b{background:linear-gradient(160deg,#f1f1f1,#c9c9c9)}.th.c{background:linear-gradient(160deg,#cfcfcf,#7a7a7a)}.th.d{background:linear-gradient(160deg,#555,#1a1a1a)}
+.dark .th.b{background:linear-gradient(160deg,#5a5a5a,#333)}
+.th.on{outline:2px solid var(--fg);outline-offset:2px}
+.tag{font-size:12px;text-align:center;margin-top:5px}.tag.dim{color:var(--dim)}
+.th.add{border:1px dashed var(--line);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--dim)}
+.editbg{position:absolute;bottom:8px;left:10px;font-size:10.5px;border-radius:12px;background:rgba(0,0,0,.4);color:#fff;padding:2px 9px}
 </style></head><body>
 <div class="st">
   <div class="bar"><span style="font-size:13px;color:var(--fg)">阎守峥</span></div>
@@ -169,8 +182,20 @@ const body={
   <div class="dold"><span>11.06 周四</span><span>面馆</span></div>
   <div class="dold"><span>11.03 周一</span><span>第一次见</span></div>
  </div>`};
+const bgsheet=`<div class="bgsheet"><div class="grab"></div>
+ <div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-size:15px">阎守峥的背景</b><span class="hd">完成</span></div>
+ <div class="seg"><span>跟天气</span><span>固定一张</span><span class="on">他来挑</span></div>
+ <div class="hint">每张写个标签，他按剧情挑一张；挑不到就留着上一张</div>
+ <div class="thumbs">
+  <div><div class="th a on"></div><div class="tag">雨夜 · 现在</div></div>
+  <div><div class="th b"></div><div class="tag">白天</div></div>
+  <div><div class="th c"></div><div class="tag">家里</div></div>
+  <div><div class="th d"></div><div class="tag">办公室</div></div>
+  <div><div class="th add">+</div><div class="tag dim">加一张</div></div>
+ </div>
+</div>`;
 const profile=`<div class="shade"></div><div class="drawer pf">
- <div class="cover"><span class="logo">SMALL BAR</span><span class="x">×</span>[ 背景 · 雨夜 ]</div>
+ <div class="cover"><span class="logo">SMALL BAR</span><span class="x">×</span><span class="editbg">背景</span>[ 背景 · 雨夜 ]</div>
  <div class="pfav"></div>
  <div class="pfname">阎守峥</div>
  <div class="pfhd">@yan.shouzheng</div>
@@ -178,6 +203,7 @@ const profile=`<div class="shade"></div><div class="drawer pf">
  <div class="pfmeta"><span>11.09 周日 01:19</span><span>小雨</span></div>
  ${body[tab]||body.posts}
  ${tabsHtml}
+ ${q.get('bg')?bgsheet:''}
 </div>`;
 const IC={home:'<svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9h-5v-6h-6v6H4z"/></svg>',search:'<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M16 16l4 4"/></svg>',bell:'<svg viewBox="0 0 24 24"><path d="M6 17V11a6 6 0 0112 0v6l2 2H4z"/><path d="M10 21h4"/></svg>',mail:'<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 7l9 7 9-7"/></svg>'};
 const xpage=`<div class="shade"></div><div class="phone">
