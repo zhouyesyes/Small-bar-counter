@@ -548,14 +548,65 @@ function settingsPanel() {
     const el = document.createElement('div');
     el.id = 'sb-ext';
     el.innerHTML = `<div class="inline-drawer"><div class="inline-drawer-toggle inline-drawer-header"><b>小吧台</b><div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div></div>
-<div class="inline-drawer-content"><label class="checkbox_label"><input type="checkbox" id="sb-enabled"> 打开小吧台（小猫、抽屉、小手机；每轮让他顺带写状态）</label>
-<div class="menu_button" id="sb-openbtn" style="margin-top:6px">打开抽屉</div><small>别的设置都在小手机的「设置」里。</small></div></div>`;
+<div class="inline-drawer-content"><label class="checkbox_label"><input type="checkbox" id="sb-enabled"> 打开小吧台</label>
+<div class="flex-container" style="gap:6px;margin-top:6px"><div class="menu_button" id="sb-openbtn">打开抽屉</div><div class="menu_button" id="sb-cleanbtn">扫描清理</div></div>
+<small id="sb-cleanres" style="opacity:.7"></small></div></div>`;
     box.appendChild(el);
     const cb = el.querySelector('#sb-enabled');
     cb.checked = settings().enabled;
     cb.addEventListener('change', () => { settings().enabled = cb.checked; saveSettings(); refresh(); });
     el.querySelector('#sb-openbtn').addEventListener('click', () => ui.open());
+    const res = el.querySelector('#sb-cleanres'), btn = el.querySelector('#sb-cleanbtn');
+    btn.addEventListener('click', async () => {
+        if (btn.dataset.busy) return; btn.dataset.busy = '1'; res.textContent = '在扫……';
+        try { res.textContent = await cleanAll(); } catch (err) { res.textContent = '没扫成：' + (err?.message || err); }
+        finally { delete btn.dataset.busy; }
+    });
 }
+
+// 整个扩展扫一遍（不跟聊天走的东西）：没在用的图、歌单里每首歌记着的旧来源 / 封面 / 播放链接、重复的歌、老版本留下的数据
+// 封面：真的图片地址留着（歌单里要显示），接口转出来的那种（节点挂了就出不来）清掉
+const apiCover = u => /[?&]type=pic\b|meting/i.test(u || '');
+const kbOf = n => (n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB');
+async function cleanAll() {
+    const s = settings();
+    const scan = await scanImages();
+    const imgBytes = scan.unused.reduce((n, x) => n + x.size, 0);
+    // 记着是谁传的、但图已经不在了的记录
+    const have = new Set(scan.all.map(x => x.src));
+    const deadOwners = Object.keys(owners()).filter(k => !have.has(k));
+    // 歌：记住的来源（ok）、直链（direct，会过期）、节点（base）、歌词链接、问来的封面 —— 清掉下次放的时候重新找
+    const lists = s.music?.lists || {};
+    let cached = 0, dupes = 0;
+    for (const list of Object.values(lists)) {
+        const seen = new Set();
+        for (const t of list) {
+            const k = (t.src || 'n') + ':' + t.id; if (seen.has(k)) dupes++; seen.add(k);
+            if (t.ok || t.direct || t.base || /^https?:/.test(t.lrc || '') || apiCover(t.cover)) cached++;
+        }
+    }
+    const old = s.chars && Object.keys(s.chars).length ? Object.keys(s.chars).length : 0; // 老版本按角色存的，现在不用了
+    const parts = [
+        scan.unused.length && `没在用的图 ${scan.unused.length} 张（${kbOf(imgBytes)}）`,
+        cached && `${cached} 首歌记着的旧来源和封面`,
+        dupes && `歌单里重复的歌 ${dupes} 首`,
+        old && `老版本留下的 ${old} 个角色的数据`,
+    ].filter(Boolean);
+    const unk = scan.unknown ? `；还有 ${scan.unknown} 张图认不出是哪个聊天的，先不动` : '';
+    if (!parts.length && !deadOwners.length) return `扫完了，没什么要清的（一共 ${scan.all.length} 张图）${unk}`;
+    if (parts.length && !await ctxConfirm(`找到：\n${parts.join('\n')}\n\n清掉吗？（歌不会从歌单里删，下次放的时候重新找来源和封面）`)) return '没清';
+    await dropImages(scan.unused);
+    for (const k of deadOwners) delete owners()[k];
+    for (const [name, list] of Object.entries(lists)) {
+        const seen = new Set();
+        lists[name] = list.filter(t => { const k = (t.src || 'n') + ':' + t.id; if (seen.has(k)) return false; seen.add(k); return true; });
+        for (const t of lists[name]) { delete t.ok; delete t.direct; delete t.base; if (/^https?:/.test(t.lrc || '')) t.lrc = ''; if (apiCover(t.cover)) t.cover = ''; }
+    }
+    if (old) s.chars = {};
+    saveSettings();
+    return `清好了：${parts.join('，') || '一些旧记录'}${unk}`;
+}
+const ctxConfirm = async text => { const c = ctx(); return c.callGenericPopup ? !!await c.callGenericPopup(text.replace(/\n/g, '<br>'), c.POPUP_TYPE.CONFIRM) : confirm(text); };
 
 jQuery(() => {
     const c = ctx(), ev = c.eventSource, T = c.eventTypes || c.event_types;
