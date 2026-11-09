@@ -60,7 +60,7 @@ export function createUI(host) {
             render();
         },
         // 状态那行小字只改字，不整页重画（滑着的时候不跳）
-        onStatus: text => { v.mstate = text; root?.querySelectorAll('.sb-mstate').forEach(el => { el.textContent = text; }); },
+        onStatus: text => { v.mstate = text; root?.querySelectorAll('.sb-mstxt').forEach(el => { el.textContent = text; }); },
     });
     const fmt = s => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
     // 播放键、主页小卡片：只改这几处
@@ -271,18 +271,27 @@ export function createUI(host) {
         const rep = host.repliesFor(post.id).map((r, i) => ({ id: r.id || post.id + '#r' + i, who: him, to: me, text: r.text, at: r.at, src: 'npc' }));
         return [...npc, ...mine, ...rep].filter(c => !ed[c.id]?.deleted).map(c => ({ ...c, text: ed[c.id]?.text ?? c.text })).sort((a, b) => (a.at || 0) - (b.at || 0));
     }
+    function likersOf(post) {
+        const meta = host.meta(), st = host.state(), me = host.me().name, him = host.him().name;
+        const author = post.who || him;
+        const known = [...new Set([him, ...st.moments.map(m => m.who), ...st.npcComments.map(c => c.who)])].filter(n => n && n !== author && n !== me);
+        let h = [...String(post.id)].reduce((n, c) => (n * 31 + c.charCodeAt(0)) >>> 0, 3);
+        const pick = known.filter(() => ((h = (h * 1103515245 + 12345) >>> 0) % 3) === 0).slice(0, 5);
+        const commenters = commentList(post).map(c => c.who).filter(n => n !== me && n !== author);
+        return [...new Set([meta.likes?.[post.id] && me, ...pick, ...commenters.slice(0, 2)].filter(Boolean))];
+    }
     function commentsHtml(post, interactive) {
         const meta = host.meta();
         const all = commentList(post);
-        const liked = meta.likes?.[post.id];
-        const likers = [liked && host.me().name].filter(Boolean);
-        if (!all.length && !likers.length && !interactive) return '';
+        const likers = likersOf(post);
         const to = v.replyTo?.post === post.id ? v.replyTo.who : '';
+        const open = interactive && (v.cfor === post.id || to);
+        if (!all.length && !likers.length && !open) return '';
         return `<div class="sb-cbox">
-  ${likers.length ? `<div class="sb-likes">♡ ${likers.map(esc).join('，')}</div>` : ''}
+  ${likers.length ? `<div class="sb-likes">${svgS('likeline')}${likers.map(n => `<b>${esc(n)}</b>`).join('，')}</div>` : ''}
   ${all.map(c => `<div class="sb-c${v.cmenu === c.id ? ' on' : ''}" data-act="cmenu" data-id="${esc(c.id)}"><b>${esc(c.who)}</b>${c.to ? ` 回复 <b>${esc(c.to)}</b>` : ''}：${esc(c.text)}</div>
    ${v.cmenu === c.id ? `<div class="sb-cacts">${c.who !== host.me().name ? `<button data-act="creply" data-post="${esc(post.id)}" data-who="${esc(c.who)}">回复${esc(c.who)}</button>` : ''}<button data-act="cedit" data-id="${esc(c.id)}">编辑</button><button data-act="cdel" data-id="${esc(c.id)}">删除</button></div>` : ''}`).join('')}
-  ${interactive ? `<div class="sb-cin">
+  ${open ? `<div class="sb-cin">
    ${to ? `<div class="sb-cto">回复 ${esc(to)} <button data-act="creply-x">×</button></div>` : ''}
    <textarea data-cin="${esc(post.id)}" rows="1" placeholder="${to ? '回复 ' + esc(to) + '…' : '留言…'}">${esc(v.cdraft?.[post.id] || '')}</textarea>
    <div class="sb-cbtns"><button data-act="csend" data-post="${esc(post.id)}">发送</button><button data-act="csend" data-post="${esc(post.id)}" data-ask="1" ${v.busy ? 'disabled' : ''}>发送并让${esc(to || 'TA')}回</button></div>
@@ -303,8 +312,7 @@ export function createUI(host) {
   <div class="sb-ptext">${nl(p.text)}</div>
   ${p.pics?.length ? `<div class="sb-pics">${p.pics.map(x => `<span>${esc(x)}</span>`).join('')}</div>` : ''}
   <div class="sb-pfoot"><span>${esc([p.time, p.place].filter(Boolean).join(' · '))}</span>
-   <span class="sb-pbtns"><button data-act="pmenu" data-post="${esc(p.id)}" aria-label="更多">··</button><button data-act="like" data-post="${esc(p.id)}" class="${meta.likes?.[p.id] ? 'on' : ''}">${meta.likes?.[p.id] ? '♥' : '♡'}</button></span></div>
-  ${v.pmenu === p.id ? `<div class="sb-cacts"><button data-act="pedit" data-post="${esc(p.id)}">编辑这条</button><button data-act="pdel" data-post="${esc(p.id)}">删掉这条</button></div>` : ''}
+   <span class="sb-pbtns">${v.pmenu === p.id ? `<span class="sb-pop"><button data-act="like" data-post="${esc(p.id)}">${svgS('likeline')}${meta.likes?.[p.id] ? '取消' : '赞'}</button><i></i><button data-act="ccomment" data-post="${esc(p.id)}">${svgS('comment')}评论</button><i></i><button data-act="pedit" data-post="${esc(p.id)}">编辑</button><i></i><button data-act="pdel" data-post="${esc(p.id)}">删</button></span>` : ''}<button class="sb-pdots" data-act="pmenu" data-post="${esc(p.id)}" aria-label="更多">··</button></span></div>
   ${commentsHtml(p, interactive)}
  </div>
 </article>`;
@@ -352,7 +360,7 @@ export function createUI(host) {
         const ms = musicState(), names = Object.keys(ms.lists);
         return `<section class="sb-music">
  <div class="sb-cap">${t ? 'now playing' : 'music'} · ${Wd().music}</div>
- ${t ? `<div class="sb-mstate">${esc(v.mstate || (player.playing() ? '正在播放' : '点播放键开始'))}</div>` : ''}
+ ${t ? `<div class="sb-mstate"><span class="sb-mstxt">${esc(v.mstate || (player.playing() ? '正在播放' : '点播放键开始'))}</span> <button class="sb-link" data-act="mskip">换个来源</button></div>` : ''}
  <div class="sb-bigcover" style="${t ? `background-image:url('${esc(coverUrl(t))}')` : ''}"></div>
  <div class="sb-mt">${esc(t?.title || '还没放歌')}</div>
  <div class="sb-ma">${esc(t?.artist || '搜一首，或者放TA在听的')}</div>
@@ -732,6 +740,7 @@ export function createUI(host) {
         hot: '<path d="M12 3c1 3 4 4.5 4 8.5a4 4 0 0 1-8 0c0-1.5.6-2.6 1.4-3.4.3 1.4 1 2.1 1.8 2.4C11 8 11 5.5 12 3z"/><path d="M6 15a6 6 0 0 0 12 0"/>',
         share: '<path d="M14 5l6 6-6 6M20 11H9a5 5 0 0 0-5 5v3"/>',
         comment: '<path d="M4 5h16v11H9l-5 4z"/>',
+        likeline: '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',
         like: '<path d="M7 11v9H4v-9zM7 11l4-7c1.5 0 2.5 1 2.2 2.6L12.6 10H19a1.5 1.5 0 0 1 1.5 1.8l-1.4 6.8A2 2 0 0 1 17.1 20H7"/>',
     };
     const svgS = k => `<svg viewBox="0 0 24 24">${SVGS[k]}</svg>`;
@@ -900,6 +909,7 @@ export function createUI(host) {
             case 'flip': v.flip = !v.flip; break;
             case 'gen': await generate(b.dataset.kind); return;
             case 'mtoggle': await player.toggle(); return;
+            case 'mskip': player.skipSource(); return;
             case 'mnext': player.next(); return;
             case 'mprev': player.prev(); return;
             case 'mmode': player.mode(); return;
@@ -958,17 +968,18 @@ export function createUI(host) {
             case 'bookmore': v.bookN = (v.bookN || 20) + 20; break;
             case 'diary': v.diaryId = b.dataset.id; break;
             case 'diary-open': v.phone = false; v.drawer = true; v.tab = 'diary'; v.diaryId = b.dataset.id; break;
-            case 'like': meta.likes ??= {}; meta.likes[b.dataset.post] = !meta.likes[b.dataset.post]; host.saveMeta(); break;
+            case 'like': meta.likes ??= {}; meta.likes[b.dataset.post] = !meta.likes[b.dataset.post]; v.pmenu = ''; host.saveMeta(); break;
             case 'ask-reply': await askReply(b.dataset.post); return;
             case 'cmenu': v.cmenu = v.cmenu === b.dataset.id ? '' : b.dataset.id; break;
             case 'creply': v.replyTo = { post: b.dataset.post, who: b.dataset.who }; v.cmenu = ''; render(); root.querySelector(`[data-cin="${CSS.escape(b.dataset.post)}"]`)?.focus(); return;
-            case 'creply-x': v.replyTo = null; break;
+            case 'creply-x': v.replyTo = null; v.cfor = ''; break;
             case 'csend': {
                 const ta = root.querySelector(`[data-cin="${CSS.escape(b.dataset.post)}"]`);
                 const text = ta?.value.trim(); if (!text) { host.toast('info', '先写点什么'); return; }
                 const to = v.replyTo?.post === b.dataset.post ? v.replyTo.who : '';
                 addComment(b.dataset.post, text, to);
                 if (v.cdraft) delete v.cdraft[b.dataset.post];
+                v.cfor = '';
                 if (b.dataset.ask) await askReply(b.dataset.post, to); else { v.replyTo = null; render(); }
                 return;
             }
@@ -979,6 +990,7 @@ export function createUI(host) {
             }
             case 'cdel': meta.cedit ??= {}; meta.cedit[b.dataset.id] = { deleted: true }; v.cmenu = ''; host.saveMeta(); break;
             case 'pmenu': v.pmenu = v.pmenu === b.dataset.post ? '' : b.dataset.post; break;
+            case 'ccomment': v.cfor = b.dataset.post; v.pmenu = ''; v.replyTo = null; render(); root.querySelector(`[data-cin="${CSS.escape(b.dataset.post)}"]`)?.focus(); return;
             case 'pedit': {
                 const p = allPosts().find(x => x.id === b.dataset.post); if (!p) return;
                 const t = await host.prompt('改这条', meta.pedit?.[p.id]?.text ?? p.text); if (t == null) return;

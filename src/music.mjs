@@ -280,6 +280,7 @@ export function createPlayer({ load, save, onChange, onStatus = () => {} }) {
     audio.addEventListener('pause', () => onChange?.('state'));
     return {
         audio, play, next, prev,
+        skipSource: () => { const t = playing || cur(); if (t) delete t.ok; fallback(); }, // 她手动点「换个来源」：这首记的来源作废，换下一个
         toggle: () => (audio.paused ? play() : audio.pause()),
         seek: frac => { if (audio.duration) audio.currentTime = audio.duration * frac; },
         current: () => playing || cur(), playing: () => !audio.paused,
