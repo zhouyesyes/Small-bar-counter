@@ -2,7 +2,7 @@
 // 只管画和点，数据和酒馆那边都从 host 拿（见 index.js），方便以后换酒馆版本
 import { catSvg } from './cat.mjs';
 import { weatherTone, parsePhoneReply } from './core.mjs';
-import { PHONE_RULES } from './prompt.mjs';
+import { PHONE_RULES, LETTER_RULES } from './prompt.mjs';
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const nl = s => esc(s).replace(/\n/g, '<br>');
@@ -33,7 +33,7 @@ const svg = k => `<svg viewBox="0 0 24 24">${ICON[k]}</svg>`;
 
 export function createUI(host) {
     const v = { drawer: false, tab: 'posts', diaryId: '', phone: false, view: 'home', plus: false, momentsN: 10, xN: 10, busy: false, flip: false, menuFor: '', edit: null };
-    let root, catBlink = 0;
+    let root, catBlink = 0, lastHtml = '';
 
     // ---------- 外壳 ----------
     function mount() {
@@ -110,12 +110,16 @@ export function createUI(host) {
         const wasOpen = root.dataset.open || '';
         const nowOpen = (v.drawer ? 'd' : '') + (v.phone ? 'p' : '');
         root.dataset.open = nowOpen;
-        root.className = `sb-${theme()} sb-era-${era}` + (nowOpen && nowOpen !== wasOpen ? ' sb-anim' : '');
-        if (!s.enabled || !host.hasChar()) { root.innerHTML = ''; return; }
+        const cls = `sb-${theme()} sb-era-${era}` + (nowOpen && nowOpen !== wasOpen ? ' sb-anim' : '');
+        if (root.className !== cls) { root.className = cls; lastHtml = ''; }
+        if (!s.enabled || !host.hasChar()) { root.innerHTML = ''; lastHtml = ''; return; }
         const keepScroll = [...root.querySelectorAll('[data-keep]')].map(el => [el.dataset.keep, el.scrollTop]);
-        root.innerHTML = (s.cat !== false && !v.drawer && !v.phone ? `<button class="sb-cat" style="top:${Number(s.catTop) || 46}%" aria-label="打开小吧台（上下拖可以挪位置）"></button>` : '')
+        const html = (s.cat !== false && !v.drawer && !v.phone ? `<button class="sb-cat" style="top:${Number(s.catTop) || 46}%" aria-label="打开小吧台（上下拖可以挪位置）"></button>` : '')
             + (v.drawer ? drawerHtml(era) : '')
             + (v.phone ? phoneHtml(era) : '');
+        if (html === lastHtml) return; // 什么都没变：不重画，进新聊天时不来回闪
+        lastHtml = html;
+        root.innerHTML = html;
         drawCat();
         for (const [k, top] of keepScroll) { const el = root.querySelector(`[data-keep="${k}"]`); if (el) el.scrollTop = top; }
         const msgs = root.querySelector('.sb-msgs'); if (msgs && v.stick) { msgs.scrollTop = msgs.scrollHeight; }
@@ -159,7 +163,7 @@ export function createUI(host) {
  <div class="sb-name">${esc(him.name)}</div>
  ${him.handle ? `<div class="sb-handle">${esc(him.handle)}</div>` : ''}
  ${him.sign || n.sign ? `<div class="sb-sign">${esc(him.sign || n.sign)}</div>` : ''}
- <div class="sb-meta">${[n.time, n.weather].filter(Boolean).map(esc).join('<i></i>') || '还没有状态 · 等他下一次回复'}</div>
+ <div class="sb-meta">${[n.time, n.weather].filter(Boolean).map(esc).join('<i></i>') || '还没有状态 · 等TA下一次回复'}</div>
  <div class="sb-body" data-keep="body">${body}</div>
  <nav class="sb-tabs">${TAB_KEYS.map((k, i) => `<button data-act="tab" data-tab="${k}" class="${v.tab === k ? 'on' : ''}">${labels[i]}${k === 'phone' && host.unread() ? ` <b class="sb-badge">${host.unread()}</b>` : ''}</button>`).join('')}</nav>
 </div>`;
@@ -179,7 +183,7 @@ export function createUI(host) {
         return `<div class="sb-cbox">
   ${likers.length ? `<div class="sb-likes">♡ ${likers.map(esc).join('，')}</div>` : ''}
   ${all.map(c => `<div class="sb-c"><b>${esc(c.who)}</b>${c.reply ? ` 回复 <b>${esc(host.me().name)}</b>` : ''}：${esc(c.text)}</div>`).join('')}
-  ${interactive ? `<div class="sb-cin"><input data-cin="${esc(post.id)}" placeholder="留言…" enterkeyhint="send"><button data-act="ask-reply" data-post="${esc(post.id)}" ${v.busy ? 'disabled' : ''}>让他回</button></div>` : ''}
+  ${interactive ? `<div class="sb-cin"><input data-cin="${esc(post.id)}" placeholder="留言…" enterkeyhint="send"><button data-act="ask-reply" data-post="${esc(post.id)}" ${v.busy ? 'disabled' : ''}>让TA回</button></div>` : ''}
  </div>`;
     }
     function postHtml(p, him, interactive = true) {
@@ -200,16 +204,16 @@ export function createUI(host) {
     function postsHtml(st, him) {
         const hidden = host.meta().hidden || {};
         const list = st.posts.filter(p => !hidden[p.id]).slice(-3).reverse();
-        if (!list.length) return `<div class="sb-empty">他还没发过${ERA[host.era()].posts}。<br>剧情里他想发的时候会出现在这里。</div>`;
+        if (!list.length) return `<div class="sb-empty">TA还没发过${ERA[host.era()].posts}。<br>剧情里TA想发的时候会出现在这里。</div>`;
         return list.map(p => postHtml(p, him)).join('') + `<div class="sb-more">只显示最新三条 · 更早的在${ERA[host.era()].wechat}里 <button data-act="phone-go" data-to="wx-moments">去看 →</button></div>`;
     }
     function musicHtml(st) {
         const m = st.music;
         return `<section class="sb-music">
- <div class="sb-cap">now playing · 他在听</div>
+ <div class="sb-cap">now playing · TA在听</div>
  <div class="sb-bigcover"></div>
  <div class="sb-mt">${esc(m?.title || '还没在听歌')}</div>
- <div class="sb-ma">${esc(m?.artist || '他听歌的时候会出现在这里')}</div>
+ <div class="sb-ma">${esc(m?.artist || 'TA听歌的时候会出现在这里')}</div>
  ${m?.lyric ? `<div class="sb-lyr">${esc(m.lyric)}</div>` : ''}
  <div class="sb-mnote">播放和搜歌下一版接上</div>
 </section>`;
@@ -219,16 +223,16 @@ export function createUI(host) {
         const row = (k, val, extra = '') => val ? `<div class="sb-k">${k}</div><div>${extra}${esc(val)}</div>` : '';
         const has = n.where || n.wear || n.want || n.voice;
         return `<div class="sb-pad">
- ${has ? `<div class="sb-grid">${row('在哪', n.where)}${row('穿着', n.wear)}${row('想要', n.want, '<span class="sb-heart">♥</span>')}</div>` : '<div class="sb-empty">还没有此刻的状态。<br>他下一次回复后就会有。</div>'}
+ ${has ? `<div class="sb-grid">${row('在哪', n.where)}${row('穿着', n.wear)}${row('想要', n.want, '<span class="sb-heart">♥</span>')}</div>` : '<div class="sb-empty">还没有此刻的状态。<br>TA下一次回复后就会有。</div>'}
  ${n.voice ? `<div class="sb-voice"><div><span class="sb-k">${v.flip ? '心声 · 背面' : '心声'}</span><br>${esc(v.flip && n.voiceBack ? n.voiceBack : n.voice)}</div>${n.voiceBack ? '<button class="sb-flip" data-act="flip">翻面</button>' : ''}</div>` : ''}
  <div class="sb-cap sb-row"><span>memo · 备忘录</span><span>${st.memo.length} / 15</span></div>
- ${st.memo.length ? st.memo.map(m => `<div class="sb-memo${m.done ? ' done' : ''}"><span class="sb-ck">${m.done ? '✓' : ''}</span>${esc(m.text)}</div>`).join('') : '<div class="sb-empty sm">他还没记要做的事</div>'}
+ ${st.memo.length ? st.memo.map(m => `<div class="sb-memo${m.done ? ' done' : ''}"><span class="sb-ck">${m.done ? '✓' : ''}</span>${esc(m.text)}</div>`).join('') : '<div class="sb-empty sm">TA还没记要做的事</div>'}
 </div>`;
     }
     function diaryListHtml(st) {
         const hidden = host.meta().hidden || {};
         const list = st.diary.filter(d => !hidden[d.id]).reverse();
-        if (!list.length) return `<div class="sb-empty">他还没写${ERA[host.era()].diary}。<br>剧情里有值得记的事，他才会写。</div>`;
+        if (!list.length) return `<div class="sb-empty">TA还没写${ERA[host.era()].diary}。<br>剧情里有值得记的事，TA才会写。</div>`;
         const [top, ...rest] = list;
         return `<div class="sb-pad">${diaryBody(top, true)}
  ${rest.length ? `<div class="sb-cap" style="margin-top:18px">earlier · 以前的</div>${rest.slice(0, 2).map(d => `<button class="sb-dold" data-act="diary" data-id="${esc(d.id)}"><span>${esc(d.time)}</span><span>${esc(d.title || d.text.slice(0, 10))}</span></button>`).join('')}
@@ -263,11 +267,59 @@ export function createUI(host) {
             x: xHtml, diary: pDiaryHtml, memo: pMemoHtml, photos: pPhotosHtml, music: pMusicHtml,
             settings: setHtml, 'set-cover': setCoverHtml, 'set-him': setHimHtml, 'set-me': setMeHtml, 'set-prompt': setPromptHtml, 'set-api': setApiHtml,
         };
-        const inner = (views[v.view] || homeHtml)(era);
+        // 古风、民国没有手机：换成书信（设置页还用同一个框）
+        const letters = era !== 'modern' && !v.view.startsWith('set');
+        const inner = letters ? letterHtml(era) : (views[v.view] || homeHtml)(era);
+        const bar = letters ? '' : v.view !== 'home' ? '<button class="sb-hbar" data-act="phone-go" data-to="home" aria-label="回主页"></button>' : '<div class="sb-hbar idle"></div>';
         return `<div class="sb-shade" data-act="phone-close"></div>
-<div class="sb-phone" role="dialog" aria-label="小手机">${inner}
- ${v.view !== 'home' ? '<button class="sb-hbar" data-act="phone-go" data-to="home" aria-label="回主页"></button>' : '<div class="sb-hbar idle"></div>'}
-</div>`;
+<div class="sb-phone${letters ? ' sb-letterbox' : ''}" role="dialog" aria-label="${letters ? '书信' : '小手机'}">${inner}${bar}</div>`;
+    }
+    // ---------- 古风 / 民国：不用小手机，换成书信 ----------
+    const LETTER = {
+        ancient: { title: '书信', him: '鸽至', me: '你寄', send: '放鸽', pend: '信已写好 {n} 封 · 系上鸽子TA才回', ph: '提笔……', pic: '附一物', money: '附银两', unit: '两', tabs: ['书信', '题壁', '手札'] },
+        minguo: { title: '信笺', him: '信到', me: '你寄', send: '寄出', pend: '写好 {n} 页 · 寄出去TA才回', ph: '写点什么……', pic: '附照片', money: '附汇票', unit: '元', tabs: ['信笺', '副刊', '日记'] },
+    };
+    function letterHtml(era) {
+        const L = LETTER[era] || LETTER.ancient, him = host.him();
+        const tab = v.view === 'wx-moments' ? 1 : v.view === 'diary' ? 2 : 0;
+        const top = `<div class="sb-lhead"><span class="sb-ltitle">${L.tabs.map((n, i) => `<button data-act="phone-go" data-to="${['wx-chat', 'wx-moments', 'diary'][i]}" class="${tab === i ? 'on' : ''}">${n}</button>`).join('')}</span>
+  <button class="sb-phx" data-act="phone-go" data-to="settings" aria-label="设置">⚙</button><button class="sb-phx" data-act="phone-close" aria-label="关上">×</button></div>`;
+        if (tab === 1) {
+            const st = host.state(), hidden = host.meta().hidden || {};
+            const all = [...st.posts.filter(p => !hidden[p.id]), ...st.moments].sort((a, b) => (b.at || 0) - (a.at || 0));
+            return top + `<div class="sb-list" data-keep="wall">${all.length ? all.slice(0, v.momentsN).map(p => postHtml(p, him)).join('') : '<div class="sb-empty">还没有人题过</div>'}
+ ${all.length > v.momentsN ? '<button class="sb-more" data-act="lmore">再看 10 条</button>' : ''}</div>`;
+        }
+        if (tab === 2) {
+            const st = host.state(), hidden = host.meta().hidden || {};
+            const list = st.diary.filter(d => !hidden[d.id]).reverse();
+            return top + `<div class="sb-list">${list.length ? list.map(d => `<button class="sb-dold" data-act="diary-open" data-id="${esc(d.id)}"><span>${esc(d.time)}</span><span>${esc(d.title || d.text.slice(0, 12))}</span></button>`).join('') : '<div class="sb-empty">还没有</div>'}</div>`;
+        }
+        // 书信：同一个人连着写的几句放在一张信纸上
+        const groups = [];
+        for (const m of host.wechat()) {
+            if (m.type === 'note') { groups.push({ note: m.text }); continue; }
+            const g = groups[groups.length - 1];
+            if (g && !g.note && g.from === m.from && !!g.pending === !!m.pending) g.items.push(m);
+            else groups.push({ from: m.from, pending: m.pending, time: m.time, items: [m] });
+        }
+        const line = m => {
+            if (m.type === 'money') return `<div class="sb-lmoney" data-act="${m.from === 'him' && m.status === 'sent' ? 'money' : ''}" data-id="${esc(m.id)}">${L.money} ${esc(m.amount)} ${L.unit}${m.text ? ' · ' + esc(m.text) : ''}${m.status === 'taken' ? ' · 已收' : m.status === 'back' ? ' · 已退回' : ''}</div>`;
+            if (m.type === 'pic') return `<div class="sb-lline dim" data-msg="${esc(m.id)}">${L.pic}：${esc(m.text)}</div>`;
+            if (m.type === 'sticker') return `<div class="sb-lline dim" data-msg="${esc(m.id)}">（${esc(m.text)}）</div>`;
+            return `<div class="sb-lline" data-msg="${esc(m.id)}">${nl(m.text)}</div>`;
+        };
+        const papers = groups.map(g => g.note ? `<div class="sb-note">${esc(g.note)}</div>` : `<div class="sb-paper${g.from === 'me' ? ' me' : ''}${g.pending ? ' pend' : ''}">
+  <div class="sb-lfrom">${esc(g.time || '')} · ${g.from === 'me' ? L.me : L.him}</div>${g.items.map(line).join('')}
+  ${g.from === 'him' ? `<div class="sb-lsign">—— ${esc(him.penName || him.name)}</div>` : ''}</div>`).join('');
+        const pend = host.wechat().filter(m => m.pending).length;
+        const menu = v.menuFor ? `<div class="sb-sheet"><button data-act="medit" data-id="${esc(v.menuFor)}">改一改</button><button data-act="mdel" data-id="${esc(v.menuFor)}">划掉</button><button data-act="mcancel">算了</button></div>` : '';
+        return top + `<div class="sb-msgs sb-letters" data-keep="msgs">${papers || `<div class="sb-empty sm">还没有往来的信。给${esc(him.remark || him.name)}写一封吧。</div>`}
+  ${pend ? `<div class="sb-pendnote">${L.pend.replace('{n}', pend)}</div>` : ''}
+  ${v.busy ? '<div class="sb-typing">TA在回信……</div>' : ''}</div>
+ ${v.edit ? `<div class="sb-inp sb-linp"><input class="sb-field" data-edit="${esc(v.edit)}" value="${esc(host.wechat().find(m => m.id === v.edit)?.text || '')}"><button class="sb-lgo" data-act="medit-ok">好</button></div>`
+        : `<div class="sb-inp sb-linp"><button class="sb-lattach${v.plus ? ' on' : ''}" data-act="plus">附</button><input class="sb-field" data-wx placeholder="${L.ph}" enterkeyhint="send"><button class="sb-lgo" data-act="wx-send" ${v.busy ? 'disabled' : ''}>${L.send}</button></div>`}
+ ${v.plus ? `<div class="sb-lpanel"><button data-act="pp" data-k="photos">${L.pic}</button><button data-act="pp" data-k="money">${L.money}</button><button data-act="pp" data-k="redo">请TA重写</button></div>` : ''}${menu}`;
     }
     const head = (title, right = '') => `<div class="sb-ph"><button class="sb-bk" data-act="phone-back" aria-label="返回">‹</button><div class="sb-pht">${title}</div>${right || '<button class="sb-phx" data-act="phone-close" aria-label="关上">×</button>'}</div>`;
     const app = (k, to, name, badge) => `<button class="sb-app" data-act="phone-go" data-to="${to}"><span class="sb-ai">${svg(k)}${badge ? `<b class="sb-ab">${badge}</b>` : ''}</span><span class="sb-an">${name}</span></button>`;
@@ -280,7 +332,7 @@ export function createUI(host) {
  <div class="sb-sbar"><span>${esc(clock)}</span><button class="sb-phx" data-act="phone-close" aria-label="关上">×</button></div>
  <div class="sb-clock">${esc(clock || '--:--')}</div>
  <div class="sb-cdate">${esc([date, n.weather].filter(Boolean).join(' · ') || '时间跟着剧情走')}</div>
- <button class="sb-widget" data-act="phone-go" data-to="music"><div class="sb-cap">他在听</div><div class="sb-wrow"><span class="sb-wcov"></span><span><b>${esc(st.music?.title || '还没在听歌')}</b><small>${esc(st.music?.lyric || st.music?.artist || '')}</small></span></div></button>
+ <button class="sb-widget" data-act="phone-go" data-to="music"><div class="sb-cap">TA在听</div><div class="sb-wrow"><span class="sb-wcov"></span><span><b>${esc(st.music?.title || '还没在听歌')}</b><small>${esc(st.music?.lyric || st.music?.artist || '')}</small></span></div></button>
  <div class="sb-apps">${app('x', 'x', 'X')}${app('diary', 'diary', ERA[era].diary)}${app('memo', 'memo', '备忘录')}${app('photos', 'photos', '相册')}</div>
  <div class="sb-dock">${app('msg', 'wx-chat', ERA[era].wechat, host.unread())}${app('music', 'music', '音乐')}${app('set', 'settings', '设置')}</div>
 </div>`;
@@ -293,7 +345,7 @@ export function createUI(host) {
         if (m.type === 'voice') inner = `<span class="sb-wave">${'<i></i>'.repeat(7)}</span><span class="sb-dim">${Math.max(2, Math.min(59, Math.round((m.text || '').length / 3)))}″</span>${m.open ? `<div class="sb-tr">${esc(m.text)}</div>` : ''}`;
         else if (m.type === 'pic') inner = `<span class="sb-picb">${m.open ? esc(m.text) : '[ 照片 · 点开看 ]'}</span>`;
         else if (m.type === 'sticker') inner = `<span class="sb-stk">（${esc(m.text)}）</span>`;
-        else if (m.type === 'money') inner = `<div class="sb-trt">¥ ${Number(m.amount || 0).toFixed(2)}</div><div class="sb-dim">${esc(m.text || '转账')}</div><div class="sb-trs">${m.status === 'taken' ? '已收下' : m.status === 'back' ? '已退回' : me ? '等他收' : '点一下：收下 / 退回'}</div>`;
+        else if (m.type === 'money') inner = `<div class="sb-trt">¥ ${Number(m.amount || 0).toFixed(2)}</div><div class="sb-dim">${esc(m.text || '转账')}</div><div class="sb-trs">${m.status === 'taken' ? '已收下' : m.status === 'back' ? '已退回' : me ? '等TA收' : '点一下：收下 / 退回'}</div>`;
         else inner = nl(m.text);
         const cls = `sb-b ${me ? 'u' : 'c'} t-${m.type}${m.pending ? ' pend' : ''}`;
         return `<div class="${cls}" data-msg="${esc(m.id)}" data-act="${m.type === 'voice' || m.type === 'pic' ? 'bopen' : m.type === 'money' && !me && m.status === 'sent' ? 'money' : ''}" data-id="${esc(m.id)}">${inner}</div>`;
@@ -312,7 +364,7 @@ export function createUI(host) {
         const menu = v.menuFor ? `<div class="sb-sheet"><button data-act="medit" data-id="${esc(v.menuFor)}">编辑</button><button data-act="mdel" data-id="${esc(v.menuFor)}">删除</button><button data-act="mcancel">取消</button></div>` : '';
         return `${head(`<span class="sb-pav sm" style="background-image:url('${esc(him.avatar)}')"></span><span><b>${esc(him.remark || him.name)}</b><small>${v.busy ? '对方正在输入…' : '在线'}</small></span>`, '<button class="sb-phx" data-act="phone-go" data-to="wx-contacts" aria-label="联系人">≡</button>')}
  <div class="sb-msgs" data-keep="msgs">${rows || '<div class="sb-empty sm">还没聊过。说点什么吧。</div>'}
-  ${pend ? `<div class="sb-pendnote">待发送 ${pend} 条 · 点 ↑ 他才回</div>` : ''}
+  ${pend ? `<div class="sb-pendnote">待发送 ${pend} 条 · 点 ↑ TA才回</div>` : ''}
   ${v.busy ? '<div class="sb-typing">· · ·</div>' : ''}
  </div>
  ${v.edit ? `<div class="sb-inp"><input class="sb-field" data-edit="${esc(v.edit)}" value="${esc(list.find(m => m.id === v.edit)?.text || '')}"><button class="sb-send" data-act="medit-ok">✓</button></div>` : `<div class="sb-inp"><button class="sb-plus${v.plus ? ' on' : ''}" data-act="plus">${v.plus ? '×' : '+'}</button><input class="sb-field" data-wx placeholder="说点什么" enterkeyhint="send"><button class="sb-send" data-act="wx-send" ${v.busy ? 'disabled' : ''}>↑</button></div>`}
@@ -360,7 +412,7 @@ export function createUI(host) {
  ${him.sign ? `<div class="sb-xbio">${esc(him.sign)}</div>` : ''}
  <div class="sb-xstat"><span><b>${seed % 40 + 3}</b> 正在关注</span><span><b>${(seed * 37 % 4000 + 120).toLocaleString()}</b> 关注者</span></div>
  <div class="sb-xtabs"><span class="on">帖子</span><span>回复</span><span>媒体</span></div>
- ${list.length ? list.slice(0, v.xN).map(p => `<article class="sb-post him"><div class="sb-pav" style="background-image:url('${esc(him.avatar)}')"></div><div class="sb-pmain"><b class="sb-pname">${esc(him.xname || him.name)}</b> <small class="sb-dim">${esc(p.time)}</small><div class="sb-ptext">${nl(p.text)}</div>${p.pics?.length ? `<div class="sb-pics">${p.pics.map(x => `<span>${esc(x)}</span>`).join('')}</div>` : ''}</div></article>`).join('') : '<div class="sb-empty">他还没在 X 上发过帖子</div>'}
+ ${list.length ? list.slice(0, v.xN).map(p => `<article class="sb-post him"><div class="sb-pav" style="background-image:url('${esc(him.avatar)}')"></div><div class="sb-pmain"><b class="sb-pname">${esc(him.xname || him.name)}</b> <small class="sb-dim">${esc(p.time)}</small><div class="sb-ptext">${nl(p.text)}</div>${p.pics?.length ? `<div class="sb-pics">${p.pics.map(x => `<span>${esc(x)}</span>`).join('')}</div>` : ''}</div></article>`).join('') : '<div class="sb-empty">TA还没在 X 上发过帖子</div>'}
  ${list.length > v.xN ? '<button class="sb-more" data-act="xmore">再加载 10 条</button>' : ''}
  <div class="sb-empty sm">私信、切换你的 X 账号下一版接上</div>
 </div>`;
@@ -372,7 +424,7 @@ export function createUI(host) {
     }
     function pMemoHtml() {
         const st = host.state();
-        return `${head('备忘录')}<div class="sb-list">${st.memo.length ? st.memo.map(m => `<div class="sb-memo${m.done ? ' done' : ''}"><span class="sb-ck">${m.done ? '✓' : ''}</span>${esc(m.text)}</div>`).join('') : '<div class="sb-empty">他还没记要做的事</div>'}</div>`;
+        return `${head('备忘录')}<div class="sb-list">${st.memo.length ? st.memo.map(m => `<div class="sb-memo${m.done ? ' done' : ''}"><span class="sb-ck">${m.done ? '✓' : ''}</span>${esc(m.text)}</div>`).join('') : '<div class="sb-empty">TA还没记要做的事</div>'}</div>`;
     }
     function pPhotosHtml() {
         const st = host.state();
@@ -386,13 +438,13 @@ export function createUI(host) {
     const toggle = (label, key, on, sub = '') => `<label class="sb-srow"><span>${label}${sub ? `<small>${sub}</small>` : ''}</span><input type="checkbox" class="sb-tg" data-set="${key}" ${on ? 'checked' : ''}></label>`;
     function setHtml() {
         const s = host.settings(), c = host.charCfg();
-        const modeName = { weather: '跟天气', fixed: '固定一张', pick: '他来挑' }[c.cover?.mode || 'weather'];
+        const modeName = { weather: '跟天气', fixed: '固定一张', pick: 'TA来挑' }[c.cover?.mode || 'weather'];
         const eraName = { auto: '自动 · ' + ({ modern: '现代', minguo: '民国', ancient: '古风' }[host.guessedEra()]), modern: '现代', minguo: '民国', ancient: '古风' }[c.era || 'auto'];
         const apiName = s.api && s.api !== 'main' ? (host.keys().find(k => k.id === s.api)?.name || '钥匙本里的一条') : '跟正文';
         return `${head('设置')}<div class="sb-slist">
- <div class="sb-sh">主页</div><div class="sb-sgrp">${row('头图', modeName, 'set-cover')}${row('他的名片', host.him().name, 'set-him')}${row('我的名字和头像', host.me().name, 'set-me')}</div>
+ <div class="sb-sh">主页</div><div class="sb-sgrp">${row('头图', modeName, 'set-cover')}${row('TA的名片', host.him().name, 'set-him')}${row('我的名字和头像', host.me().name, 'set-me')}</div>
  <div class="sb-sh">API</div><div class="sb-sgrp">${row('小手机用哪个', apiName, 'set-api')}${toggle('省一点', 'saveMode', s.saveMode, '这一轮只写时间、天气、在哪、心声')}</div>
- <div class="sb-sh">他</div><div class="sb-sgrp">
+ <div class="sb-sh">TA</div><div class="sb-sgrp">
   <label class="sb-srow"><span>时代</span><select data-cset="era">${[['auto', eraName.startsWith('自动') ? eraName : '自动'], ['modern', '现代'], ['minguo', '民国'], ['ancient', '古风']].map(([k, n]) => `<option value="${k}" ${(c.era || 'auto') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
   ${row('提示词', s.prompt ? '改过' : '默认', 'set-prompt')}
   <label class="sb-srow"><span>手机聊天记几条<small>带进正文和小手机回复</small></span><input type="number" min="0" max="2000" class="sb-num" data-set="wxMemory" value="${Number(s.wxMemory ?? 50)}"></label>
@@ -406,10 +458,10 @@ export function createUI(host) {
     function setCoverHtml() {
         const c = host.charCfg().cover || { mode: 'weather' };
         const mode = c.mode || 'weather';
-        const hint = { weather: '不用传图：按剧情里的天气和时间，换黑白灰的背景', fixed: '传一张，一直用它', pick: '每张写个标签，他按剧情挑一张；挑不到就留着上一张' }[mode];
+        const hint = { weather: '不用传图：按剧情里的天气和时间，换黑白灰的背景', fixed: '传一张，一直用它', pick: '每张写个标签，TA按剧情挑一张；挑不到就留着上一张' }[mode];
         const imgs = c.images || [];
         return `${head(esc(host.him().name) + '的背景')}<div class="sb-list">
- <div class="sb-seg">${[['weather', '跟天气'], ['fixed', '固定一张'], ['pick', '他来挑']].map(([k, n]) => `<button data-act="cover-mode" data-mode="${k}" class="${mode === k ? 'on' : ''}">${n}</button>`).join('')}</div>
+ <div class="sb-seg">${[['weather', '跟天气'], ['fixed', '固定一张'], ['pick', 'TA来挑']].map(([k, n]) => `<button data-act="cover-mode" data-mode="${k}" class="${mode === k ? 'on' : ''}">${n}</button>`).join('')}</div>
  <div class="sb-hint">${hint}</div>
  ${mode === 'fixed' ? `<div class="sb-thumbs"><label class="sb-th ${c.fixed ? '' : 'add'}" style="${c.fixed ? `background-image:url('${c.fixed}')` : ''}">${c.fixed ? '' : '+'}<input type="file" accept="image/*" data-upload="fixed" hidden></label></div>${c.fixed ? '<button class="sb-link" data-act="cover-clear">去掉这张</button>' : ''}` : ''}
  ${mode === 'pick' ? `<div class="sb-thumbs">${imgs.map((x, i) => `<div><div class="sb-th${host.state().cover && x.tag && (host.state().cover.includes(x.tag) || x.tag.includes(host.state().cover)) ? ' on' : ''}" style="background-image:url('${x.src}')"><button class="sb-thx" data-act="cover-del" data-i="${i}" aria-label="删掉">×</button></div><input class="sb-tag" data-tag="${i}" value="${esc(x.tag)}" placeholder="写个标签"></div>`).join('')}
@@ -419,14 +471,14 @@ export function createUI(host) {
     const field = (label, key, val, ph = '') => `<label class="sb-fld"><span>${label}</span><input data-him="${key}" value="${esc(val || '')}" placeholder="${esc(ph)}"></label>`;
     function setHimHtml() {
         const h = host.charCfg().him || {}, him = host.him();
-        return `${head('他的名片')}<div class="sb-list">
+        return `${head('TA的名片')}<div class="sb-list">
  <label class="sb-eav"><span class="sb-pav big" style="background-image:url('${esc(him.avatar)}')"></span><small>点头像换一张 · ${h.avatar ? '用的是你换的' : '现在用角色卡的'}</small><input type="file" accept="image/*" data-upload="him-avatar" hidden></label>
  ${h.avatar ? '<button class="sb-link" data-act="him-avatar-clear">换回角色卡的头像</button>' : ''}
  ${field('名字', 'name', h.name, him.cardName)}
- ${field('微信备注', 'remark', h.remark, '你给他起的备注，只有你看得见')}
+ ${field('微信备注', 'remark', h.remark, '你给TA起的备注，只有你看得见')}
  ${field('X 网名', 'xname', h.xname, him.name)}
  ${field('账号', 'handle', h.handle, '@…')}
- ${field('签名', 'sign', h.sign, '空着的话他会自己写')}
+ ${field('签名', 'sign', h.sign, '空着的话TA会自己写')}
  ${field('日记署名', 'penName', h.penName, him.name)}
  <div class="sb-hint">只改小吧台里显示的，不动角色卡。</div></div>`;
     }
@@ -435,12 +487,12 @@ export function createUI(host) {
         return `${head('我的名字和头像')}<div class="sb-list">
  <label class="sb-eav"><span class="sb-pav big" style="background-image:url('${esc(me.avatar)}')"></span><small>点头像换一张</small><input type="file" accept="image/*" data-upload="me-avatar" hidden></label>
  <label class="sb-fld"><span>名字</span><input data-me="name" value="${esc(m.name || '')}" placeholder="${esc(me.cardName)}"></label>
- <div class="sb-hint">在他的朋友圈、聊天里显示的名字。空着就用酒馆里你的名字。</div></div>`;
+ <div class="sb-hint">在TA的朋友圈、聊天里显示的名字。空着就用酒馆里你的名字。</div></div>`;
     }
     function setPromptHtml() {
         const s = host.settings();
         return `${head('提示词', '<button class="sb-phx" data-act="prompt-reset">默认</button>')}<div class="sb-list">
- <div class="sb-hint">每轮会把这段加进正文的提示词里，让他顺带写状态。改了马上生效；点右上「默认」换回来。</div>
+ <div class="sb-hint">每轮会把这段加进正文的提示词里，让TA顺带写状态。改了马上生效；点右上「默认」换回来。</div>
  <textarea class="sb-prompt" data-prompt>${esc(s.prompt || host.defaultPrompt())}</textarea></div>`;
     }
     function setApiHtml() {
@@ -471,7 +523,7 @@ export function createUI(host) {
             case 'ask-reply': await askReply(b.dataset.post); return;
             case 'dlike': meta.diaryLikes ??= {}; meta.diaryLikes[b.dataset.id] = !meta.diaryLikes[b.dataset.id]; host.saveMeta(); break;
             case 'dnote': {
-                const t = await host.prompt('给他留个小纸条', meta.diaryNotes?.[b.dataset.id] || '');
+                const t = await host.prompt('给TA留个小纸条', meta.diaryNotes?.[b.dataset.id] || '');
                 if (t == null) return;
                 meta.diaryNotes ??= {}; meta.diaryNotes[b.dataset.id] = String(t).trim(); host.saveMeta(); break;
             }
@@ -495,6 +547,7 @@ export function createUI(host) {
             }
             case 'phone-close': v.phone = false; v.plus = false; v.menuFor = ''; v.edit = null; break;
             case 'xmore': v.xN += 10; break;
+            case 'lmore': v.momentsN += 10; break;
             case 'plus': v.plus = !v.plus; break;
             case 'pp': await plusAction(b.dataset.k); return;
             case 'wx-send': await sendRound(); return;
@@ -539,7 +592,8 @@ export function createUI(host) {
         else if (t.dataset.prompt != null) host.setSettings(s => { s.prompt = t.value.trim() === host.defaultPrompt().trim() ? '' : t.value; });
         else if (t.dataset.upload && t.files?.[0]) {
             const kind = t.dataset.upload;
-            const src = await shrink(t.files[0], kind.includes('avatar') ? 320 : 900);
+            let src = await shrink(t.files[0], kind.includes('avatar') ? 320 : 900);
+            src = await host.upload(src); // 存到酒馆服务器，只记地址
             if (kind === 'fixed') host.setCharCfg(c => { c.cover = { ...(c.cover || {}), mode: 'fixed', fixed: src }; });
             if (kind === 'pick') host.setCharCfg(c => { c.cover = { ...(c.cover || {}), mode: 'pick', images: [...(c.cover?.images || []), { tag: '', src }] }; });
             if (kind === 'him-avatar') host.setCharCfg(c => { c.him = { ...(c.him || {}), avatar: src }; });
@@ -585,7 +639,7 @@ export function createUI(host) {
         }
         v.plus = false; render();
     }
-    // 点 ↑：把待发送的都发出去，请他回；他的回复一条一条出来
+    // 点 ↑：把待发送的都发出去，请TA回；TA的回复一条一条出来
     async function sendRound({ redo = false } = {}) {
         if (v.busy) return;
         const inp = root.querySelector('[data-wx]');
@@ -593,7 +647,7 @@ export function createUI(host) {
         let removed = [];
         if (redo) {
             removed = host.takeLastRound();
-            if (!removed.length) { host.toast('info', '他这一轮还没回，没东西可以重来'); return; }
+            if (!removed.length) { host.toast('info', 'TA这一轮还没回，没东西可以重来'); return; }
         } else if (!host.wechat().some(m => m.pending)) { host.toast('info', '先说点什么，再点 ↑'); return; }
         host.wechat().forEach(m => { if (m.pending) host.patchWechat(m.id, { pending: false }, true); });
         host.saveMeta();
@@ -601,7 +655,7 @@ export function createUI(host) {
         try {
             const text = await host.ask(phoneMessages());
             const list = parsePhoneReply(text);
-            if (!list.length) throw new Error('他没回出东西');
+            if (!list.length) throw new Error('TA没回出东西');
             for (const m of list) {
                 await wait(650 + Math.min(1600, (m.text || '').length * 60));
                 host.addWechat({ ...m, from: 'him', time: host.state().now.time || '' });
@@ -620,10 +674,10 @@ export function createUI(host) {
         const sys = [
             `你是 ${him.cardName}。下面是你的设定：\n${card}`,
             me.persona ? `对方（${me.cardName}）的设定：\n${me.persona}` : '',
-            `现在你们在手机上聊天，对方在你手机里叫「${me.name}」。`,
+            host.era() === 'modern' ? `现在你们在手机上聊天，对方在你手机里叫「${me.name}」。` : `现在你们在书信往来，对方署名「${me.name}」。`,
             n.time || n.where ? `此刻：${[n.time, n.weather, n.where && '你在' + n.where].filter(Boolean).join('，')}` : '',
             host.storyTail() ? `最近发生的事（正文）：\n${host.storyTail()}` : '',
-            PHONE_RULES,
+            host.era() === 'modern' ? PHONE_RULES : LETTER_RULES,
         ].filter(Boolean).join('\n\n');
         const msgs = [{ role: 'system', content: sys }];
         const N = Number(host.settings().wxMemory ?? 50);
@@ -649,7 +703,7 @@ export function createUI(host) {
         if (inp?.value.trim()) addComment(postId, inp.value);
         const meta = host.meta();
         const mine = meta.comments?.[postId] || [];
-        if (!mine.some(c => c.who === 'me')) { host.toast('info', '先留一句言，再点让他回'); return; }
+        if (!mine.some(c => c.who === 'me')) { host.toast('info', '先留一句言，再点让TA回'); return; }
         const post = [...host.state().posts].find(p => p.id === postId);
         v.busy = true; render();
         try {
@@ -659,7 +713,7 @@ export function createUI(host) {
                 { role: 'user', content: mine.map(c => `${c.who === 'me' ? host.me().name : him.name}：${c.text}`).join('\n') },
             ]);
             const line = String(text || '').split(/\r?\n/).map(x => x.trim()).filter(Boolean)[0];
-            if (!line) throw new Error('他没回出东西');
+            if (!line) throw new Error('TA没回出东西');
             mine.push({ who: 'him', text: line.replace(/^[^：:]{1,8}[：:]/, '').trim(), at: Date.now() });
             host.saveMeta();
         } catch (err) { host.toast('error', '没回成：' + (err?.message || err)); }

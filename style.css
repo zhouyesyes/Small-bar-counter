@@ -86,12 +86,15 @@
 #sb-root .sb-empty.sm{padding:12px 8px}
 
 /* 音乐 */
-#sb-root .sb-music{padding:22px 20px 26px;border-top:1px solid var(--sb-line);background:linear-gradient(var(--sb-soft),var(--sb-bg) 70%);text-align:center}
+#sb-root .sb-music{position:relative;overflow:hidden;padding:24px 20px 26px;border-top:1px solid var(--sb-line);text-align:center;isolation:isolate}
+/* 封面后面一层放大、模糊的影子，往下淡出去 */
+#sb-root .sb-music::before{content:"";position:absolute;inset:-40px -40px 30%;z-index:-1;background:radial-gradient(60% 55% at 50% 38%,#9a9a9a,transparent 70%),radial-gradient(40% 40% at 30% 20%,#d0d0d0,transparent 70%);filter:blur(24px);opacity:.55}
+#sb-root.sb-dark .sb-music::before{background:radial-gradient(60% 55% at 50% 38%,#4a4a4a,transparent 70%),radial-gradient(40% 40% at 30% 20%,#2c2c2c,transparent 70%);opacity:.8}
 #sb-root .sb-cap{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--sb-dim);margin-bottom:10px}
 #sb-root .sb-cap.sb-row{display:flex;justify-content:space-between;margin:20px 0 6px}
-#sb-root .sb-bigcover{width:170px;height:170px;margin:4px auto 0;border-radius:14px;background:linear-gradient(135deg,#d6d6d6,#6a6a6a 60%,#2e2e2e);box-shadow:0 14px 34px rgba(0,0,0,.22)}
+#sb-root .sb-bigcover{width:112px;height:112px;margin:4px auto 0;border-radius:12px;background:linear-gradient(135deg,#d6d6d6,#6a6a6a 60%,#2e2e2e);box-shadow:0 14px 34px rgba(0,0,0,.22)}
 #sb-root.sb-dark .sb-bigcover{background:linear-gradient(135deg,#6a6a6a,#2a2a2a 60%,#111)}
-#sb-root .sb-mt{font-size:19px;font-weight:700;margin-top:16px}
+#sb-root .sb-mt{font-size:17px;font-weight:700;margin-top:14px}
 #sb-root .sb-ma{font-size:12.5px;color:var(--sb-dim)}
 #sb-root .sb-lyr{margin-top:12px;font-size:15px;font-weight:600}
 #sb-root .sb-mnote{margin-top:14px;font-size:11px;color:var(--sb-dim)}
@@ -228,3 +231,25 @@
 #sb-root .sb-fld span{display:block;font-size:11px;color:var(--sb-dim)}
 #sb-root .sb-fld input{width:100%;border:0;background:none;padding:2px 0;font-size:14px}
 #sb-root .sb-prompt{width:100%;min-height:340px;font-size:12.5px!important;line-height:1.6}
+
+/* 书信（古风 / 民国）：信纸，不是手机 */
+#sb-root .sb-lhead{display:flex;align-items:center;gap:4px;padding:12px 12px 10px 16px;border-bottom:1px solid var(--sb-line);flex:0 0 auto}
+#sb-root .sb-ltitle{flex:1;display:flex;gap:16px}
+#sb-root .sb-ltitle button{font-size:14px;letter-spacing:.25em;color:var(--sb-dim);padding:2px 0}
+#sb-root .sb-ltitle button.on{color:var(--sb-fg);font-weight:700;box-shadow:inset 0 -1.5px 0 var(--sb-fg)}
+#sb-root .sb-letters{gap:12px;padding:16px 14px}
+#sb-root .sb-paper{border:1px solid var(--sb-line);background:var(--sb-soft);padding:12px 14px;margin-right:24px;-webkit-user-select:none;user-select:none}
+#sb-root .sb-paper.me{background:var(--sb-bg);margin:0 0 0 24px}
+#sb-root .sb-paper.pend{opacity:.6;border-style:dashed}
+#sb-root .sb-lfrom{font-size:11px;color:var(--sb-dim);letter-spacing:.15em;margin-bottom:4px}
+#sb-root .sb-lline{font-size:14px;letter-spacing:.08em;line-height:1.9;word-break:break-word}
+#sb-root .sb-lline.dim{color:var(--sb-dim);font-size:13px}
+#sb-root .sb-lmoney{font-size:13px;color:var(--sb-dim);border-top:1px dashed var(--sb-line);margin-top:6px;padding-top:4px}
+#sb-root .sb-lsign{text-align:right;font-size:12px;color:var(--sb-dim);margin-top:4px;letter-spacing:.15em}
+#sb-root .sb-linp .sb-field{border-radius:0!important;background:none!important;border-bottom:1px solid var(--sb-line)!important;height:32px}
+#sb-root .sb-lattach{font-size:13px;color:var(--sb-dim);padding:0 4px}#sb-root .sb-lattach.on{color:var(--sb-fg);font-weight:700}
+#sb-root .sb-lgo{font-size:12.5px;border:1px solid var(--sb-fg);padding:4px 10px;letter-spacing:.2em;white-space:nowrap}
+#sb-root .sb-lgo[disabled]{opacity:.35}
+#sb-root .sb-lpanel{display:flex;gap:8px;padding:2px 14px 6px;flex:0 0 auto}
+#sb-root .sb-lpanel button{flex:1;font-size:12px;border:1px solid var(--sb-line);padding:6px 0;letter-spacing:.1em}
+#sb-root.sb-era-ancient .sb-phone,#sb-root.sb-era-minguo .sb-phone{border-radius:6px}

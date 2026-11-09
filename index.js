@@ -23,7 +23,8 @@ function settings() {
 }
 const saveSettings = () => ctx().saveSettingsDebounced();
 const charKey = () => { const c = ctx(); return c.characters?.[c.characterId]?.avatar || ''; };
-function charCfg() { const s = settings(), k = charKey(); return (s.chars[k] ??= {}); }
+// 头图、名片、时代：跟着聊天走（她 11/9 说的），存在这个聊天自己的数据里；新开的聊天从头来
+function charCfg() { const m = meta(); return (m.cfg ??= {}); }
 
 // ---------- 每个聊天的数据 ----------
 function meta() { const m = (ctx().chatMetadata[META] ??= {}); m.wechat ??= []; return m; }
@@ -188,6 +189,26 @@ async function ask(messages) {
     return data?.choices?.[0]?.message?.content ?? data?.content ?? '';
 }
 
+// ---------- 图片 ----------
+// 传的图存到酒馆服务器的 user/images/small-bar/ 下面，设置里只记地址；
+// 和头像一样按地址加载，浏览器会缓存，不会让设置文件变大、也不会每次保存都把图发一遍
+async function upload(dataUrl) {
+    const m = String(dataUrl).match(/^data:image\/(\w+);base64,(.+)$/);
+    if (!m) return dataUrl;
+    try {
+        const res = await fetch('/api/images/upload', {
+            method: 'POST', headers: ctx().getRequestHeaders(), cache: 'no-cache',
+            body: JSON.stringify({ image: m[2], format: m[1] === 'jpeg' ? 'jpg' : m[1], ch_name: 'small-bar', filename: 'sb-' + Date.now().toString(36) }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data?.path) throw new Error(data?.error || res.status);
+        return '/' + String(data.path).replace(/\\/g, '/').replace(/^\/+/, '');
+    } catch (e) {
+        console.warn('[小吧台] 图片传到服务器失败，先存在设置里', e);
+        return dataUrl;
+    }
+}
+
 // ---------- 注入提示词 ----------
 function refreshInject() {
     const c = ctx(), s = settings();
@@ -200,7 +221,7 @@ function refreshInject() {
     const mc = meta().comments || {};
     // 只带还没被回的：那条动态下最后一句是她说的
     const myComments = Object.values(mc).filter(list => list.length && list[list.length - 1].who === 'me').map(list => '- ' + list[list.length - 1].text).slice(-3).join('\n');
-    const text = buildInjection({ prompt: s.prompt, coverTags: tags, state: state(), wechatTail: tail, myComments, saveMode: s.saveMode });
+    const text = buildInjection({ prompt: s.prompt, coverTags: tags, state: state(), wechatTail: tail, myComments, saveMode: s.saveMode, channel: era() === 'modern' ? '在手机上的聊天' : '的书信往来' });
     // 1 = 放在聊天里（IN_CHAT），深度 0 = 最后面，0 = 系统身份
     c.setExtensionPrompt(INJECT_KEY, text, 1, 0, false, 0);
 }
@@ -210,7 +231,8 @@ function hasChar() { const c = ctx(); return c.characterId != null && c.characte
 // ---------- 接起来 ----------
 const host = {
     settings, setSettings: f => { f(settings()); saveSettings(); refreshInject(); },
-    charCfg, setCharCfg: f => { f(charCfg()); saveSettings(); refreshInject(); },
+    charCfg, setCharCfg: f => { f(charCfg()); saveMeta(); refreshInject(); },
+    upload,
     meta, saveMeta, state, unread, markRead, wechat, addWechat, patchWechat, deleteWechat, takeLastRound, restoreRound, repliesFor,
     him, me, charCard, era, guessedEra, storyTail, keys, ask, hasChar,
     defaultPrompt: () => DEFAULT_PROMPT,
@@ -219,7 +241,8 @@ const host = {
     prompt: async (title, value) => { const c = ctx(); if (c.callGenericPopup) { const r = await c.callGenericPopup(title, c.POPUP_TYPE.INPUT, value); return r === false || r == null ? null : String(r); } return prompt(title, value); },
 };
 const ui = createUI(host);
-function refresh() { dirty(); refreshInject(); ui.render(); }
+let refreshTimer = 0;
+function refresh() { dirty(); clearTimeout(refreshTimer); refreshTimer = setTimeout(() => { dirty(); refreshInject(); ui.render(); }, 120); }
 
 // 扩展页里的一小块设置：总开关、打开按钮（小猫关了也能从这里进）
 function settingsPanel() {
