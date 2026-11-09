@@ -53,7 +53,12 @@ function idOf(x) {
 function trackOf(x, base) {
     const id = idOf(x); if (!id) return null;
     const artist = Array.isArray(x.artist ?? x.author) ? (x.artist ?? x.author).map(a => (typeof a === 'string' ? a : a?.name || '')).join(' / ') : str(x.artist ?? x.author ?? x.singer);
-    return { id, title: str(x.name ?? x.title) || '未命名', artist, cover: str(x.pic ?? x.cover), lrc: str(x.lrc ?? x.lyric), base };
+    const raw = str(x.url || x.audio);
+    const direct = /^https?:\/\//.test(raw) && !/[?&]type=(url|song)\b|\/api(\/|\?)|meting/i.test(raw) ? raw : '';
+    let dur = x.time ?? x.duration ?? x.interval ?? 0;
+    dur = typeof dur === 'string' && dur.includes(':') ? dur.split(':').reduce((a, n) => a * 60 + (+n || 0), 0) : +dur || 0;
+    if (dur > 3600) dur = Math.round(dur / 1000); // 有的接口给的是毫秒
+    return { id, title: str(x.name ?? x.title) || '未命名', artist, cover: str(x.pic ?? x.cover), lrc: str(x.lrc ?? x.lyric), base, direct, dur };
 }
 
 export async function searchSongs(q, page = 1) {
@@ -128,10 +133,16 @@ async function gdUrl(t) {
     if (!/^https?:/.test(u)) throw new Error('GD 没给地址');
     return u.replace(/^http:/, 'https:');
 }
-export async function sourceUrl(t) {
-    if (t.src === 'qq') return await qqUrl(t);
-    try { return await gdUrl(t); } catch { return playUrl(t); }
+export async function sourceList(t) {
+    if (t.src === 'qq') return [await qqUrl(t)];
+    const list = [];
+    if (t.direct) list.push(t.direct);
+    try { list.push(await gdUrl(t)); } catch { /* GD 没给就跳过 */ }
+    const bases = [t.base, ...MUSIC_APIS].filter(Boolean);
+    for (const b of [...new Set(bases)]) list.push(apiUrl(b, { server: 'netease', type: 'url', id: t.id }));
+    return [...new Set(list)];
 }
+export async function sourceUrl(t) { return (await sourceList(t))[0]; }
 export async function songById(id) {
     const { base, rows } = await ask({ server: 'netease', type: 'song', id });
     return trackOf({ id, ...rows[0] }, base);
@@ -168,7 +179,7 @@ export const lineAt = (lrc, sec) => { let cur = -1; for (let i = 0; i < lrc.leng
 export function createPlayer({ load, save, onChange, onStatus = () => {} }) {
     const audio = new Audio();
     audio.preload = 'none';
-    let lrc = [], lrcFor = '';
+    let lrc = [], lrcFor = '', sources = [], srcIdx = 0;
     const st = () => load(); // { list: [], idx, mode }
     const cur = () => st().list[st().idx];
     async function play(i) {
@@ -177,10 +188,12 @@ export function createPlayer({ load, save, onChange, onStatus = () => {} }) {
         const t = cur(); if (!t) return;
         let src;
         onStatus(t.src === 'qq' ? '正在问 QQ 音乐要播放地址…' : '正在连网易云…');
-        try { src = await sourceUrl(t); } catch (e) { onStatus('拿不到播放地址'); onChange?.('error', e?.message || '拿不到播放地址'); return; }
+        try { sources = await sourceList(t); srcIdx = 0; src = sources[0]; } catch (e) { onStatus('拿不到播放地址'); onChange?.('error', e?.message || '拿不到播放地址'); return; }
+        if (!src) { onStatus('拿不到播放地址'); return; }
         if (t.src === 'qq') save(); // 问地址时顺便拿到了封面、歌词
         if (audio.dataset.src !== src) { audio.src = src; audio.dataset.src = src; audio.dataset.id = t.id; audio.dataset.tried = ''; }
-        try { await audio.play(); } catch (e) { if (e?.name !== 'NotAllowedError') await fallback(); else onChange?.('error', '点一下播放键继续'); }
+        // 放不了时 <audio> 自己会发 error，由那边换来源；这里只管被浏览器拦下自动播放的情况
+        try { await audio.play(); } catch (e) { if (e?.name === 'NotAllowedError') onChange?.('error', '点一下播放键继续'); }
         if (lrcFor !== t.id) { lrcFor = t.id; lrc = []; lyricOf(t).then(l => { if (lrcFor === t.id) { lrc = l; onChange?.('state'); } }); }
         onChange?.();
     }
@@ -192,6 +205,11 @@ export function createPlayer({ load, save, onChange, onStatus = () => {} }) {
     };
     const prev = () => { const s = st(); if (!s.list.length) return; s.idx = (s.idx - 1 + s.list.length) % s.list.length; save(); play(); };
     audio.addEventListener('ended', () => next(true));
+    // 只有 30 秒左右、整首明明更长：多半是会员歌的试听片段，换下一个来源
+    audio.addEventListener('loadedmetadata', () => {
+        const t = cur();
+        if (t && t.src !== 'qq' && t.dur > 60 && audio.duration > 0 && audio.duration < 45 && srcIdx + 1 < sources.length) { onStatus('这个来源只有试听片段，换一个…'); fallback(); }
+    });
     // 现在在干嘛：给界面那一行小字
     const where = () => (cur()?.src === 'qq' || /vkeys|qq\.com|tc\.qq/.test(audio.src) ? 'QQ 音乐' : '网易云');
     audio.addEventListener('loadstart', () => onStatus('正在加载…'));
@@ -201,7 +219,16 @@ export function createPlayer({ load, save, onChange, onStatus = () => {} }) {
     audio.addEventListener('pause', () => { if (!audio.ended && audio.currentTime > 0) onStatus('暂停了'); });
     // 放不出来：网易云的歌先去 QQ 找同一首，再不行就提示
     async function fallback() {
-        const t = cur(); if (!t || audio.dataset.tried) { onChange?.('error', '这首放不了（可能是会员歌或接口不通）'); return; }
+        const t = cur(); if (!t) return;
+        // 先在这首歌的备用来源里一个个换（QR 也是这样，有的节点能放完整的会员歌）
+        if (srcIdx + 1 < sources.length) {
+            srcIdx++; const u = sources[srcIdx];
+            onStatus(`换一个来源试试（${srcIdx + 1} / ${sources.length}）…`);
+            audio.src = u; audio.dataset.src = u;
+            try { await audio.play(); } catch { /* 出错会再进来 */ }
+            return;
+        }
+        if (audio.dataset.tried) { onStatus('放不了'); onChange?.('error', '这首放不了（可能是会员歌或接口不通）'); return; }
         audio.dataset.tried = '1';
         if (t.src !== 'qq') {
             onStatus('网易云放不了，去 QQ 音乐找同一首…');
