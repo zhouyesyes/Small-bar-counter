@@ -632,23 +632,42 @@ export function createUI(host) {
     }
     // 微博：热搜 + 广场（随便发的、吃瓜、磕 CP），不放账号
     function weiboHtml() {
-        const st = host.state(), tab = v.wbTab || 'hot';
+        const st = host.state(), tab = v.wbTab || 'square';
         const list = [...st.weibo].reverse();
         const seed = str => [...String(str)].reduce((n, c) => (n * 31 + c.charCodeAt(0)) >>> 0, 7);
         const num = n => (n >= 10000 ? (n / 10000).toFixed(1).replace(/\.0$/, '') + '万' : String(n));
-        const TAG = { 热: 'hot', 新: 'new', 沸: 'boil', 爆: 'boom' };
-        const tabs = `<div class="sb-wbtabs">${[['hot', Wd().hot], ['square', Wd().square]].map(([k, n]) => `<button data-act="wbtab" data-t="${k}" class="${tab === k ? 'on' : ''}">${n}</button>`).join('')}<span class="sb-wbgen">${genBtn('weibo', '刷新')}</span></div>`;
-        const hot = st.hot.length ? `<div class="sb-hothead"><b>${Wd().weibo}${Wd().hot}</b><small>实时 · 跟着剧情变</small></div><ol class="sb-hot">${st.hot.map((h, i) => `<li><span class="sb-hn r${i < 3 ? i + 1 : ''}">${i + 1}</span><span class="sb-hw">${esc(h.word)}<em>${esc(h.heat)}</em></span>${h.tag ? `<span class="sb-ht t-${TAG[h.tag] || 'x'}">${esc(h.tag)}</span>` : ''}</li>`).join('')}</ol>` : `<div class="sb-empty">还没有${Wd().hot}，点右上「刷新」</div>`;
+        // 热搜的小标：爆 / 沸 / 热 / 新 / 荐（荐的那条不排名，前面一个小圆点）
+        const TAG = { 爆: 'boom', 沸: 'boil', 热: 'hot', 新: 'new', 荐: 'rec', 重磅: 'rec', 火热: 'rec' };
+        const bottom = `<nav class="sb-wbnav">${[['square', '微博', 'home'], ['hot', '热搜', 'hot']].map(([k, n, ic]) => `<button data-act="wbtab" data-t="${k}" class="${tab === k ? 'on' : ''}">${svgS(ic)}<span>${n}</span></button>`).join('')}</nav>`;
+        if (tab === 'hot') {
+            let rank = 0;
+            const rows = st.hot.map(h => {
+                const kind = TAG[h.tag] || '';
+                const pinned = kind === 'rec';
+                if (!pinned) rank++;
+                return `<li><span class="sb-hn${pinned ? ' dot' : rank <= 3 ? ' r' + rank : ''}">${pinned ? '•' : rank}</span><span class="sb-hw">${esc(h.word)}<em>${esc(h.heat)}</em></span>${h.tag && (kind || h.tag.length <= 2) ? `<span class="sb-ht t-${kind || 'x'}">${esc(h.tag)}</span>` : ''}</li>`;
+            }).join('');
+            return `<div class="sb-wbhot">
+ <div class="sb-wbbanner"><button class="sb-bk light" data-act="phone-back" aria-label="返回">‹</button><span class="sb-wbgen">${genBtn('weibo', '刷新')}</span>
+  <div class="sb-wbtitle">${Wd().weibo}${Wd().hot}</div><div class="sb-wbsub">这个世界此刻在聊什么</div></div>
+ <div class="sb-wbcats"><span class="on">${Wd().hot}</span></div>
+ <div class="sb-wbradar">热搜雷达，跟着剧情一起变</div>
+ <div class="sb-list sb-wb" data-keep="weibo">${rows ? `<ol class="sb-hot">${rows}</ol>` : `<div class="sb-empty">还没有${Wd().hot}，点右上「刷新」</div>`}</div>
+</div>${bottom}`;
+        }
         const card = p => {
             const n = seed(p.who + p.text);
-            return `<article class="sb-wbcard"><div class="sb-wbhead"><span class="sb-wbav">${esc(p.who.slice(0, 1))}</span><span><b class="sb-wbname">${esc(p.who)}</b><small>${esc(p.time || '刚刚')} · 来自 ${['iPhone 客户端', '微博 weibo.com', 'HUAWEI Mate', '小米手机'][n % 4]}</small></span></div>
-  <div class="sb-wbtext">${nl(p.text)}</div>${p.pics?.length ? `<div class="sb-wbpics">${p.pics.map(x => `<span>${esc(x)}</span>`).join('')}</div>` : ''}
-  <div class="sb-wbacts"><span>${svgS('share')}${num(n % 900)}</span><span>${svgS('comment')}${num(n % 2300 + 3)}</span><span>${svgS('like')}${num(n % 52000 + 12)}</span></div></article>`;
+            return `<article class="sb-wbcard"><div class="sb-wbhead"><span class="sb-wbav">${esc(p.who.slice(0, 1))}</span><span class="sb-wbwho"><b class="sb-wbname">${esc(p.who)}</b><small>来自 ${['iPhone 15 Pro', '微博视频号', 'HUAWEI Mate 60', '小米 14'][n % 4]}  ${esc(p.time || '刚刚')}</small></span><span class="sb-wbmore">···</span></div>
+  <div class="sb-wbtext">${nl(p.text)}</div>${p.pics?.length ? `<div class="sb-wbpics n${Math.min(p.pics.length, 3)}">${p.pics.map(x => `<span>${esc(x)}</span>`).join('')}</div>` : ''}
+  <div class="sb-wbacts"><span>${svgS('share')}${num(n % 900 + 1)}</span><span>${svgS('comment')}${num(n % 2300 + 3)}</span><span>${svgS('like')}${num(n % 52000 + 12)}</span></div></article>`;
         };
         const square = list.length ? list.slice(0, v.wbN || 15).map(card).join('') + (list.length > (v.wbN || 15) ? '<button class="sb-more" data-act="wbmore">再看 15 条</button>' : '') : `<div class="sb-empty">${Wd().square}还是空的，点右上「刷新」</div>`;
-        return `${head(Wd().weibo)}${tabs}<div class="sb-list sb-wb" data-keep="weibo">${tab === 'hot' ? hot : square}</div>`;
+        return `<div class="sb-wbtop"><button class="sb-bk" data-act="phone-back" aria-label="返回">‹</button><span class="sb-wbtabs2"><span class="on">推荐</span></span><span class="sb-wbgen">${genBtn('weibo', '刷新')}</span></div>
+ <div class="sb-list sb-wb sb-wbfeed" data-keep="weibo">${square}</div>${bottom}`;
     }
     const SVGS = {
+        home: '<path d="M4 11l8-7 8 7v9h-5v-6h-6v6H4z"/>',
+        hot: '<path d="M12 3c1 3 4 4.5 4 8.5a4 4 0 0 1-8 0c0-1.5.6-2.6 1.4-3.4.3 1.4 1 2.1 1.8 2.4C11 8 11 5.5 12 3z"/><path d="M6 15a6 6 0 0 0 12 0"/>',
         share: '<path d="M14 5l6 6-6 6M20 11H9a5 5 0 0 0-5 5v3"/>',
         comment: '<path d="M4 5h16v11H9l-5 4z"/>',
         like: '<path d="M7 11v9H4v-9zM7 11l4-7c1.5 0 2.5 1 2.2 2.6L12.6 10H19a1.5 1.5 0 0 1 1.5 1.8l-1.4 6.8A2 2 0 0 1 17.1 20H7"/>',

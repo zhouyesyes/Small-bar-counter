@@ -404,37 +404,58 @@
 #sb-root .sb-album figure span{aspect-ratio:1;display:flex}
 #sb-root .sb-album figcaption{font-size:11px;color:var(--sb-dim);margin-top:4px}
 
-/* 微博：照着微博的颜色和排版（现代） */
-#sb-root.sb-era-modern .sb-phone:has(.sb-wb){--wb-bg:#f2f2f2;--wb-card:#fff;--wb-text:#333;--wb-dim:#939393;--wb-line:#ececec;--wb-orange:#ff8200}
-#sb-root.sb-era-modern.sb-dark .sb-phone:has(.sb-wb){--wb-bg:#000;--wb-card:#161616;--wb-text:#d8d8d8;--wb-dim:#7a7a7a;--wb-line:#262626;--wb-orange:#ff8200}
-#sb-root.sb-era-modern .sb-phone:has(.sb-wb){background:var(--wb-card)}
-#sb-root.sb-era-modern .sb-phone:has(.sb-wb) .sb-ph{background:var(--wb-card);border-color:var(--wb-line)}
-#sb-root.sb-era-modern .sb-wbtabs{background:var(--wb-card);border-color:var(--wb-line);align-items:flex-end}
-#sb-root.sb-era-modern .sb-wbtabs button{color:var(--wb-dim);font-size:15px}
-#sb-root.sb-era-modern .sb-wbtabs button.on{color:var(--wb-text);font-weight:700;box-shadow:inset 0 -3px 0 var(--wb-orange)}
-#sb-root .sb-wbgen{margin-left:auto;padding-bottom:6px}
-#sb-root.sb-era-modern .sb-wb{background:var(--wb-bg);padding:0;color:var(--wb-text)}
-/* 热搜榜 */
-#sb-root .sb-hothead{display:flex;align-items:baseline;gap:8px;padding:12px 14px 6px;background:var(--wb-card,var(--sb-bg))}
-#sb-root .sb-hothead b{font-size:16px;color:var(--wb-orange,var(--sb-fg))}#sb-root .sb-hothead small{display:inline;font-size:11px}
-#sb-root.sb-era-modern .sb-wb .sb-hot{background:var(--wb-card)}
-#sb-root.sb-era-modern .sb-wb .sb-hot li{padding:11px 14px;border-color:var(--wb-line);font-size:14.5px}
-#sb-root.sb-era-modern .sb-wb .sb-hn{color:#f6b64b;font-style:italic;font-size:15px;width:22px}
-#sb-root.sb-era-modern .sb-wb .sb-hn.r1{color:#fe2d46}#sb-root.sb-era-modern .sb-wb .sb-hn.r2{color:#f60}#sb-root.sb-era-modern .sb-wb .sb-hn.r3{color:#faa90e}
-#sb-root .sb-hw em{font-style:normal;font-size:11.5px;color:var(--wb-dim,var(--sb-dim));margin-left:8px}
-#sb-root.sb-era-modern .sb-wb .sb-ht{border:0;color:#fff;font-size:11px;width:18px;height:18px;padding:0;border-radius:4px;display:flex;align-items:center;justify-content:center}
-#sb-root.sb-era-modern .sb-wb .sb-ht.t-new{background:#ff3852}#sb-root.sb-era-modern .sb-wb .sb-ht.t-hot{background:#ff9406}
-#sb-root.sb-era-modern .sb-wb .sb-ht.t-boil{background:#f86400}#sb-root.sb-era-modern .sb-wb .sb-ht.t-boom{background:#bd0000}#sb-root.sb-era-modern .sb-wb .sb-ht.t-x{background:#c5c5c5}
-/* 广场的一条条微博：白卡片，中间隔一道灰 */
-#sb-root .sb-wbcard{background:var(--wb-card,var(--sb-bg));padding:12px 14px 0;margin-bottom:8px;contain:layout paint}
+
+/* 微博：照着微博 App 的两页（推荐信息流、热搜榜）。颜色：橙 #ff8200，浅色白底灰隔条，深色黑底 */
+#sb-root .sb-phone:has(.sb-wb){--wb-bg:#f3f3f3;--wb-card:#fff;--wb-text:#222;--wb-dim:#939393;--wb-line:#ececec;--wb-or:#ff8200;background:var(--wb-card)}
+#sb-root.sb-dark .sb-phone:has(.sb-wb){--wb-bg:#0d0d0d;--wb-card:#1c1c1c;--wb-text:#e6e6e6;--wb-dim:#8b8b8b;--wb-line:#2a2a2a}
+#sb-root .sb-wb{background:var(--wb-bg);padding:0!important;color:var(--wb-text)}
+#sb-root .sb-wbgen .sb-gen{font-size:11px;padding:2px 10px;border-radius:12px;border:1px solid var(--wb-line);color:var(--wb-dim);background:var(--wb-card)}
+/* 推荐页顶上 */
+#sb-root .sb-wbtop{display:flex;align-items:center;padding:12px 12px 0;background:var(--wb-card);flex:0 0 auto}
+#sb-root .sb-wbtabs2{flex:1;display:flex;justify-content:center;gap:24px}
+#sb-root .sb-wbtabs2 span{font-size:17px;color:var(--wb-dim);padding-bottom:9px;position:relative}
+#sb-root .sb-wbtabs2 .on{color:var(--wb-text);font-weight:700}
+#sb-root .sb-wbtabs2 .on::after{content:"";position:absolute;left:50%;bottom:0;width:24px;height:3px;border-radius:2px;background:var(--wb-or);transform:translateX(-50%)}
+/* 一条微博 */
+#sb-root .sb-wbcard{background:var(--wb-card);padding:14px 14px 0;margin-bottom:9px;contain:layout paint}
 #sb-root .sb-wbhead{display:flex;align-items:center;gap:10px}
-#sb-root .sb-wbav{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#ffd29a,#ff8a3d);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;flex:0 0 auto}
-#sb-root .sb-wbname{font-size:14.5px;color:var(--wb-orange,var(--sb-fg));font-weight:600}
-#sb-root .sb-wbhead small{font-size:11px;color:var(--wb-dim,var(--sb-dim))}
-#sb-root .sb-wbtext{font-size:15px;line-height:1.6;margin:8px 0;color:var(--wb-text,var(--sb-fg));word-break:break-word}
-#sb-root .sb-wbpics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;margin-bottom:6px}
-#sb-root .sb-wbpics span{aspect-ratio:1;background:var(--wb-bg,var(--sb-soft));display:flex;align-items:center;justify-content:center;text-align:center;font-size:10.5px;color:var(--wb-dim,var(--sb-dim));padding:4px}
-#sb-root .sb-wbacts{display:flex;justify-content:space-around;border-top:1px solid var(--wb-line,var(--sb-line));padding:9px 0;margin-top:4px;font-size:12px;color:var(--wb-dim,var(--sb-dim))}
-#sb-root .sb-wbacts span{display:flex;align-items:center;gap:5px}
-#sb-root .sb-wbacts svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round}
-#sb-root.sb-era-modern .sb-wbtabs .sb-gen{font-size:11px;color:var(--wb-dim);padding:2px 10px;box-shadow:none;border:1px solid var(--wb-line);border-radius:12px}
+#sb-root .sb-wbav{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#ffcf9a,#ff8a3d);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;flex:0 0 auto}
+#sb-root .sb-wbwho{flex:1;min-width:0}
+#sb-root .sb-wbname{font-size:15px;color:var(--wb-text);font-weight:500}
+#sb-root .sb-wbwho small{font-size:11.5px;color:var(--wb-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#sb-root .sb-wbmore{color:var(--wb-dim);letter-spacing:1px}
+#sb-root .sb-wbtext{font-size:16px;line-height:1.6;margin:10px 0;color:var(--wb-text);word-break:break-word}
+#sb-root .sb-wbpics{display:grid;gap:4px;margin-bottom:4px}
+#sb-root .sb-wbpics.n1{grid-template-columns:minmax(0,.62fr)}#sb-root .sb-wbpics.n2{grid-template-columns:repeat(2,minmax(0,1fr))}#sb-root .sb-wbpics.n3{grid-template-columns:repeat(3,minmax(0,1fr))}
+#sb-root .sb-wbpics span{aspect-ratio:1;border-radius:6px;background:var(--wb-bg);display:flex;align-items:center;justify-content:center;text-align:center;font-size:11px;color:var(--wb-dim);padding:6px}
+#sb-root .sb-wbpics.n1 span{aspect-ratio:3/4}
+#sb-root .sb-wbacts{display:flex;justify-content:space-around;padding:11px 0;font-size:13px;color:var(--wb-dim)}
+#sb-root .sb-wbacts span{display:flex;align-items:center;gap:6px}
+#sb-root .sb-wbacts svg,#sb-root .sb-wbnav svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round}
+/* 底下的导航 */
+#sb-root .sb-wbnav{display:flex;justify-content:space-around;border-top:1px solid var(--wb-line);background:var(--wb-card);flex:0 0 auto;padding:6px 0 0}
+#sb-root .sb-wbnav button{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--wb-dim);padding:2px 18px}
+#sb-root .sb-wbnav button.on{color:var(--wb-text)}#sb-root .sb-wbnav button.on svg{stroke:var(--wb-or)}
+#sb-root .sb-phone:has(.sb-wb) .sb-hbar{background:var(--wb-text)}
+/* 热搜页：橙色大头图 + 分类条 + 榜单 */
+#sb-root .sb-wbhot{flex:1;display:flex;flex-direction:column;min-height:0}
+#sb-root .sb-wbbanner{position:relative;flex:0 0 auto;height:120px;background:radial-gradient(120% 90% at 70% 0%,#ffcf4a 0%,#ffa02a 45%,#ff6a1a 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
+#sb-root .sb-wbbanner::before{content:"";position:absolute;inset:-40%;background:repeating-radial-gradient(circle at 75% 20%,rgba(255,255,255,.12) 0 2px,transparent 2px 38px)}
+#sb-root .sb-wbbanner .sb-bk{top:10px;left:10px}
+#sb-root .sb-wbbanner .sb-wbgen{position:absolute;top:12px;right:12px}
+#sb-root .sb-wbbanner .sb-gen{background:rgba(255,255,255,.25);color:#fff;border-color:rgba(255,255,255,.5)}
+#sb-root .sb-wbtitle{position:relative;font-size:32px;font-weight:900;font-style:italic;color:#fff;letter-spacing:2px;text-shadow:0 2px 0 rgba(200,70,0,.45)}
+#sb-root .sb-wbsub{position:relative;font-size:11px;color:rgba(255,255,255,.9);letter-spacing:4px;font-style:italic;margin-top:2px}
+#sb-root .sb-wbcats{display:flex;gap:22px;padding:10px 16px 0;background:var(--wb-card);flex:0 0 auto;font-size:15px}
+#sb-root .sb-wbcats span{padding-bottom:8px;color:var(--wb-dim)}#sb-root .sb-wbcats .on{color:var(--wb-text);font-weight:700;box-shadow:inset 0 -3px 0 var(--wb-or)}
+#sb-root .sb-wbradar{font-size:12px;color:var(--wb-dim);padding:8px 14px;background:var(--wb-bg);flex:0 0 auto}
+#sb-root .sb-wb .sb-hot{background:var(--wb-card);margin:0;padding:0;list-style:none}
+#sb-root .sb-wb .sb-hot li{display:flex;align-items:center;gap:10px;padding:13px 14px;border-bottom:1px solid var(--wb-line);font-size:15px}
+#sb-root .sb-wb .sb-hn{width:22px;text-align:center;font-style:italic;font-weight:700;font-size:16px;color:#ff9a3c;flex:0 0 auto}
+#sb-root .sb-wb .sb-hn.r1,#sb-root .sb-wb .sb-hn.r2,#sb-root .sb-wb .sb-hn.r3{color:#ff5d3d}
+#sb-root .sb-wb .sb-hn.dot{color:#ff8200;font-style:normal}
+#sb-root .sb-wb .sb-hw{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--wb-text)}
+#sb-root .sb-wb .sb-hw em{font-style:normal;font-size:12.5px;color:var(--wb-dim);margin-left:8px}
+#sb-root .sb-wb .sb-ht{flex:0 0 auto;border:0;color:#fff;font-size:11.5px;min-width:19px;height:19px;padding:0 3px;border-radius:4px;display:flex;align-items:center;justify-content:center}
+#sb-root .sb-wb .sb-ht.t-boom{background:#bd0000}#sb-root .sb-wb .sb-ht.t-boil{background:#f86400}#sb-root .sb-wb .sb-ht.t-hot{background:#ff9406}
+#sb-root .sb-wb .sb-ht.t-new{background:#ff3852}#sb-root .sb-wb .sb-ht.t-rec{background:#4c8bff}#sb-root .sb-wb .sb-ht.t-x{background:#bbb}
