@@ -1,0 +1,95 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+/* 古风那一套：还是黑白灰，换成宣纸、水墨、宋体、竖排 */
+:root{--bg:#f6f5f2;--fg:#1a1a1a;--dim:#8a8782;--line:#dedad3;--soft:#ecebe7;--ink:#2a2a2a;--shade:rgba(0,0,0,.28)}
+.dark{--bg:#121211;--fg:#ecebe7;--dim:#7e7c78;--line:#2a2927;--soft:#1c1b1a;--ink:#d8d6d1;--shade:rgba(0,0,0,.55)}
+*{box-sizing:border-box}
+body{margin:0;width:390px;height:844px;overflow:hidden;font:14px/1.6 "Songti SC","Noto Serif CJK SC","Source Han Serif SC",serif;color:var(--fg);background:var(--bg);position:relative}
+.st{position:absolute;inset:0;padding:64px 18px 0;color:var(--dim);font-family:-apple-system,"PingFang SC",sans-serif}
+.st p{margin:0 0 14px;color:var(--fg);opacity:.75}
+.shade{position:absolute;inset:0;background:var(--shade)}
+.drawer{position:absolute;top:0;bottom:0;left:0;width:318px;background:var(--bg);border-right:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden}
+.cover{height:132px;flex:0 0 auto;position:relative;overflow:hidden;background:linear-gradient(180deg,#e9e8e4,#cfccc6)}
+.dark .cover{background:linear-gradient(180deg,#2a2927,#161615)}
+.cover svg{position:absolute;inset:0;width:100%;height:100%}
+.logo{position:absolute;top:14px;left:16px;font-size:12px;line-height:1.3;width:1em;word-break:break-all;color:var(--ink)}
+.x{position:absolute;top:12px;right:14px;width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--dim)}
+.av{width:76px;height:76px;border-radius:50%;margin:-38px auto 0;background:radial-gradient(circle at 40% 35%,#cfcfcf,#5d5d5d);border:3px solid var(--bg);box-shadow:0 0 0 1px var(--line);position:relative}
+.dark .av{background:radial-gradient(circle at 40% 35%,#777,#262626)}
+.nm{text-align:center;font-size:19px;font-weight:700;letter-spacing:.2em;margin-top:8px}
+.zi{text-align:center;font-size:12px;color:var(--dim);letter-spacing:.15em}
+.poem{text-align:center;font-size:13px;margin-top:8px;letter-spacing:.12em}
+.meta{text-align:center;font-size:11.5px;color:var(--dim);margin-top:6px;padding-bottom:12px;border-bottom:1px solid var(--line);letter-spacing:.1em}
+.body{flex:1;overflow:hidden}
+.tabs{display:flex;border-top:1px solid var(--line);font-size:13.5px;color:var(--dim);letter-spacing:.2em;padding-bottom:6px}
+.tabs span{flex:1;text-align:center;padding:12px 0}.tabs .on{color:var(--fg);font-weight:700;box-shadow:inset 0 2px 0 var(--fg)}
+/* 题壁 */
+.wall{padding:14px 18px;border-bottom:1px solid var(--line)}
+.wh{display:flex;justify-content:space-between;font-size:11.5px;color:var(--dim);letter-spacing:.08em}
+.wh b{color:var(--fg);font-size:13.5px;letter-spacing:.12em}
+.verse{margin:8px 0 6px;font-size:15px;letter-spacing:.18em;line-height:1.9}
+.he{font-size:12.5px;color:var(--dim);border-left:2px solid var(--line);padding-left:9px;margin-top:4px;line-height:1.7}
+.he b{color:var(--fg);font-weight:600}
+.acts{display:flex;gap:16px;font-size:11.5px;color:var(--dim);margin-top:8px;letter-spacing:.1em}
+/* 手札：竖排 */
+.letter{height:100%;padding:18px 16px;display:flex;flex-direction:row-reverse;gap:0}
+/* 截图机上没有带竖排字形的宋体，这里用一列一个字的办法模拟竖排；真做时用 writing-mode:vertical-rl */
+.v{width:calc(1.15em + 16px);padding:0 8px;font-size:15px;line-height:1.5;text-align:center;word-break:break-all;border-left:1px solid var(--line);height:430px}
+.v.date{font-size:12px;color:var(--dim)}
+.seal{align-self:flex-end;margin:0 10px 10px;width:26px;border:1.5px solid var(--ink);color:var(--ink);font-size:12px;line-height:1.25;text-align:center;padding:4px 0;border-radius:2px}
+/* 书信（小手机在古风里换成书信） */
+.phone{position:absolute;left:50%;transform:translateX(-50%);bottom:28px;width:300px;height:540px;border-radius:6px;border:1px solid var(--line);background:var(--bg);box-shadow:0 18px 50px rgba(0,0,0,.28);display:flex;flex-direction:column;overflow:hidden}
+.ph{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line);font-size:14px;letter-spacing:.3em}
+.ph .s{font-size:12px;color:var(--dim);letter-spacing:.1em}
+.scroll{flex:1;padding:16px 14px;display:flex;flex-direction:column;gap:12px;overflow:hidden}
+.paper{border:1px solid var(--line);background:var(--soft);padding:12px 14px;position:relative}
+.paper.me{background:var(--bg);margin-left:28px}
+.paper .from{font-size:11px;color:var(--dim);letter-spacing:.15em;margin-bottom:4px}
+.paper .t{font-size:14px;letter-spacing:.12em;line-height:1.9}
+.paper .sg{text-align:right;font-size:12px;color:var(--dim);margin-top:4px;letter-spacing:.15em}
+.pending{font-size:11px;color:var(--dim);text-align:center;letter-spacing:.15em}
+.inp{display:flex;align-items:center;gap:10px;padding:10px 14px 14px;border-top:1px solid var(--line)}
+.inp .f{flex:1;border-bottom:1px solid var(--line);padding:4px 2px;font-size:13px;color:var(--dim);letter-spacing:.1em}
+.inp .go{font-size:12.5px;border:1px solid var(--fg);padding:3px 10px;letter-spacing:.2em}
+</style></head><body>
+<div class="st"><p>夜雨未歇，檐下灯笼晃了一晃。他把伞往你那边偏了偏，自己半边肩头湿透，也不言语。</p><p>「回去罢。」他道，「明日还要早起。」</p><p>我没动，抬头看他。</p></div>
+<div id="x"></div>
+<script>
+const q=new URLSearchParams(location.search);if(q.get('t')==='dark')document.body.classList.add('dark');
+const s=q.get('s')||'wall';
+const mount=`<svg viewBox="0 0 318 132" preserveAspectRatio="none"><path d="M0 100 L40 70 L70 88 L110 50 L150 84 L190 62 L230 90 L270 58 L318 86 L318 132 L0 132Z" fill="var(--ink)" opacity=".12"/><path d="M0 118 L50 96 L90 110 L140 86 L190 108 L240 92 L318 112 L318 132 L0 132Z" fill="var(--ink)" opacity=".22"/><circle cx="214" cy="36" r="12" fill="none" stroke="var(--ink)" stroke-opacity=".35"/></svg>`;
+const head=`<div class="cover">${mount}<span class="logo">小吧台</span><span class="x">×</span></div>
+ <div class="av"></div><div class="nm">阎守峥</div><div class="zi">字 守之 · 号 夜行人</div>
+ <div class="poem">一灯如豆夜未央</div><div class="meta">丑时 · 冬月初九 · 微雨</div>`;
+const tabs=on=>`<div class="tabs">${['题壁','此刻','手札','书信'].map(n=>`<span class="${n===on?'on':''}">${n}</span>`).join('')}</div>`;
+const wall=`<div class="body">
+ <div class="wall"><div class="wh"><b>阎守峥</b><span>题于巷口茶寮 · 丑时</span></div>
+  <div class="verse">伞旧人新，雨声未歇。</div>
+  <div class="he"><b>陈叔</b> 和曰：夜深露重，早些歇着。</div>
+  <div class="he"><b>你</b> 批曰：伞明明是新买的。</div>
+  <div class="he"><b>阎守峥</b> 答：嗯，人也是。</div>
+  <div class="acts"><span>赏 3</span><span>和诗</span><span>请他答</span></div></div>
+ <div class="wall"><div class="wh"><b>阎守峥</b><span>题于城南面铺 · 昨日酉时</span></div>
+  <div class="verse">面铺闭门，空归。</div>
+  <div class="acts"><span>赏 1</span><span>和诗</span></div></div>
+</div>`;
+const diary=`<div class="body"><div class="letter">
+ <div class="v date">冬月初九 · 微雨</div>
+ <div class="v">伊今日未携伞，吾于巷口候四十分，自言候雨停耳。</div>
+ <div class="v">归途伊默然，至门前方问吾冷否。吾曰不冷。</div>
+ <div class="v">肩湿其半，伊大抵见了。</div>
+ <div class="seal">守<br>之</div>
+</div></div>`;
+const drawer=b=>`<div class="shade"></div><div class="drawer">${head}${b}${tabs(s==='diary'?'手札':'题壁')}</div>`;
+const letter=`<div class="shade"></div><div class="phone">
+ <div class="ph"><span>书信</span><span class="s">致 阎守峥 ×</span></div>
+ <div class="scroll">
+  <div class="paper me"><div class="from">冬月初八 · 你寄</div><div class="t">已到家，你也早些回去。</div></div>
+  <div class="paper"><div class="from">冬月初八 · 鸽至</div><div class="t">知道了。夜里风大，窗要关好。</div><div class="sg">—— 守之</div></div>
+  <div class="paper"><div class="from">冬月初九 · 鸽至</div><div class="t">面钱放在你门口的匣子里了，下回我请。</div><div class="sg">—— 守之 · 附碎银二两</div></div>
+  <div class="pending">信已写好两封 · 系上鸽子他才回</div>
+ </div>
+ <div class="inp"><span style="color:var(--dim)">附</span><div class="f">提笔……</div><span class="go">放鸽</span></div>
+</div>`;
+document.getElementById('x').innerHTML = s==='letter'?letter : drawer(s==='diary'?diary:wall);
+</script></body></html>
