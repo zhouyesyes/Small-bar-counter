@@ -735,6 +735,7 @@ export function createUI(host) {
   ${row('提示词', s.prompt ? '改过' : '默认', 'set-prompt')}
  </div>
  <div class="sb-sh">其他</div><div class="sb-sgrp">
+  <label class="sb-srow"><span>小手机怎么打开<small>抽屉里：嵌在抽屉那一格；浮窗：浮在聊天上，能拖，只有 × 关</small></span><select data-set="phoneMode">${[['drawer', '抽屉里'], ['float', '浮窗']].map(([k, n]) => `<option value="${k}" ${(s.phoneMode || 'drawer') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
   <label class="sb-srow"><span>外观</span><select data-set="theme">${[['auto', '跟酒馆'], ['light', '浅色'], ['dark', '深色']].map(([k, n]) => `<option value="${k}" ${(s.theme || 'auto') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
   ${toggle('小猫入口', 'cat', s.cat !== false)}
   <label class="sb-srow"><span>小猫高度<small>离屏幕顶上的百分比</small></span><input type="number" min="10" max="85" class="sb-num" data-set="catTop" value="${Number(s.catTop) || 46}"></label>
@@ -861,7 +862,11 @@ export function createUI(host) {
             case 'open': v.drawer = true; break;
             case 'close': v.drawer = false; v.diaryId = ''; v.mini = false; break;
             case 'tab':
-                if (b.dataset.tab === 'phone') { v.tab = 'phone'; v.phone = false; if (v.tab !== 'phone' || !v.view) v.view = 'home'; host.markRead(); }
+                if (b.dataset.tab === 'phone') {
+                    v.view ||= 'home'; host.markRead();
+                    if (host.settings().phoneMode === 'float') { v.phone = true; v.drawer = false; } // 浮窗：关掉抽屉，小手机浮在聊天上
+                    else { v.tab = 'phone'; v.phone = false; }
+                }
                 else { v.tab = b.dataset.tab; v.diaryId = ''; v.nowBook = false; v.mini = false; }
                 break;
             case 'flip': v.flip = !v.flip; break;
@@ -943,7 +948,8 @@ export function createUI(host) {
                 meta.hidden ??= {}; meta.hidden[b.dataset.id] = true; host.saveMeta(); v.diaryId = ''; break;
             case 'phone-go':
                 if (b.closest('.sb-float')) v.phone = true;
-                else if (v.drawer) { v.tab = 'phone'; v.phone = false; }
+                else if (v.drawer && host.settings().phoneMode !== 'float') { v.tab = 'phone'; v.phone = false; }
+                else if (v.drawer) { v.drawer = false; v.phone = true; }
                 else v.phone = true;
                 v.plus = false; v.menuFor = ''; v.edit = null;
                 v.prev = v.view; v.view = b.dataset.to;
@@ -1033,6 +1039,8 @@ export function createUI(host) {
     async function onChange(e) {
         const t = e.target;
         if (t.dataset.set) host.setSettings(s => { s[t.dataset.set] = t.type === 'checkbox' ? t.checked : t.type === 'number' ? Number(t.value) : t.value; });
+        // 切了小手机的开法：正开着的小手机马上挪过去
+        if (t.dataset.set === 'phoneMode') { if (t.value === 'float') { v.phone = true; v.drawer = false; } else { v.phone = false; v.drawer = true; v.tab = 'phone'; } }
         else if (t.dataset.ctx) host.setSettings(s => { s.ctx = { ...host.replyCtx(), [t.dataset.ctx]: t.type === 'checkbox' ? t.checked : Number(t.value) }; });
         else if (t.dataset.own) host.setSettings(s => { s.ownApi = { ...(s.ownApi || {}), [t.dataset.own]: t.value.trim() }; });
         else if (t.dataset.cset) host.setCharCfg(c => { c[t.dataset.cset] = t.value; });
@@ -1220,7 +1228,13 @@ export function createUI(host) {
     return {
         mount, render,
         open: () => { v.drawer = true; render(); },
-        openPhone: () => { v.phone = true; v.view ||= 'home'; if (v.drawer && v.tab === 'phone') v.tab = 'posts'; render(); },
+        // 魔杖菜单「酒吧小手机」：照设置，浮窗就浮出来，抽屉就打开抽屉的小手机那格
+        openPhone: () => {
+            v.view ||= 'home';
+            if (host.settings().phoneMode === 'float') { v.phone = true; if (v.drawer && v.tab === 'phone') v.tab = 'posts'; }
+            else { v.drawer = true; v.tab = 'phone'; v.phone = false; }
+            render();
+        },
         reset: () => { v.drawer = false; v.phone = false; v.view = 'home'; v.diaryId = ''; v.edit = null; v.menuFor = ''; v.busy = false; render(); },
         isOpen: () => v.drawer || v.phone,
     };
