@@ -4,6 +4,8 @@
 import { getContext } from '../../../extensions.js';
 // 你现在用的人设头像在 personas.js 里；整个模块导入，按名字取，没有也不报错
 import * as personas from '../../../personas.js';
+// 世界书：全局选中的书在 world-info.js 里；整个模块导入，按名字取
+import * as wi from '../../../world-info.js';
 import { extractBlock, buildState, guessEra } from './src/core.mjs';
 import { DEFAULT_PROMPT, buildInjection } from './src/prompt.mjs';
 import { createUI } from './src/ui.mjs';
@@ -191,46 +193,86 @@ function storyTail(n = 6) {
 
 // ---------- 请他回（小手机、动态留言） ----------
 // 回复时带什么：整套（交给酒馆拼，含预设）或自己挑
-function replyMode() { const s = settings(); if ((s.api || 'main') !== 'main') return 'pick'; return s.replyMode || 'pick'; } // 默认自己挑：不带预设，世界书照带（她 11/9 说的）
+function replyMode() { const s = settings(); if ((s.api || 'main') !== 'main' && !hasHelper()) return 'pick'; return s.replyMode || 'pick'; } // 默认自己挑：不带预设，世界书照带（她 11/9 说的）
 function replyCtx() { return { card: true, persona: true, world: true, status: true, story: 6, ...(settings().ctx || {}) }; }
 // 世界书：用酒馆自己的触发规则，只取这次被聊天内容触发到的条目（试运行，不算真的触发）
 async function worldInfo(texts) {
+    return replyCtx().worldAll ? await worldBooksWhole() : await worldTriggered(texts);
+}
+// 只带触发到的：用酒馆自己的规则试跑一次（常驻的、被聊天内容触发的、按深度插的都算），不算真的触发
+async function worldTriggered(texts) {
     const c = ctx();
     if (typeof c.getWorldInfoPrompt !== 'function') return '';
     try {
         const ch = c.characters?.[c.characterId] || {}, d = ch.data || ch;
-        const scan = [...texts].reverse();
-        const r = await c.getWorldInfoPrompt(scan, c.maxContext || 8192, true, {
+        const r = await c.getWorldInfoPrompt([...texts].reverse(), c.maxContext || 8192, true, {
             personaDescription: c.powerUserSettings?.persona_description || '', characterDescription: d.description || '', characterPersonality: d.personality || '',
             characterDepthPrompt: '', scenario: d.scenario || '', creatorNotes: d.creator_notes || '', trigger: 'normal',
         });
-        return String(r?.worldInfoString || '').trim().slice(0, 8000);
+        const depth = (r?.worldInfoDepth || []).flatMap(x => x?.entries || []);
+        return [r?.worldInfoString, ...depth, ...(r?.anBefore || []), ...(r?.anAfter || [])].map(x => String(x || '').trim()).filter(Boolean).join('\n\n');
     } catch (e) { console.warn('[小吧台] 读世界书失败', e); return ''; }
 }
+// 整本都带：角色绑的书、额外的书、这个聊天的书、全局选中的书，所有开着的条目
+async function worldBooksWhole() {
+    const c = ctx();
+    const load = c.loadWorldInfo || wi.loadWorldInfo;
+    if (typeof load !== 'function') return '';
+    const ch = c.characters?.[c.characterId] || {}, d = ch.data || ch;
+    const extra = (wi.world_info?.charLore || []).find(x => x.name === ch.avatar)?.extraBooks || [];
+    const names = [...new Set([d.extensions?.world, ...extra, c.chatMetadata?.world_info, ...(wi.selected_world_info || [])].filter(x => typeof x === 'string' && x))];
+    const out = [];
+    for (const name of names) {
+        try {
+            const book = await load(name);
+            for (const e of Object.values(book?.entries || {})) if (!e.disable && e.content) out.push(e.content.trim());
+        } catch (e) { console.warn('[小吧台] 读世界书失败', name, e); }
+    }
+    return out.join('\n\n');
+}
+
+// 酒馆助手（JS-Slash-Runner）装了的话，它的 generate 能「用酒馆拼好的整套」发给另一个 API（Rainday 就是这么做的）
+const helper = () => globalThis.TavernHelper;
+const hasHelper = () => typeof helper()?.generate === 'function';
+const customApi = () => { const o = settings().ownApi || {}; return o.url ? { apiurl: apiBase(o.url), key: o.key, model: o.model, source: 'openai' } : null; };
 
 async function ask(messages, quiet) {
     const s = settings();
     const c = ctx();
     // 角色卡在「懒加载」时只有名字没有设定（酒馆 1.18 / TauriTavern 都可能）：先补全
     try { await c.unshallowCharacter?.(c.characterId); } catch { /* 没有就算了 */ }
-    const api = s.api || 'main';
-    if (api === 'main') {
-        // 整套：用酒馆自己的安静生成，和正文同一套预设、世界书、上下文
-        if (quiet && replyMode() === 'full' && typeof c.generateQuietPrompt === 'function') {
-            c.setExtensionPrompt?.(INJECT_KEY, '', 1, 0); // 这一下不要让 TA 顺带写状态段
-            try {
+    const own = (s.api || 'main') === 'own';
+    if (own && !s.ownApi?.url) throw new Error('小手机的 API 还没填好（设置 → 小手机用哪个）');
+    // 整套：交给酒馆拼（预设 + 世界书 + 角色卡 + 剧情），小手机的规矩插在最后
+    if (quiet && replyMode() === 'full') {
+        c.setExtensionPrompt?.(INJECT_KEY, '', 1, 0); // 这一下不要让 TA 顺带写状态段
+        try {
+            if (hasHelper()) {
+                const out = await helper().generate({
+                    user_input: '', should_stream: false, preset_name: 'in_use',
+                    injects: [{ role: 'system', position: 'in_chat', depth: 0, should_scan: false, content: quiet }],
+                    ...(own ? { custom_api: customApi() } : {}),
+                });
+                return extractBlock(String(out?.content ?? out ?? '')).text;
+            }
+            if (!own && typeof c.generateQuietPrompt === 'function') {
                 const out = await c.generateQuietPrompt({ quietPrompt: quiet, responseLength: 400, removeReasoning: true });
                 return extractBlock(String(out || '')).text;
-            } finally { refreshInject(); }
-        }
-        if (typeof c.generateRaw !== 'function') throw new Error('这个酒馆版本没有 generateRaw');
-        const sys = messages.filter(m => m.role === 'system').map(m => m.content).join('\n\n');
-        const rest = messages.filter(m => m.role !== 'system');
-        return await c.generateRaw({ systemPrompt: sys, prompt: rest, responseLength: 400 });
+            }
+        } finally { refreshInject(); }
     }
-    const conf = s.ownApi;
-    if (!conf?.url) throw new Error('小手机的 API 还没填好（设置 → 小手机用哪个）');
-    return await callApi(conf, messages);
+    // 自己挑：只发小吧台拼的这几段
+    if (own) {
+        if (typeof helper()?.generateRaw === 'function') {
+            const out = await helper().generateRaw({ ordered_prompts: messages, should_stream: false, custom_api: customApi() });
+            return String(out?.content ?? out ?? '');
+        }
+        return await callApi(s.ownApi, messages);
+    }
+    if (typeof c.generateRaw !== 'function') throw new Error('这个酒馆版本没有 generateRaw');
+    const sys = messages.filter(m => m.role === 'system').map(m => m.content).join('\n\n');
+    const rest = messages.filter(m => m.role !== 'system');
+    return await c.generateRaw({ systemPrompt: sys, prompt: rest, responseLength: 400 });
 }
 const apiBase = u => String(u || '').trim().replace(/\/+(chat\/completions|completions|models)\/?$/i, '').replace(/\/+$/, '');
 // 先经酒馆后端转一下（手机上直接请求常被跨域拦）；后端不认（比如 TauriTavern 没有这条路）再直接请求
@@ -301,7 +343,7 @@ const host = {
     saveImage, img, dropImage: deleteImage, refreshInject,
     meta, saveMeta, state, unread, markRead, wechat, addWechat, patchWechat, deleteWechat, takeLastRound, restoreRound, repliesFor,
     ...xHost,
-    replyMode, replyCtx, worldInfo, testOwnApi,
+    replyMode, replyCtx, worldInfo, testOwnApi, hasHelper,
     him, me, charCard, era, guessedEra, storyTail, ask, hasChar,
     countTokens: async t => { if (!t) return 0; const c = ctx(); try { if (c.getTokenCountAsync) return await c.getTokenCountAsync(t); } catch { /* 算不了就估 */ } return Math.ceil(t.length / 1.6); },
     defaultPrompt: () => DEFAULT_PROMPT,

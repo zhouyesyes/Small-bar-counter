@@ -277,3 +277,4 @@
 #sb-root .sb-clock.sm{font-size:30px;font-weight:300;letter-spacing:.2em;margin-top:22px}
 #sb-root .sb-npage .sb-flip{margin-top:6px}
 #sb-root .sb-aitext{font-size:20px;font-weight:600;font-family:var(--sb-serif)}
+#sb-root .sb-memo.sm{font-size:12.5px;padding:4px 0;border-bottom:0}#sb-root .sb-memo.sm .sb-ck{width:13px;height:13px;font-size:9px}

@@ -48,7 +48,8 @@ export function buildState(msgs) {
             voice: ['心声'], voiceBack: ['心声背面', '背面'], sign: ['签名'],
         })) { const v = one(b, ...keys); if (v) n[k] = v; }
         // 此刻的本子：每一轮的此刻都记一页（以前的也能翻）
-        if (['时间', '在哪', '地点', '穿着', '想要', '心声'].some(k => b[k]?.length)) st.nowLog.push({ id, at, ...n });
+        const memoAdd = many(b, '备忘', '备忘+'), memoDone = many(b, '备忘✓', '完成');
+        if (['时间', '在哪', '地点', '穿着', '想要', '心声'].some(k => b[k]?.length) || memoAdd.length || memoDone.length) st.nowLog.push({ id, at, ...n, memoAdd, memoDone });
         const cov = one(b, '背景'); if (cov) st.cover = cov;
         many(b, '动态').forEach((v, i) => {
             const [text, p, place] = split(v);

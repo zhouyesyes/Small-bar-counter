@@ -17,9 +17,9 @@ const ERA = {
 const TAB_KEYS = ['posts', 'now', 'diary', 'phone'];
 // 小手机里每一页的叫法：页面都一样有，只是换成那个年代的东西
 const WORDS = {
-    modern: { phone: '小手机', wechat: '微信', contacts: '通讯录', moments: '朋友圈', me: '我', x: 'X', xHim: 'TA的主页', xMe: '我的主页', dm: '私信', post: '发帖', follow: '关注', fans: '关注者', following: '正在关注', compose: '有什么新鲜事？', diary: '日记', memo: '备忘录', photos: '相册', music: '音乐', set: '设置', listen: 'TA在听', online: '在线' },
-    minguo: { phone: '信匣', wechat: '信笺', contacts: '通信录', moments: '副刊', me: '我', x: '小报', xHim: 'TA的专栏', xMe: '我的笔名', dm: '读者来信', post: '投稿', follow: '订阅', fans: '读者', following: '订阅了', compose: '写一则小文……', diary: '日记', memo: '记事簿', photos: '相片', music: '留声机', set: '设置', listen: '留声机里放着', online: '' },
-    ancient: { phone: '书匣', wechat: '书信', contacts: '故交', moments: '题壁', me: '我', x: '榜文', xHim: 'TA的诗名', xMe: '我的别号', dm: '匿名书', post: '张贴', follow: '相识', fans: '传阅', following: '结交', compose: '题一句……', diary: '手札', memo: '记事', photos: '画卷', music: '琴谱', set: '设置', listen: 'TA在抚', online: '' },
+    modern: { phone: '小手机', wechat: '微信', contacts: '通讯录', moments: '朋友圈', me: '我', x: 'X', xHim: 'TA的主页', xMe: '我的主页', dm: '私信', post: '发帖', follow: '关注', fans: '关注者', following: '正在关注', compose: '有什么新鲜事？', diary: '日记', memo: '备忘录', photos: '相册', music: '音乐', set: '设置', listen: 'TA在听', online: '在线', book: '此刻簿' },
+    minguo: { phone: '信匣', wechat: '信笺', contacts: '通信录', moments: '副刊', me: '我', x: '小报', xHim: 'TA的专栏', xMe: '我的笔名', dm: '读者来信', post: '投稿', follow: '订阅', fans: '读者', following: '订阅了', compose: '写一则小文……', diary: '日记', memo: '记事簿', photos: '相片', music: '留声机', set: '设置', listen: '留声机里放着', online: '', book: '流年簿' },
+    ancient: { phone: '书匣', wechat: '书信', contacts: '故交', moments: '题壁', me: '我', x: '榜文', xHim: 'TA的诗名', xMe: '我的别号', dm: '匿名书', post: '张贴', follow: '相识', fans: '传阅', following: '结交', compose: '题一句……', diary: '手札', memo: '记事', photos: '画卷', music: '琴谱', set: '设置', listen: 'TA在抚', online: '', book: '起居注' },
 };
 
 const ICON = {
@@ -163,7 +163,7 @@ export function createUI(host) {
         const labels = ERA[era].tabs;
         let body = '';
         if (v.tab === 'posts') body = postsHtml(st, him) + musicHtml(st);
-        if (v.tab === 'now') body = v.nowBook ? nowBookHtml(st) : nowHtml(st);
+        if (v.tab === 'now') body = nowHtml(st);
         if (v.tab === 'diary') body = v.diaryId ? diaryOneHtml(st, him) : diaryListHtml(st);
         return `<div class="sb-shade" data-act="close"></div>
 <div class="sb-drawer" role="dialog" aria-label="小吧台">
@@ -238,14 +238,15 @@ export function createUI(host) {
         return `<div class="sb-pad">
  ${has ? `<div class="sb-grid">${row('在哪', n.where)}${row('穿着', n.wear)}${row('想要', n.want, '<span class="sb-heart">♥</span>')}</div>` : '<div class="sb-empty">还没有此刻的状态。<br>TA下一次回复后就会有。</div>'}
  ${n.voice ? `<div class="sb-voice"><div><span class="sb-k">${v.flip ? '心声 · 背面' : '心声'}</span><br>${esc(v.flip && n.voiceBack ? n.voiceBack : n.voice)}</div>${n.voiceBack ? '<button class="sb-flip" data-act="flip">翻面</button>' : ''}</div>` : ''}
- ${st.nowLog.length > 1 ? `<button class="sb-dold dim" data-act="nowbook">以前的此刻 · ${st.nowLog.length - 1} 页 →</button>` : ''}
+ ${st.nowLog.length > 1 ? `<button class="sb-dold dim" data-act="phone-go" data-to="nowbook">以前的此刻在小手机的「${Wd().book}」里 →</button>` : ''}
  <div class="sb-cap sb-row"><span>memo · 备忘录</span><span>${st.memo.length} / 15</span></div>
  ${st.memo.length ? st.memo.map(m => `<div class="sb-memo${m.done ? ' done' : ''}"><span class="sb-ck">${m.done ? '✓' : ''}</span>${esc(m.text)}</div>`).join('') : '<div class="sb-empty sm">TA还没记要做的事</div>'}
 </div>`;
     }
     // 此刻的本子：每一轮的此刻一页，新的在上面，按日子分开
-    function nowBookHtml(st) {
-        const list = st.nowLog.slice(0, -1).reverse().slice(0, v.bookN || 20);
+    function nowBookHtml() {
+        const st = host.state();
+        const list = st.nowLog.slice().reverse().slice(0, v.bookN || 20);
         let lastDay = '';
         const pages = list.map(p => {
             const day = String(p.time || '').split(/\s+/)[0] || '';
@@ -255,11 +256,12 @@ export function createUI(host) {
             const back = v.bookFlip?.[p.id];
             return head + `<div class="sb-npage"><div class="sb-dday"><b>${esc(String(p.time || '').replace(day, '').trim() || p.time || '')}</b> ${esc(p.weather || '')}</div>
   <div class="sb-grid" style="margin-top:6px">${r('在哪', p.where)}${r('穿着', p.wear)}${r('想要', p.want)}${r(back ? '背面' : '心声', back ? p.voiceBack : p.voice)}</div>
+  ${(p.memoAdd || []).map(x => `<div class="sb-memo sm"><span class="sb-ck"></span>记下：${esc(x)}</div>`).join('')}${(p.memoDone || []).map(x => `<div class="sb-memo sm done"><span class="sb-ck">✓</span>做完：${esc(x)}</div>`).join('')}
   ${p.voiceBack ? `<button class="sb-flip" data-act="bookflip" data-id="${esc(p.id)}">${back ? '翻回来' : '翻面'}</button>` : ''}</div>`;
         }).join('');
-        return `<div class="sb-pad"><button class="sb-back" data-act="nowbook">← 现在</button>
- ${pages || '<div class="sb-empty">还没有以前的</div>'}
- ${st.nowLog.length - 1 > (v.bookN || 20) ? '<button class="sb-more" data-act="bookmore">再翻 20 页</button>' : ''}</div>`;
+        return `${head(Wd().book)}<div class="sb-list" data-keep="book"><div class="sb-hint">每一轮的此刻一页（在哪、穿着、想要、心声，备忘记下和做完的），新的在上面。</div>
+ ${pages || '<div class="sb-empty">还没有</div>'}
+ ${st.nowLog.length > (v.bookN || 20) ? '<button class="sb-more" data-act="bookmore">再翻 20 页</button>' : ''}</div>`;
     }
     function diaryListHtml(st) {
         const hidden = host.meta().hidden || {};
@@ -296,7 +298,7 @@ export function createUI(host) {
     function phoneHtml(era) {
         const views = {
             home: homeHtml, 'wx-chat': wxChatHtml, 'wx-contacts': wxContactsHtml, 'wx-moments': wxMomentsHtml, 'wx-me': wxMeHtml,
-            x: xHtml, 'x-dm': xDmHtml, diary: pDiaryHtml, memo: pMemoHtml, photos: pPhotosHtml, music: pMusicHtml,
+            x: xHtml, 'x-dm': xDmHtml, nowbook: nowBookHtml, diary: pDiaryHtml, memo: pMemoHtml, photos: pPhotosHtml, music: pMusicHtml,
             settings: setHtml, 'set-cover': setCoverHtml, 'set-him': setHimHtml, 'set-me': setMeHtml, 'set-prompt': setPromptHtml, 'set-api': setApiHtml, 'set-reply': setReplyHtml, 'set-when': setWhenHtml,
         };
         // 古风、民国没有手机：换成书信（设置页还用同一个框）
@@ -353,7 +355,7 @@ export function createUI(host) {
  <div class="sb-clock${clock ? '' : ' sm'}">${esc(clock || (era === 'modern' ? '--:--' : (n.time || '').split(/\s+/).pop() || '—'))}</div>
  <div class="sb-cdate">${esc([date, n.weather].filter(Boolean).join(' · ') || '时间跟着剧情走')}</div>
  <button class="sb-widget" data-act="phone-go" data-to="music"><div class="sb-cap">${Wd().listen}</div><div class="sb-wrow"><span class="sb-wcov"></span><span><b>${esc(st.music?.title || '还没在听歌')}</b><small>${esc(st.music?.lyric || st.music?.artist || '')}</small></span></div></button>
- <div class="sb-apps">${era === 'modern' ? app('x', 'x', Wd().x) : `<button class="sb-app" data-act="phone-go" data-to="x"><span class="sb-ai sb-aitext">${Wd().x.slice(0, 1)}</span><span class="sb-an">${Wd().x}</span></button>`}${app('diary', 'diary', Wd().diary)}${app('memo', 'memo', Wd().memo)}${app('photos', 'photos', Wd().photos)}</div>
+ <div class="sb-apps">${era === 'modern' ? app('x', 'x', Wd().x) : `<button class="sb-app" data-act="phone-go" data-to="x"><span class="sb-ai sb-aitext">${Wd().x.slice(0, 1)}</span><span class="sb-an">${Wd().x}</span></button>`}${app('diary', 'diary', Wd().diary)}${app('memo', 'memo', Wd().memo)}${app('photos', 'photos', Wd().photos)}${app('diary', 'nowbook', Wd().book)}</div>
  <div class="sb-dock">${app('msg', 'wx-contacts', Wd().wechat, host.unread())}${app('music', 'music', Wd().music)}${app('set', 'settings', Wd().set)}</div>
 </div>`;
     }
@@ -604,17 +606,18 @@ export function createUI(host) {
  <div class="sb-hint">「顺带回」用的是正文那个 API，带的就是正文的整套（预设、世界书都在）。</div></div>`;
     }
     function setReplyHtml() {
-        const s = host.settings(), c = host.replyCtx(), full = host.replyMode() === 'full', main = (s.api || 'main') === 'main';
+        const s = host.settings(), c = host.replyCtx(), full = host.replyMode() === 'full', main = (s.api || 'main') === 'main' || host.hasHelper();
         const tg = (label, key, sub = '') => `<label class="sb-srow"><span>${label}${sub ? `<small>${sub}</small>` : ''}</span><input type="checkbox" class="sb-tg" data-ctx="${key}" ${c[key] ? 'checked' : ''}></label>`;
         return `${head('回复时带什么')}<div class="sb-list">
  <div class="sb-hint">小手机、留言、私信，TA每回一次都要请求一次。这里挑这一次带哪些东西进去：带得越全越像TA，也越费。</div>
  <div class="sb-seg"><button data-act="rmode" data-mode="full" class="${full ? 'on' : ''}" ${main ? '' : 'disabled'}>整套</button><button data-act="rmode" data-mode="pick" class="${full ? '' : 'on'}">自己挑</button></div>
  <div class="sb-tokens" data-tokens>正在算 tokens…</div>
- <div class="sb-hint">${full ? '整套：交给酒馆拼，和正文一样带上你的预设、世界书、角色卡、人设和整段剧情。' : main ? '自己挑：只带下面勾上的，不走预设。' : '用的不是「跟正文」，酒馆的预设拼不进去，只能自己挑。'}</div>
+ <div class="sb-hint">${full ? (host.hasHelper() ? '整套：交给酒馆拼（用了酒馆助手），和正文一样带上你的预设、世界书、角色卡、人设和整段剧情；小手机选了自己填的 API 也行。' : '整套：交给酒馆拼，和正文一样带上你的预设、世界书、角色卡、人设和整段剧情。') : main ? '自己挑：只带下面勾上的，不走预设。' : '用的是自己填的 API：没装酒馆助手时，酒馆的预设拼不进去，只能自己挑。装了酒馆助手就能选整套。'}</div>
  ${full ? '' : `<div class="sb-sgrp">
   ${tg('角色卡', 'card', 'TA的设定、性格、场景')}
   ${tg('我的人设', 'persona', '你在酒馆里的人设描述')}
-  ${tg('世界书', 'world', '只带这次聊天触发到的条目')}
+  ${tg('世界书', 'world', c.worldAll ? '整本都带（所有开着的条目）' : '只带触发到的：常驻的 + 被聊天内容触发的，按你世界书的预算')}
+  ${c.world ? tg('世界书整本都带', 'worldAll', '不管触发没触发，绑着的书里开着的条目全带；很费') : ''}
   ${tg('此刻状态', 'status', '时间、天气、TA在哪')}
   <label class="sb-srow"><span>最近正文几楼<small>0 就是不带剧情</small></span><input type="number" min="0" max="40" class="sb-num" data-ctx="story" value="${Number(c.story ?? 6)}"></label>
   <label class="sb-srow"><span>手机聊天记几条<small>小手机自己的聊天记录</small></span><input type="number" min="0" max="2000" class="sb-num" data-set="wxMemory" value="${Number(s.wxMemory ?? 50)}"></label>
