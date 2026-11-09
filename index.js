@@ -7,6 +7,7 @@ import * as personas from '../../../personas.js';
 import { extractBlock, buildState, guessEra } from './src/core.mjs';
 import { DEFAULT_PROMPT, buildInjection } from './src/prompt.mjs';
 import { createUI } from './src/ui.mjs';
+import { saveImage, imageUrl, deleteImage } from './src/imgstore.mjs';
 
 const NS = 'small_bar';          // 扩展设置里的位置
 const META = 'small_bar';        // 每个聊天自己的数据（chat_metadata 里）
@@ -141,7 +142,7 @@ function him() {
     return {
         cardName: ch.name || c.name2 || '他', name, remark: h.remark || '', xname: h.xname || '', handle: h.handle || '', xhandle: h.handle || '',
         sign: h.sign || '', penName: h.penName || '',
-        avatar: h.avatar || (ch.avatar ? (c.getThumbnailUrl?.('avatar', ch.avatar) ?? `/thumbnail?type=avatar&file=${encodeURIComponent(ch.avatar)}`) : ''),
+        avatar: (h.avatar && img(h.avatar)) || (ch.avatar ? (c.getThumbnailUrl?.('avatar', ch.avatar) ?? `/thumbnail?type=avatar&file=${encodeURIComponent(ch.avatar)}`) : ''),
     };
 }
 function me() {
@@ -150,7 +151,7 @@ function me() {
     const file = personas.user_avatar || '';
     return {
         cardName: c.name1 || '我', name: s.me.name || c.name1 || '我',
-        avatar: s.me.avatar || (file ? `/thumbnail?type=persona&file=${encodeURIComponent(file)}` : ''),
+        avatar: (s.me.avatar && img(s.me.avatar)) || (file ? `/thumbnail?type=persona&file=${encodeURIComponent(file)}` : ''),
         persona: pu.persona_description || '',
     };
 }
@@ -190,24 +191,8 @@ async function ask(messages) {
 }
 
 // ---------- 图片 ----------
-// 传的图存到酒馆服务器的 user/images/small-bar/ 下面，设置里只记地址；
-// 和头像一样按地址加载，浏览器会缓存，不会让设置文件变大、也不会每次保存都把图发一遍
-async function upload(dataUrl) {
-    const m = String(dataUrl).match(/^data:image\/(\w+);base64,(.+)$/);
-    if (!m) return dataUrl;
-    try {
-        const res = await fetch('/api/images/upload', {
-            method: 'POST', headers: ctx().getRequestHeaders(), cache: 'no-cache',
-            body: JSON.stringify({ image: m[2], format: m[1] === 'jpeg' ? 'jpg' : m[1], ch_name: 'small-bar', filename: 'sb-' + Date.now().toString(36) }),
-        });
-        const data = await res.json();
-        if (!res.ok || !data?.path) throw new Error(data?.error || res.status);
-        return '/' + String(data.path).replace(/\\/g, '/').replace(/^\/+/, '');
-    } catch (e) {
-        console.warn('[小吧台] 图片传到服务器失败，先存在设置里', e);
-        return dataUrl;
-    }
-}
+// 她传的图只存在这台手机的浏览器里（她 11/9 说的：不要存服务器），见 src/imgstore.mjs
+const img = src => imageUrl(src, () => { ui.render(); });
 
 // ---------- 注入提示词 ----------
 function refreshInject() {
@@ -232,7 +217,7 @@ function hasChar() { const c = ctx(); return c.characterId != null && c.characte
 const host = {
     settings, setSettings: f => { f(settings()); saveSettings(); refreshInject(); },
     charCfg, setCharCfg: f => { f(charCfg()); saveMeta(); refreshInject(); },
-    upload,
+    saveImage, img, dropImage: deleteImage,
     meta, saveMeta, state, unread, markRead, wechat, addWechat, patchWechat, deleteWechat, takeLastRound, restoreRound, repliesFor,
     him, me, charCard, era, guessedEra, storyTail, keys, ask, hasChar,
     defaultPrompt: () => DEFAULT_PROMPT,

@@ -130,10 +130,10 @@ export function createUI(host) {
     function coverStyle() {
         const c = host.charCfg().cover || {};
         const st = host.state();
-        if (c.mode === 'fixed' && c.fixed) return `background-image:url('${c.fixed}')`;
+        if (c.mode === 'fixed' && c.fixed) return `background-image:url('${host.img(c.fixed)}')`;
         if (c.mode === 'pick' && c.images?.length) {
             const hit = c.images.find(x => x.tag && st.cover && (st.cover.includes(x.tag) || x.tag.includes(st.cover))) || c.images[0];
-            return `background-image:url('${hit.src}')`;
+            return `background-image:url('${host.img(hit.src)}')`;
         }
         return '';
     }
@@ -463,8 +463,8 @@ export function createUI(host) {
         return `${head(esc(host.him().name) + '的背景')}<div class="sb-list">
  <div class="sb-seg">${[['weather', '跟天气'], ['fixed', '固定一张'], ['pick', 'TA来挑']].map(([k, n]) => `<button data-act="cover-mode" data-mode="${k}" class="${mode === k ? 'on' : ''}">${n}</button>`).join('')}</div>
  <div class="sb-hint">${hint}</div>
- ${mode === 'fixed' ? `<div class="sb-thumbs"><label class="sb-th ${c.fixed ? '' : 'add'}" style="${c.fixed ? `background-image:url('${c.fixed}')` : ''}">${c.fixed ? '' : '+'}<input type="file" accept="image/*" data-upload="fixed" hidden></label></div>${c.fixed ? '<button class="sb-link" data-act="cover-clear">去掉这张</button>' : ''}` : ''}
- ${mode === 'pick' ? `<div class="sb-thumbs">${imgs.map((x, i) => `<div><div class="sb-th${host.state().cover && x.tag && (host.state().cover.includes(x.tag) || x.tag.includes(host.state().cover)) ? ' on' : ''}" style="background-image:url('${x.src}')"><button class="sb-thx" data-act="cover-del" data-i="${i}" aria-label="删掉">×</button></div><input class="sb-tag" data-tag="${i}" value="${esc(x.tag)}" placeholder="写个标签"></div>`).join('')}
+ ${mode === 'fixed' ? `<div class="sb-thumbs"><label class="sb-th ${c.fixed ? '' : 'add'}" style="${c.fixed ? `background-image:url('${host.img(c.fixed)}')` : ''}">${c.fixed ? '' : '+'}<input type="file" accept="image/*" data-upload="fixed" hidden></label></div>${c.fixed ? '<button class="sb-link" data-act="cover-clear">去掉这张</button>' : ''}` : ''}
+ ${mode === 'pick' ? `<div class="sb-thumbs">${imgs.map((x, i) => `<div><div class="sb-th${host.state().cover && x.tag && (host.state().cover.includes(x.tag) || x.tag.includes(host.state().cover)) ? ' on' : ''}" style="background-image:url('${host.img(x.src)}')"><button class="sb-thx" data-act="cover-del" data-i="${i}" aria-label="删掉">×</button></div><input class="sb-tag" data-tag="${i}" value="${esc(x.tag)}" placeholder="写个标签"></div>`).join('')}
   <div><label class="sb-th add">+<input type="file" accept="image/*" data-upload="pick" hidden></label><div class="sb-tag dim">加一张</div></div></div>` : ''}
 </div>`;
     }
@@ -567,8 +567,8 @@ export function createUI(host) {
             case 'mdel': host.deleteWechat(b.dataset.id); v.menuFor = ''; break;
             case 'mcancel': v.menuFor = ''; break;
             case 'cover-mode': host.setCharCfg(c => { c.cover = { ...(c.cover || {}), mode: b.dataset.mode }; }); break;
-            case 'cover-clear': host.setCharCfg(c => { c.cover.fixed = ''; }); break;
-            case 'cover-del': host.setCharCfg(c => { c.cover.images.splice(Number(b.dataset.i), 1); }); break;
+            case 'cover-clear': host.dropImage(host.charCfg().cover?.fixed); host.setCharCfg(c => { c.cover.fixed = ''; }); break;
+            case 'cover-del': host.dropImage(host.charCfg().cover?.images?.[Number(b.dataset.i)]?.src); host.setCharCfg(c => { c.cover.images.splice(Number(b.dataset.i), 1); }); break;
             case 'him-avatar-clear': host.setCharCfg(c => { c.him = { ...(c.him || {}), avatar: '' }; }); break;
             case 'prompt-reset': host.setSettings(s => { s.prompt = ''; }); break;
             case 'api': host.setSettings(s => { s.api = b.dataset.id; }); v.view = 'settings'; break;
@@ -593,7 +593,7 @@ export function createUI(host) {
         else if (t.dataset.upload && t.files?.[0]) {
             const kind = t.dataset.upload;
             let src = await shrink(t.files[0], kind.includes('avatar') ? 320 : 900);
-            src = await host.upload(src); // 存到酒馆服务器，只记地址
+            src = await host.saveImage(src); // 只存在这台手机的浏览器里，设置里记个编号
             if (kind === 'fixed') host.setCharCfg(c => { c.cover = { ...(c.cover || {}), mode: 'fixed', fixed: src }; });
             if (kind === 'pick') host.setCharCfg(c => { c.cover = { ...(c.cover || {}), mode: 'pick', images: [...(c.cover?.images || []), { tag: '', src }] }; });
             if (kind === 'him-avatar') host.setCharCfg(c => { c.him = { ...(c.him || {}), avatar: src }; });

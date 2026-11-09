@@ -42,5 +42,5 @@ SillyTavern 前端扩展：从屏幕左边探头的像素小猫，点开是一�
 - 她在小吧台里做的事（留言、点赞、小手机聊天）存在这个聊天的 `chat_metadata.small_bar`
 - 全局设置（API、外观、小猫位置、提示词）存在酒馆扩展设置 `small_bar` 里
 - 头图、名片、时代跟着聊天走，存在这个聊天的 `chat_metadata.small_bar.cfg` 里
-- 传的图片压缩后存到酒馆服务器 `user/images/small-bar/`，只记地址（传失败才临时存进设置）
+- 传的图片压缩后只存在这台手机的浏览器里（IndexedDB，`src/imgstore.mjs`），设置里只记「idb:编号」；不传服务器（她 11/9 说的）。换手机或清浏览器数据要重新传
 - 纯逻辑在 `src/core.mjs`，测试：`node tests/core.test.mjs`
