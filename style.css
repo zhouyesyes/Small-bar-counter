@@ -279,5 +279,8 @@
 #sb-root .sb-aitext{font-size:20px;font-weight:600;font-family:var(--sb-serif)}
 #sb-root .sb-memo.sm{font-size:12.5px;padding:4px 0;border-bottom:0}#sb-root .sb-memo.sm .sb-ck{width:13px;height:13px;font-size:9px}
 #sb-root .sb-nowpad{position:relative}
-#sb-root .sb-bookbtn{position:absolute;top:10px;right:12px;font-size:10.5px;color:var(--sb-dim);border:1px solid var(--sb-line);border-radius:10px;padding:1px 8px;background:var(--sb-bg)}
-#sb-root .sb-nowpad .sb-grid{margin-right:56px}
+#sb-root .sb-nowtop{display:flex;justify-content:flex-end;gap:6px;margin:-4px 0 6px}
+#sb-root .sb-bookbtn{font-size:10.5px;color:var(--sb-dim);border:1px solid var(--sb-line);border-radius:10px;padding:1px 8px;background:var(--sb-bg)}
+#sb-root .sb-genrow{display:flex;justify-content:flex-end;padding:8px 16px 0}
+#sb-root .sb-gen{font-size:10.5px;color:var(--sb-dim);border:1px dashed var(--sb-line);border-radius:10px;padding:1px 9px}
+#sb-root .sb-gen[disabled]{opacity:.5}

@@ -40,7 +40,10 @@ let cache = null;
 function state() {
     if (cache) return cache;
     const chat = ctx().chat || [];
-    cache = buildState(chat.filter(m => !m.is_user && m.extra?.small_bar).map((m, i) => ({ id: msgId(m) + '#' + i, raw: m.extra.small_bar, at: msgAt(m) })));
+    const fromChat = chat.filter(m => !m.is_user && m.extra?.small_bar).map((m, i) => ({ id: msgId(m) + '#' + i, raw: m.extra.small_bar, at: msgAt(m) }));
+    // 不在正文里写的：小手机回消息时顺带写的、她点按钮让TA写的，存在这个聊天的数据里
+    const extra = (ctx().chatMetadata?.[META]?.blocks || []).map(b => ({ id: b.id, raw: b.raw, at: b.at }));
+    cache = buildState([...fromChat, ...extra].sort((a, b) => (a.at || 0) - (b.at || 0)));
     return cache;
 }
 const dirty = () => { cache = null; };
@@ -156,6 +159,15 @@ const xHost = {
     xIBlocked: () => !!xflag('xiblocked')[xAccount().id],           // 她拉黑了TA
     setXIBlocked: on => { xflag('xiblocked')[xAccount().id] = on; saveMeta(); },
 };
+
+// ---------- 不靠正文写的状态段 ----------
+function addBlock(raw) {
+    raw = String(raw || '').trim(); if (!raw) return false;
+    const m = meta(); m.blocks ??= [];
+    m.blocks.push({ id: newId(), raw, at: Date.now() });
+    saveMeta(); dirty(); refreshInject();
+    return true;
+}
 
 // ---------- 人 ----------
 function him() {
@@ -343,7 +355,7 @@ const host = {
     saveImage, img, dropImage: deleteImage, refreshInject,
     meta, saveMeta, state, unread, markRead, wechat, addWechat, patchWechat, deleteWechat, takeLastRound, restoreRound, repliesFor,
     ...xHost,
-    replyMode, replyCtx, worldInfo, testOwnApi, hasHelper,
+    replyMode, replyCtx, worldInfo, testOwnApi, hasHelper, addBlock, extractBlock,
     him, me, charCard, era, guessedEra, storyTail, ask, hasChar,
     countTokens: async t => { if (!t) return 0; const c = ctx(); try { if (c.getTokenCountAsync) return await c.getTokenCountAsync(t); } catch { /* 算不了就估 */ } return Math.ceil(t.length / 1.6); },
     defaultPrompt: () => DEFAULT_PROMPT,

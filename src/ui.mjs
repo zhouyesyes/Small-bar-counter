@@ -2,7 +2,7 @@
 // 只管画和点，数据和酒馆那边都从 host 拿（见 index.js），方便以后换酒馆版本
 import { catSvg } from './cat.mjs';
 import { weatherTone, parsePhoneReply } from './core.mjs';
-import { PHONE_RULES, LETTER_RULES } from './prompt.mjs';
+import { PHONE_RULES, LETTER_RULES, PHONE_STATUS, MANUAL } from './prompt.mjs';
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const nl = s => esc(s).replace(/\n/g, '<br>');
@@ -214,11 +214,28 @@ export function createUI(host) {
  </div>
 </article>`;
     }
+    // 她点一下，让TA现在就写（动态 / 日记 / X / 此刻）
+    const genBtn = (kind, label) => `<button class="sb-gen" data-act="gen" data-kind="${kind}" ${v.busy ? 'disabled' : ''}>${v.busy === kind ? '在写……' : label}</button>`;
+    async function generate(kind) {
+        if (v.busy) return;
+        v.busy = kind; render();
+        try {
+            const rule = MANUAL[kind];
+            const msgs = [{ role: 'system', content: await buildSys('', rule, []) }, { role: 'user', content: '（现在写）' }];
+            const out = String(await host.ask(msgs, `【暂停正文，这一次不写正文】\n${rule}`) || '');
+            let raw = host.extractBlock(out).raw;
+            if (!raw && /[:：]/.test(out)) raw = out; // 没包 <!--SB 也认
+            if (!host.addBlock(raw)) throw new Error('TA没写出来');
+            host.toast('success', '写好了');
+        } catch (err) { host.toast('error', '没写成：' + (err?.message || err)); }
+        finally { v.busy = false; render(); }
+    }
     function postsHtml(st, him) {
         const hidden = host.meta().hidden || {};
         const list = st.posts.filter(p => !hidden[p.id]).slice(-3).reverse();
-        if (!list.length) return `<div class="sb-empty">TA还没发过${ERA[host.era()].posts}。<br>剧情里TA想发的时候会出现在这里。</div>`;
-        return list.map(p => postHtml(p, him)).join('') + `<div class="sb-more">只显示最新三条 · 更早的在${ERA[host.era()].wechat}里 <button data-act="phone-go" data-to="wx-moments">去看 →</button></div>`;
+        const btn = `<div class="sb-genrow">${genBtn('post', '让TA现在发一条')}</div>`;
+        if (!list.length) return btn + `<div class="sb-empty">TA还没发过${ERA[host.era()].posts}。<br>剧情里TA想发的时候会出现在这里。</div>`;
+        return btn + list.map(p => postHtml(p, him)).join('') + `<div class="sb-more">只显示最新三条 · 更早的在${ERA[host.era()].wechat}里 <button data-act="phone-go" data-to="wx-moments">去看 →</button></div>`;
     }
     function musicHtml(st) {
         const m = st.music;
@@ -236,7 +253,7 @@ export function createUI(host) {
         const row = (k, val, extra = '') => val ? `<div class="sb-k">${k}</div><div>${extra}${esc(val)}</div>` : '';
         const has = n.where || n.wear || n.want || n.voice;
         return `<div class="sb-pad sb-nowpad">
- ${st.nowLog.length ? `<button class="sb-bookbtn" data-act="nowbook" title="以前的此刻">${Wd().book}</button>` : ''}
+ <div class="sb-nowtop">${genBtn('now', '刷新此刻')}${st.nowLog.length ? `<button class="sb-bookbtn" data-act="nowbook" title="以前的此刻">${Wd().book}</button>` : ''}</div>
  ${has ? `<div class="sb-grid">${row('在哪', n.where)}${row('穿着', n.wear)}${row('想要', n.want, '<span class="sb-heart">♥</span>')}</div>` : '<div class="sb-empty">还没有此刻的状态。<br>TA下一次回复后就会有。</div>'}
  ${n.voice ? `<div class="sb-voice"><div><span class="sb-k">${v.flip ? '心声 · 背面' : '心声'}</span><br>${esc(v.flip && n.voiceBack ? n.voiceBack : n.voice)}</div>${n.voiceBack ? '<button class="sb-flip" data-act="flip">翻面</button>' : ''}</div>` : ''}
  <div class="sb-cap sb-row"><span>memo · 备忘录</span><span>${st.memo.length} / 15</span></div>
@@ -266,9 +283,10 @@ export function createUI(host) {
     function diaryListHtml(st) {
         const hidden = host.meta().hidden || {};
         const list = st.diary.filter(d => !hidden[d.id]).reverse();
-        if (!list.length) return `<div class="sb-empty">TA还没写${ERA[host.era()].diary}。<br>剧情里有值得记的事，TA才会写。</div>`;
+        const btn = `<div class="sb-genrow">${genBtn('diary', '让TA现在写一篇')}</div>`;
+        if (!list.length) return btn + `<div class="sb-empty">TA还没写${ERA[host.era()].diary}。<br>剧情里有值得记的事，TA才会写。</div>`;
         const [top, ...rest] = list;
-        return `<div class="sb-pad">${diaryBody(top, true)}
+        return btn + `<div class="sb-pad">${diaryBody(top, true)}
  ${rest.length ? `<div class="sb-cap" style="margin-top:18px">earlier · 以前的</div>${rest.slice(0, 2).map(d => `<button class="sb-dold" data-act="diary" data-id="${esc(d.id)}"><span>${esc(d.time)}</span><span>${esc(d.title || d.text.slice(0, 10))}</span></button>`).join('')}
  ${rest.length > 2 ? `<button class="sb-dold dim" data-act="phone-go" data-to="diary">更早的 ${rest.length - 2} 篇在小手机的日记里 →</button>` : ''}` : ''}</div>`;
     }
@@ -435,6 +453,7 @@ export function createUI(host) {
  ${him.sign ? `<div class="sb-xbio">${esc(him.sign)}</div>` : ''}
  <div class="sb-xstat"><span><b>${seed % 40 + 3}</b> ${Wd().following}</span><span><b>${(seed * 37 % 4000 + 120).toLocaleString()}</b> ${Wd().fans}</span></div>
  <div class="sb-xtabs"><span class="on">帖子</span><span>回复</span><span>媒体</span></div>
+ <div class="sb-genrow">${genBtn('x', '让TA现在发一条')}</div>
  ${list.length ? list.slice(0, v.xN).map(p => `<article class="sb-post him"><div class="sb-pav" style="background-image:url('${esc(him.xavatar)}')">${him.xavatar ? '' : esc((him.xname || him.name).slice(0, 1))}</div><div class="sb-pmain"><b class="sb-pname">${esc(him.xname || him.name)}</b> <small class="sb-dim">${esc(p.time)}</small><div class="sb-ptext">${nl(p.text)}</div>${p.pics?.length ? `<div class="sb-pics">${p.pics.map(x => `<span>${esc(x)}</span>`).join('')}</div>` : ''}</div></article>`).join('') : `<div class="sb-empty">TA还没在${Wd().x}上发过</div>`}
  ${list.length > v.xN ? '<button class="sb-more" data-act="xmore">再加载 10 条</button>' : ''}
  
@@ -530,7 +549,7 @@ export function createUI(host) {
         const apiName = s.api === 'own' ? (s.ownApi?.model || '自己填的') : '跟正文';
         return `${head(Wd().set)}<div class="sb-slist">
  <div class="sb-sh">主页</div><div class="sb-sgrp">${row('头图', modeName, 'set-cover')}${row('TA的名片', host.him().name, 'set-him')}${row('我的名字和头像', host.me().name, 'set-me')}</div>
- <div class="sb-sh">API</div><div class="sb-sgrp">${row('小手机用哪个', apiName, 'set-api')}${row('TA什么时候回', host.settings().phoneWhen === 'next' ? '下一轮正文顺带回' : '马上回', 'set-when')}${row('回复时带什么', host.replyMode() === 'full' ? '整套（预设 + 世界书 + 剧情）' : '自己挑', 'set-reply')}${toggle('省一点', 'saveMode', s.saveMode, '这一轮只写时间、天气、在哪、心声')}</div>
+ <div class="sb-sh">API</div><div class="sb-sgrp">${row('小手机用哪个', apiName, 'set-api')}${row('TA什么时候回', host.settings().phoneWhen === 'next' ? '下一轮正文顺带回' : '马上回', 'set-when')}${row('回复时带什么', host.replyMode() === 'full' ? '整套（预设 + 世界书 + 剧情）' : '自己挑', 'set-reply')}${toggle('省一点', 'saveMode', s.saveMode, '正文只顺带写时间、天气、在哪、心声；小手机回消息时不顺带更新动态、日记、此刻')}</div>
  <div class="sb-sh">TA</div><div class="sb-sgrp">
   <label class="sb-srow"><span>时代</span><select data-cset="era">${[['auto', eraName.startsWith('自动') ? eraName : '自动'], ['modern', '现代'], ['minguo', '民国'], ['ancient', '古风']].map(([k, n]) => `<option value="${k}" ${(c.era || 'auto') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
   ${row('提示词', s.prompt ? '改过' : '默认', 'set-prompt')}
@@ -639,6 +658,7 @@ export function createUI(host) {
                 else { v.tab = b.dataset.tab; v.diaryId = ''; v.nowBook = false; }
                 break;
             case 'flip': v.flip = !v.flip; break;
+            case 'gen': await generate(b.dataset.kind); return;
             case 'nowbook': v.nowBook = !v.nowBook; v.bookN = 20; break;
             case 'bookflip': v.bookFlip ??= {}; v.bookFlip[b.dataset.id] = !v.bookFlip[b.dataset.id]; break;
             case 'bookmore': v.bookN = (v.bookN || 20) + 20; break;
@@ -823,8 +843,10 @@ export function createUI(host) {
         v.busy = true; v.stick = true; render();
         try {
             const msgs = await phoneMessages();
-            const text = await host.ask(msgs, quietOf(msgs, host.era() === 'modern' ? '现在只写你在手机上回的消息，一行一条。' : '现在只写你回的信，一行一句。'));
-            const list = parsePhoneReply(text);
+            const text = await host.ask(msgs, quietOf(msgs, (host.era() === 'modern' ? '现在只写你在手机上回的消息，一行一条。' : '现在只写你回的信，一行一句。') + (host.settings().saveMode ? '' : '\n' + PHONE_STATUS)));
+            const cut = host.extractBlock(String(text || ''));
+            if (cut.raw && !host.settings().saveMode) host.addBlock(cut.raw); // 顺带的状态段：此刻、动态、日记都跟着更新
+            const list = parsePhoneReply(cut.text);
             if (!list.length) throw new Error('TA没回出东西');
             for (const m of list) {
                 await wait(650 + Math.min(1600, (m.text || '').length * 60));
@@ -880,7 +902,7 @@ export function createUI(host) {
         const list = host.wechat().filter(x => x.type !== 'note').slice(-Math.max(1, N));
         const sys = await buildSys(
             host.era() === 'modern' ? `现在你们在手机上聊天，对方在你手机里叫「${me.name}」。` : `现在你们在书信往来，对方署名「${me.name}」。`,
-            host.era() === 'modern' ? PHONE_RULES : LETTER_RULES,
+            (host.era() === 'modern' ? PHONE_RULES : LETTER_RULES) + (host.settings().saveMode ? '' : '\n' + PHONE_STATUS),
             list.slice(-6).map(m => m.text || ''));
         const msgs = [{ role: 'system', content: sys }];
         for (const m of list) {
