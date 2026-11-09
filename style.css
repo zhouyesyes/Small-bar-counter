@@ -403,3 +403,38 @@
 #sb-root .sb-album figure{margin:0}
 #sb-root .sb-album figure span{aspect-ratio:1;display:flex}
 #sb-root .sb-album figcaption{font-size:11px;color:var(--sb-dim);margin-top:4px}
+
+/* 微博：照着微博的颜色和排版（现代） */
+#sb-root.sb-era-modern .sb-phone:has(.sb-wb){--wb-bg:#f2f2f2;--wb-card:#fff;--wb-text:#333;--wb-dim:#939393;--wb-line:#ececec;--wb-orange:#ff8200}
+#sb-root.sb-era-modern.sb-dark .sb-phone:has(.sb-wb){--wb-bg:#000;--wb-card:#161616;--wb-text:#d8d8d8;--wb-dim:#7a7a7a;--wb-line:#262626;--wb-orange:#ff8200}
+#sb-root.sb-era-modern .sb-phone:has(.sb-wb){background:var(--wb-card)}
+#sb-root.sb-era-modern .sb-phone:has(.sb-wb) .sb-ph{background:var(--wb-card);border-color:var(--wb-line)}
+#sb-root.sb-era-modern .sb-wbtabs{background:var(--wb-card);border-color:var(--wb-line);align-items:flex-end}
+#sb-root.sb-era-modern .sb-wbtabs button{color:var(--wb-dim);font-size:15px}
+#sb-root.sb-era-modern .sb-wbtabs button.on{color:var(--wb-text);font-weight:700;box-shadow:inset 0 -3px 0 var(--wb-orange)}
+#sb-root .sb-wbgen{margin-left:auto;padding-bottom:6px}
+#sb-root.sb-era-modern .sb-wb{background:var(--wb-bg);padding:0;color:var(--wb-text)}
+/* 热搜榜 */
+#sb-root .sb-hothead{display:flex;align-items:baseline;gap:8px;padding:12px 14px 6px;background:var(--wb-card,var(--sb-bg))}
+#sb-root .sb-hothead b{font-size:16px;color:var(--wb-orange,var(--sb-fg))}#sb-root .sb-hothead small{display:inline;font-size:11px}
+#sb-root.sb-era-modern .sb-wb .sb-hot{background:var(--wb-card)}
+#sb-root.sb-era-modern .sb-wb .sb-hot li{padding:11px 14px;border-color:var(--wb-line);font-size:14.5px}
+#sb-root.sb-era-modern .sb-wb .sb-hn{color:#f6b64b;font-style:italic;font-size:15px;width:22px}
+#sb-root.sb-era-modern .sb-wb .sb-hn.r1{color:#fe2d46}#sb-root.sb-era-modern .sb-wb .sb-hn.r2{color:#f60}#sb-root.sb-era-modern .sb-wb .sb-hn.r3{color:#faa90e}
+#sb-root .sb-hw em{font-style:normal;font-size:11.5px;color:var(--wb-dim,var(--sb-dim));margin-left:8px}
+#sb-root.sb-era-modern .sb-wb .sb-ht{border:0;color:#fff;font-size:11px;width:18px;height:18px;padding:0;border-radius:4px;display:flex;align-items:center;justify-content:center}
+#sb-root.sb-era-modern .sb-wb .sb-ht.t-new{background:#ff3852}#sb-root.sb-era-modern .sb-wb .sb-ht.t-hot{background:#ff9406}
+#sb-root.sb-era-modern .sb-wb .sb-ht.t-boil{background:#f86400}#sb-root.sb-era-modern .sb-wb .sb-ht.t-boom{background:#bd0000}#sb-root.sb-era-modern .sb-wb .sb-ht.t-x{background:#c5c5c5}
+/* 广场的一条条微博：白卡片，中间隔一道灰 */
+#sb-root .sb-wbcard{background:var(--wb-card,var(--sb-bg));padding:12px 14px 0;margin-bottom:8px;contain:layout paint}
+#sb-root .sb-wbhead{display:flex;align-items:center;gap:10px}
+#sb-root .sb-wbav{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#ffd29a,#ff8a3d);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;flex:0 0 auto}
+#sb-root .sb-wbname{font-size:14.5px;color:var(--wb-orange,var(--sb-fg));font-weight:600}
+#sb-root .sb-wbhead small{font-size:11px;color:var(--wb-dim,var(--sb-dim))}
+#sb-root .sb-wbtext{font-size:15px;line-height:1.6;margin:8px 0;color:var(--wb-text,var(--sb-fg));word-break:break-word}
+#sb-root .sb-wbpics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;margin-bottom:6px}
+#sb-root .sb-wbpics span{aspect-ratio:1;background:var(--wb-bg,var(--sb-soft));display:flex;align-items:center;justify-content:center;text-align:center;font-size:10.5px;color:var(--wb-dim,var(--sb-dim));padding:4px}
+#sb-root .sb-wbacts{display:flex;justify-content:space-around;border-top:1px solid var(--wb-line,var(--sb-line));padding:9px 0;margin-top:4px;font-size:12px;color:var(--wb-dim,var(--sb-dim))}
+#sb-root .sb-wbacts span{display:flex;align-items:center;gap:5px}
+#sb-root .sb-wbacts svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round;stroke-linecap:round}
+#sb-root.sb-era-modern .sb-wbtabs .sb-gen{font-size:11px;color:var(--wb-dim);padding:2px 10px;box-shadow:none;border:1px solid var(--wb-line);border-radius:12px}

@@ -634,11 +634,26 @@ export function createUI(host) {
     function weiboHtml() {
         const st = host.state(), tab = v.wbTab || 'hot';
         const list = [...st.weibo].reverse();
-        const tabs = `<div class="sb-wbtabs">${[['hot', Wd().hot], ['square', Wd().square]].map(([k, n]) => `<button data-act="wbtab" data-t="${k}" class="${tab === k ? 'on' : ''}">${n}</button>`).join('')}</div>`;
-        const hot = st.hot.length ? `<ol class="sb-hot">${st.hot.map((h, i) => `<li><span class="sb-hn${i < 3 ? ' top' : ''}">${i + 1}</span><span class="sb-hw">${esc(h.word)}</span>${h.tag ? `<span class="sb-ht t-${esc({ 热: 'hot', 新: 'new', 沸: 'boil' }[h.tag] || 'x')}">${esc(h.tag)}</span>` : ''}<span class="sb-hh">${esc(h.heat)}</span></li>`).join('')}</ol>` : `<div class="sb-empty">还没有${Wd().hot}，点右上「刷新」</div>`;
-        const square = list.length ? list.slice(0, v.wbN || 15).map(p => `<article class="sb-post"><div class="sb-pav">${esc(p.who.slice(0, 1))}</div><div class="sb-pmain"><b class="sb-pname">${esc(p.who)}</b> <small class="sb-dim">${esc(p.time || '')}</small><div class="sb-ptext">${nl(p.text)}</div>${p.pics?.length ? `<div class="sb-pics">${p.pics.map(x => `<span>${esc(x)}</span>`).join('')}</div>` : ''}</div></article>`).join('') + (list.length > (v.wbN || 15) ? '<button class="sb-more" data-act="wbmore">再看 15 条</button>' : '') : `<div class="sb-empty">${Wd().square}还是空的，点右上「刷新」</div>`;
-        return `${head(Wd().weibo, genBtn('weibo', '刷新'))}${tabs}<div class="sb-list" data-keep="weibo">${tab === 'hot' ? hot : square}</div>`;
+        const seed = str => [...String(str)].reduce((n, c) => (n * 31 + c.charCodeAt(0)) >>> 0, 7);
+        const num = n => (n >= 10000 ? (n / 10000).toFixed(1).replace(/\.0$/, '') + '万' : String(n));
+        const TAG = { 热: 'hot', 新: 'new', 沸: 'boil', 爆: 'boom' };
+        const tabs = `<div class="sb-wbtabs">${[['hot', Wd().hot], ['square', Wd().square]].map(([k, n]) => `<button data-act="wbtab" data-t="${k}" class="${tab === k ? 'on' : ''}">${n}</button>`).join('')}<span class="sb-wbgen">${genBtn('weibo', '刷新')}</span></div>`;
+        const hot = st.hot.length ? `<div class="sb-hothead"><b>${Wd().weibo}${Wd().hot}</b><small>实时 · 跟着剧情变</small></div><ol class="sb-hot">${st.hot.map((h, i) => `<li><span class="sb-hn r${i < 3 ? i + 1 : ''}">${i + 1}</span><span class="sb-hw">${esc(h.word)}<em>${esc(h.heat)}</em></span>${h.tag ? `<span class="sb-ht t-${TAG[h.tag] || 'x'}">${esc(h.tag)}</span>` : ''}</li>`).join('')}</ol>` : `<div class="sb-empty">还没有${Wd().hot}，点右上「刷新」</div>`;
+        const card = p => {
+            const n = seed(p.who + p.text);
+            return `<article class="sb-wbcard"><div class="sb-wbhead"><span class="sb-wbav">${esc(p.who.slice(0, 1))}</span><span><b class="sb-wbname">${esc(p.who)}</b><small>${esc(p.time || '刚刚')} · 来自 ${['iPhone 客户端', '微博 weibo.com', 'HUAWEI Mate', '小米手机'][n % 4]}</small></span></div>
+  <div class="sb-wbtext">${nl(p.text)}</div>${p.pics?.length ? `<div class="sb-wbpics">${p.pics.map(x => `<span>${esc(x)}</span>`).join('')}</div>` : ''}
+  <div class="sb-wbacts"><span>${svgS('share')}${num(n % 900)}</span><span>${svgS('comment')}${num(n % 2300 + 3)}</span><span>${svgS('like')}${num(n % 52000 + 12)}</span></div></article>`;
+        };
+        const square = list.length ? list.slice(0, v.wbN || 15).map(card).join('') + (list.length > (v.wbN || 15) ? '<button class="sb-more" data-act="wbmore">再看 15 条</button>' : '') : `<div class="sb-empty">${Wd().square}还是空的，点右上「刷新」</div>`;
+        return `${head(Wd().weibo)}${tabs}<div class="sb-list sb-wb" data-keep="weibo">${tab === 'hot' ? hot : square}</div>`;
     }
+    const SVGS = {
+        share: '<path d="M14 5l6 6-6 6M20 11H9a5 5 0 0 0-5 5v3"/>',
+        comment: '<path d="M4 5h16v11H9l-5 4z"/>',
+        like: '<path d="M7 11v9H4v-9zM7 11l4-7c1.5 0 2.5 1 2.2 2.6L12.6 10H19a1.5 1.5 0 0 1 1.5 1.8l-1.4 6.8A2 2 0 0 1 17.1 20H7"/>',
+    };
+    const svgS = k => `<svg viewBox="0 0 24 24">${SVGS[k]}</svg>`;
     function pPhotosHtml() {
         const st = host.state();
         const shots = [...st.photos].reverse();
