@@ -164,6 +164,18 @@ body{margin:0;width:390px;height:844px;overflow:hidden;font:14px/1.5 -apple-syst
 .dock{margin:auto 12px 0;display:flex;justify-content:space-around;padding:10px 0;border-radius:22px;background:var(--soft);border:1px solid var(--line)}.dock .an{font-size:10.5px}
 .dock .ai{background:var(--bg)}
 .hbar{width:100px;height:4px;border-radius:2px;background:var(--fg);opacity:.5;margin:10px auto 10px}
+.bk{font-size:22px;color:var(--dim);line-height:1;margin-right:-2px}
+.ph .close{margin-left:auto}
+.tr{align-self:flex-start;width:170px;border:1px solid var(--line);border-radius:12px;padding:9px 12px;background:var(--soft)}
+.trt{font-size:16px;font-weight:700}.trn{font-size:12px;color:var(--dim);margin-top:2px}.trs{font-size:10.5px;color:var(--dim);border-top:1px solid var(--line);margin-top:7px;padding-top:4px}
+.note{align-self:center;font-size:10.5px;color:var(--dim);margin:4px 0}
+.plus.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.ppanel{display:grid;grid-template-columns:repeat(5,1fr);padding:4px 8px 6px}
+.ai.sm{width:42px;height:42px;border-radius:12px}.ai.sm svg{width:21px;height:21px}
+.clist{flex:1;padding:8px 14px;overflow:hidden}
+.creq{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:6px 0}
+.cr{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}.cr.dim{opacity:.55}
+.cr .xbtn{padding:2px 10px;font-size:11.5px}.cr .more{color:var(--dim)}
 </style></head><body>
 <div class="st">
   <div class="bar"><span style="font-size:13px;color:var(--fg)">阎守峥</span></div>
@@ -318,7 +330,7 @@ const phhome=`<div class="shade"></div><div class="phone home">
  <div class="widget"><div class="cap" style="font-size:9.5px">他在听</div><div style="display:flex;align-items:center;gap:10px;margin-top:6px"><div class="wcov"></div><div style="flex:1;min-width:0"><b style="font-size:13px">雨夜的街</b><div class="hd" style="font-size:11px">伞下只够站两个人</div></div><span style="font-size:14px">▶</span></div></div>
  <div class="apps">
   ${app('x','X')}${app('moments','朋友圈',1)}${app('diary','日记')}${app('memo','备忘录')}
-  ${app('photos','相册')}${app('wallet','钱包')}
+  ${app('photos','相册')}
  </div>
  <div class="dock">${app('msg','消息',2)}${app('music','音乐')}${app('set','设置')}</div>
  <div class="hbar"></div>
@@ -353,7 +365,38 @@ const phone=`<div class="shade"></div><div class="phone">
  </div>
  <div class="inp"><div class="plus">+</div><div class="field">说点什么</div><div class="send">↑</div></div>
 </div>`;
+const PI={emoji:'<circle cx="12" cy="12" r="8"/><path d="M9 10h.01M15 10h.01M8.5 14c1 1.5 2.2 2 3.5 2s2.5-.5 3.5-2"/>',voice:'<path d="M6 10v4M9 7v10M12 5v14M15 8v8M18 11v2"/>',pic:AP.photos,money:'<rect x="4" y="6" width="16" height="12" rx="2"/><path d="M12 9v6M10 10.5c0-1 4-1 4 0s-4 1-4 2 4 1 4 0"/>',redo:'<path d="M5 12a7 7 0 1 0 2-5"/><path d="M5 4v4h4"/>'};
+const pi=(k,n)=>`<div class="app"><div class="ai sm"><svg viewBox="0 0 24 24">${PI[k]}</svg></div><div class="an">${n}</div></div>`;
+const chatplus=`<div class="shade"></div><div class="phone">
+ <div class="ph"><span class="bk">‹</span><div class="av sm"></div><div><div class="nm">阎守峥</div><div class="hd">在线</div></div><span class="close">≡</span></div>
+ <div class="msgs">
+  <div class="time">11月9日 00:52</div>
+  <div class="b u">到家了</div>
+  <div class="b c">嗯 刚到</div>
+  <div class="tr c"><div class="trt">¥ 52.00</div><div class="trn">面钱，下次我请</div><div class="trs">已收下</div></div>
+  <div class="note">阎守峥 把你的备注改成了「不带伞的人」</div>
+  <div class="b c">早点睡 别熬了</div>
+  <div class="b u">你也是</div>
+ </div>
+ <div class="inp"><div class="plus on">×</div><div class="field">说点什么</div><div class="send">↑</div></div>
+ <div class="ppanel">${pi('emoji','表情')}${pi('voice','语音')}${pi('pic','图片')}${pi('money','转账')}${pi('redo','重生成')}</div>
+ <div class="hbar"></div>
+</div>`;
+const contacts=`<div class="shade"></div><div class="phone">
+ <div class="ph"><span class="bk">‹</span><div class="nm" style="flex:1">联系人</div><span class="close">＋</span></div>
+ <div class="clist">
+  <div class="creq"><span>好友申请</span><span class="badge">1</span></div>
+  <div class="cr"><div class="av sm"></div><div style="flex:1;min-width:0"><div class="nm" style="font-size:14px">阿宁</div><div class="hd">想加你：上次面馆见过</div></div><span class="xbtn">拒绝</span><span class="xbtn solid">通过</span></div>
+  <div class="cap" style="margin:14px 0 4px">friends · 好友</div>
+  <div class="cr"><div class="av sm"></div><div style="flex:1;min-width:0"><div class="nm" style="font-size:14px">阎守峥</div><div class="hd">他给你的备注：不带伞的人</div></div><span class="more">···</span></div>
+  <div class="cr"><div class="av sm"></div><div style="flex:1;min-width:0"><div class="nm" style="font-size:14px">陈叔</div><div class="hd">码头 · 管货的</div></div><span class="more">···</span></div>
+  <div class="cap" style="margin:14px 0 4px">blocked · 拉黑</div>
+  <div class="cr dim"><div class="av sm"></div><div style="flex:1;min-width:0"><div class="nm" style="font-size:14px">周先生</div><div class="hd">你拉黑了他</div></div><span class="xbtn">解除</span></div>
+  <div class="cr dim"><div class="av sm"></div><div style="flex:1;min-width:0"><div class="nm" style="font-size:14px">X 上的「雨巷」</div><div class="hd">他把这个号拉黑了</div></div><span class="hd">等他解除</span></div>
+ </div>
+ <div class="hbar"></div>
+</div>`;
 document.getElementById('cat').src='cat-'+(q.get('t')==='dark'?'dark':'light')+'-'+(q.get('c')||'idle')+'.png'; if(s) document.getElementById('cat').style.display='none';
-document.getElementById('extra').innerHTML = s==='drawer'?drawer : s==='profile'?profile : s==='x'?xpage : s==='home'?phhome : s==='phone'?phone : '';
+document.getElementById('extra').innerHTML = s==='drawer'?drawer : s==='profile'?profile : s==='x'?xpage : s==='home'?phhome : s==='plus'?chatplus : s==='contacts'?contacts : s==='phone'?phone : '';
 if(q.get('scroll')){document.querySelector('.drawer.pf')?.classList.add('mini');const f=document.getElementById('feed');if(f)f.scrollTop=9999;}
 </script></body></html>
