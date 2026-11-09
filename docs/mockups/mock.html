@@ -176,6 +176,18 @@ body{margin:0;width:390px;height:844px;overflow:hidden;font:14px/1.5 -apple-syst
 .creq{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:6px 0}
 .cr{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}.cr.dim{opacity:.55}
 .cr .xbtn{padding:2px 10px;font-size:11.5px}.cr .more{color:var(--dim)}
+.slist{flex:1;overflow:hidden;padding:2px 14px 6px;background:var(--soft)}
+.sh{font-size:10.5px;letter-spacing:.14em;color:var(--dim);margin:12px 4px 5px}
+.sgrp{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:0 12px}
+.srow{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 0;font-size:13.5px;border-bottom:1px solid var(--line)}.srow:last-child{border-bottom:0}
+.sv{color:var(--dim);font-size:12.5px;display:flex;align-items:center;gap:6px;white-space:nowrap}.sv i{font-style:normal;font-size:15px}
+.mini-cov{width:26px;height:18px;border-radius:4px;background:linear-gradient(160deg,#ccc,#555)}
+.tg{width:38px;height:22px;border-radius:11px;background:var(--line);position:relative;flex:0 0 auto}.tg i{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--bg);box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.tg.on{background:var(--fg)}.tg.on i{left:18px}
+.dmhead{display:flex;flex-direction:column;align-items:center;gap:3px;margin:6px 0 10px;font-size:14px}.dmhead .hd{font-size:11px}
+.read{align-self:flex-end;font-size:10.5px;color:var(--dim)}
+.dmmenu{position:absolute;top:58px;right:12px;width:178px;background:var(--bg);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 26px rgba(0,0,0,.18);padding:4px 0}
+.dmi{padding:9px 14px;font-size:13px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}.dmi:last-child{border:0}.dmi .hd{font-size:11px}
 </style></head><body>
 <div class="st">
   <div class="bar"><span style="font-size:13px;color:var(--fg)">阎守峥</span></div>
@@ -382,6 +394,56 @@ const chatplus=`<div class="shade"></div><div class="phone">
  <div class="ppanel">${pi('emoji','表情')}${pi('voice','语音')}${pi('pic','图片')}${pi('money','转账')}${pi('redo','重生成')}</div>
  <div class="hbar"></div>
 </div>`;
+const row=(k,v,arrow=true)=>`<div class="srow"><span>${k}</span><span class="sv">${v}${arrow?' <i>›</i>':''}</span></div>`;
+const tg=(on)=>`<span class="tg ${on?'on':''}"><i></i></span>`;
+const settings=`<div class="shade"></div><div class="phone">
+ <div class="ph"><span class="bk">‹</span><div class="nm" style="flex:1">设置</div><span class="close">×</span></div>
+ <div class="slist">
+  <div class="sh">主页</div>
+  <div class="sgrp">
+   <div class="srow"><span>头图</span><span class="sv"><span class="mini-cov"></span>他来挑 · 4 张 <i>›</i></span></div>
+   ${row('他的名字和签名','阎守峥')}
+   ${row('我的名字和头像','我')}
+  </div>
+  <div class="sh">API</div>
+  <div class="sgrp">
+   ${row('小手机用哪个','跟正文')}
+   ${row('钥匙本','3 条')}
+   <div class="srow"><span>省一点<div class="hd" style="font-size:10.5px">回消息时不顺带写日记、动态</div></span>${tg(false)}</div>
+  </div>
+  <div class="sh">他</div>
+  <div class="sgrp">
+   ${row('时代','自动 · 现代')}
+   ${row('提示词','可改')}
+   ${row('手机聊天记几条','50')}
+  </div>
+  <div class="sh">其他</div>
+  <div class="sgrp">
+   ${row('外观','跟酒馆')}
+   <div class="srow"><span>小猫入口</span>${tg(true)}</div>
+  </div>
+ </div>
+ <div class="hbar"></div>
+</div>`;
+const xdm=`<div class="shade"></div><div class="phone">
+ <div class="ph"><span class="bk">‹</span><div class="av sm"></div><div><div class="nm">阎守峥</div><div class="hd">@yan.shouzheng</div></div><span class="close">···</span></div>
+ <div class="msgs">
+  <div class="dmhead"><div class="av"></div><b>阎守峥</b><div class="hd">你们没有互相关注 · 他不知道你是谁</div></div>
+  <div class="time">11月8日 23:10</div>
+  <div class="b u">你那张旧伞的照片 是在哪拍的</div>
+  <div class="b u">感觉在哪见过</div>
+  <div class="b c">你是？</div>
+  <div class="b u">路过的</div>
+  <div class="read">已读</div>
+ </div>
+ <div class="dmmenu">
+  <div class="dmi">切换 X 账号 <span class="hd">现在：雨巷 ›</span></div>
+  <div class="dmi">添加到小手机</div>
+  <div class="dmi">拉黑</div>
+ </div>
+ <div class="inp"><div class="plus">+</div><div class="field">发私信</div><div class="send">↑</div></div>
+ <div class="hbar"></div>
+</div>`;
 const contacts=`<div class="shade"></div><div class="phone">
  <div class="ph"><span class="bk">‹</span><div class="nm" style="flex:1">联系人</div><span class="close">＋</span></div>
  <div class="clist">
@@ -397,6 +459,6 @@ const contacts=`<div class="shade"></div><div class="phone">
  <div class="hbar"></div>
 </div>`;
 document.getElementById('cat').src='cat-'+(q.get('t')==='dark'?'dark':'light')+'-'+(q.get('c')||'idle')+'.png'; if(s) document.getElementById('cat').style.display='none';
-document.getElementById('extra').innerHTML = s==='drawer'?drawer : s==='profile'?profile : s==='x'?xpage : s==='home'?phhome : s==='plus'?chatplus : s==='contacts'?contacts : s==='phone'?phone : '';
+document.getElementById('extra').innerHTML = s==='drawer'?drawer : s==='profile'?profile : s==='x'?xpage : s==='home'?phhome : s==='plus'?chatplus : s==='contacts'?contacts : s==='settings'?settings : s==='dm'?xdm : s==='phone'?phone : '';
 if(q.get('scroll')){document.querySelector('.drawer.pf')?.classList.add('mini');const f=document.getElementById('feed');if(f)f.scrollTop=9999;}
 </script></body></html>
