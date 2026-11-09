@@ -349,3 +349,18 @@
 #sb-root .sb-bigcover{width:84px!important;height:84px!important;border-radius:10px!important}
 #sb-root .sb-music .sb-mt{margin-top:10px}
 #sb-root .sb-mthumb{width:38px;height:38px;flex:0 0 auto;border-radius:6px;object-fit:cover;background:var(--sb-soft)}
+
+/* 播放按钮：自己画的线条图标（不用 emoji，iPhone 上不会变成彩色方块） */
+#sb-root .sb-mi{display:inline-flex;width:22px;height:22px}
+#sb-root .sb-mi svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+#sb-root .sb-mplay .sb-mi svg{stroke-width:2.2}
+#sb-root .sb-mplay .sb-mi svg path[d^="M8 5l"]{fill:currentColor}
+#sb-root .sb-mctl button[data-act="mprev"] path:last-child,#sb-root .sb-mctl button[data-act="mnext"] path:last-child{fill:currentColor}
+/* 歌单一排 */
+#sb-root .sb-plists{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:12px}
+#sb-root .sb-plists::-webkit-scrollbar{display:none}
+#sb-root .sb-plists button{flex:0 0 auto;font-size:12px;border:1px solid var(--sb-line);border-radius:14px;padding:3px 10px;color:var(--sb-dim)}
+#sb-root .sb-plists button.on{color:var(--sb-bg);background:var(--sb-fg);border-color:var(--sb-fg)}
+#sb-root .sb-plists button small{display:inline;font-size:10px;opacity:.7}
+#sb-root .sb-plists .add{border-style:dashed}
+#sb-root .sb-mres .sb-link{margin:0 0 0 8px;font-size:11px}

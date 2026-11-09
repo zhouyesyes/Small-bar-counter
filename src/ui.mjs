@@ -42,8 +42,17 @@ export function createUI(host) {
     const v = { drawer: false, tab: 'posts', diaryId: '', phone: false, view: 'home', plus: false, momentsN: 10, xN: 10, busy: false, flip: false, menuFor: '', edit: null };
     let root, catBlink = 0, lastHtml = '';
     // 音乐：歌单存在扩展设置里（不跟聊天走）；播放器不随界面重画
+    function musicState() {
+        const st = host.settings();
+        const m = (st.music ??= {});
+        if (!m.lists) { m.lists = { 默认歌单: Array.isArray(m.list) ? m.list : [] }; m.active = '默认歌单'; delete m.list; }
+        if (!m.lists[m.active]) m.active = Object.keys(m.lists)[0] || (m.lists.默认歌单 = [], '默认歌单');
+        m.idx ??= 0; m.mode ??= 'all';
+        if (!Object.getOwnPropertyDescriptor(m, 'list')) Object.defineProperty(m, 'list', { get() { return this.lists[this.active]; }, enumerable: false, configurable: true });
+        return m;
+    }
     const player = createPlayer({
-        load: () => (host.settings().music ??= { list: [], idx: 0, mode: 'all' }),
+        load: musicState,
         save: () => host.setSettings(() => {}),
         onChange: (kind, msg) => { if (kind === 'error') host.toast('warning', msg); if (kind === 'info') host.toast('info', msg); render(); },
     });
@@ -259,9 +268,20 @@ export function createUI(host) {
         if (!list.length) return btn + `<div class="sb-empty">TA还没发过${ERA[host.era()].posts}。<br>剧情里TA想发的时候会出现在这里。</div>`;
         return btn + list.map(p => postHtml(p, him)).join('') + `<div class="sb-more">只显示最新三条 · 更早的在${ERA[host.era()].wechat}里 <button data-act="phone-go" data-to="wx-moments">去看 →</button></div>`;
     }
+    const MI = {
+        prev: '<svg viewBox="0 0 24 24"><path d="M7 6v12M18 6l-8 6 8 6z"/></svg>',
+        next: '<svg viewBox="0 0 24 24"><path d="M17 6v12M6 6l8 6-8 6z"/></svg>',
+        play: '<svg viewBox="0 0 24 24"><path d="M8 5l11 7-11 7z"/></svg>',
+        pause: '<svg viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg>',
+        all: '<svg viewBox="0 0 24 24"><path d="M4 12a6 6 0 0 1 6-6h9M16 3l3 3-3 3M20 12a6 6 0 0 1-6 6H5M8 21l-3-3 3-3"/></svg>',
+        one: '<svg viewBox="0 0 24 24"><path d="M4 12a6 6 0 0 1 6-6h9M16 3l3 3-3 3M20 12a6 6 0 0 1-6 6H5M8 21l-3-3 3-3"/><text x="12" y="14.5" text-anchor="middle" font-size="7" stroke="none" fill="currentColor">1</text></svg>',
+        shuffle: '<svg viewBox="0 0 24 24"><path d="M4 7h4l8 10h4M17 14l3 3-3 3M4 17h4l2-2.5M14 9.5L16 7h4M17 4l3 3-3 3"/></svg>',
+        list: '<svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg>',
+    };
+    const mi = k => `<span class="sb-mi">${MI[k]}</span>`;
     function musicHtml(st) {
         const m = st.music, t = player.current(), list = host.settings().music?.list || [], mode = host.settings().music?.mode || 'all';
-        const modeIcon = { all: '⟳', one: '①', shuffle: '⤮' }[mode];
+        const ms = musicState(), names = Object.keys(ms.lists);
         return `<section class="sb-music">
  <div class="sb-cap">${t ? 'now playing' : 'music'} · ${Wd().music}</div>
  <div class="sb-bigcover" style="${t ? `background-image:url('${esc(coverUrl(t))}')` : ''}"></div>
@@ -269,11 +289,12 @@ export function createUI(host) {
  <div class="sb-ma">${esc(t?.artist || '搜一首，或者放TA在听的')}</div>
  <div class="sb-lyr" data-i=""></div>
  ${t ? `<button class="sb-mbar" data-act="mseek"><i></i></button><div class="sb-mtime">0:00 / 0:00</div>` : ''}
- <div class="sb-mctl"><button data-act="mmode" title="播放顺序">${modeIcon}</button><button data-act="mprev">⏮</button><button class="sb-mplay" data-act="mtoggle">${player.playing() ? '❚❚' : '▶'}</button><button data-act="mnext">⏭</button><button data-act="mlist" class="${v.mlist ? 'on' : ''}" title="歌单">☰</button></div>
+ <div class="sb-mctl"><button data-act="mmode" title="${{ all: '列表循环', one: '单曲循环', shuffle: '随机' }[mode]}">${mi(mode)}</button><button data-act="mprev" aria-label="上一首">${mi('prev')}</button><button class="sb-mplay" data-act="mtoggle" aria-label="播放">${mi(player.playing() ? 'pause' : 'play')}</button><button data-act="mnext" aria-label="下一首">${mi('next')}</button><button data-act="mlist" class="${v.mlist ? 'on' : ''}" aria-label="歌单">${mi('list')}</button></div>
+ <div class="sb-plists">${names.map(n => `<button data-act="mpl" data-n="${esc(n)}" class="${n === ms.active ? 'on' : ''}">${esc(n)} <small>${ms.lists[n].length}</small></button>`).join('')}<button data-act="mpl-new" class="add">＋ 新建歌单</button></div>
  ${m?.title ? `<button class="sb-mhis" data-act="mhis">${Wd().listen}《${esc(m.title)}》${m.artist ? ' · ' + esc(m.artist) : ''} · 放这首</button>` : ''}
  <div class="sb-msearch"><input data-msearch placeholder="搜歌名、歌手，或贴网易云链接" enterkeyhint="search" value="${esc(v.mq || '')}"><button data-act="msearch">${v.msearching ? '…' : '搜'}</button></div>
  ${v.mres?.length ? `<div class="sb-mres">${v.mres.map((r, i) => `<div class="sb-mrow2"><img class="sb-mthumb" src="${esc(coverUrl(r))}" loading="lazy" decoding="async" alt="" onerror="this.style.visibility='hidden'"><span><b>${esc(r.title)}</b><small>${esc(r.artist)}${r.src === 'qq' ? ' · QQ' : ''}</small></span><button data-act="madd" data-i="${i}" data-play="1">▶</button><button data-act="madd" data-i="${i}">＋</button></div>`).join('')}</div>` : ''}
- ${v.mlist ? `<div class="sb-mres"><div class="sb-cap" style="margin:6px 0">歌单 · ${list.length} 首</div>${list.map((r, i) => `<div class="sb-mrow2${t && r.id === t.id ? ' on' : ''}"><img class="sb-mthumb" src="${esc(coverUrl(r))}" loading="lazy" decoding="async" alt="" onerror="this.style.visibility='hidden'"><span data-act="mplayat" data-i="${i}"><b>${esc(r.title)}</b><small>${esc(r.artist)}</small></span><button data-act="mdelsong" data-i="${i}">×</button></div>`).join('') || '<div class="sb-empty sm">还没有歌</div>'}</div>` : ''}
+ ${v.mlist ? `<div class="sb-mres"><div class="sb-cap sb-row" style="margin:6px 0"><span>${esc(ms.active)} · ${list.length} 首</span><span><button class="sb-link" data-act="mpl-rename">改名</button>${names.length > 1 ? ' <button class="sb-link" data-act="mpl-del">删掉这个歌单</button>' : ''}</span></div>${list.map((r, i) => `<div class="sb-mrow2${t && r.id === t.id ? ' on' : ''}"><img class="sb-mthumb" src="${esc(coverUrl(r))}" loading="lazy" decoding="async" alt="" onerror="this.style.visibility='hidden'"><span data-act="mplayat" data-i="${i}"><b>${esc(r.title)}</b><small>${esc(r.artist)}</small></span><button data-act="mdelsong" data-i="${i}">×</button></div>`).join('') || '<div class="sb-empty sm">还没有歌</div>'}</div>` : ''}
  <div class="sb-mnote">歌来自第三方公开接口：先找网易云，搜不到或放不了再找 QQ 音乐；会员歌和接口都不通时放不了</div>
 </section>`;
     }
@@ -716,6 +737,24 @@ export function createUI(host) {
             case 'mprev': player.prev(); return;
             case 'mmode': player.mode(); return;
             case 'mlist': v.mlist = !v.mlist; break;
+            case 'mpl': { const m = musicState(); m.active = b.dataset.n; m.idx = 0; v.mlist = true; host.setSettings(() => {}); break; }
+            case 'mpl-new': {
+                const n = String(await host.prompt('新歌单叫什么？', '') || '').trim(); if (!n) return;
+                const m = musicState(); if (m.lists[n]) { host.toast('info', '已经有这个名字了'); return; }
+                m.lists[n] = []; m.active = n; m.idx = 0; v.mlist = true; host.setSettings(() => {}); break;
+            }
+            case 'mpl-rename': {
+                const m = musicState(), old = m.active;
+                const n = String(await host.prompt('歌单改个名字', old) || '').trim(); if (!n || n === old) return;
+                if (m.lists[n]) { host.toast('info', '已经有这个名字了'); return; }
+                const next = {}; for (const [k, val] of Object.entries(m.lists)) next[k === old ? n : k] = val; // 保持原来的顺序
+                m.lists = next; m.active = n; host.setSettings(() => {}); break;
+            }
+            case 'mpl-del': {
+                const m = musicState();
+                if (!await host.confirm(`删掉歌单「${m.active}」？里面的 ${m.list.length} 首也一起去掉`)) return;
+                delete m.lists[m.active]; m.active = Object.keys(m.lists)[0]; m.idx = 0; host.setSettings(() => {}); break;
+            }
             case 'mseek': { const r = b.getBoundingClientRect(); player.seek((e.clientX - r.left) / r.width); tickMusic(); return; }
             case 'msearch': await musicSearch(root.querySelector('[data-msearch]')?.value); return;
             case 'madd': { const t = v.mres?.[Number(b.dataset.i)]; if (t) player.add(t, !!b.dataset.play); if (!b.dataset.play) host.toast('success', '加进歌单了'); return; }
