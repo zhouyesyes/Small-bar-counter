@@ -145,6 +145,10 @@ const xHost = {
     setXAccount: id => { meta().xcur = id; saveMeta(); },
     newXAccount: name => { const a = { id: 'a' + Date.now().toString(36), name: name || '小号' }; xAccounts().push(a); meta().xcur = a.id; saveMeta(); },
     renameXAccount: name => { xAccount().name = name; saveMeta(); },
+    setXAccountAvatar: src => { xAccount().avatar = src; saveMeta(); },
+    xMine: () => { const m = meta(); m.xmine ??= {}; return (m.xmine[xAccount().id] ??= []); },
+    addXMine: text => { const m = meta(); m.xmine ??= {}; (m.xmine[xAccount().id] ??= []).push({ id: newId(), text, at: Date.now(), time: state().now.time || '' }); saveMeta(); },
+    delXMine: id => { const list = meta().xmine?.[xAccount().id] || []; const i = list.findIndex(p => p.id === id); if (i >= 0) list.splice(i, 1); saveMeta(); },
     xBlocked: () => !!xflag('xblocked')[xAccount().id],             // TA拉黑了这个号
     setXBlocked: on => { xflag('xblocked')[xAccount().id] = on; saveMeta(); },
     xIBlocked: () => !!xflag('xiblocked')[xAccount().id],           // 她拉黑了TA
@@ -186,7 +190,6 @@ function storyTail(n = 6) {
 }
 
 // ---------- 请他回（小手机、动态留言） ----------
-function keys() { return (ctx().extensionSettings.tavern_ruined_me_keys?.keys || []).filter(k => k.url); }
 // 回复时带什么：整套（交给酒馆拼，含预设）或自己挑
 function replyMode() { const s = settings(); if ((s.api || 'main') !== 'main') return 'pick'; return s.replyMode || 'pick'; } // 默认自己挑：不带预设，世界书照带（她 11/9 说的）
 function replyCtx() { return { card: true, persona: true, world: true, status: true, story: 6, ...(settings().ctx || {}) }; }
@@ -225,7 +228,7 @@ async function ask(messages, quiet) {
         const rest = messages.filter(m => m.role !== 'system');
         return await c.generateRaw({ systemPrompt: sys, prompt: rest, responseLength: 400 });
     }
-    const conf = api === 'own' ? s.ownApi : keys().find(k => k.id === api);
+    const conf = s.ownApi;
     if (!conf?.url) throw new Error('小手机的 API 还没填好（设置 → 小手机用哪个）');
     return await callApi(conf, messages);
 }
@@ -295,7 +298,8 @@ const host = {
     meta, saveMeta, state, unread, markRead, wechat, addWechat, patchWechat, deleteWechat, takeLastRound, restoreRound, repliesFor,
     ...xHost,
     replyMode, replyCtx, worldInfo, testOwnApi,
-    him, me, charCard, era, guessedEra, storyTail, keys, ask, hasChar,
+    him, me, charCard, era, guessedEra, storyTail, ask, hasChar,
+    countTokens: async t => { if (!t) return 0; const c = ctx(); try { if (c.getTokenCountAsync) return await c.getTokenCountAsync(t); } catch { /* 算不了就估 */ } return Math.ceil(t.length / 1.6); },
     defaultPrompt: () => DEFAULT_PROMPT,
     toast: (kind, msg) => globalThis.toastr?.[kind]?.(msg, '小吧台'),
     confirm: async text => { const c = ctx(); return c.callGenericPopup ? !!await c.callGenericPopup(text, c.POPUP_TYPE.CONFIRM) : confirm(text); },

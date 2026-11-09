@@ -37,7 +37,7 @@ const pics = v => (v || '').replace(/^(照片|图片|图)\s*[:：]?/, '').split(
 // msgs: [{ id, raw, at }]，id 是这一楼稳定的编号（发出时间 + 第几页回复），at 是这一楼的时间（毫秒，排先后用）
 export function buildState(msgs) {
     const st = {
-        now: {}, posts: [], moments: [], diary: [], memo: [], music: null, xposts: [], wechat: [], npcComments: [], replies: [], cover: '',
+        now: {}, nowLog: [], posts: [], moments: [], diary: [], memo: [], music: null, xposts: [], wechat: [], npcComments: [], replies: [], cover: '',
     };
     for (const { id, raw, at = 0 } of msgs) {
         if (!raw) continue;
@@ -47,6 +47,8 @@ export function buildState(msgs) {
             time: ['时间'], weather: ['天气'], where: ['在哪', '地点'], wear: ['穿着'], want: ['想要'],
             voice: ['心声'], voiceBack: ['心声背面', '背面'], sign: ['签名'],
         })) { const v = one(b, ...keys); if (v) n[k] = v; }
+        // 此刻的本子：每一轮的此刻都记一页（以前的也能翻）
+        if (['时间', '在哪', '地点', '穿着', '想要', '心声'].some(k => b[k]?.length)) st.nowLog.push({ id, at, ...n });
         const cov = one(b, '背景'); if (cov) st.cover = cov;
         many(b, '动态').forEach((v, i) => {
             const [text, p, place] = split(v);
