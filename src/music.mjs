@@ -8,6 +8,8 @@ export const MUSIC_APIS = [
 
 // QQ 音乐的备用来源（参考 Rainday 用的 vkeys 接口）：网易云搜不到、或者放不出来时才去这里找
 export const QQ_API = 'https://api.vkeys.cn/v2/music/tencent';
+// 另一个网易云的来源（Rainday 默认用的 GD 音乐台）：很多会员歌在这里能拿到完整的播放地址，放歌时先问它
+export const GD_API = 'https://music-api.gdstudio.xyz/api.php';
 
 const str = v => String(v ?? '').trim();
 const norm = s => str(s).toLowerCase().replace(/\([^)]*\)|（[^）]*）|\[[^\]]*\]/g, '').replace(/[\s·,，/&、]/g, '');
@@ -60,9 +62,12 @@ export async function searchSongs(q, page = 1) {
     if (id) return [await songById(id)].filter(Boolean);
     // 网易云和 QQ 一起问：网易云先回就用网易云；网易云 4 秒还没回、或者没搜到，用 QQ 的（不用干等）
     const qq = searchQQ(q);
-    const ne = ask({ server: 'netease', type: 'search', id: q, page, limit: 20 }, { timeout: 4000 })
-        .then(({ base, rows }) => rows.map(x => trackOf(x, base)).filter(Boolean)).catch(() => []);
-    let list = await ne;
+    const meting = ask({ server: 'netease', type: 'search', id: q, page, limit: 20 }, { timeout: 4000 })
+        .then(({ base, rows }) => rows.map(x => trackOf(x, base)).filter(Boolean));
+    const gd = getJson(GD_API + '?' + new URLSearchParams({ types: 'search', source: 'netease', name: q, count: 20, pages: page }), 4000)
+        .then(d => (Array.isArray(d) ? d : d?.data || []).map(x => trackOf(x)).filter(Boolean));
+    // 两个网易云来源谁先回用谁（另一个也挂了才算没搜到）
+    let list = await Promise.any([meting.then(l => l.length ? l : Promise.reject()), gd.then(l => l.length ? l : Promise.reject())]).catch(() => []);
     if (!list.length) list = await qq;
     return rankSongs(list, q).slice(0, 12);
 }
@@ -72,12 +77,15 @@ export function rankSongs(list, q) {
     const nq = norm(q), words = str(q).split(/\s+/).map(norm).filter(Boolean);
     const score = (t, i) => {
         const title = norm(t.title), artist = norm(t.artist);
-        let s = 0;
-        if (title === nq) s += 100;
-        else if (title.startsWith(nq)) s += 60;
-        else if (title.includes(nq)) s += 35;
-        // 搜「歌名 歌手」：每个词在歌名或歌手里都算分
-        for (const w of words) { if (title.includes(w)) s += 12; if (artist.includes(w)) s += 18; }
+        let s = 0, inTitle = 0, inArtist = 0;
+        for (const w of words) { if (title.includes(w)) inTitle++; else if (artist.includes(w)) inArtist++; }
+        const covered = inTitle + inArtist === words.length;
+        if (covered && inTitle && inArtist) s += 120;          // 「体面 于文文」：歌名有体面、歌手是于文文，最该在前
+        else if (words.length === 1 && title === nq) s += 100;  // 只搜歌名：歌名正好是它
+        else if (covered && inTitle) s += words.length > 1 ? 40 : 70; // 字全在歌名里（多半是别人上传的同名翻唱）
+        else if (inTitle) s += 30;
+        else if (inArtist) s += 15;                              // 只有歌手对上：这个歌手的别的歌
+        if (words.some(w => title === w)) s += 20;              // 歌名正好是其中一个词
         if (VARIANT.test(t.title)) s -= 45;
         return s - i * 0.5; // 分一样时照接口原来的顺序
     };
@@ -114,7 +122,16 @@ export async function qqTwin(t) {
     const list = await searchQQ([t.title, t.artist].filter(Boolean).join(' '));
     return list.find(x => norm(x.title) === norm(t.title) && (!t.artist || !x.artist || norm(x.artist).includes(norm(t.artist).slice(0, 4)) || norm(t.artist).includes(norm(x.artist).slice(0, 4)))) || null;
 }
-export const sourceUrl = async t => (t.src === 'qq' ? await qqUrl(t) : playUrl(t));
+async function gdUrl(t) {
+    const d = await getJson(GD_API + '?' + new URLSearchParams({ types: 'url', source: 'netease', id: t.id, br: 320 }), 6000);
+    const u = str(d?.url || d?.data?.url);
+    if (!/^https?:/.test(u)) throw new Error('GD 没给地址');
+    return u.replace(/^http:/, 'https:');
+}
+export async function sourceUrl(t) {
+    if (t.src === 'qq') return await qqUrl(t);
+    try { return await gdUrl(t); } catch { return playUrl(t); }
+}
 export async function songById(id) {
     const { base, rows } = await ask({ server: 'netease', type: 'song', id });
     return trackOf({ id, ...rows[0] }, base);
