@@ -153,6 +153,13 @@ const xHost = {
     renameXAccount: name => { xAccount().name = name; saveMeta(); },
     setXAccountAvatar: src => { xAccount().avatar = src; saveMeta(); },
     setXAccountField: (k, val) => { xAccount()[k] = val; saveMeta(); },
+    deleteXAccount: id => {
+        const m = meta(), list = xAccounts(); if (list.length < 2) return;
+        const i = list.findIndex(a => a.id === id); if (i < 0) return;
+        list.splice(i, 1);
+        for (const k of ['xdm', 'xmine', 'xblocked', 'xiblocked']) if (m[k]) delete m[k][id];
+        m.xcur = list[0].id; saveMeta();
+    },
     xMine: () => { const m = meta(); m.xmine ??= {}; return (m.xmine[xAccount().id] ??= []); },
     addXMine: text => { const m = meta(); m.xmine ??= {}; (m.xmine[xAccount().id] ??= []).push({ id: newId(), text, at: Date.now(), time: state().now.time || '' }); saveMeta(); },
     delXMine: id => { const list = meta().xmine?.[xAccount().id] || []; const i = list.findIndex(p => p.id === id); if (i >= 0) list.splice(i, 1); saveMeta(); },

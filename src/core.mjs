@@ -37,7 +37,7 @@ const pics = v => (v || '').replace(/^(照片|图片|图)\s*[:：]?/, '').split(
 // msgs: [{ id, raw, at }]，id 是这一楼稳定的编号（发出时间 + 第几页回复），at 是这一楼的时间（毫秒，排先后用）
 export function buildState(msgs) {
     const st = {
-        now: {}, nowLog: [], posts: [], moments: [], diary: [], memo: [], music: null, xposts: [], xfeed: [], wechat: [], npcComments: [], replies: [], cover: '',
+        now: {}, nowLog: [], posts: [], moments: [], diary: [], memo: [], music: null, xposts: [], xfeed: [], weibo: [], hot: [], photos: [], wechat: [], npcComments: [], replies: [], cover: '',
     };
     for (const { id, raw, at = 0 } of msgs) {
         if (!raw) continue;
@@ -85,6 +85,12 @@ export function buildState(msgs) {
             const [who, handle, text, p] = split(v);
             if (who && text) st.xfeed.push({ id: id + '#f' + i, who, handle: handle || '', text, pics: pics(p), time: n.time || '', at });
         });
+        // 微博：广场上的帖子；热搜：每次写了就换成新的一批
+        many(b, '微博').forEach((v, i) => { const [who, text, p] = split(v); if (who && text) st.weibo.push({ id: id + '#wb' + i, who, text, pics: pics(p), time: n.time || '', at }); });
+        const hot = many(b, '热搜').map(v => { const [word, heat, tag] = split(v); return word ? { word: word.replace(/^#|#$/g, ''), heat: heat || '', tag: tag || '' } : null; }).filter(Boolean);
+        if (hot.length) st.hot = hot;
+        // 相册：TA拍的、存的照片
+        many(b, '照片').forEach((v, i) => { const [desc, note] = split(v); if (desc) st.photos.push({ id: id + '#ph' + i, desc, note: note || '', time: n.time || '', at }); });
         many(b, '微信', '消息').forEach((v, i) => st.wechat.push({ id: id + '#w' + i, from: 'him', type: 'text', text: v, time: n.time || '', at }));
     }
     // 备忘最多 15 条：做完的先挪走

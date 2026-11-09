@@ -18,9 +18,9 @@ const ERA = {
 const TAB_KEYS = ['posts', 'now', 'diary', 'phone'];
 // 小手机里每一页的叫法：页面都一样有，只是换成那个年代的东西
 const WORDS = {
-    modern: { phone: '小手机', wechat: '微信', contacts: '通讯录', moments: '朋友圈', me: '我', x: 'X', xHim: 'TA的主页', xMe: '我的主页', dm: '私信', post: '发帖', follow: '关注', fans: '关注者', following: '正在关注', compose: '有什么新鲜事？', diary: '日记', memo: '备忘录', photos: '相册', music: '音乐', set: '设置', listen: 'TA在听', online: '在线', book: '此刻簿' },
-    minguo: { phone: '信匣', wechat: '信笺', contacts: '通信录', moments: '副刊', me: '我', x: '小报', xHim: 'TA的专栏', xMe: '我的笔名', dm: '读者来信', post: '投稿', follow: '订阅', fans: '读者', following: '订阅了', compose: '写一则小文……', diary: '日记', memo: '记事簿', photos: '相片', music: '留声机', set: '设置', listen: '留声机里放着', online: '', book: '流年簿' },
-    ancient: { phone: '书匣', wechat: '书信', contacts: '故交', moments: '题壁', me: '我', x: '榜文', xHim: 'TA的诗名', xMe: '我的别号', dm: '匿名书', post: '张贴', follow: '相识', fans: '传阅', following: '结交', compose: '题一句……', diary: '手札', memo: '记事', photos: '画卷', music: '琴谱', set: '设置', listen: 'TA在抚', online: '', book: '起居注' },
+    modern: { phone: '小手机', wechat: '微信', contacts: '通讯录', moments: '朋友圈', me: '我', x: 'X', xHim: 'TA的主页', xMe: '我的主页', dm: '私信', post: '发帖', follow: '关注', fans: '关注者', following: '正在关注', compose: '有什么新鲜事？', diary: '日记', memo: '备忘录', photos: '相册', music: '音乐', set: '设置', listen: 'TA在听', online: '在线', book: '此刻簿', weibo: '微博', hot: '热搜', square: '广场' },
+    minguo: { phone: '信匣', wechat: '信笺', contacts: '通信录', moments: '副刊', me: '我', x: '小报', xHim: 'TA的专栏', xMe: '我的笔名', dm: '读者来信', post: '投稿', follow: '订阅', fans: '读者', following: '订阅了', compose: '写一则小文……', diary: '日记', memo: '记事簿', photos: '相片', music: '留声机', set: '设置', listen: '留声机里放着', online: '', book: '流年簿', weibo: '街谈', hot: '号外', square: '街头' },
+    ancient: { phone: '书匣', wechat: '书信', contacts: '故交', moments: '题壁', me: '我', x: '榜文', xHim: 'TA的诗名', xMe: '我的别号', dm: '匿名书', post: '张贴', follow: '相识', fans: '传阅', following: '结交', compose: '题一句……', diary: '手札', memo: '记事', photos: '画卷', music: '琴谱', set: '设置', listen: 'TA在抚', online: '', book: '起居注', weibo: '坊间', hot: '传闻', square: '茶肆' },
 };
 
 const ICON = {
@@ -394,7 +394,7 @@ export function createUI(host) {
     function phoneHtml(era) {
         const views = {
             home: homeHtml, 'wx-chat': wxChatHtml, 'wx-contacts': wxContactsHtml, 'wx-moments': wxMomentsHtml, 'wx-me': wxMeHtml,
-            x: xHtml, 'x-dm': xDmHtml, diary: pDiaryHtml, memo: pMemoHtml, photos: pPhotosHtml, music: pMusicHtml,
+            x: xHtml, 'x-dm': xDmHtml, weibo: weiboHtml, diary: pDiaryHtml, memo: pMemoHtml, photos: pPhotosHtml, music: pMusicHtml,
             settings: setHtml, 'set-cover': setCoverHtml, 'set-him': setHimHtml, 'set-me': setMeHtml, 'set-prompt': setPromptHtml, 'set-api': setApiHtml, 'set-reply': setReplyHtml, 'set-when': setWhenHtml,
         };
         // 古风、民国没有手机：换成书信（设置页还用同一个框）
@@ -447,13 +447,13 @@ export function createUI(host) {
         const clock = (n.time || '').match(/(\d{1,2}[:：]\d{2})/)?.[1]?.replace('：', ':') || '';
         const date = (n.time || '').replace(/\d{1,2}[:：]\d{2}/, '').trim();
         return `<div class="sb-home">
- <div class="sb-sbar"><span>${esc(clock)}</span><button class="sb-phx" data-act="phone-close" aria-label="关上">×</button></div>
+ <div class="sb-sbar"><span>${esc(clock)}</span><span class="sb-sbr">${genBtn('all', '全部刷新')}<button class="sb-phx" data-act="phone-close" aria-label="关上">×</button></span></div>
  <div class="sb-clock${clock ? '' : ' sm'}">${esc(clock || (era === 'modern' ? '--:--' : (n.time || '').split(/\s+/).pop() || '—'))}</div>
  <div class="sb-cdate">${esc([date, n.weather].filter(Boolean).join(' · ') || '时间跟着剧情走')}</div>
  ${(() => { const t = player.current(); return t
     ? `<div class="sb-widget"><div class="sb-cap">正在放</div><div class="sb-wrow"><span class="sb-wcov" data-act="phone-go" data-to="music" style="background-image:url('${esc(coverUrl(t))}')"></span><span data-act="phone-go" data-to="music"><b>${esc(t.title)}</b><small>${esc(t.artist)}</small></span><button class="sb-wplay" data-act="mtoggle" aria-label="播放">${mi(player.playing() ? 'pause' : 'play')}</button></div></div>`
     : `<button class="sb-widget" data-act="phone-go" data-to="music"><div class="sb-cap">${Wd().listen}</div><div class="sb-wrow"><span class="sb-wcov"></span><span><b>${esc(st.music?.title || '还没在听歌')}</b><small>${esc(st.music?.lyric || st.music?.artist || '点这里去放歌')}</small></span></div></button>`; })()}
- <div class="sb-apps">${era === 'modern' ? app('x', 'x', Wd().x) : `<button class="sb-app" data-act="phone-go" data-to="x"><span class="sb-ai sb-aitext">${Wd().x.slice(0, 1)}</span><span class="sb-an">${Wd().x}</span></button>`}${app('diary', 'diary', Wd().diary)}${app('memo', 'memo', Wd().memo)}${app('photos', 'photos', Wd().photos)}</div>
+ <div class="sb-apps">${era === 'modern' ? app('x', 'x', Wd().x) : `<button class="sb-app" data-act="phone-go" data-to="x"><span class="sb-ai sb-aitext">${Wd().x.slice(0, 1)}</span><span class="sb-an">${Wd().x}</span></button>`}${`<button class="sb-app" data-act="phone-go" data-to="weibo"><span class="sb-ai sb-aitext">${Wd().weibo.slice(0, 1)}</span><span class="sb-an">${Wd().weibo}</span></button>`}${app('diary', 'diary', Wd().diary)}${app('memo', 'memo', Wd().memo)}${app('photos', 'photos', Wd().photos)}</div>
  <div class="sb-dock">${app('msg', 'wx-contacts', Wd().wechat, host.unread())}${app('music', 'music', Wd().music)}${app('set', 'settings', Wd().set)}</div>
 </div>`;
     }
@@ -561,7 +561,7 @@ export function createUI(host) {
         const acc = host.xAccount(), me = host.me(), list = [...host.xMine()].reverse();
         return `<div class="sb-xpage" data-keep="xme">
  <div class="sb-xcover ${acc.cover ? 'sb-cover-img' : sideCover('coverXMe').cls}" style="${acc.cover ? `background-image:url('${host.img(acc.cover)}')` : sideCover('coverXMe').style}"><button class="sb-bk light" data-act="phone-back">‹</button>${coverBtn('xacc-cover')}</div>
- <div class="sb-xtop"><span class="sb-xav" style="background-image:url('${esc(acc.avatar ? host.img(acc.avatar) : '')}')">${acc.avatar ? '' : esc(acc.name.slice(0, 1))}</span><label class="sb-xbtn">换头像<input type="file" accept="image/*" data-upload="xacc-avatar" hidden></label><button class="sb-xbtn" data-act="xacc-next">换号</button></div>
+ <div class="sb-xtop"><span class="sb-xav" style="background-image:url('${esc(acc.avatar ? host.img(acc.avatar) : '')}')">${acc.avatar ? '' : esc(acc.name.slice(0, 1))}</span><label class="sb-xbtn">换头像<input type="file" accept="image/*" data-upload="xacc-avatar" hidden></label><button class="sb-xbtn" data-act="xacc-next">换号</button>${host.xAccounts().length > 1 ? '<button class="sb-xbtn" data-act="xacc-del">删号</button>' : ''}</div>
  <button class="sb-xname" data-act="xacc-rename" title="点一下改网名">${esc(acc.name)} <small class="sb-pen">✎</small></button><button class="sb-handle left sb-edit" data-act="edit" data-scope="acc" data-key="handle" data-label="这个号的账号 ID（@ 后面那串）">@${esc((acc.handle || '').replace(/^@/, '') || '点这里填账号')}</button>
  <button class="sb-xbio sb-edit" data-act="edit" data-scope="acc" data-key="bio" data-label="这个号的签名">${esc(acc.bio || '点这里写签名')}</button>
  <div class="sb-xbio sb-dim">TA不知道这是你 · 网名、账号、签名点了就能改</div>
@@ -580,6 +580,7 @@ export function createUI(host) {
   ${host.xAccounts().map(a => `<button data-act="xacc" data-id="${esc(a.id)}">${esc(a.name)}${a.id === acc.id ? ' ✓' : ''}</button>`).join('')}
   <button data-act="xacc-new">＋ 新开一个小号</button>
   <button data-act="xacc-rename">改这个号的网名</button>
+  ${host.xAccounts().length > 1 ? '<button data-act="xacc-del">删掉这个号</button>' : ''}
   <button data-act="xblock">${host.xIBlocked() ? '解除拉黑' : '拉黑TA'}</button>
  </div>` : '';
         return `${head(`<span class="sb-pav sm" style="background-image:url('${esc(him.xavatar)}')">${him.xavatar ? '' : esc((him.xname || him.name).slice(0, 1))}</span><span><b>${esc(him.xname || him.name)}</b><small>你现在是「${esc(acc.name)}」</small></span>`, '<button class="sb-phx" data-act="dmmenu" aria-label="更多">···</button>')}
@@ -627,12 +628,25 @@ export function createUI(host) {
     }
     function pMemoHtml() {
         const st = host.state();
-        return `${head(Wd().memo)}<div class="sb-list">${st.memo.length ? st.memo.map(m => `<div class="sb-memo${m.done ? ' done' : ''}"><span class="sb-ck">${m.done ? '✓' : ''}</span>${esc(m.text)}</div>`).join('') : '<div class="sb-empty">TA还没记要做的事</div>'}</div>`;
+        return `${head(Wd().memo, genBtn('memo', '整理'))}<div class="sb-list">${st.memo.length ? st.memo.map(m => `<div class="sb-memo${m.done ? ' done' : ''}"><span class="sb-ck">${m.done ? '✓' : ''}</span>${esc(m.text)}</div>`).join('') : '<div class="sb-empty">TA还没记要做的事</div>'}</div>`;
+    }
+    // 微博：热搜 + 广场（随便发的、吃瓜、磕 CP），不放账号
+    function weiboHtml() {
+        const st = host.state(), tab = v.wbTab || 'hot';
+        const list = [...st.weibo].reverse();
+        const tabs = `<div class="sb-wbtabs">${[['hot', Wd().hot], ['square', Wd().square]].map(([k, n]) => `<button data-act="wbtab" data-t="${k}" class="${tab === k ? 'on' : ''}">${n}</button>`).join('')}</div>`;
+        const hot = st.hot.length ? `<ol class="sb-hot">${st.hot.map((h, i) => `<li><span class="sb-hn${i < 3 ? ' top' : ''}">${i + 1}</span><span class="sb-hw">${esc(h.word)}</span>${h.tag ? `<span class="sb-ht t-${esc({ 热: 'hot', 新: 'new', 沸: 'boil' }[h.tag] || 'x')}">${esc(h.tag)}</span>` : ''}<span class="sb-hh">${esc(h.heat)}</span></li>`).join('')}</ol>` : `<div class="sb-empty">还没有${Wd().hot}，点右上「刷新」</div>`;
+        const square = list.length ? list.slice(0, v.wbN || 15).map(p => `<article class="sb-post"><div class="sb-pav">${esc(p.who.slice(0, 1))}</div><div class="sb-pmain"><b class="sb-pname">${esc(p.who)}</b> <small class="sb-dim">${esc(p.time || '')}</small><div class="sb-ptext">${nl(p.text)}</div>${p.pics?.length ? `<div class="sb-pics">${p.pics.map(x => `<span>${esc(x)}</span>`).join('')}</div>` : ''}</div></article>`).join('') + (list.length > (v.wbN || 15) ? '<button class="sb-more" data-act="wbmore">再看 15 条</button>' : '') : `<div class="sb-empty">${Wd().square}还是空的，点右上「刷新」</div>`;
+        return `${head(Wd().weibo, genBtn('weibo', '刷新'))}${tabs}<div class="sb-list" data-keep="weibo">${tab === 'hot' ? hot : square}</div>`;
     }
     function pPhotosHtml() {
         const st = host.state();
+        const shots = [...st.photos].reverse();
         const pics = [...st.posts.flatMap(p => p.pics), ...st.xposts.flatMap(p => p.pics), ...host.wechat().filter(m => m.type === 'pic' && m.from === 'him').map(m => m.text)].reverse();
-        return `${head(Wd().photos)}<div class="sb-list"><div class="sb-album">${pics.length ? pics.map(p => `<span>${esc(p)}</span>`).join('') : ''}</div>${pics.length ? '' : '<div class="sb-empty">还没有照片</div>'}</div>`;
+        return `${head(Wd().photos, genBtn('photos', '刷新'))}<div class="sb-list">
+ ${shots.length ? `<div class="sb-album big">${shots.map(p => `<figure><span>${esc(p.desc)}</span>${p.note || p.time ? `<figcaption>${esc([p.note, p.time].filter(Boolean).join(' · '))}</figcaption>` : ''}</figure>`).join('')}</div>` : ''}
+ ${pics.length ? `<div class="sb-cap" style="margin:12px 0 6px">发过的图</div><div class="sb-album">${pics.map(p => `<span>${esc(p)}</span>`).join('')}</div>` : ''}
+ ${shots.length || pics.length ? '' : '<div class="sb-empty">还没有照片，点右上「刷新」</div>'}</div>`;
     }
     function pMusicHtml() { return `${head(Wd().music)}<div class="sb-list">${musicHtml(host.state())}</div>`; }
 
@@ -761,6 +775,13 @@ export function createUI(host) {
             case 'mprev': player.prev(); return;
             case 'mmode': player.mode(); return;
             case 'mlist': v.mlist = !v.mlist; break;
+            case 'wbtab': v.wbTab = b.dataset.t; break;
+            case 'wbmore': v.wbN = (v.wbN || 15) + 15; break;
+            case 'xacc-del': {
+                const a = host.xAccount();
+                if (!await host.confirm(`删掉小号「${a.name}」？这个号的私信、发过的帖子也一起删掉`)) return;
+                host.dropImage(a.avatar); host.dropImage(a.cover); host.deleteXAccount(a.id); v.dmMenu = false; break;
+            }
             case 'xfill-no': host.setCharCfg(c => { c.xAsked = true; }); break;
             case 'mpl': { const m = musicState(); m.active = b.dataset.n; m.idx = 0; v.mlist = true; host.saveSettings(); break; }
             case 'mpl-new': {
