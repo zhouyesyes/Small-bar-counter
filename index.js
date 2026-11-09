@@ -6,7 +6,7 @@ import { getContext } from '../../../extensions.js';
 import * as personas from '../../../personas.js';
 // 世界书：全局选中的书在 world-info.js 里；整个模块导入，按名字取
 import * as wi from '../../../world-info.js';
-import { extractBlock, buildState, guessEra, parseBlock } from './src/core.mjs';
+import { extractBlock, buildState, guessEra, parseBlock, stripNow } from './src/core.mjs';
 import { DEFAULT_PROMPT, buildInjection } from './src/prompt.mjs';
 import { createUI } from './src/ui.mjs';
 import { saveImage, imageUrl, deleteImage } from './src/imgstore.mjs';
@@ -37,6 +37,12 @@ const saveMeta = () => ctx().saveMetadataDebounced?.() ?? ctx().saveMetadata?.()
 const msgId = (m) => `${m.send_date || ''}|${m.swipe_id ?? 0}`;
 const msgAt = (m) => { const t = Date.parse(m.send_date); return Number.isFinite(t) ? t : 0; };
 let cache = null;
+// 备忘录里还没做完的，告诉TA（做完了才会写「完成:」）
+function memoNote(memo) {
+    const left = (memo || []).filter(m => !m.done).map(m => '- ' + m.text);
+    return left.length ? `{{char}}备忘录里还没做完的事：\n${left.join('\n')}\n做完了的，在状态段里写「完成: 那件事」（照原话）；不打算做了也可以写「完成:」划掉。` : '';
+}
+
 // 谁认识谁，告诉TA：别让她的朋友跑去TA的动态下面留言
 function circleNote(circle) {
     const g = { her: [], him: [], both: [] };
@@ -48,13 +54,22 @@ function circleNote(circle) {
 
 function state() {
     if (cache) return cache;
+    cache = stateWithout(null);
+    return cache;
+}
+// except：再多剪掉这一楼的此刻（重新生成时，被换掉的那版里的备忘不该再给TA看）
+function stateWithout(except) {
     const chat = ctx().chat || [];
     const fromChat = chat.filter(m => !m.is_user && m.extra?.small_bar).map((m, i) => ({ id: msgId(m) + '#' + i, raw: m.extra.small_bar, at: msgAt(m) }));
     // 不在正文里写的：小手机回消息时顺带写的、她点按钮让TA写的，存在这个聊天的数据里
     const extra = (ctx().chatMetadata?.[META]?.blocks || []).map(b => ({ id: b.id, raw: b.raw, at: b.at }));
-    cache = buildState([...fromChat, ...extra].sort((a, b) => (a.at || 0) - (b.at || 0)));
-    Object.assign(cache.circle, ctx().chatMetadata?.[META]?.circle || {}); // 她在通讯录里改过的圈子
-    return cache;
+    // 此刻的几个版本（重新生成出来的）：只用选中的那一版，别的版本把此刻那几项剪掉
+    const off = new Set(except ? [except] : []);
+    for (const g of Object.values(ctx().chatMetadata?.[META]?.nowVer || {})) g.ids.forEach((id, i) => { if (i !== g.pick) off.add(id); });
+    const all = [...fromChat, ...extra].map(b => (off.has(b.id) ? { ...b, raw: stripNow(b.raw) } : b));
+    const st = buildState(all.sort((a, b) => (a.at || 0) - (b.at || 0)));
+    Object.assign(st.circle, ctx().chatMetadata?.[META]?.circle || {}); // 她在通讯录里改过的圈子
+    return st;
 }
 const dirty = () => { cache = null; };
 
@@ -196,9 +211,10 @@ function addBlock(raw) {
     raw = String(raw || '').trim(); if (!raw) return false;
     applyProfile(raw);
     const m = meta(); m.blocks ??= [];
-    m.blocks.push({ id: newId(), raw, at: Date.now() });
+    const id = newId();
+    m.blocks.push({ id, raw, at: Date.now() });
     saveMeta(); dirty(); refreshInject();
-    return true;
+    return id;
 }
 
 // ---------- 人 ----------
@@ -383,6 +399,7 @@ function refreshInject() {
         st0.blockedMe && m0.myReq?.text && !m0.myReq.done ? `{{user}} 被拉黑后给你发了微信好友申请，验证消息：「${m0.myReq.text}」。如果你愿意通过，在状态段里写「通过好友申请: 是」；不想通过就不写。` : '',
         m0.wxBlock?.him ? '（{{user}} 在微信上把{{char}}拉黑了：你发的微信她收不到。）' : '',
         circleNote(st0.circle),
+        memoNote(st0.memo),
     ].filter(Boolean).join('\n');
     const text = buildInjection({ prompt: s.prompt, coverTags: tags, state: state(), wechatTail: tail, myComments, waiting, wxNote: [wxNote, myM && `{{user}} 最近发的朋友圈（你刷得到）：\n${myM}`].filter(Boolean).join('\n\n'), saveMode: s.saveMode, channel: era() === 'modern' ? '在手机上的聊天' : '的书信往来' });
     // 1 = 放在聊天里（IN_CHAT），深度 0 = 最后面，0 = 系统身份
@@ -400,6 +417,9 @@ const host = {
     ...xHost,
     saveSettings,
     replyMode, replyCtx, worldInfo, testOwnApi, hasHelper, addBlock, extractBlock,
+    // 此刻换一版：meta.nowVer 改完以后要重算
+    nowChanged: () => { saveMeta(); dirty(); refreshInject(); },
+    memoNote: except => memoNote((except ? stateWithout(except) : state()).memo),
     him, me, charCard, era, guessedEra, storyTail, ask, hasChar,
     countTokens: async t => { if (!t) return 0; const c = ctx(); try { if (c.getTokenCountAsync) return await c.getTokenCountAsync(t); } catch { /* 算不了就估 */ } return Math.ceil(t.length / 1.6); },
     defaultPrompt: () => DEFAULT_PROMPT,

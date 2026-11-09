@@ -140,6 +140,15 @@ export function createUI(host) {
         };
         root.addEventListener('pointerup', endDrag);
         root.addEventListener('pointercancel', endDrag);
+        // 此刻那一页左右滑：换版本（重新生成过才有）
+        let sw = null;
+        root.addEventListener('pointerdown', e => { if (e.target.closest?.('.sb-nowpad') && !e.target.closest('button')) sw = { x: e.clientX, y: e.clientY, id: e.pointerId }; });
+        root.addEventListener('pointerup', e => {
+            if (!sw || e.pointerId !== sw.id) return;
+            const dx = e.clientX - sw.x, dy = e.clientY - sw.y; sw = null;
+            if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) nowSwitch(dx < 0 ? 1 : -1);
+        });
+        root.addEventListener('pointercancel', () => { sw = null; });
         // 长按小手机里的气泡：编辑 / 删除
         let timer = 0;
         root.addEventListener('pointerdown', e => {
@@ -330,18 +339,26 @@ export function createUI(host) {
     const genBtn = (kind, label) => `<button class="sb-gen" data-act="gen" data-kind="${kind}" ${v.busy ? 'disabled' : ''}>${v.busy === kind ? '在写……' : label}</button>`;
     async function generate(kind) {
         if (v.busy) return;
-        // 重新生成此刻：写一份新的，盖掉现在这份（被盖掉的那页不进此刻簿）
-        const redoOf = kind === 'now-redo' ? host.state().nowLog.slice(-1)[0]?.id : null;
+        // 重新生成此刻：再写一版，几版都留着，左右滑 / 点 ‹ › 换着看（没选中的那几版不算数）
+        const redoOf = kind === 'now-redo' ? curNowId() : null;
         if (kind === 'now-redo') kind = 'now';
         v.busy = kind; render();
         try {
-            const rule = MANUAL[kind];
+            let rule = MANUAL[kind];
+            if (['now', 'memo', 'all'].includes(kind)) rule += '\n' + host.memoNote(redoOf);
             const msgs = [{ role: 'system', content: await buildSys('', rule, []) }, { role: 'user', content: '（现在写）' }];
             const out = String(await host.ask(msgs, `【暂停正文，这一次不写正文】\n${rule}`) || '');
             let raw = host.extractBlock(out).raw;
             if (!raw && /[:：]/.test(out)) raw = out; // 没包 <!--SB 也认
-            if (!host.addBlock(raw)) throw new Error('TA没写出来');
-            if (redoOf) { const m = host.meta(); m.hidden ??= {}; m.hidden[redoOf] = true; host.saveMeta(); }
+            const id = host.addBlock(raw);
+            if (!id) throw new Error('TA没写出来');
+            if (redoOf) {
+                const m = host.meta(); m.nowVer ??= {};
+                const key = Object.keys(m.nowVer).find(k => m.nowVer[k].ids.includes(redoOf)) || redoOf;
+                const g = m.nowVer[key] ??= { ids: [redoOf], pick: 0 };
+                g.ids.push(id); g.pick = g.ids.length - 1; v.flip = false;
+                host.nowChanged();
+            }
             host.toast('success', '写好了');
         } catch (err) { host.toast('error', '没写成：' + (err?.message || err)); }
         finally { v.busy = false; render(); }
@@ -396,12 +413,25 @@ export function createUI(host) {
         catch (err) { host.toast('error', err?.message || '搜不了'); }
         finally { v.msearching = false; render(); root.querySelector('.sb-mres')?.scrollIntoView({ block: 'nearest' }); }
     }
+    // 现在显示的这一页此刻是哪一楼的；它有几个版本
+    const curNowId = () => host.state().nowLog.slice(-1)[0]?.id || null;
+    function nowGroup() {
+        const id = curNowId(), all = host.meta().nowVer || {};
+        const key = id && Object.keys(all).find(k => all[k].ids.includes(id));
+        return key ? all[key] : null;
+    }
+    function nowSwitch(d) {
+        const g = nowGroup(); if (!g || g.ids.length < 2) return;
+        const i = g.pick + d; if (i < 0 || i >= g.ids.length) return;
+        g.pick = i; v.flip = false; host.nowChanged(); render();
+    }
     function nowHtml(st) {
         const n = st.now;
         const row = (k, val, extra = '') => val ? `<div class="sb-k">${k}</div><div>${extra}${esc(val)}</div>` : '';
         const has = n.where || n.wear || n.want || n.voice;
+        const g = nowGroup(), ver = g && g.ids.length > 1 ? `<span class="sb-nowver"><button data-act="nowver" data-d="-1" ${g.pick ? '' : 'disabled'} aria-label="上一版">‹</button>${g.pick + 1} / ${g.ids.length}<button data-act="nowver" data-d="1" ${g.pick < g.ids.length - 1 ? '' : 'disabled'} aria-label="下一版">›</button></span>` : '';
         return `<div class="sb-pad sb-nowpad">
- <div class="sb-nowtop">${st.nowLog.length ? genBtn('now-redo', '重新生成') : ''}${genBtn('now', '刷新此刻')}${st.nowLog.length ? `<button class="sb-bookbtn" data-act="nowbook" title="以前的此刻">${Wd().book}</button>` : ''}</div>
+ <div class="sb-nowtop">${ver}${st.nowLog.length ? genBtn('now-redo', '重新生成') : ''}${genBtn('now', '刷新此刻')}${st.nowLog.length ? `<button class="sb-bookbtn" data-act="nowbook" title="以前的此刻">${Wd().book}</button>` : ''}</div>
  ${has ? `<div class="sb-grid">${row('在哪', n.where)}${row('穿着', n.wear)}${row('想要', n.want, '<span class="sb-heart">♥</span>')}</div>` : '<div class="sb-empty">还没有此刻的状态。<br>TA下一次回复后就会有。</div>'}
  ${n.voice ? `<div class="sb-voice"><div><span class="sb-k">${v.flip ? '心声 · 背面' : '心声'}</span><br>${esc(v.flip && n.voiceBack ? n.voiceBack : n.voice)}</div>${n.voiceBack ? '<button class="sb-flip" data-act="flip">翻面</button>' : ''}</div>` : ''}
  <div class="sb-cap sb-row"><span>memo · 备忘录</span><span>${st.memo.length} / 15</span></div>
@@ -946,6 +976,7 @@ export function createUI(host) {
             case 'mprev': player.prev(); return;
             case 'mmode': player.mode(); return;
             case 'mlist': v.mlist = !v.mlist; break;
+            case 'nowver': nowSwitch(+b.dataset.d); return;
             case 'crmenu': v.crmenu = v.crmenu === b.dataset.k ? '' : b.dataset.k; break;
             case 'wxblock': {
                 const k = b.dataset.k; meta.wxBlock ??= {}; meta.wxBlockAt ??= {};

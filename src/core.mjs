@@ -125,6 +125,15 @@ export function buildState(msgs) {
     return st;
 }
 
+// 此刻那几项：重新生成此刻时，没被选中的那一版要把这些剪掉（别的照留，比如正文那一楼里的动态）
+export const NOW_KEYS = ['时间', '天气', '在哪', '地点', '穿着', '想要', '心声', '心声背面', '背面', '备忘', '备忘+', '备忘✓', '完成'];
+export function stripNow(raw) {
+    return String(raw || '').split(/\r?\n/).filter(line => {
+        const m = line.trim().match(/^[-*·\s]*([^:：]{1,8})\s*[:：]/);
+        return !(m && NOW_KEYS.includes(m[1].trim()));
+    }).join('\n');
+}
+
 // 「她 / TA / 都认识」→ her / him / both；认不出就空
 export function circleWord(w) {
     const s = String(w || '').trim();
