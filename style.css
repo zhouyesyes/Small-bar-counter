@@ -522,7 +522,7 @@
 #sb-root .sb-pdots{background:var(--sb-soft)!important;border-radius:4px;padding:0 8px!important;font-size:14px!important;color:var(--wx-name)!important;letter-spacing:1px;line-height:20px}
 #sb-root .sb-pbtns{position:relative}
 #sb-root .sb-pop{position:absolute;right:calc(100% + 8px);top:50%;transform:translateY(-50%);display:flex;align-items:center;background:#4c4c4c;border-radius:6px;padding:0 4px;white-space:nowrap;z-index:2}
-#sb-root .sb-pop button{display:flex;align-items:center;gap:4px;color:#fff!important;font-size:13px!important;padding:7px 10px!important}
+#sb-root .sb-pop button{display:flex;align-items:center;gap:4px;color:#fff!important;font-size:13px!important;padding:7px 6px!important}
 #sb-root .sb-pop svg{width:15px;height:15px;fill:none;stroke:#fff;stroke-width:1.6}
 #sb-root .sb-pop i{width:1px;height:18px;background:rgba(255,255,255,.2)}
 #sb-root .sb-mstate .sb-link{font-size:10.5px;margin:0 0 0 6px}

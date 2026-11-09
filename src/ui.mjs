@@ -323,7 +323,7 @@ export function createUI(host) {
   <div class="sb-ptext">${nl(p.text)}</div>
   ${p.pics?.length ? `<div class="sb-pics">${p.pics.map(x => `<span>${esc(x)}</span>`).join('')}</div>` : ''}
   <div class="sb-pfoot"><span>${esc([p.time, p.place].filter(Boolean).join(' · '))}</span>
-   <span class="sb-pbtns">${v.pmenu === p.id ? `<span class="sb-pop"><button data-act="like" data-post="${esc(p.id)}">${svgS('likeline')}${meta.likes?.[p.id] ? '取消' : '赞'}</button><i></i><button data-act="ccomment" data-post="${esc(p.id)}">${svgS('comment')}评论</button><i></i><button data-act="pedit" data-post="${esc(p.id)}">编辑</button><i></i><button data-act="pdel" data-post="${esc(p.id)}">删</button></span>` : ''}<button class="sb-pdots" data-act="pmenu" data-post="${esc(p.id)}" aria-label="更多">··</button></span></div>
+   <span class="sb-pbtns">${v.pmenu === p.id ? `<span class="sb-pop"><button data-act="like" data-post="${esc(p.id)}">${svgS('likeline')}${meta.likes?.[p.id] ? '取消' : '赞'}</button><i></i><button data-act="ccomment" data-post="${esc(p.id)}">${svgS('comment')}评论</button><i></i><button data-act="pinput" data-post="${esc(p.id)}">写进正文</button><i></i><button data-act="pedit" data-post="${esc(p.id)}">编辑</button><i></i><button data-act="pdel" data-post="${esc(p.id)}">删</button></span>` : ''}<button class="sb-pdots" data-act="pmenu" data-post="${esc(p.id)}" aria-label="更多">··</button></span></div>
   ${commentsHtml(p, interactive)}
  </div>
 </article>`;
@@ -534,7 +534,7 @@ export function createUI(host) {
   <div class="sb-lfrom">${esc(g.time || '')} · ${g.from === 'me' ? L.me : L.him}</div>${g.items.map(line).join('')}
   ${g.from === 'him' ? `<div class="sb-lsign">—— ${esc(him.penName || him.name)}</div>` : ''}</div>`).join('');
         const pend = host.wechat().filter(m => m.pending).length;
-        const menu = v.menuFor ? `<div class="sb-sheet"><button data-act="medit" data-id="${esc(v.menuFor)}">改一改</button><button data-act="mdel" data-id="${esc(v.menuFor)}">划掉</button><button data-act="mcancel">算了</button></div>` : '';
+        const menu = v.menuFor ? `<div class="sb-sheet"><button data-act="minput" data-id="${esc(v.menuFor)}">写进正文</button><button data-act="medit" data-id="${esc(v.menuFor)}">改一改</button><button data-act="mdel" data-id="${esc(v.menuFor)}">划掉</button><button data-act="mcancel">算了</button></div>` : '';
         return top + `<div class="sb-msgs sb-letters" data-keep="msgs">${papers || `<div class="sb-empty sm">还没有往来的信。给${esc(him.remark || him.name)}写一封吧。</div>`}
   ${pend ? `<div class="sb-pendnote">${L.pend.replace('{n}', pend)}</div>` : ''}
   ${v.busy ? '<div class="sb-typing">TA在回信……</div>' : ''}</div>
@@ -589,7 +589,7 @@ export function createUI(host) {
         const blockedMe = host.state().blockedMe, iBlocked = host.meta().wxBlock?.him, req = host.meta().myReq;
         const banner = iBlocked ? `<div class="sb-wxban">你把TA拉黑了，TA发的消息你收不到 <button class="sb-link" data-act="wxblock" data-k="him">解除拉黑</button></div>`
             : blockedMe ? `<div class="sb-wxban">消息已发出，但被对方拒收了。${req?.text && !req.done ? '好友申请已发送，等TA通过' : '<button class="sb-link" data-act="wxreq">发送朋友验证</button>'}</div>` : '';
-        const menu = v.menuFor ? `<div class="sb-sheet"><button data-act="medit" data-id="${esc(v.menuFor)}">编辑</button><button data-act="mdel" data-id="${esc(v.menuFor)}">删除</button><button data-act="mcancel">取消</button></div>` : '';
+        const menu = v.menuFor ? `<div class="sb-sheet"><button data-act="minput" data-id="${esc(v.menuFor)}">写进正文</button><button data-act="medit" data-id="${esc(v.menuFor)}">编辑</button><button data-act="mdel" data-id="${esc(v.menuFor)}">删除</button><button data-act="mcancel">取消</button></div>` : '';
         return `${head(`<span class="sb-pav sm" style="background-image:url('${esc(him.avatar)}')"></span><span><b>${esc(him.remark || him.name)}</b><small>${v.busy ? '对方正在输入…' : Wd().online}</small></span>`, '<button class="sb-phx" data-act="phone-go" data-to="wx-contacts" aria-label="联系人">≡</button>')}
  <div class="sb-msgs sb-wxchat" data-keep="msgs">${rows || '<div class="sb-empty sm">还没聊过。说点什么吧。</div>'}
   ${banner}
@@ -820,7 +820,8 @@ export function createUI(host) {
         return `${head(Wd().set)}<div class="sb-slist">
  <div class="sb-sh">资料（各个平台上显示的，都在这里改）</div><div class="sb-sgrp">${row('TA的资料', host.him().name, 'set-him')}${row('我的资料', host.me().name, 'set-me')}</div>
  <div class="sb-sh">主页</div><div class="sb-sgrp">${row('抽屉的头图', modeName, 'set-cover')}</div>
- <div class="sb-sh">API</div><div class="sb-sgrp">${row('小手机用哪个', apiName, 'set-api')}${row('TA什么时候回', host.settings().phoneWhen === 'next' ? '下一轮正文顺带回' : '马上回', 'set-when')}${row('回复时带什么', host.replyMode() === 'full' ? '整套（预设 + 世界书 + 剧情）' : '自己挑', 'set-reply')}${toggle('省一点', 'saveMode', s.saveMode, '正文只顺带写时间、天气、在哪、心声；小手机回消息时不顺带更新动态、日记、此刻')}</div>
+ <div class="sb-sh">API</div><div class="sb-sgrp">${row('小手机用哪个', apiName, 'set-api')}${row('TA什么时候回', host.settings().phoneWhen === 'next' ? '下一轮正文顺带回' : '马上回', 'set-when')}${row('回复时带什么', host.replyMode() === 'full' ? '整套（预设 + 世界书 + 剧情）' : '自己挑', 'set-reply')}${toggle('省一点', 'saveMode', s.saveMode, '正文只顺带写时间、天气、在哪、心声；小手机回消息时不顺带更新动态、日记、此刻')}
+  <label class="sb-srow"><span>正文带几件手机里的事<small>最近的微信、你的朋友圈、留言，TA看情况在正文里提一笔；0 就是不带</small></span><input type="number" min="0" max="10" class="sb-num" data-set="storyPhoneN" value="${Number(s.storyPhoneN ?? 2)}"></label></div>
  <div class="sb-sh">TA</div><div class="sb-sgrp">
   <label class="sb-srow"><span>时代</span><select data-cset="era">${[['auto', eraName.startsWith('自动') ? eraName : '自动'], ['modern', '现代'], ['minguo', '民国'], ['ancient', '古风']].map(([k, n]) => `<option value="${k}" ${(c.era || 'auto') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
   ${row('提示词', s.prompt ? '改过' : '默认', 'set-prompt')}
@@ -1153,6 +1154,8 @@ export function createUI(host) {
             }
             case 'mdel': host.deleteWechat(b.dataset.id); v.menuFor = ''; break;
             case 'mcancel': v.menuFor = ''; break;
+            case 'minput': { const m = host.wechat().find(x => x.id === b.dataset.id); v.menuFor = ''; if (m) toInput(msgLine(m)); break; }
+            case 'pinput': { const p = allPosts().find(x => x.id === b.dataset.post); v.pmenu = ''; if (p) toInput(postLine(p)); break; }
             case 'cover-mode': host.setCharCfg(c => { c.cover = { ...(c.cover || {}), mode: b.dataset.mode }; }); break;
             case 'cover-clear': host.dropImage(host.charCfg().cover?.fixed); host.setCharCfg(c => { c.cover.fixed = ''; }); break;
             case 'cover-del': host.dropImage(host.charCfg().cover?.images?.[Number(b.dataset.i)]?.src); host.setCharCfg(c => { c.cover.images.splice(Number(b.dataset.i), 1); }); break;
@@ -1344,6 +1347,26 @@ export function createUI(host) {
         }
         if (msgs[msgs.length - 1].role !== 'user') msgs.push({ role: 'user', content: '（她在等你回）' });
         return msgs;
+    }
+
+    // ---------- 写进正文（她 11/9 选的 B）：把手机里这件事写成一句旁白，放进酒馆输入框，她改了再发 ----------
+    function msgLine(m) {
+        const him = host.him(), modern = host.era() === 'modern';
+        const kind = { voice: '一条语音', pic: '一张图片', sticker: '一个表情', money: '一笔转账' }[m.type];
+        const what = m.type === 'text' ? `「${m.text}」` : `${kind}${m.text ? `（${m.text}）` : ''}${m.amount ? ' ¥' + m.amount : ''}`;
+        if (!modern) return m.from === 'me' ? `（我给${him.name}写了封信：${what}）` : `（${him.name}来信：${what}）`;
+        return m.from === 'me' ? `（我在微信上给${him.name}发：${what}）` : `（手机响了，${him.name}发来微信：${what}）`;
+    }
+    function postLine(p) {
+        const him = host.him(), w = Wd().moments;
+        const pic = p.pics?.length ? `，配图是${p.pics.join('、')}` : '';
+        const ped = host.meta().pedit?.[p.id]; const text = ped?.text ?? p.text;
+        if (p.mine) return `（我发了条${w}：「${text}」${pic}）`;
+        return `（我刷到${p.who || him.name}发的${w}：「${text}」${pic}）`;
+    }
+    function toInput(line) {
+        if (host.toInput(line)) host.toast('success', '写进输入框了，改一改再发');
+        else host.toast('error', '找不到酒馆的输入框');
     }
 
     // ---------- 动态留言 ----------

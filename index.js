@@ -20,7 +20,7 @@ const ctx = () => getContext();
 function settings() {
     const c = ctx();
     const s = (c.extensionSettings[NS] ??= {});
-    s.enabled ??= true; s.cat ??= true; s.theme ??= 'auto'; s.api ??= 'main'; s.wxMemory ??= 50; s.catTop ??= 46;
+    s.enabled ??= true; s.cat ??= true; s.theme ??= 'auto'; s.api ??= 'main'; s.wxMemory ??= 50; s.storyPhoneN ??= 2; s.catTop ??= 46;
     s.chars ??= {}; s.me ??= {};
     return s;
 }
@@ -363,6 +363,24 @@ async function testOwnApi() {
 // 她传的图只存在这台手机的浏览器里（她 11/9 说的：不要存服务器），见 src/imgstore.mjs
 const img = src => imageUrl(src, () => { ui.render(); });
 
+// ---------- 正文里带上手机里最近的事（她 11/9 选的 C：条数她定，0 = 不带） ----------
+// 只挑TA知道的：微信 / 书信往来、她发的朋友圈、她和TA的动态下面的留言
+function phoneEvents(n) {
+    if (!(n > 0)) return '';
+    const H = '{{char}}', U = '{{user}}', who = w => (w === 'me' ? U : w === 'him' ? H : w);
+    const word = era() === 'modern' ? '微信' : '信';
+    const kind = { voice: '语音', pic: '图片', sticker: '表情', money: '转账' };
+    const out = [];
+    for (const m of wechat()) if (m.type !== 'note' && !m.pending) out.push({ at: m.at || 0, t: `${word}　${m.from === 'me' ? U : H}：${m.type === 'text' ? m.text : `[${kind[m.type] || m.type}]${m.text || ''}${m.amount ? ' ¥' + m.amount : ''}`}` });
+    for (const p of meta().myMoments || []) out.push({ at: p.at || 0, t: `${U} 发了朋友圈：${p.text}${p.pics?.length ? `（配图：${p.pics.join('、')}）` : ''}` });
+    const st = state(), posts = new Map([...st.posts.map(p => [p.id, H]), ...(meta().myMoments || []).map(p => [p.id, U]), ...st.moments.map(p => [p.id, p.who])]);
+    for (const [id, list] of Object.entries(meta().comments || {})) {
+        const owner = posts.get(id); if (!owner) continue;
+        for (const c of list) out.push({ at: c.at || 0, t: `${owner}的朋友圈下面，${who(c.who)}${c.to ? ' 回复 ' + who(c.to) : ''}：${c.text}` });
+    }
+    return out.sort((a, b) => a.at - b.at).slice(-n).map(x => '- ' + x.t).join('\n');
+}
+
 // ---------- 注入提示词 ----------
 function refreshInject() {
     const c = ctx(), s = settings();
@@ -390,7 +408,9 @@ function refreshInject() {
         m0.wxBlock?.him ? '（{{user}} 在微信上把{{char}}拉黑了：你发的微信她收不到。）' : '',
         memoNote(st0.memo),
     ].filter(Boolean).join('\n');
-    const text = buildInjection({ prompt: s.prompt, coverTags: tags, state: state(), wechatTail: tail, myComments, waiting, wxNote: [wxNote, myM && `{{user}} 最近发的朋友圈（你刷得到）：\n${myM}`].filter(Boolean).join('\n\n'), saveMode: s.saveMode, channel: era() === 'modern' ? '在手机上的聊天' : '的书信往来' });
+    const events = phoneEvents(Number(s.storyPhoneN ?? 2));
+    const evNote = events ? `手机上最近发生的（从早到晚）：\n${events}\n正文里可以自然地带一笔（看了眼手机、想起那条朋友圈、顺手回一句），也可以不提，看剧情合不合适，别硬塞。` : '';
+    const text = buildInjection({ prompt: s.prompt, coverTags: tags, state: state(), wechatTail: tail, myComments, waiting, wxNote: [wxNote, myM && `{{user}} 最近发的朋友圈（你刷得到）：\n${myM}`, evNote].filter(Boolean).join('\n\n'), saveMode: s.saveMode, channel: era() === 'modern' ? '在手机上的聊天' : '的书信往来' });
     // 1 = 放在聊天里（IN_CHAT），深度 0 = 最后面，0 = 系统身份
     c.setExtensionPrompt(INJECT_KEY, text, 1, 0, false, 0);
 }
@@ -408,6 +428,13 @@ const host = {
     replyMode, replyCtx, worldInfo, testOwnApi, hasHelper, addBlock, extractBlock,
     // 此刻换一版：meta.nowVer 改完以后要重算
     nowChanged: () => { saveMeta(); dirty(); refreshInject(); },
+    // 把一句话放进酒馆的输入框（接在已经写的后面），她改了再发
+    toInput: text => {
+        const ta = document.getElementById('send_textarea'); if (!ta) return false;
+        ta.value = ta.value.trim() ? ta.value.replace(/\s+$/, '') + '\n' + text : text;
+        ta.dispatchEvent(new Event('input', { bubbles: true }));
+        return true;
+    },
     memoNote: except => memoNote((except ? stateWithout(except) : state()).memo),
     him, me, charCard, era, guessedEra, storyTail, ask, hasChar,
     countTokens: async t => { if (!t) return 0; const c = ctx(); try { if (c.getTokenCountAsync) return await c.getTokenCountAsync(t); } catch { /* 算不了就估 */ } return Math.ceil(t.length / 1.6); },
