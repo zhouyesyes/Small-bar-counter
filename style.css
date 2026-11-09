@@ -534,3 +534,9 @@
 #sb-root .sb-mrow .sb-b.rej::after{content:"!";position:absolute;left:-22px;top:50%;transform:translateY(-50%);width:16px;height:16px;border-radius:50%;background:#fa5151;color:#fff;font-size:11px;line-height:16px;text-align:center;font-weight:700}
 /* 头像统一用圆的（她 11/9 说的） */
 #sb-root .sb-mav,#sb-root .sb-wav,#sb-root .sb-wbav{border-radius:50%!important}
+/* 她发朋友圈 */
+#sb-root .sb-camera{width:26px;height:22px;border-radius:12px;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center}
+#sb-root .sb-camera svg{width:15px;height:15px;fill:none;stroke:#fff;stroke-width:1.7;stroke-linejoin:round}
+#sb-root .sb-mcomp{margin:4px 14px 10px;padding:10px;border:1px solid var(--sb-line);border-radius:10px}
+#sb-root .sb-mcomp textarea{display:block;width:100%;resize:none;font-size:14px!important;min-height:70px}
+#sb-root .sb-mcomp input{display:block;width:100%;margin-top:6px;font-size:12.5px!important}

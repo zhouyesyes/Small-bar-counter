@@ -356,6 +356,8 @@ function refreshInject() {
     const tags = cover?.mode === 'pick' ? (cover.images || []).map(x => x.tag).filter(Boolean) : [];
     const N = Number(s.wxMemory ?? 50);
     const tail = N > 0 ? wechat().filter(m => !m.pending && m.type !== 'note').slice(-Math.min(N, 30)).map(m => `${m.from === 'me' ? '{{user}}' : '{{char}}'}：${m.type === 'text' ? m.text : `[${{ voice: '语音', pic: '图片', sticker: '表情', money: '转账' }[m.type]}]${m.text || ''}${m.amount ? ' ¥' + m.amount : ''}`}`).join('\n') : '';
+    // 她自己发的朋友圈：TA刷得到
+    const myM = (meta().myMoments || []).slice(-2).map(p => `- ${p.text}${p.pics?.length ? `（配图：${p.pics.join('、')}）` : ''}`).join('\n');
     const mc = meta().comments || {};
     // 只带还没被回的：那条动态下最后一句是她说的
     const myComments = Object.values(mc).filter(list => list.length && list[list.length - 1].who === 'me').map(list => '- ' + list[list.length - 1].text).slice(-3).join('\n');
@@ -371,7 +373,7 @@ function refreshInject() {
         st0.blockedMe && m0.myReq?.text && !m0.myReq.done ? `{{user}} 被拉黑后给你发了微信好友申请，验证消息：「${m0.myReq.text}」。如果你愿意通过，在状态段里写「通过好友申请: 是」；不想通过就不写。` : '',
         m0.wxBlock?.him ? '（{{user}} 在微信上把{{char}}拉黑了：你发的微信她收不到。）' : '',
     ].filter(Boolean).join('\n');
-    const text = buildInjection({ prompt: s.prompt, coverTags: tags, state: state(), wechatTail: tail, myComments, waiting, wxNote, saveMode: s.saveMode, channel: era() === 'modern' ? '在手机上的聊天' : '的书信往来' });
+    const text = buildInjection({ prompt: s.prompt, coverTags: tags, state: state(), wechatTail: tail, myComments, waiting, wxNote: [wxNote, myM && `{{user}} 最近发的朋友圈（你刷得到）：\n${myM}`].filter(Boolean).join('\n\n'), saveMode: s.saveMode, channel: era() === 'modern' ? '在手机上的聊天' : '的书信往来' });
     // 1 = 放在聊天里（IN_CHAT），深度 0 = 最后面，0 = 系统身份
     c.setExtensionPrompt(INJECT_KEY, text, 1, 0, false, 0);
 }

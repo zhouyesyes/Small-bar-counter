@@ -90,7 +90,10 @@ export function createUI(host) {
         root.addEventListener('change', onChange);
         // 评论框：跟着字多自动变高；打到一半的字记着，重画也不丢
         root.addEventListener('input', e => {
-            const t = e.target; if (!t.matches?.('[data-cin]')) return;
+            const t = e.target;
+            if (t.matches?.('[data-mtext]')) { v.mdraft = t.value; return; }
+            if (t.matches?.('[data-mpics]')) { v.mpicsDraft = t.value; return; }
+            if (!t.matches?.('[data-cin]')) return;
             t.style.height = 'auto'; t.style.height = Math.min(140, t.scrollHeight) + 'px';
             (v.cdraft ??= {})[t.dataset.cin] = t.value;
         });
@@ -268,7 +271,7 @@ export function createUI(host) {
         const me = host.me().name, him = host.him().name;
         const nameOf = w => (w === 'me' ? me : w === 'him' ? him : w);
         const npc = host.state().npcComments.filter(c => c.post === post.id).map(c => ({ id: c.id, who: c.who, text: c.text, at: c.at, src: 'npc' }));
-        const mine = (meta.comments?.[post.id] || []).map((c, i) => ({ id: c.id || post.id + '#c' + i, who: nameOf(c.who), to: c.to ? nameOf(c.to) : (c.who === 'him' ? me : ''), text: c.text, at: c.at, src: 'mine', i }));
+        const mine = (meta.comments?.[post.id] || []).map((c, i) => ({ id: c.id || post.id + '#c' + i, who: nameOf(c.who), to: c.to !== undefined ? (c.to ? nameOf(c.to) : '') : (c.who === 'him' ? me : ''), text: c.text, at: c.at, src: 'mine', i }));
         const rep = host.repliesFor(post.id).map((r, i) => ({ id: r.id || post.id + '#r' + i, who: him, to: me, text: r.text, at: r.at, src: 'npc' }));
         return [...npc, ...mine, ...rep].filter(c => !ed[c.id]?.deleted).map(c => ({ ...c, text: ed[c.id]?.text ?? c.text })).sort((a, b) => (a.at || 0) - (b.at || 0));
     }
@@ -301,13 +304,13 @@ export function createUI(host) {
     }
     function postHtml(p, him, interactive = true) {
         p.author = p.who || '';
-        const who = p.who || him.name, isHim = !p.who;
+        const who = p.who || him.name, isHim = !p.who, isMe = !!p.mine;
         const meta = host.meta();
         const ped = meta.pedit?.[p.id];
         if (ped?.deleted) return '';
         if (ped?.text != null) p = { ...p, text: ped.text };
         return `<article class="sb-post${isHim ? ' him' : ''}">
- <div class="sb-pav" style="background-image:url('${esc(isHim ? him.avatar : '')}')">${isHim ? '' : esc(who.slice(0, 1))}</div>
+ <div class="sb-pav" style="background-image:url('${esc(isHim ? him.avatar : isMe ? host.me().avatar : '')}')">${isHim || isMe ? '' : esc(who.slice(0, 1))}</div>
  <div class="sb-pmain">
   <b class="sb-pname">${esc(who)}</b>
   <div class="sb-ptext">${nl(p.text)}</div>
@@ -590,11 +593,17 @@ export function createUI(host) {
     }
     function wxMomentsHtml() {
         const st = host.state(), him = host.him(), hidden = host.meta().hidden || {};
-        const all = [...st.posts.filter(p => !hidden[p.id]), ...st.moments].sort((a, b) => (b.at || 0) - (a.at || 0));
+        const all = [...st.posts.filter(p => !hidden[p.id]), ...st.moments, ...myMoments()].sort((a, b) => (b.at || 0) - (a.at || 0));
         const me = host.me();
+        const compose = v.mcompose ? `<div class="sb-mcomp">
+   <textarea data-mtext rows="3" placeholder="这一刻的想法…">${esc(v.mdraft || '')}</textarea>
+   <input data-mpics placeholder="配图：写画面描述，几张用逗号隔开（可以空着）" value="${esc(v.mpicsDraft || '')}">
+   <div class="sb-cbtns"><button data-act="mpost-x">取消</button><button data-act="mpost-go">发表</button><button data-act="mpost-go" data-react="1" ${v.busy ? 'disabled' : ''}>发表并等大家评论</button></div>
+  </div>` : '';
         return `<div class="sb-wxfeed" data-keep="moments">
-  <div class="sb-wcover ${sideCover('coverWx').cls}" style="${sideCover('coverWx').style}"><button class="sb-bk light" data-act="phone-back">‹</button><span class="sb-wcovtop">${genBtn('moments', '刷新')}${coverBtn('coverWx')}</span><span class="sb-wme"><button class="sb-edit" data-act="edit" data-scope="me" data-key="name" data-label="你在朋友圈里的名字"><b>${esc(me.name)}</b></button><label class="sb-wav" style="background-image:url('${esc(me.avatar)}')" title="点一下换头像"><input type="file" accept="image/*" data-upload="me-avatar" hidden></label></span></div>
+  <div class="sb-wcover ${sideCover('coverWx').cls}" style="${sideCover('coverWx').style}"><button class="sb-bk light" data-act="phone-back">‹</button><span class="sb-wcovtop"><button class="sb-camera" data-act="mpost" aria-label="发朋友圈">${svgS('camera')}</button>${genBtn('moments', '刷新')}${coverBtn('coverWx')}</span><span class="sb-wme"><button class="sb-edit" data-act="edit" data-scope="me" data-key="name" data-label="你在朋友圈里的名字"><b>${esc(me.name)}</b></button><label class="sb-wav" style="background-image:url('${esc(me.avatar)}')" title="点一下换头像"><input type="file" accept="image/*" data-upload="me-avatar" hidden></label></span></div>
   <button class="sb-wsign sb-edit" data-act="edit" data-scope="me" data-key="sign" data-label="你的签名">${esc(me.sign || '点这里写签名')}</button>
+  ${compose}
   ${all.length ? all.slice(0, v.momentsN).map(p => postHtml(p, him)).join('') : `<div class="sb-empty">${Wd().moments}还是空的</div>`}
   ${all.length > v.momentsN ? `<button class="sb-more" data-act="lmore">再看 10 条（还有 ${all.length - v.momentsN} 条）</button>` : all.length ? '<div class="sb-more">没有更早的了</div>' : ''}
  </div>${wxTabs('wx-moments')}`;
@@ -753,6 +762,7 @@ export function createUI(host) {
         hot: '<path d="M12 3c1 3 4 4.5 4 8.5a4 4 0 0 1-8 0c0-1.5.6-2.6 1.4-3.4.3 1.4 1 2.1 1.8 2.4C11 8 11 5.5 12 3z"/><path d="M6 15a6 6 0 0 0 12 0"/>',
         share: '<path d="M14 5l6 6-6 6M20 11H9a5 5 0 0 0-5 5v3"/>',
         comment: '<path d="M4 5h16v11H9l-5 4z"/>',
+        camera: '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
         likeline: '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',
         like: '<path d="M7 11v9H4v-9zM7 11l4-7c1.5 0 2.5 1 2.2 2.6L12.6 10H19a1.5 1.5 0 0 1 1.5 1.8l-1.4 6.8A2 2 0 0 1 17.1 20H7"/>',
     };
@@ -1015,6 +1025,18 @@ export function createUI(host) {
                 meta.cedit ??= {}; meta.cedit[b.dataset.id] = { ...(meta.cedit[b.dataset.id] || {}), text: String(t).trim() }; v.cmenu = ''; host.saveMeta(); break;
             }
             case 'cdel': meta.cedit ??= {}; meta.cedit[b.dataset.id] = { deleted: true }; v.cmenu = ''; host.saveMeta(); break;
+            case 'mpost': v.mcompose = !v.mcompose; break;
+            case 'mpost-x': v.mcompose = false; v.mdraft = ''; v.mpicsDraft = ''; break;
+            case 'mpost-go': {
+                const text = root.querySelector('[data-mtext]')?.value.trim() || '';
+                const pics = (root.querySelector('[data-mpics]')?.value || '').split(/[,，、]/).map(x => x.trim()).filter(Boolean);
+                if (!text && !pics.length) { host.toast('info', '写点什么再发'); return; }
+                const post = { id: 'my' + Date.now().toString(36), text, pics, at: Date.now(), time: host.state().now.time || '刚刚' };
+                (meta.myMoments ??= []).push(post); host.saveMeta(); host.refreshInject();
+                v.mcompose = false; v.mdraft = ''; v.mpicsDraft = ''; render();
+                if (b.dataset.react) await reactTo(post);
+                return;
+            }
             case 'pmenu': v.pmenu = v.pmenu === b.dataset.post ? '' : b.dataset.post; break;
             case 'ccomment': v.cfor = b.dataset.post; v.pmenu = ''; v.replyTo = null; render(); root.querySelector(`[data-cin="${CSS.escape(b.dataset.post)}"]`)?.focus(); return;
             case 'pedit': {
@@ -1293,7 +1315,28 @@ export function createUI(host) {
     }
 
     // ---------- 动态留言 ----------
-    const allPosts = () => { const st = host.state(); return [...st.posts, ...st.moments]; };
+    const myMoments = () => (host.meta().myMoments || []).map(p => ({ ...p, who: host.me().name, mine: true }));
+    const allPosts = () => { const st = host.state(); return [...st.posts, ...st.moments, ...myMoments()]; };
+    async function reactTo(post) {
+        const him = host.him(), me = host.me().name;
+        const rule = `${me}刚发了一条朋友圈：「${post.text}」${post.pics.length ? `（配图：${post.pics.join('、')}）` : ''}。写 2～4 条认识她的人在下面的评论（可以有你${him.cardName}自己，用「${him.name}」这个名字），口吻各像各的。只写一段 <!--SB … SB-->，每条一行「评论: 名字｜内容」。不要写别的。`;
+        v.busy = 'react'; render();
+        try {
+            const msgs = [{ role: 'system', content: await buildSys('', rule, [post.text]) }, { role: 'user', content: '（现在写）' }];
+            const out = String(await host.ask(msgs, `【暂停正文，这一次不写正文】\n${rule}`) || '');
+            const raw = host.extractBlock(out).raw || out;
+            const meta = host.meta(); const list = (meta.comments ??= {})[post.id] ??= [];
+            let n = 0;
+            for (const line of raw.split(/\r?\n/)) {
+                const m = line.match(/^[-*\s]*评论\s*[:：]\s*([^｜|]+)[｜|](.+)$/); if (!m) continue;
+                const who = m[1].trim(), text = m[2].trim();
+                list.push({ id: 'c' + Date.now().toString(36) + n, who: who === him.name || who === him.cardName ? 'him' : who, to: '', text, at: Date.now() + n++ });
+            }
+            if (!n) throw new Error('没人来评论');
+            host.saveMeta();
+        } catch (err) { host.toast('error', '没评论成：' + (err?.message || err)); }
+        finally { v.busy = false; render(); }
+    }
     function findComment(id) { for (const p of allPosts()) { const c = commentList(p).find(x => x.id === id); if (c) return c; } return null; }
     function addComment(postId, text, to = '') {
         text = String(text || '').trim(); if (!text) return;
@@ -1307,7 +1350,7 @@ export function createUI(host) {
         if (!post) return;
         const him = host.him(), me = host.me().name;
         const author = post.who || him.name;
-        const who = to || author; // 没点谁回复，就是帖子主人来回
+        const who = to || (post.mine ? him.name : author); // 没点谁回复：别人的帖子由主人回；她自己的帖子由TA来回
         const isHim = who === him.name;
         const log = commentList(post).map(c => `${c.who}${c.to ? ' 回复 ' + c.to : ''}：${c.text}`).join('\n');
         const scene = `${author}发了一条朋友圈：「${post.text}」。下面是这条下面的评论：\n${log}`;
