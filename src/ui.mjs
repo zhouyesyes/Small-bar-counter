@@ -412,7 +412,7 @@ export function createUI(host) {
         try {
             const res = await searchSongs(q, page);
             if (!res.length) { host.toast('info', page > 1 ? '没有下一页了' : '没搜到'); if (page === 1) v.mres = []; }
-            else { v.mres = res; v.mpage = page; Promise.all(res.slice(0, 20).map(t => resolveCover(t))).then(r => { if (r.some(Boolean) && v.mres === res) render(); }); }
+            else { v.mres = res; v.mpage = page; let tm = 0; for (const t of res) resolveCover(t).then(ok => { if (ok && v.mres === res) { clearTimeout(tm); tm = setTimeout(render, 150); } }); } // 封面拿到一批画一次（攒一下再画，不一闪一闪）
         }
         catch (err) { host.toast('error', err?.message || '搜不了'); }
         finally { v.msearching = false; render(); root.querySelector('.sb-mres')?.scrollIntoView({ block: 'nearest' }); }

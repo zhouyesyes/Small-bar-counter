@@ -58,7 +58,7 @@ function trackOf(x, base) {
     let dur = x.time ?? x.duration ?? x.interval ?? 0;
     dur = typeof dur === 'string' && dur.includes(':') ? dur.split(':').reduce((a, n) => a * 60 + (+n || 0), 0) : +dur || 0;
     if (dur > 3600) dur = Math.round(dur / 1000); // 有的接口给的是毫秒
-    return { id, title: str(x.name ?? x.title) || '未命名', artist, cover: /^https?:/.test(str(x.pic ?? x.cover)) ? str(x.pic ?? x.cover) : '', picId: str(x.pic_id), lrc: str(x.lrc ?? x.lyric), base, direct, dur };
+    return { id, title: str(x.name ?? x.title) || '未命名', artist, cover: /^https?:/.test(str(x.pic ?? x.cover)) ? str(x.pic ?? x.cover) : '', picId: str(x.pic_id), lyricId: str(x.lyric_id), lrc: str(x.lrc ?? x.lyric), base, direct, dur };
 }
 
 export async function searchSongs(q, page = 1) {
@@ -165,32 +165,73 @@ export const playUrl = t => apiUrl(t.base || MUSIC_APIS[0], { server: 'netease',
 export function coverList(t) {
     const out = [];
     if (t.cover && /^https?:/.test(t.cover)) out.push(t.cover);
-    if (t.src !== 'qq') for (const b of [...new Set([t.base, ...MUSIC_APIS].filter(Boolean))]) out.push(apiUrl(b, { server: 'netease', type: 'pic', id: t.id }));
+    if (gotCover.has(t.picId || t.id)) out.push(gotCover.get(t.picId || t.id));
+    // Meting 的 pic 接口要的是封面的编号（pic_id），不是歌的编号；从 GD 搜到的歌以前传错了，所以封面全出不来
+    if (t.src !== 'qq' && t.picId) for (const b of [...new Set([t.base, ...MUSIC_APIS].filter(Boolean))]) out.push(apiUrl(b, { server: 'netease', type: 'pic', id: t.picId }));
     return out;
 }
 export const coverUrl = t => coverList(t)[0] || '';
 // 没有现成封面的：问 GD 要一张真的图片地址，记在歌上（下次不用再问）
+// 一次最多问 3 个（一下子问 20 个会被 GD 限流，后面的全拿不到）；问到的这次打开期间都记着
+const gotCover = new Map();
+let coverBusy = 0; const coverWait = [];
+const coverSlot = () => (coverBusy < 3 ? (coverBusy++, Promise.resolve()) : new Promise(r => coverWait.push(r)));
+const coverDone = () => { const next = coverWait.shift(); if (next) next(); else coverBusy--; };
 export async function resolveCover(t) {
     if (!t || (t.cover && /^https?:/.test(t.cover)) || t.src === 'qq') return false;
+    const key = t.picId || t.id;
+    if (gotCover.has(key)) { t.cover = gotCover.get(key); return true; }
+    await coverSlot();
+    const got = u => { t.cover = u.replace(/^http:/, 'https:'); gotCover.set(key, t.cover); return true; };
     try {
-        const d = await getJson(GD_API + '?' + new URLSearchParams({ types: 'pic', source: 'netease', id: t.picId || t.id, size: 300 }), 5000);
+        // 以前存下来、没记封面编号的歌：先问 Meting 这首歌的资料，里面有封面地址
+        if (!t.picId) {
+            try {
+                const { rows } = await ask({ server: 'netease', type: 'song', id: t.id }, { timeout: 6000 });
+                const pic = str(rows[0]?.pic ?? rows[0]?.cover);
+                if (/^https?:/.test(pic)) return got(pic);
+                if (rows[0]?.pic_id) t.picId = str(rows[0].pic_id);
+            } catch { /* 问不到就接着问 GD */ }
+        }
+        const d = await getJson(GD_API + '?' + new URLSearchParams({ types: 'pic', source: 'netease', id: t.picId || t.id, size: 300 }), 6000);
         const u = str(d?.url || d?.data?.url);
-        if (/^https?:/.test(u)) { t.cover = u.replace(/^http:/, 'https:'); return true; }
+        if (/^https?:/.test(u)) return got(u);
     } catch { /* 拿不到就用别的 */ }
+    finally { coverDone(); }
     return false;
 }
 
 // 歌词：[mm:ss.xx] 一行一句
+// 好几个地方挨个问，谁给了像样的歌词用谁：歌上记的 → 搜出这首的那个节点和别的 Meting 节点 → GD
+// （以前只问一个节点，那个节点挂了或者歌是从 GD 搜到的，就一直没歌词）
+const gotLrc = new Map();
+const lrcText = raw => {
+    const s = String(raw || '').trim();
+    if (!s.startsWith('{')) return s;
+    try { const d = JSON.parse(s); return str(d.lyric ?? d.lrc ?? d.data?.lyric ?? d.data?.lrc); } catch { return ''; }
+};
+async function fetchText(url, timeout = 6000) {
+    const c = new AbortController(), t = setTimeout(() => c.abort(), timeout);
+    try { const r = await fetch(url, { credentials: 'omit', referrerPolicy: 'no-referrer', signal: c.signal }); return r.ok ? await r.text() : ''; }
+    catch { return ''; } finally { clearTimeout(t); }
+}
 export async function lyricOf(t) {
-    let text = t.lrc;
-    try {
-        if (t.src === 'qq' && !text) return [];
-        if (!text || /^https?:/.test(text)) {
-            const r = await fetch(/^https?:/.test(text || '') ? text : apiUrl(t.base || MUSIC_APIS[0], { server: 'netease', type: 'lrc', id: t.id }), { credentials: 'omit', referrerPolicy: 'no-referrer' });
-            text = r.ok ? await r.text() : '';
-        }
-    } catch { text = ''; }
-    return parseLrc(text);
+    const key = (t.src || 'n') + ':' + t.id;
+    if (gotLrc.has(key)) return gotLrc.get(key);
+    const tries = [];
+    if (t.lrc && !/^https?:/.test(t.lrc)) tries.push(async () => t.lrc);
+    if (/^https?:/.test(t.lrc || '')) tries.push(() => fetchText(t.lrc));
+    if (t.src !== 'qq') {
+        const id = t.lyricId || t.id;
+        // Meting 节点一起问，第一个有歌词的算
+        tries.push(() => Promise.any([...new Set([t.base, ...MUSIC_APIS].filter(Boolean))].map(b => fetchText(apiUrl(b, { server: 'netease', type: 'lrc', id })).then(x => (parseLrc(lrcText(x)).length ? x : Promise.reject())))).catch(() => ''));
+        tries.push(() => fetchText(GD_API + '?' + new URLSearchParams({ types: 'lyric', source: 'netease', id })));
+    }
+    for (const get of tries) {
+        const lines = parseLrc(lrcText(await get()));
+        if (lines.length) { gotLrc.set(key, lines); return lines; }
+    }
+    return [];
 }
 export function parseLrc(text) {
     const out = [];
