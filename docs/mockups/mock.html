@@ -130,6 +130,26 @@ body{margin:0;width:390px;height:844px;overflow:hidden;font:14px/1.5 -apple-syst
 .bar2{height:2px;background:var(--line);border-radius:1px;margin:12px 0 10px}.bar2 i{display:block;width:38%;height:100%;background:var(--fg)}
 .mctl{display:flex;justify-content:space-around;align-items:center;font-size:15px;color:var(--dim)}.mctl .play{width:34px;height:34px;border-radius:50%;background:var(--fg);color:var(--bg);display:flex;align-items:center;justify-content:center;font-size:12px}
 #feed{overflow:auto}
+.music2{margin:6px 0 0;padding:22px 20px 26px;border-top:1px solid var(--line);background:linear-gradient(var(--soft),var(--bg) 70%)}
+.bigcover{width:190px;height:190px;margin:0 auto;border-radius:14px;background:linear-gradient(135deg,#d6d6d6,#6a6a6a 60%,#2e2e2e);box-shadow:0 14px 34px rgba(0,0,0,.25)}
+.dark .bigcover{background:linear-gradient(135deg,#6a6a6a,#2a2a2a 60%,#111);box-shadow:0 14px 34px rgba(0,0,0,.6)}
+.mt2{text-align:center;font-size:20px;font-weight:700;margin-top:18px;letter-spacing:.02em}
+.ma2{text-align:center;font-size:12.5px;color:var(--dim);margin-top:2px}
+.lyr{text-align:center;margin-top:14px;font-size:13px;color:var(--dim);line-height:1.9}.lyr .cur{color:var(--fg);font-size:15px;font-weight:600}
+.prog{display:flex;align-items:center;gap:8px;font-size:10.5px;color:var(--dim);margin-top:14px}.prog .bar2{flex:1;margin:0}
+.mctl2{display:flex;justify-content:space-between;align-items:center;margin:14px 8px 0;font-size:16px;color:var(--dim)}.mctl2 .big{font-size:20px;color:var(--fg)}
+.play2{width:54px;height:54px;border-radius:50%;background:var(--fg);color:var(--bg);display:flex;align-items:center;justify-content:center;font-size:18px}
+.msearch{margin-top:18px;height:34px;border-radius:17px;border:1px solid var(--line);display:flex;align-items:center;padding:0 14px;font-size:12.5px;color:var(--dim)}
+.memo{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.memo .ck{width:16px;height:16px;border:1.5px solid var(--fg);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;flex:0 0 auto}
+.memo.done{color:var(--dim);text-decoration:line-through}.memo.done .ck{border-color:var(--dim)}
+.dback{font-size:12.5px;color:var(--dim)}
+.dtitle{font-size:18px;font-weight:700;margin-top:4px;font-family:"Songti SC","Noto Serif CJK SC",serif}
+.slip{margin:16px 30px 0 auto;width:72%;background:var(--soft);border:1px solid var(--line);padding:8px 10px;font-size:12.5px;transform:rotate(-1.5deg);box-shadow:0 3px 8px rgba(0,0,0,.08)}
+.dacts{display:flex;justify-content:space-between;margin-top:20px;padding-top:10px;border-top:1px solid var(--line);font-size:12px;color:var(--dim)}
+.drawer.pf.mini .cover{height:56px}.drawer.pf.mini .cover>span:not(.x){display:none}.drawer.pf.mini .cover{font-size:0}
+.drawer.pf.mini .pfav,.drawer.pf.mini .pfhd,.drawer.pf.mini .pfbio,.drawer.pf.mini .pfmeta{display:none}
+.drawer.pf.mini .pfname{position:absolute;top:16px;left:16px;margin:0;color:#fff;font-size:15px}
 </style></head><body>
 <div class="st">
   <div class="bar"><span style="font-size:13px;color:var(--fg)">阎守峥</span></div>
@@ -172,7 +192,7 @@ const drawer=`<div class="shade"></div><div class="drawer">
 const P=(t,body,media,a)=>`<div class="post"><div class="av xs"></div><div style="flex:1"><div><b style="font-size:13px">阎守峥</b> <span class="hd">· ${t}</span></div>
    <div class="body">${body}</div>${media?`<div class="media">[ 照片 · ${media} ]</div>`:''}
    <div class="acts"><span>♡ ${a[0]}</span><span>○ ${a[1]}</span><span>↻ ${a[2]}</span></div></div></div>`;
-const tab=q.get('tab')||'posts';
+const tab0=q.get('tab')||'posts';const tab=tab0==='diaryopen'?'diary':tab0;
 const TABS=[['posts','动态'],['now','此刻'],['diary','日记'],['phone','小手机']];
 const tabsHtml=`<div class="tabs">${TABS.map(([k,n])=>`<span class="${k===tab?'on':''}">${n}${k==='phone'?' <span class="badge sm">2</span>':''}</span>`).join('')}</div>`;
 const body={
@@ -201,11 +221,15 @@ const body={
    </div>
   </div>
   <div class="mo last"><span class="hd">只显示最新三条 · 更早的往下翻才加载</span></div>
-  <div class="music">
-   <div class="cap" style="margin-bottom:10px">music · 音乐</div>
-   <div class="mrow"><div class="cover"></div><div style="flex:1;min-width:0"><div class="mtt">雨夜的街</div><div class="hd">某某乐队</div><div class="lyric">伞下只够站两个人</div></div></div>
-   <div class="bar2"><i></i></div>
-   <div class="mctl"><span>⇄</span><span>⏮</span><span class="play">▶</span><span>⏭</span><span>☰</span></div>
+  <div class="music2">
+   <div class="cap" style="text-align:center;margin-bottom:16px">now playing · 他在听</div>
+   <div class="bigcover"></div>
+   <div class="mt2">雨夜的街</div>
+   <div class="ma2">某某乐队 · 《无人的站台》</div>
+   <div class="lyr"><div>巷口的灯一盏一盏亮</div><div class="cur">伞下只够站两个人</div><div>你不说我也不问</div></div>
+   <div class="prog"><span>1:24</span><div class="bar2"><i></i></div><span>3:52</span></div>
+   <div class="mctl2"><span>⇄</span><span class="big">⏮</span><span class="play2">▶</span><span class="big">⏭</span><span>☰</span></div>
+   <div class="msearch">⌕ 搜歌名或歌手</div>
   </div>
  </div>`,
  now:`<div class="feed" style="padding:14px 16px">
@@ -215,6 +239,20 @@ const body={
    <div class="k">想要</div><div class="want"><span class="heart">♥</span>她再待一会儿</div>
   </div>
   <div class="voice"><div><span class="k" style="color:var(--dim);font-size:11px;letter-spacing:.14em">心声</span><br>伞再偏一点她就看出来了。</div><span class="flip">翻面</span></div>
+  <div class="cap" style="margin:20px 0 8px;display:flex;justify-content:space-between"><span>memo · 备忘录</span><span>3 / 15</span></div>
+  <div class="memo"><span class="ck"></span>明早七点去码头接货</div>
+  <div class="memo"><span class="ck"></span>伞拿去修，伞骨断了一根</div>
+  <div class="memo"><span class="ck"></span>问阿宁面馆哪天开</div>
+  <div class="memo done"><span class="ck">✓</span>把那件大衣送去干洗</div>
+ </div>`,
+ diaryopen:`<div class="feed" style="padding:14px 16px 10px">
+  <div class="dback">← 日记</div>
+  <div class="dday" style="margin-top:12px"><b>11.09</b> 周日 · 小雨</div>
+  <div class="dtitle">等雨停</div>
+  <div class="dtext">她今天没带伞。我在巷口等了四十分钟，跟自己说是在等雨停。<br><br>回去的路上她一直没说话，快到门口才问我冷不冷。我说不冷。肩膀湿了一半，她大概看见了。</div>
+  <div class="dsign">—— 守</div>
+  <div class="slip"><div class="hd" style="font-size:10.5px;margin-bottom:2px">她留的小纸条</div>看见了。下次伞往你自己那边打。</div>
+  <div class="dacts"><span>♡ 喜欢</span><span>✎ 纸条</span><span>⤓ 存图</span><span>⧉ 复制</span><span>删除</span></div>
  </div>`,
  diary:`<div class="feed" style="padding:14px 16px">
   <div class="dday"><b>11.09</b> 周日 · 小雨</div>
@@ -244,7 +282,7 @@ const profile=`<div class="shade"></div><div class="drawer pf">
  <div class="pfhd">@yan.shouzheng</div>
  <div class="pfbio">the lighter burned down the world.</div>
  <div class="pfmeta"><span>11.09 周日 01:19</span><span>小雨</span></div>
- ${body[tab]||body.posts}
+ ${body[tab0]||body.posts}
  ${tabsHtml}
  ${q.get('bg')?bgsheet:''}
 </div>`;
@@ -281,5 +319,5 @@ const phone=`<div class="shade"></div><div class="phone">
 </div>`;
 document.getElementById('cat').src='cat-'+(q.get('t')==='dark'?'dark':'light')+'-'+(q.get('c')||'idle')+'.png'; if(s) document.getElementById('cat').style.display='none';
 document.getElementById('extra').innerHTML = s==='drawer'?drawer : s==='profile'?profile : s==='x'?xpage : s==='phone'?phone : '';
-if(q.get('scroll')){const f=document.getElementById('feed');if(f)f.scrollTop=9999;}
+if(q.get('scroll')){document.querySelector('.drawer.pf')?.classList.add('mini');const f=document.getElementById('feed');if(f)f.scrollTop=9999;}
 </script></body></html>
