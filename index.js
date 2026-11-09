@@ -134,6 +134,23 @@ function repliesFor(postId) {
     return out;
 }
 
+// ---------- X 私信：她的匿名小号，每个号各存各的 ----------
+function xAccounts() { const m = meta(); m.xacc ??= [{ id: 'a1', name: '路人' }]; return m.xacc; }
+function xAccount() { const m = meta(), list = xAccounts(); return list.find(a => a.id === m.xcur) || list[0]; }
+function xdm() { const m = meta(); m.xdm ??= {}; return (m.xdm[xAccount().id] ??= []); }
+const xflag = (k) => { const m = meta(); m[k] ??= {}; return m[k]; };
+const xHost = {
+    xAccounts, xAccount, xdm,
+    addXdm: x => { xdm().push({ id: newId(), at: Date.now(), type: 'text', ...x }); saveMeta(); },
+    setXAccount: id => { meta().xcur = id; saveMeta(); },
+    newXAccount: name => { const a = { id: 'a' + Date.now().toString(36), name: name || '小号' }; xAccounts().push(a); meta().xcur = a.id; saveMeta(); },
+    renameXAccount: name => { xAccount().name = name; saveMeta(); },
+    xBlocked: () => !!xflag('xblocked')[xAccount().id],             // TA拉黑了这个号
+    setXBlocked: on => { xflag('xblocked')[xAccount().id] = on; saveMeta(); },
+    xIBlocked: () => !!xflag('xiblocked')[xAccount().id],           // 她拉黑了TA
+    setXIBlocked: on => { xflag('xiblocked')[xAccount().id] = on; saveMeta(); },
+};
+
 // ---------- 人 ----------
 function him() {
     const c = ctx(), ch = c.characters?.[c.characterId] || {};
@@ -170,11 +187,21 @@ function storyTail() {
 
 // ---------- 请他回（小手机、动态留言） ----------
 function keys() { return (ctx().extensionSettings.tavern_ruined_me_keys?.keys || []).filter(k => k.url); }
-async function ask(messages) {
+async function ask(messages, quiet) {
     const s = settings();
+    const c = ctx();
+    // 角色卡在「懒加载」时只有名字没有设定（酒馆 1.18 / TauriTavern 都可能）：先补全
+    try { await c.unshallowCharacter?.(c.characterId); } catch { /* 没有就算了 */ }
     const key = s.api && s.api !== 'main' ? keys().find(k => k.id === s.api) : null;
     if (!key) {
-        const c = ctx();
+        // 跟正文、而且开着「带上预设和世界书」：用酒馆自己的安静生成，和正文同一套预设、世界书、上下文，更不容易 OOC
+        if (quiet && s.icMode !== false && typeof c.generateQuietPrompt === 'function') {
+            c.setExtensionPrompt?.(INJECT_KEY, '', 1, 0); // 这一下不要让 TA 顺带写状态段
+            try {
+                const out = await c.generateQuietPrompt({ quietPrompt: quiet, responseLength: 400, removeReasoning: true });
+                return extractBlock(String(out || '')).text;
+            } finally { refreshInject(); }
+        }
         if (typeof c.generateRaw !== 'function') throw new Error('这个酒馆版本没有 generateRaw');
         const sys = messages.filter(m => m.role === 'system').map(m => m.content).join('\n\n');
         const rest = messages.filter(m => m.role !== 'system');
@@ -219,6 +246,7 @@ const host = {
     charCfg, setCharCfg: f => { f(charCfg()); saveMeta(); refreshInject(); },
     saveImage, img, dropImage: deleteImage,
     meta, saveMeta, state, unread, markRead, wechat, addWechat, patchWechat, deleteWechat, takeLastRound, restoreRound, repliesFor,
+    ...xHost,
     him, me, charCard, era, guessedEra, storyTail, keys, ask, hasChar,
     defaultPrompt: () => DEFAULT_PROMPT,
     toast: (kind, msg) => globalThis.toastr?.[kind]?.(msg, '小吧台'),

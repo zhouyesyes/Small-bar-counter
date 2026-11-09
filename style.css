@@ -35,7 +35,7 @@
 #sb-root .sb-x{position:absolute;top:calc(10px + env(safe-area-inset-top));right:12px;width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,.35);color:#fff;font-size:16px}
 #sb-root .sb-coverbtn{position:absolute;bottom:8px;left:10px;font-size:10.5px;border-radius:12px;background:rgba(0,0,0,.4);color:#fff;padding:2px 9px}
 #sb-root .sb-mininame{display:none;position:absolute;top:calc(14px + env(safe-area-inset-top));left:16px;color:#fff;font-weight:600;font-size:15px;text-shadow:0 1px 3px rgba(0,0,0,.35)}
-#sb-root .sb-av{width:78px;height:78px;flex:0 0 auto;border-radius:50%;margin:-39px auto 0;border:3px solid var(--sb-bg);background:#bbb center/cover;position:relative}
+#sb-root .sb-av{display:block;cursor:pointer;width:78px;height:78px;flex:0 0 auto;border-radius:50%;margin:-39px auto 0;border:3px solid var(--sb-bg);background:#bbb center/cover;position:relative}
 #sb-root .sb-name{text-align:center;font-weight:600;font-size:17px;margin-top:6px;line-height:1.25}
 #sb-root .sb-handle{text-align:center;font-size:12px;color:var(--sb-dim)}#sb-root .sb-handle.left{text-align:left;padding:0 14px}
 #sb-root .sb-sign{text-align:center;font-size:13px;font-style:italic;margin:6px 22px 0}
@@ -253,3 +253,10 @@
 #sb-root .sb-lpanel{display:flex;gap:8px;padding:2px 14px 6px;flex:0 0 auto}
 #sb-root .sb-lpanel button{flex:1;font-size:12px;border:1px solid var(--sb-line);padding:6px 0;letter-spacing:.1em}
 #sb-root.sb-era-ancient .sb-phone,#sb-root.sb-era-minguo .sb-phone{border-radius:6px}
+
+/* X 私信 */
+#sb-root .sb-dmhead{display:flex;flex-direction:column;align-items:center;gap:3px;margin:6px 0 10px;font-size:14px;text-align:center}
+#sb-root .sb-dmmenu{position:absolute;top:56px;right:12px;width:200px;background:var(--sb-bg);border:1px solid var(--sb-line);border-radius:12px;box-shadow:0 10px 26px rgba(0,0,0,.18);padding:4px 0;z-index:3}
+#sb-root .sb-dmmenu button{display:block;width:100%;text-align:left;padding:9px 14px;font-size:13px;border-bottom:1px solid var(--sb-line)}
+#sb-root .sb-dmmenu button:last-child{border-bottom:0}
+#sb-root .sb-blocked{flex:0 0 auto;text-align:center;font-size:12px;color:var(--sb-dim);padding:14px;border-top:1px solid var(--sb-line)}

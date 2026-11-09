@@ -159,7 +159,7 @@ export function createUI(host) {
   <button class="sb-coverbtn" data-act="phone-go" data-to="set-cover">背景</button>
   <span class="sb-mininame">${esc(him.name)}</span>
  </div>
- <div class="sb-av" style="background-image:url('${esc(him.avatar)}')"></div>
+ <label class="sb-av" style="background-image:url('${esc(him.avatar)}')" title="点一下换头像"><input type="file" accept="image/*" data-upload="him-avatar" hidden></label>
  <div class="sb-name">${esc(him.name)}</div>
  ${him.handle ? `<div class="sb-handle">${esc(him.handle)}</div>` : ''}
  ${him.sign || n.sign ? `<div class="sb-sign">${esc(him.sign || n.sign)}</div>` : ''}
@@ -264,7 +264,7 @@ export function createUI(host) {
     function phoneHtml(era) {
         const views = {
             home: homeHtml, 'wx-chat': wxChatHtml, 'wx-contacts': wxContactsHtml, 'wx-moments': wxMomentsHtml, 'wx-me': wxMeHtml,
-            x: xHtml, diary: pDiaryHtml, memo: pMemoHtml, photos: pPhotosHtml, music: pMusicHtml,
+            x: xHtml, 'x-dm': xDmHtml, diary: pDiaryHtml, memo: pMemoHtml, photos: pPhotosHtml, music: pMusicHtml,
             settings: setHtml, 'set-cover': setCoverHtml, 'set-him': setHimHtml, 'set-me': setMeHtml, 'set-prompt': setPromptHtml, 'set-api': setApiHtml,
         };
         // 古风、民国没有手机：换成书信（设置页还用同一个框）
@@ -407,15 +407,66 @@ export function createUI(host) {
         const seed = [...(him.name || 'x')].reduce((n, c) => n + c.charCodeAt(0), 0);
         return `<div class="sb-xpage" data-keep="x">
  <div class="sb-xcover ${coverClass()}" style="${coverStyle()}"><button class="sb-bk light" data-act="phone-back">‹</button></div>
- <div class="sb-xtop"><span class="sb-xav" style="background-image:url('${esc(him.avatar)}')"></span><span class="sb-xbtn">私信</span><span class="sb-xbtn solid">关注</span></div>
+ <div class="sb-xtop"><span class="sb-xav" style="background-image:url('${esc(him.avatar)}')"></span><button class="sb-xbtn" data-act="phone-go" data-to="x-dm">私信</button><span class="sb-xbtn solid">关注</span></div>
  <div class="sb-xname">${esc(him.xname || him.name)}</div><div class="sb-handle left">${esc(him.xhandle || him.handle || '')}</div>
  ${him.sign ? `<div class="sb-xbio">${esc(him.sign)}</div>` : ''}
  <div class="sb-xstat"><span><b>${seed % 40 + 3}</b> 正在关注</span><span><b>${(seed * 37 % 4000 + 120).toLocaleString()}</b> 关注者</span></div>
  <div class="sb-xtabs"><span class="on">帖子</span><span>回复</span><span>媒体</span></div>
  ${list.length ? list.slice(0, v.xN).map(p => `<article class="sb-post him"><div class="sb-pav" style="background-image:url('${esc(him.avatar)}')"></div><div class="sb-pmain"><b class="sb-pname">${esc(him.xname || him.name)}</b> <small class="sb-dim">${esc(p.time)}</small><div class="sb-ptext">${nl(p.text)}</div>${p.pics?.length ? `<div class="sb-pics">${p.pics.map(x => `<span>${esc(x)}</span>`).join('')}</div>` : ''}</div></article>`).join('') : '<div class="sb-empty">TA还没在 X 上发过帖子</div>'}
  ${list.length > v.xN ? '<button class="sb-more" data-act="xmore">再加载 10 条</button>' : ''}
- <div class="sb-empty sm">私信、切换你的 X 账号下一版接上</div>
+ 
 </div>`;
+    }
+    // X 私信：你是匿名网友，TA不知道你是谁；可能已读不回、拉黑
+    function xDmHtml() {
+        const him = host.him(), acc = host.xAccount(), list = host.xdm();
+        const blocked = host.xBlocked();
+        const pend = list.filter(m => m.pending).length;
+        const rows = list.map(m => m.type === 'note' ? `<div class="sb-note">${esc(m.text)}</div>` : `<div class="sb-b ${m.from === 'me' ? 'u' : 'c'}${m.pending ? ' pend' : ''}" data-xmsg="${esc(m.id)}">${nl(m.text)}</div>`).join('');
+        const menu = v.dmMenu ? `<div class="sb-dmmenu">
+  <div class="sb-cap" style="margin:4px 12px 2px">你的 X 账号</div>
+  ${host.xAccounts().map(a => `<button data-act="xacc" data-id="${esc(a.id)}">${esc(a.name)}${a.id === acc.id ? ' ✓' : ''}</button>`).join('')}
+  <button data-act="xacc-new">＋ 新开一个小号</button>
+  <button data-act="xacc-rename">改这个号的网名</button>
+  <button data-act="xblock">${host.xIBlocked() ? '解除拉黑' : '拉黑TA'}</button>
+ </div>` : '';
+        return `${head(`<span class="sb-pav sm" style="background-image:url('${esc(him.avatar)}')"></span><span><b>${esc(him.xname || him.name)}</b><small>你现在是「${esc(acc.name)}」</small></span>`, '<button class="sb-phx" data-act="dmmenu" aria-label="更多">···</button>')}
+ <div class="sb-msgs" data-keep="dm">
+  <div class="sb-dmhead"><span class="sb-pav big" style="background-image:url('${esc(him.avatar)}')"></span><b>${esc(him.xname || him.name)}</b><small>你们没有互相关注 · TA不知道你是谁</small></div>
+  ${rows}
+  ${pend ? `<div class="sb-pendnote">待发送 ${pend} 条 · 点 ↑ TA才看到</div>` : ''}
+  ${v.busy ? '<div class="sb-typing">· · ·</div>' : ''}
+ </div>
+ ${blocked ? '<div class="sb-blocked">你已被对方拉黑，发不出去了</div>' : host.xIBlocked() ? '<div class="sb-blocked">你拉黑了TA · 右上 ··· 解除</div>' : `<div class="sb-inp"><input class="sb-field" data-xdm placeholder="发私信" enterkeyhint="send"><button class="sb-send" data-act="xdm-send" ${v.busy ? 'disabled' : ''}>↑</button></div>`}
+ ${menu}`;
+    }
+    async function sendDm() {
+        if (v.busy) return;
+        const inp = root.querySelector('[data-xdm]');
+        if (inp?.value.trim()) { host.addXdm({ from: 'me', text: inp.value.trim(), pending: true }); inp.value = ''; }
+        if (!host.xdm().some(m => m.pending)) { host.toast('info', '先写点什么，再点 ↑'); return; }
+        host.xdm().forEach(m => { m.pending = false; });
+        host.saveMeta();
+        v.busy = true; v.stick = true; render();
+        const him = host.him(), acc = host.xAccount();
+        const rules = `你在 X（推特）上收到一个陌生网友「${acc.name}」的私信。你不认识对方，不知道对方现实里是谁，不要把对方当成你认识的人；只凭私信里的话判断。
+按你的性格决定怎么回：可以冷淡、可以只回一两句。像真人发私信：短句，一行一条，不要动作描写和旁白。
+如果你决定不回，只输出：[已读不回]
+如果对方让你烦到想拉黑，只输出：[拉黑]`;
+        const log = host.xdm().filter(m => m.type !== 'note').slice(-40).map(m => `${m.from === 'me' ? acc.name : '你'}：${m.text}`).join('\n');
+        try {
+            const out = String(await host.ask([
+                { role: 'system', content: `你是 ${him.cardName}。设定：\n${host.charCard()}\n\n${rules}` },
+                { role: 'user', content: log },
+            ], `【暂停正文，这一次不写正文】\n${rules}\n\n私信记录：\n${log}\n\n现在只写你回的私信。`) || '');
+            if (/\[拉黑\]/.test(out)) { host.addXdm({ type: 'note', text: '你已被对方拉黑' }); host.setXBlocked(true); }
+            else if (/\[已读不回\]/.test(out) || !out.trim()) host.addXdm({ type: 'note', text: '已读' });
+            else for (const m of parsePhoneReply(out).filter(x => x.type === 'text')) {
+                await wait(600 + Math.min(1500, m.text.length * 60));
+                host.addXdm({ from: 'him', text: m.text }); v.stick = true; render();
+            }
+        } catch (err) { host.toast('error', '没发成：' + (err?.message || err)); }
+        finally { v.busy = false; v.stick = true; render(); }
     }
     function pDiaryHtml(era) {
         const st = host.state(), hidden = host.meta().hidden || {};
@@ -443,7 +494,7 @@ export function createUI(host) {
         const apiName = s.api && s.api !== 'main' ? (host.keys().find(k => k.id === s.api)?.name || '钥匙本里的一条') : '跟正文';
         return `${head('设置')}<div class="sb-slist">
  <div class="sb-sh">主页</div><div class="sb-sgrp">${row('头图', modeName, 'set-cover')}${row('TA的名片', host.him().name, 'set-him')}${row('我的名字和头像', host.me().name, 'set-me')}</div>
- <div class="sb-sh">API</div><div class="sb-sgrp">${row('小手机用哪个', apiName, 'set-api')}${toggle('省一点', 'saveMode', s.saveMode, '这一轮只写时间、天气、在哪、心声')}</div>
+ <div class="sb-sh">API</div><div class="sb-sgrp">${row('小手机用哪个', apiName, 'set-api')}${toggle('带上预设和世界书', 'icMode', s.icMode !== false, '跟正文时：小手机回复用酒馆同一套预设、世界书和剧情，更不容易 OOC')}${toggle('省一点', 'saveMode', s.saveMode, '这一轮只写时间、天气、在哪、心声')}</div>
  <div class="sb-sh">TA</div><div class="sb-sgrp">
   <label class="sb-srow"><span>时代</span><select data-cset="era">${[['auto', eraName.startsWith('自动') ? eraName : '自动'], ['modern', '现代'], ['minguo', '民国'], ['ancient', '古风']].map(([k, n]) => `<option value="${k}" ${(c.era || 'auto') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
   ${row('提示词', s.prompt ? '改过' : '默认', 'set-prompt')}
@@ -538,16 +589,29 @@ export function createUI(host) {
             case 'phone-go':
                 v.phone = true; v.drawer = false; v.plus = false; v.menuFor = ''; v.edit = null;
                 v.prev = v.view; v.view = b.dataset.to;
-                if (v.view === 'wx-chat') { host.markRead(); v.stick = true; }
+                if (v.view === 'wx-chat' || v.view === 'x-dm') { if (v.view === 'wx-chat') host.markRead(); v.stick = true; }
+                v.dmMenu = false;
                 if (v.view === 'wx-moments') v.momentsN = 10;
                 break;
             case 'phone-back': {
-                const back = { 'set-cover': 'settings', 'set-him': 'settings', 'set-me': 'settings', 'set-prompt': 'settings', 'set-api': 'settings' }[v.view];
+                const back = { 'x-dm': 'x', 'set-cover': 'settings', 'set-him': 'settings', 'set-me': 'settings', 'set-prompt': 'settings', 'set-api': 'settings' }[v.view];
                 v.view = back || 'home'; v.plus = false; v.menuFor = ''; v.edit = null; break;
             }
             case 'phone-close': v.phone = false; v.plus = false; v.menuFor = ''; v.edit = null; break;
             case 'xmore': v.xN += 10; break;
             case 'lmore': v.momentsN += 10; break;
+            case 'dmmenu': v.dmMenu = !v.dmMenu; break;
+            case 'xacc': host.setXAccount(b.dataset.id); v.dmMenu = false; v.stick = true; break;
+            case 'xacc-new': {
+                const n = await host.prompt('新小号叫什么？', ''); if (!n) return;
+                host.newXAccount(String(n).trim()); v.dmMenu = false; break;
+            }
+            case 'xacc-rename': {
+                const n = await host.prompt('这个号的网名', host.xAccount().name); if (!n) return;
+                host.renameXAccount(String(n).trim()); v.dmMenu = false; break;
+            }
+            case 'xblock': host.setXIBlocked(!host.xIBlocked()); v.dmMenu = false; break;
+            case 'xdm-send': await sendDm(); return;
             case 'plus': v.plus = !v.plus; break;
             case 'pp': await plusAction(b.dataset.k); return;
             case 'wx-send': await sendRound(); return;
@@ -579,6 +643,7 @@ export function createUI(host) {
         if (e.key !== 'Enter' || e.isComposing) return;
         const t = e.target;
         if (t.matches?.('[data-wx]')) { e.preventDefault(); queueMine({ type: 'text', text: t.value }); t.value = ''; }
+        if (t.matches?.('[data-xdm]')) { e.preventDefault(); if (t.value.trim()) { host.addXdm({ from: 'me', text: t.value.trim(), pending: true }); t.value = ''; v.stick = true; render(); root.querySelector('[data-xdm]')?.focus(); } }
         if (t.matches?.('[data-cin]')) { e.preventDefault(); addComment(t.dataset.cin, t.value); }
         if (t.matches?.('[data-edit]')) { e.preventDefault(); root.querySelector('[data-act="medit-ok"]')?.click(); }
     }
@@ -653,7 +718,8 @@ export function createUI(host) {
         host.saveMeta();
         v.busy = true; v.stick = true; render();
         try {
-            const text = await host.ask(phoneMessages());
+            const msgs = phoneMessages();
+            const text = await host.ask(msgs, quietOf(msgs, host.era() === 'modern' ? '现在只写你在手机上回的消息，一行一条。' : '现在只写你回的信，一行一句。'));
             const list = parsePhoneReply(text);
             if (!list.length) throw new Error('TA没回出东西');
             for (const m of list) {
@@ -666,6 +732,12 @@ export function createUI(host) {
             if (removed.length) host.restoreRound(removed);
             host.toast('error', '没回成：' + (err?.message || err));
         } finally { v.busy = false; v.stick = true; render(); }
+    }
+    // 酒馆安静生成用：卡片和设定酒馆自己会带，这里只给规矩和这段聊天
+    function quietOf(msgs, tail) {
+        const sys = msgs[0].content.split('\n\n').filter(x => !x.startsWith('你是 ') && !x.includes('的设定：') && !x.startsWith('最近发生的事')).join('\n\n');
+        const log = msgs.slice(1).map(m => `${m.role === 'user' ? host.me().name : host.him().cardName}：${m.content}`).join('\n');
+        return `【暂停正文，这一次不写正文】\n${sys}\n\n${log}\n\n${tail}`;
     }
     function phoneMessages() {
         const him = host.him(), me = host.me();
@@ -708,10 +780,11 @@ export function createUI(host) {
         v.busy = true; render();
         try {
             const him = host.him();
-            const text = await host.ask([
+            const msgs = [
                 { role: 'system', content: `你是 ${him.cardName}。设定：\n${host.charCard()}\n\n你发了一条朋友圈：「${post?.text || ''}」。下面是留言，请你回复「${host.me().name}」最新那条留言。只写回复的那一句话，短一点，像朋友圈回复，不要引号和名字。` },
                 { role: 'user', content: mine.map(c => `${c.who === 'me' ? host.me().name : him.name}：${c.text}`).join('\n') },
-            ]);
+            ];
+            const text = await host.ask(msgs, `【暂停正文，这一次不写正文】\n你发了一条朋友圈：「${post?.text || ''}」。留言：\n${msgs[1].content}\n\n只写你回复「${host.me().name}」最新那条留言的一句话，短一点，不要引号和名字。`);
             const line = String(text || '').split(/\r?\n/).map(x => x.trim()).filter(Boolean)[0];
             if (!line) throw new Error('TA没回出东西');
             mine.push({ who: 'him', text: line.replace(/^[^：:]{1,8}[：:]/, '').trim(), at: Date.now() });
