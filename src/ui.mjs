@@ -39,10 +39,35 @@ export function createUI(host) {
     function mount() {
         root = document.createElement('div');
         root.id = 'sb-root';
-        document.body.appendChild(root);
+        document.documentElement.appendChild(root); // 不放进 body：酒馆主题可能给 body 加变形，会把固定定位困住
         root.addEventListener('click', onClick);
         root.addEventListener('keydown', onKey);
         root.addEventListener('change', onChange);
+        // 小猫：点一下打开；按住上下拖，挪到左边任意高度（松手记住）
+        let drag = null;
+        root.addEventListener('pointerdown', e => {
+            const cat = e.target.closest?.('.sb-cat'); if (!cat) return;
+            drag = { y: e.clientY, moved: false, cat, id: e.pointerId };
+            try { cat.setPointerCapture(e.pointerId); } catch { /* 旧浏览器 */ }
+        });
+        root.addEventListener('pointermove', e => {
+            if (!drag || e.pointerId !== drag.id) return;
+            if (!drag.moved && Math.abs(e.clientY - drag.y) < 6) return;
+            drag.moved = true; drag.cat.classList.add('drag');
+            const h = root.clientHeight || innerHeight;
+            const pct = Math.max(8, Math.min(90, (e.clientY / h) * 100));
+            drag.cat.style.top = pct + '%'; drag.pct = pct;
+            e.preventDefault();
+        });
+        const endDrag = e => {
+            if (!drag || (e.pointerId != null && e.pointerId !== drag.id)) return;
+            const d = drag; drag = null;
+            d.cat.classList.remove('drag');
+            if (d.moved) { host.setSettings(st => { st.catTop = Math.round(d.pct * 10) / 10; }); }
+            else if (e.type === 'pointerup') { v.drawer = true; render(); }
+        };
+        root.addEventListener('pointerup', endDrag);
+        root.addEventListener('pointercancel', endDrag);
         // 长按小手机里的气泡：编辑 / 删除
         let timer = 0;
         root.addEventListener('pointerdown', e => {
@@ -88,7 +113,7 @@ export function createUI(host) {
         root.className = `sb-${theme()} sb-era-${era}` + (nowOpen && nowOpen !== wasOpen ? ' sb-anim' : '');
         if (!s.enabled || !host.hasChar()) { root.innerHTML = ''; return; }
         const keepScroll = [...root.querySelectorAll('[data-keep]')].map(el => [el.dataset.keep, el.scrollTop]);
-        root.innerHTML = (s.cat !== false && !v.drawer && !v.phone ? `<button class="sb-cat" data-act="open" style="top:${Number(s.catTop) || 46}%" aria-label="打开小吧台"></button>` : '')
+        root.innerHTML = (s.cat !== false && !v.drawer && !v.phone ? `<button class="sb-cat" style="top:${Number(s.catTop) || 46}%" aria-label="打开小吧台（上下拖可以挪位置）"></button>` : '')
             + (v.drawer ? drawerHtml(era) : '')
             + (v.phone ? phoneHtml(era) : '');
         drawCat();

@@ -1,22 +1,25 @@
 /* 小吧台：黑白极简。颜色都在这几个变量里，浅色 / 深色两套 */
 #sb-root{--sb-bg:#fff;--sb-fg:#111;--sb-dim:#8a8a8a;--sb-line:#e6e6e6;--sb-soft:#f5f5f5;--sb-shade:rgba(0,0,0,.28);--sb-font:-apple-system,"Helvetica Neue","PingFang SC","Microsoft YaHei",sans-serif;--sb-serif:"Songti SC","Noto Serif CJK SC","Source Han Serif SC",serif;
-    position:fixed;inset:0;pointer-events:none;z-index:9990;font:14px/1.5 var(--sb-font);color:var(--sb-fg);-webkit-text-size-adjust:100%}
+    /* 挂在 <html> 上，铺满屏幕；里面的东西都相对它定位。酒馆主题给 body 加了变形 / 滤镜时，挂在 body 里的固定定位会被困在 body 里（第一版就是这样跑到左上角、抽屉变透明的） */
+    position:fixed;top:0;left:0;width:100vw;height:100vh;height:100dvh;pointer-events:none;z-index:31000;overflow:hidden;font:14px/1.5 var(--sb-font);color:var(--sb-fg);-webkit-text-size-adjust:100%}
 #sb-root.sb-dark{--sb-bg:#0b0b0b;--sb-fg:#f2f2f2;--sb-dim:#7d7d7d;--sb-line:#262626;--sb-soft:#1a1a1a;--sb-shade:rgba(0,0,0,.55)}
 #sb-root.sb-era-ancient,#sb-root.sb-era-minguo{--sb-font:var(--sb-serif)}
 #sb-root.sb-era-ancient{--sb-bg:#f6f5f2;--sb-soft:#ecebe7;--sb-line:#dedad3}
 #sb-root.sb-era-ancient.sb-dark{--sb-bg:#121211;--sb-soft:#1c1b1a;--sb-line:#2a2927}
-#sb-root *{box-sizing:border-box}
+#sb-root *{box-sizing:border-box;font-family:var(--sb-font);letter-spacing:normal;text-transform:none;text-shadow:none}
+#sb-root .sb-cap,#sb-root .sb-logo{letter-spacing:.16em}#sb-root .sb-cap{text-transform:uppercase}#sb-root .sb-logo{letter-spacing:.32em}
 #sb-root button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
 #sb-root input,#sb-root select,#sb-root textarea{font:inherit;color:var(--sb-fg);background:var(--sb-soft);border:1px solid var(--sb-line);border-radius:10px;padding:7px 10px;outline:none;max-width:100%}
 #sb-root small{display:block;font-size:11px;color:var(--sb-dim);font-weight:400}
 
 /* 小猫：从左边缘探头，只能点 */
-#sb-root .sb-cat{position:fixed;left:-6px;pointer-events:auto;transform:translateY(-50%);padding:6px 6px 6px 0;line-height:0;opacity:.92}
+#sb-root .sb-cat{position:absolute;left:-4px;pointer-events:auto;transform:translateY(-50%);padding:8px 8px 8px 0;line-height:0;opacity:.95;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#sb-root .sb-cat.drag{opacity:.7}
 #sb-root .sb-cat svg{display:block}
 #sb-root .sb-cat-ink{fill:#111}#sb-root .sb-cat-hole{fill:#fff}
 #sb-root.sb-dark .sb-cat-ink{fill:#f2f2f2}#sb-root.sb-dark .sb-cat-hole{fill:#0b0b0b}
 
-#sb-root .sb-shade{position:fixed;inset:0;background:var(--sb-shade);pointer-events:auto}
+#sb-root .sb-shade{position:absolute;inset:0;background:var(--sb-shade);pointer-events:auto}
 /* 只在刚打开的那一下动一动，之后点来点去不再重播 */
 #sb-root.sb-anim .sb-shade{animation:sb-fade .2s}
 @keyframes sb-fade{from{opacity:0}}
@@ -26,7 +29,7 @@
 #sb-root.sb-anim .sb-phone{animation:sb-up .22s ease-out}
 
 /* 抽屉 */
-#sb-root .sb-drawer{position:fixed;top:0;bottom:0;left:0;width:min(330px,86vw);background:var(--sb-bg);border-right:1px solid var(--sb-line);display:flex;flex-direction:column;pointer-events:auto;touch-action:pan-y;overscroll-behavior:contain;padding-bottom:env(safe-area-inset-bottom)}
+#sb-root .sb-drawer{position:absolute;top:0;left:0;height:100%;width:min(330px,86vw);background:var(--sb-bg);border-right:1px solid var(--sb-line);display:flex;flex-direction:column;pointer-events:auto;touch-action:pan-y;overscroll-behavior:contain;padding-bottom:env(safe-area-inset-bottom)}
 #sb-root .sb-cover{height:128px;flex:0 0 auto;position:relative;background:#999 center/cover no-repeat;transition:height .2s}
 #sb-root .sb-logo{position:absolute;top:calc(14px + env(safe-area-inset-top));left:16px;color:#fff;font-size:11px;letter-spacing:.32em;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.3)}
 #sb-root .sb-x{position:absolute;top:calc(10px + env(safe-area-inset-top));right:12px;width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,.35);color:#fff;font-size:16px}
@@ -119,7 +122,7 @@
 #sb-root .sb-back{font-size:12.5px;color:var(--sb-dim);margin-bottom:10px}
 
 /* 小手机 */
-#sb-root .sb-phone{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom));width:min(320px,92vw);height:min(560px,calc(100dvh - 90px));border-radius:30px;border:1px solid var(--sb-line);background:var(--sb-bg);box-shadow:0 18px 50px rgba(0,0,0,.28);display:flex;flex-direction:column;overflow:hidden;pointer-events:auto;touch-action:pan-y;overscroll-behavior:contain}
+#sb-root .sb-phone{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom));width:min(320px,92vw);height:min(560px,calc(100% - 90px));border-radius:30px;border:1px solid var(--sb-line);background:var(--sb-bg);box-shadow:0 18px 50px rgba(0,0,0,.28);display:flex;flex-direction:column;overflow:hidden;pointer-events:auto;touch-action:pan-y;overscroll-behavior:contain}
 #sb-root.sb-era-ancient .sb-phone{border-radius:8px}
 #sb-root .sb-hbar{width:100px;height:4px;border-radius:2px;background:var(--sb-fg);opacity:.45;margin:8px auto 10px;flex:0 0 auto;padding:0}
 #sb-root .sb-hbar.idle{opacity:.2}
