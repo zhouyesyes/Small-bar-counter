@@ -55,6 +55,8 @@ export function createUI(host) {
         load: musicState,
         save: () => host.setSettings(() => {}),
         onChange: (kind, msg) => { if (kind === 'error') host.toast('warning', msg); if (kind === 'info') host.toast('info', msg); render(); },
+        // 状态那行小字只改字，不整页重画（滑着的时候不跳）
+        onStatus: text => { v.mstate = text; root?.querySelectorAll('.sb-mstate').forEach(el => { el.textContent = text; }); },
     });
     const fmt = s => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
     // 每秒只改进度条和歌词那几个字，不整页重画
@@ -111,8 +113,8 @@ export function createUI(host) {
             // 顶上收起 / 展开留一段余量：滑到底时页面变高变矮会来回弹，所以收起后要滑回很上面才展开
             if (e.target.classList?.contains('sb-body')) {
                 const d = root.querySelector('.sb-drawer'), y = e.target.scrollTop;
-                if (d && !d.classList.contains('sb-mini') && y > 160) d.classList.add('sb-mini');
-                else if (d && d.classList.contains('sb-mini') && y < 8) d.classList.remove('sb-mini');
+                if (d && !d.classList.contains('sb-mini') && y > 160) { d.classList.add('sb-mini'); v.mini = true; }
+                else if (d && d.classList.contains('sb-mini') && y < 8) { d.classList.remove('sb-mini'); v.mini = false; }
             }
             if (e.target.classList?.contains('sb-wxfeed') && e.target.scrollTop + e.target.clientHeight > e.target.scrollHeight - 40) {
                 const total = host.state().posts.length + host.state().moments.length;
@@ -197,7 +199,7 @@ export function createUI(host) {
         if (v.tab === 'now') body = v.nowBook ? nowBookHtml() : nowHtml(st);
         if (v.tab === 'diary') body = v.diaryId ? diaryOneHtml(st, him) : diaryListHtml(st);
         return `<div class="sb-shade" data-act="close"></div>
-<div class="sb-drawer" role="dialog" aria-label="小吧台">
+<div class="sb-drawer${v.mini ? ' sb-mini' : ''}" role="dialog" aria-label="小吧台">
  <div class="sb-cover ${coverClass()}" style="${coverStyle()}">
   <span class="sb-logo">SMALL BAR</span><button class="sb-x" data-act="close" aria-label="关上">×</button>
   <button class="sb-coverbtn" data-act="phone-go" data-to="set-cover">背景</button>
@@ -284,6 +286,7 @@ export function createUI(host) {
         const ms = musicState(), names = Object.keys(ms.lists);
         return `<section class="sb-music">
  <div class="sb-cap">${t ? 'now playing' : 'music'} · ${Wd().music}</div>
+ ${t ? `<div class="sb-mstate">${esc(v.mstate || (player.playing() ? '正在播放' : '点播放键开始'))}</div>` : ''}
  <div class="sb-bigcover" style="${t ? `background-image:url('${esc(coverUrl(t))}')` : ''}"></div>
  <div class="sb-mt">${esc(t?.title || '还没放歌')}</div>
  <div class="sb-ma">${esc(t?.artist || '搜一首，或者放TA在听的')}</div>
@@ -725,10 +728,10 @@ export function createUI(host) {
         const meta = host.meta();
         switch (act) {
             case 'open': v.drawer = true; break;
-            case 'close': v.drawer = false; v.diaryId = ''; break;
+            case 'close': v.drawer = false; v.diaryId = ''; v.mini = false; break;
             case 'tab':
                 if (b.dataset.tab === 'phone') { v.phone = true; v.view = 'home'; v.drawer = false; host.markRead(); }
-                else { v.tab = b.dataset.tab; v.diaryId = ''; v.nowBook = false; }
+                else { v.tab = b.dataset.tab; v.diaryId = ''; v.nowBook = false; v.mini = false; }
                 break;
             case 'flip': v.flip = !v.flip; break;
             case 'gen': await generate(b.dataset.kind); return;

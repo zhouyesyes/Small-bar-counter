@@ -364,3 +364,4 @@
 #sb-root .sb-plists button small{display:inline;font-size:10px;opacity:.7}
 #sb-root .sb-plists .add{border-style:dashed}
 #sb-root .sb-mres .sb-link{margin:0 0 0 8px;font-size:11px}
+#sb-root .sb-mstate{font-size:10.5px;color:var(--sb-dim);margin:-4px 0 8px;letter-spacing:.04em}

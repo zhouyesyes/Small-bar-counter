@@ -58,10 +58,12 @@ export async function searchSongs(q, page = 1) {
     q = str(q); if (!q) return [];
     const id = neteaseId(q);
     if (id) return [await songById(id)].filter(Boolean);
-    let list = [];
-    try { const { base, rows } = await ask({ server: 'netease', type: 'search', id: q, page, limit: 20 }); list = rows.map(x => trackOf(x, base)).filter(Boolean); }
-    catch { list = []; }
-    if (!list.length) list = await searchQQ(q); // 网易云没有：去 QQ 音乐找
+    // 网易云和 QQ 一起问：网易云先回就用网易云；网易云 4 秒还没回、或者没搜到，用 QQ 的（不用干等）
+    const qq = searchQQ(q);
+    const ne = ask({ server: 'netease', type: 'search', id: q, page, limit: 20 }, { timeout: 4000 })
+        .then(({ base, rows }) => rows.map(x => trackOf(x, base)).filter(Boolean)).catch(() => []);
+    let list = await ne;
+    if (!list.length) list = await qq;
     return rankSongs(list, q).slice(0, 12);
 }
 // 搜出来的排个序：歌名正好是搜的那个 > 歌名开头是 > 歌名里有 > 歌手对得上；翻唱、伴奏、DJ、现场这些往后放
@@ -146,7 +148,7 @@ export function parseLrc(text) {
 export const lineAt = (lrc, sec) => { let cur = -1; for (let i = 0; i < lrc.length; i++) { if (lrc[i].t <= sec + 0.2) cur = i; else break; } return cur; };
 
 // 播放器：一个真的 <audio>，不随界面重画；界面每秒问它一次进度
-export function createPlayer({ load, save, onChange }) {
+export function createPlayer({ load, save, onChange, onStatus = () => {} }) {
     const audio = new Audio();
     audio.preload = 'none';
     let lrc = [], lrcFor = '';
@@ -157,7 +159,9 @@ export function createPlayer({ load, save, onChange }) {
         if (i != null) { s.idx = Math.max(0, Math.min(s.list.length - 1, i)); save(); }
         const t = cur(); if (!t) return;
         let src;
-        try { src = await sourceUrl(t); } catch (e) { onChange?.('error', e?.message || '拿不到播放地址'); return; }
+        onStatus(t.src === 'qq' ? '正在问 QQ 音乐要播放地址…' : '正在连网易云…');
+        try { src = await sourceUrl(t); } catch (e) { onStatus('拿不到播放地址'); onChange?.('error', e?.message || '拿不到播放地址'); return; }
+        if (t.src === 'qq') save(); // 问地址时顺便拿到了封面、歌词
         if (audio.dataset.src !== src) { audio.src = src; audio.dataset.src = src; audio.dataset.id = t.id; audio.dataset.tried = ''; }
         try { await audio.play(); } catch (e) { if (e?.name !== 'NotAllowedError') await fallback(); else onChange?.('error', '点一下播放键继续'); }
         if (lrcFor !== t.id) { lrcFor = t.id; lrc = []; lyricOf(t).then(l => { if (lrcFor === t.id) { lrc = l; onChange?.(); } }); }
@@ -171,16 +175,25 @@ export function createPlayer({ load, save, onChange }) {
     };
     const prev = () => { const s = st(); if (!s.list.length) return; s.idx = (s.idx - 1 + s.list.length) % s.list.length; save(); play(); };
     audio.addEventListener('ended', () => next(true));
+    // 现在在干嘛：给界面那一行小字
+    const where = () => (cur()?.src === 'qq' || /vkeys|qq\.com|tc\.qq/.test(audio.src) ? 'QQ 音乐' : '网易云');
+    audio.addEventListener('loadstart', () => onStatus('正在加载…'));
+    audio.addEventListener('waiting', () => onStatus('缓冲中…（网不好会慢一点）'));
+    audio.addEventListener('stalled', () => onStatus('卡住了，还在等音乐接口…'));
+    audio.addEventListener('playing', () => onStatus('正在播放 · ' + where()));
+    audio.addEventListener('pause', () => { if (!audio.ended && audio.currentTime > 0) onStatus('暂停了'); });
     // 放不出来：网易云的歌先去 QQ 找同一首，再不行就提示
     async function fallback() {
         const t = cur(); if (!t || audio.dataset.tried) { onChange?.('error', '这首放不了（可能是会员歌或接口不通）'); return; }
         audio.dataset.tried = '1';
         if (t.src !== 'qq') {
+            onStatus('网易云放不了，去 QQ 音乐找同一首…');
             try {
                 const twin = await qqTwin(t);
                 if (twin) { const u = await qqUrl(twin); audio.src = u; audio.dataset.src = u; await audio.play(); onChange?.('info', '网易云放不了，换成 QQ 音乐的同一首'); return; }
             } catch { /* 继续往下提示 */ }
         }
+        onStatus('放不了');
         onChange?.('error', '这首放不了（可能是会员歌或接口不通）');
     }
     audio.addEventListener('error', () => { if (audio.src) fallback(); });
