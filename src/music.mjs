@@ -133,16 +133,28 @@ async function gdUrl(t) {
     if (!/^https?:/.test(u)) throw new Error('GD 没给地址');
     return u.replace(/^http:/, 'https:');
 }
+// 一串来源，每个带名字（k）：哪个放得出来就记在这首歌上（t.ok），下次先试它，不用再一个个等
 export async function sourceList(t) {
-    if (t.src === 'qq') return [await qqUrl(t)];
     const list = [];
-    if (t.direct) list.push(t.direct);
-    try { list.push(await gdUrl(t)); } catch { /* GD 没给就跳过 */ }
-    const bases = [t.base, ...MUSIC_APIS].filter(Boolean);
-    for (const b of [...new Set(bases)]) list.push(apiUrl(b, { server: 'netease', type: 'url', id: t.id }));
-    return [...new Set(list)];
+    const add = async (k, get) => { try { const u = await get(); if (u && !list.some(x => x.u === u)) list.push({ k, u }); } catch { /* 这个没给就跳过 */ } };
+    if (t.src === 'qq') {
+        await add('qq', () => qqUrl(t));
+    } else {
+        if (t.direct) list.push({ k: 'direct', u: t.direct });
+        const bases = [...new Set([t.base, ...MUSIC_APIS].filter(Boolean))];
+        // 记住的那个先拿（GD 要先问一次地址，其余是直接的链接）
+        const okIsGd = t.ok === 'gd';
+        if (okIsGd) await add('gd', () => gdUrl(t));
+        if (t.ok && t.ok.startsWith('m:')) list.push({ k: t.ok, u: apiUrl(t.ok.slice(2), { server: 'netease', type: 'url', id: t.id }) });
+        if (!okIsGd) await add('gd', () => gdUrl(t));
+        for (const b of bases) if ('m:' + b !== t.ok) list.push({ k: 'm:' + b, u: apiUrl(b, { server: 'netease', type: 'url', id: t.id }) });
+    }
+    // 记住的那个排第一
+    const i = list.findIndex(x => x.k === t.ok);
+    if (i > 0) list.unshift(...list.splice(i, 1));
+    return list;
 }
-export async function sourceUrl(t) { return (await sourceList(t))[0]; }
+export async function sourceUrl(t) { return (await sourceList(t))[0]?.u; }
 export async function songById(id) {
     const { base, rows } = await ask({ server: 'netease', type: 'song', id });
     return trackOf({ id, ...rows[0] }, base);
@@ -179,20 +191,23 @@ export const lineAt = (lrc, sec) => { let cur = -1; for (let i = 0; i < lrc.leng
 export function createPlayer({ load, save, onChange, onStatus = () => {} }) {
     const audio = new Audio();
     audio.preload = 'none';
-    let lrc = [], lrcFor = '', sources = [], srcIdx = 0, playing = null; // playing：真正在响的那首（切歌单不影响它）
+    let lrc = [], lrcFor = '', sources = [], srcIdx = 0, playing = null, swapped = false; // swapped：换成了另一个平台的同一首（这时不记来源）
+    const twinMode = () => { swapped = true; }; // playing：真正在响的那首（切歌单不影响它）
     const st = () => load(); // { list: [], idx, mode }
     const cur = () => st().list[st().idx];
     async function play(i) {
         const s = st();
         if (i != null) { s.idx = Math.max(0, Math.min(s.list.length - 1, i)); save(); }
         const t = cur(); if (!t) return;
-        playing = t;
+        playing = t; swapped = false;
         let src;
         onStatus(t.src === 'qq' ? '正在问 QQ 音乐要播放地址…' : '正在连网易云…');
-        try { sources = await sourceList(t); srcIdx = 0; src = sources[0]; } catch (e) { onStatus('拿不到播放地址'); onChange?.('error', e?.message || '拿不到播放地址'); return; }
-        if (!src) { onStatus('拿不到播放地址'); return; }
+        try { sources = await sourceList(t); srcIdx = 0; src = sources[0]?.u; } catch (e) { onStatus('拿不到播放地址'); onChange?.('error', e?.message || '拿不到播放地址'); return; }
+        if (!src) { onStatus('拿不到播放地址'); return fallback(); }
+        if (t.ok) onStatus('用上次放得出来的那个来源…');
         if (t.src === 'qq') save(); // 问地址时顺便拿到了封面、歌词
         if (audio.dataset.src !== src) { audio.src = src; audio.dataset.src = src; audio.dataset.id = t.id; audio.dataset.tried = ''; }
+        watch();
         // 放不了时 <audio> 自己会发 error，由那边换来源；这里只管被浏览器拦下自动播放的情况
         try { await audio.play(); } catch (e) { if (e?.name === 'NotAllowedError') onChange?.('error', '点一下播放键继续'); }
         if (lrcFor !== t.id) { lrcFor = t.id; lrc = []; lyricOf(t).then(l => { if (lrcFor === t.id) { lrc = l; onChange?.('state'); } }); }
@@ -223,25 +238,44 @@ export function createPlayer({ load, save, onChange, onStatus = () => {} }) {
         const t = playing || cur(); if (!t) return;
         // 先在这首歌的备用来源里一个个换（QR 也是这样，有的节点能放完整的会员歌）
         if (srcIdx + 1 < sources.length) {
-            srcIdx++; const u = sources[srcIdx];
+            srcIdx++; const u = sources[srcIdx].u;
             onStatus(`换一个来源试试（${srcIdx + 1} / ${sources.length}）…`);
-            audio.src = u; audio.dataset.src = u;
+            audio.src = u; audio.dataset.src = u; watch();
             try { await audio.play(); } catch { /* 出错会再进来 */ }
             return;
         }
         if (audio.dataset.tried) { onStatus('放不了'); onChange?.('error', '这首放不了（可能是会员歌或接口不通）'); return; }
         audio.dataset.tried = '1';
+        if (t.src === 'qq') {
+            onStatus('QQ 音乐放不了，去网易云找同一首…');
+            try {
+                const list = (await searchSongs([t.title, t.artist].filter(Boolean).join(' '))).filter(x => x.src !== 'qq');
+                const twin = list.find(x => norm(x.title) === norm(t.title));
+                if (twin) { sources = await sourceList(twin); srcIdx = 0; if (sources[0]) { twinMode(); audio.src = sources[0].u; audio.dataset.src = sources[0].u; watch(); await audio.play().catch(() => {}); onChange?.('info', 'QQ 音乐放不了，换成网易云的同一首'); return; } }
+            } catch { /* 继续往下提示 */ }
+        }
         if (t.src !== 'qq') {
             onStatus('网易云放不了，去 QQ 音乐找同一首…');
             try {
                 const twin = await qqTwin(t);
-                if (twin) { const u = await qqUrl(twin); audio.src = u; audio.dataset.src = u; await audio.play(); onChange?.('info', '网易云放不了，换成 QQ 音乐的同一首'); return; }
+                if (twin) { twinMode(); const u = await qqUrl(twin); audio.src = u; audio.dataset.src = u; watch(); await audio.play(); onChange?.('info', '网易云放不了，换成 QQ 音乐的同一首'); return; }
             } catch { /* 继续往下提示 */ }
         }
         onStatus('放不了');
         onChange?.('error', '这首放不了（可能是会员歌或接口不通）');
     }
-    audio.addEventListener('error', () => { if (audio.src) fallback(); });
+    let dog = 0;
+    function watch() {
+        clearTimeout(dog);
+        dog = setTimeout(() => { if (audio.paused || audio.currentTime < 0.3) { onStatus('等太久了，换一个来源…'); fallback(); } }, 12000);
+    }
+    audio.addEventListener('playing', () => {
+        clearTimeout(dog);
+        const t = playing, k = sources[srcIdx]?.k;
+        if (t && k && !swapped && t.ok !== k) { t.ok = k; save(); } // 记住这首用哪个来源放得出来
+    });
+    audio.addEventListener('pause', () => clearTimeout(dog));
+    audio.addEventListener('error', () => { clearTimeout(dog); if (audio.src) fallback(); });
     audio.addEventListener('play', () => onChange?.('state'));
     audio.addEventListener('pause', () => onChange?.('state'));
     return {
