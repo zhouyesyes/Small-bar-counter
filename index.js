@@ -161,7 +161,7 @@ function him() {
     const h = charCfg().him || {};
     const name = h.name || ch.name || c.name2 || '他';
     return {
-        cardName: ch.name || c.name2 || '他', name, remark: h.remark || '', xname: h.xname || '', handle: h.handle || '', xhandle: h.handle || '',
+        cardName: ch.name || c.name2 || '他', name, xavatar: h.xavatar ? img(h.xavatar) : '', remark: h.remark || '', xname: h.xname || '', handle: h.handle || '', xhandle: h.handle || '',
         sign: h.sign || '', penName: h.penName || '',
         avatar: (h.avatar && img(h.avatar)) || (ch.avatar ? (c.getThumbnailUrl?.('avatar', ch.avatar) ?? `/thumbnail?type=avatar&file=${encodeURIComponent(ch.avatar)}`) : ''),
     };
@@ -283,7 +283,11 @@ function refreshInject() {
     const mc = meta().comments || {};
     // 只带还没被回的：那条动态下最后一句是她说的
     const myComments = Object.values(mc).filter(list => list.length && list[list.length - 1].who === 'me').map(list => '- ' + list[list.length - 1].text).slice(-3).join('\n');
-    const text = buildInjection({ prompt: s.prompt, coverTags: tags, state: state(), wechatTail: tail, myComments, saveMode: s.saveMode, channel: era() === 'modern' ? '在手机上的聊天' : '的书信往来' });
+    // 「下一轮正文顺带回」：她发了还没回的手机消息
+    const list = wechat().filter(m => m.type !== 'note'); // 连正文里TA顺带回的一起看：TA回过了就不再催
+    let k = list.length; while (k > 0 && list[k - 1].from === 'me') k--;
+    const waiting = list.slice(k).filter(m => m.waiting && !m.pending).map(m => '- ' + (m.type === 'text' ? m.text : `[${m.type}]${m.text || ''}`)).join('\n');
+    const text = buildInjection({ prompt: s.prompt, coverTags: tags, state: state(), wechatTail: tail, myComments, waiting, saveMode: s.saveMode, channel: era() === 'modern' ? '在手机上的聊天' : '的书信往来' });
     // 1 = 放在聊天里（IN_CHAT），深度 0 = 最后面，0 = 系统身份
     c.setExtensionPrompt(INJECT_KEY, text, 1, 0, false, 0);
 }
@@ -294,7 +298,7 @@ function hasChar() { const c = ctx(); return c.characterId != null && c.characte
 const host = {
     settings, setSettings: f => { f(settings()); saveSettings(); refreshInject(); },
     charCfg, setCharCfg: f => { f(charCfg()); saveMeta(); refreshInject(); },
-    saveImage, img, dropImage: deleteImage,
+    saveImage, img, dropImage: deleteImage, refreshInject,
     meta, saveMeta, state, unread, markRead, wechat, addWechat, patchWechat, deleteWechat, takeLastRound, restoreRound, repliesFor,
     ...xHost,
     replyMode, replyCtx, worldInfo, testOwnApi,

@@ -39,13 +39,14 @@ export const PHONE_RULES = `你在用手机和对方聊天。像真人发消息�
 [转账]金额｜留言`;
 
 // 每轮注入正文的那一段：规则 + 现在的状态（{{char}}不用每次从头想）+ 她在小手机里新说的话
-export function buildInjection({ prompt, coverTags, state, wechatTail, myComments, saveMode, channel = '手机上的聊天' }) {
+export function buildInjection({ prompt, coverTags, state, wechatTail, myComments, waiting, saveMode, channel = '手机上的聊天' }) {
     let text = (prompt || DEFAULT_PROMPT).replace('{{背景}}', coverTags?.length ? `背景: 从这几个里挑一个最合适此刻的：${coverTags.join('、')}` : '');
     if (saveMode) text += '\n（省一点：这一轮只写 时间、天气、在哪、心声 这几项）';
     const n = state?.now || {};
     const cur = [n.time && '时间 ' + n.time, n.weather && '天气 ' + n.weather, n.where && '在 ' + n.where, n.wear && '穿着 ' + n.wear].filter(Boolean).join('，');
     if (cur) text += `\n上一轮的状态：${cur}`;
     if (wechatTail) text += `\n\n你们最近${channel}（{{char}} 记得这些）：\n${wechatTail}`;
+    if (waiting) text += `\n\n{{user}} 刚在手机上发来、还没回的消息：\n${waiting}\n这一轮请在状态段里用「微信:」回她，一行一条（可以好几行）。`;
     if (myComments) text += `\n\n{{user}} 在{{char}}动态下的留言（还没回）：\n${myComments}`;
     return text;
 }

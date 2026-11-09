@@ -271,3 +271,9 @@
 #sb-root label.sb-xbtn{cursor:pointer}
 #sb-root .sb-tokens{font-size:12px;color:var(--sb-dim);background:var(--sb-soft);border-radius:10px;padding:8px 10px;margin:4px 0 8px;line-height:1.6}
 #sb-root .sb-tokens b{color:var(--sb-fg);font-size:13px}
+#sb-root .sb-xcover .sb-coverbtn.sb-side{top:10px;bottom:auto;z-index:2}
+#sb-root .sb-xav{display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--sb-dim);cursor:pointer}
+#sb-root button.sb-xname{display:block;text-align:left}#sb-root .sb-pen{display:inline;color:var(--sb-dim);font-size:11px}
+#sb-root .sb-clock.sm{font-size:30px;font-weight:300;letter-spacing:.2em;margin-top:22px}
+#sb-root .sb-npage .sb-flip{margin-top:6px}
+#sb-root .sb-aitext{font-size:20px;font-weight:600;font-family:var(--sb-serif)}

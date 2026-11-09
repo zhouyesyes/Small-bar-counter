@@ -11,10 +11,16 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
 // 不同时代：同一套功能，换名字和字体
 const ERA = {
     modern: { tabs: ['动态', '此刻', '日记', '小手机'], posts: '动态', diary: '日记', phone: '小手机', wechat: '微信' },
-    minguo: { tabs: ['副刊', '此刻', '日记', '信笺'], posts: '副刊', diary: '日记', phone: '信笺', wechat: '信笺' },
-    ancient: { tabs: ['题壁', '此刻', '手札', '书信'], posts: '题壁', diary: '手札', phone: '书信', wechat: '书信' },
+    minguo: { tabs: ['副刊', '此刻', '日记', '信匣'], posts: '副刊', diary: '日记', phone: '信笺', wechat: '信笺' },
+    ancient: { tabs: ['题壁', '此刻', '手札', '书匣'], posts: '题壁', diary: '手札', phone: '书信', wechat: '书信' },
 };
 const TAB_KEYS = ['posts', 'now', 'diary', 'phone'];
+// 小手机里每一页的叫法：页面都一样有，只是换成那个年代的东西
+const WORDS = {
+    modern: { phone: '小手机', wechat: '微信', contacts: '通讯录', moments: '朋友圈', me: '我', x: 'X', xHim: 'TA的主页', xMe: '我的主页', dm: '私信', post: '发帖', follow: '关注', fans: '关注者', following: '正在关注', compose: '有什么新鲜事？', diary: '日记', memo: '备忘录', photos: '相册', music: '音乐', set: '设置', listen: 'TA在听', online: '在线' },
+    minguo: { phone: '信匣', wechat: '信笺', contacts: '通信录', moments: '副刊', me: '我', x: '小报', xHim: 'TA的专栏', xMe: '我的笔名', dm: '读者来信', post: '投稿', follow: '订阅', fans: '读者', following: '订阅了', compose: '写一则小文……', diary: '日记', memo: '记事簿', photos: '相片', music: '留声机', set: '设置', listen: '留声机里放着', online: '' },
+    ancient: { phone: '书匣', wechat: '书信', contacts: '故交', moments: '题壁', me: '我', x: '榜文', xHim: 'TA的诗名', xMe: '我的别号', dm: '匿名书', post: '张贴', follow: '相识', fans: '传阅', following: '结交', compose: '题一句……', diary: '手札', memo: '记事', photos: '画卷', music: '琴谱', set: '设置', listen: 'TA在抚', online: '' },
+};
 
 const ICON = {
     msg: '<path d="M4 6h16v10H9l-5 4z"/>',
@@ -246,8 +252,10 @@ export function createUI(host) {
             const head = day && day !== lastDay ? `<div class="sb-cap" style="margin:16px 0 6px">${esc(day)}</div>` : '';
             lastDay = day || lastDay;
             const r = (k, val) => val ? `<div class="sb-k">${k}</div><div>${esc(val)}</div>` : '';
+            const back = v.bookFlip?.[p.id];
             return head + `<div class="sb-npage"><div class="sb-dday"><b>${esc(String(p.time || '').replace(day, '').trim() || p.time || '')}</b> ${esc(p.weather || '')}</div>
-  <div class="sb-grid" style="margin-top:6px">${r('在哪', p.where)}${r('穿着', p.wear)}${r('想要', p.want)}${r('心声', p.voice)}</div></div>`;
+  <div class="sb-grid" style="margin-top:6px">${r('在哪', p.where)}${r('穿着', p.wear)}${r('想要', p.want)}${r(back ? '背面' : '心声', back ? p.voiceBack : p.voice)}</div>
+  ${p.voiceBack ? `<button class="sb-flip" data-act="bookflip" data-id="${esc(p.id)}">${back ? '翻回来' : '翻面'}</button>` : ''}</div>`;
         }).join('');
         return `<div class="sb-pad"><button class="sb-back" data-act="nowbook">← 现在</button>
  ${pages || '<div class="sb-empty">还没有以前的</div>'}
@@ -289,14 +297,14 @@ export function createUI(host) {
         const views = {
             home: homeHtml, 'wx-chat': wxChatHtml, 'wx-contacts': wxContactsHtml, 'wx-moments': wxMomentsHtml, 'wx-me': wxMeHtml,
             x: xHtml, 'x-dm': xDmHtml, diary: pDiaryHtml, memo: pMemoHtml, photos: pPhotosHtml, music: pMusicHtml,
-            settings: setHtml, 'set-cover': setCoverHtml, 'set-him': setHimHtml, 'set-me': setMeHtml, 'set-prompt': setPromptHtml, 'set-api': setApiHtml, 'set-reply': setReplyHtml,
+            settings: setHtml, 'set-cover': setCoverHtml, 'set-him': setHimHtml, 'set-me': setMeHtml, 'set-prompt': setPromptHtml, 'set-api': setApiHtml, 'set-reply': setReplyHtml, 'set-when': setWhenHtml,
         };
         // 古风、民国没有手机：换成书信（设置页还用同一个框）
-        const letters = era !== 'modern' && !v.view.startsWith('set');
+        const letters = era !== 'modern' && v.view === 'wx-chat';
         const inner = letters ? letterHtml(era) : (views[v.view] || homeHtml)(era);
-        const bar = letters ? '' : v.view !== 'home' ? '<button class="sb-hbar" data-act="phone-go" data-to="home" aria-label="回主页"></button>' : '<div class="sb-hbar idle"></div>';
+        const bar = v.view !== 'home' ? '<button class="sb-hbar" data-act="phone-go" data-to="home" aria-label="回主页"></button>' : '<div class="sb-hbar idle"></div>';
         return `<div class="sb-shade" data-act="phone-close"></div>
-<div class="sb-phone${letters ? ' sb-letterbox' : ''}" role="dialog" aria-label="${letters ? '书信' : '小手机'}">${inner}${bar}</div>`;
+<div class="sb-phone${era !== 'modern' ? ' sb-letterbox' : ''}" role="dialog" aria-label="${WORDS[era].phone}">${inner}${bar}</div>`;
     }
     // ---------- 古风 / 民国：不用小手机，换成书信 ----------
     const LETTER = {
@@ -305,20 +313,7 @@ export function createUI(host) {
     };
     function letterHtml(era) {
         const L = LETTER[era] || LETTER.ancient, him = host.him();
-        const tab = v.view === 'wx-moments' ? 1 : v.view === 'diary' ? 2 : 0;
-        const top = `<div class="sb-lhead"><span class="sb-ltitle">${L.tabs.map((n, i) => `<button data-act="phone-go" data-to="${['wx-chat', 'wx-moments', 'diary'][i]}" class="${tab === i ? 'on' : ''}">${n}</button>`).join('')}</span>
-  <button class="sb-phx" data-act="phone-go" data-to="settings" aria-label="设置">⚙</button><button class="sb-phx" data-act="phone-close" aria-label="关上">×</button></div>`;
-        if (tab === 1) {
-            const st = host.state(), hidden = host.meta().hidden || {};
-            const all = [...st.posts.filter(p => !hidden[p.id]), ...st.moments].sort((a, b) => (b.at || 0) - (a.at || 0));
-            return top + `<div class="sb-list" data-keep="wall">${all.length ? all.slice(0, v.momentsN).map(p => postHtml(p, him)).join('') : '<div class="sb-empty">还没有人题过</div>'}
- ${all.length > v.momentsN ? '<button class="sb-more" data-act="lmore">再看 10 条</button>' : ''}</div>`;
-        }
-        if (tab === 2) {
-            const st = host.state(), hidden = host.meta().hidden || {};
-            const list = st.diary.filter(d => !hidden[d.id]).reverse();
-            return top + `<div class="sb-list">${list.length ? list.map(d => `<button class="sb-dold" data-act="diary-open" data-id="${esc(d.id)}"><span>${esc(d.time)}</span><span>${esc(d.title || d.text.slice(0, 12))}</span></button>`).join('') : '<div class="sb-empty">还没有</div>'}</div>`;
-        }
+        const top = head(`<span class="sb-pav sm" style="background-image:url('${esc(him.avatar)}')"></span><span><b>${esc(him.remark || him.name)}</b><small>${L.title}</small></span>`);
         // 书信：同一个人连着写的几句放在一张信纸上
         const groups = [];
         for (const m of host.wechat()) {
@@ -348,17 +343,18 @@ export function createUI(host) {
     const head = (title, right = '') => `<div class="sb-ph"><button class="sb-bk" data-act="phone-back" aria-label="返回">‹</button><div class="sb-pht">${title}</div>${right || '<button class="sb-phx" data-act="phone-close" aria-label="关上">×</button>'}</div>`;
     const app = (k, to, name, badge) => `<button class="sb-app" data-act="phone-go" data-to="${to}"><span class="sb-ai">${svg(k)}${badge ? `<b class="sb-ab">${badge}</b>` : ''}</span><span class="sb-an">${name}</span></button>`;
 
+    const Wd = () => WORDS[host.era()] || WORDS.modern;
     function homeHtml(era) {
         const st = host.state(), n = st.now;
         const clock = (n.time || '').match(/(\d{1,2}[:：]\d{2})/)?.[1]?.replace('：', ':') || '';
         const date = (n.time || '').replace(/\d{1,2}[:：]\d{2}/, '').trim();
         return `<div class="sb-home">
  <div class="sb-sbar"><span>${esc(clock)}</span><button class="sb-phx" data-act="phone-close" aria-label="关上">×</button></div>
- <div class="sb-clock">${esc(clock || '--:--')}</div>
+ <div class="sb-clock${clock ? '' : ' sm'}">${esc(clock || (era === 'modern' ? '--:--' : (n.time || '').split(/\s+/).pop() || '—'))}</div>
  <div class="sb-cdate">${esc([date, n.weather].filter(Boolean).join(' · ') || '时间跟着剧情走')}</div>
- <button class="sb-widget" data-act="phone-go" data-to="music"><div class="sb-cap">TA在听</div><div class="sb-wrow"><span class="sb-wcov"></span><span><b>${esc(st.music?.title || '还没在听歌')}</b><small>${esc(st.music?.lyric || st.music?.artist || '')}</small></span></div></button>
- <div class="sb-apps">${app('x', 'x', 'X')}${app('diary', 'diary', ERA[era].diary)}${app('memo', 'memo', '备忘录')}${app('photos', 'photos', '相册')}</div>
- <div class="sb-dock">${app('msg', 'wx-contacts', ERA[era].wechat, host.unread())}${app('music', 'music', '音乐')}${app('set', 'settings', '设置')}</div>
+ <button class="sb-widget" data-act="phone-go" data-to="music"><div class="sb-cap">${Wd().listen}</div><div class="sb-wrow"><span class="sb-wcov"></span><span><b>${esc(st.music?.title || '还没在听歌')}</b><small>${esc(st.music?.lyric || st.music?.artist || '')}</small></span></div></button>
+ <div class="sb-apps">${era === 'modern' ? app('x', 'x', Wd().x) : `<button class="sb-app" data-act="phone-go" data-to="x"><span class="sb-ai sb-aitext">${Wd().x.slice(0, 1)}</span><span class="sb-an">${Wd().x}</span></button>`}${app('diary', 'diary', Wd().diary)}${app('memo', 'memo', Wd().memo)}${app('photos', 'photos', Wd().photos)}</div>
+ <div class="sb-dock">${app('msg', 'wx-contacts', Wd().wechat, host.unread())}${app('music', 'music', Wd().music)}${app('set', 'settings', Wd().set)}</div>
 </div>`;
     }
 
@@ -386,7 +382,7 @@ export function createUI(host) {
             return t + bubble(m);
         }).join('');
         const menu = v.menuFor ? `<div class="sb-sheet"><button data-act="medit" data-id="${esc(v.menuFor)}">编辑</button><button data-act="mdel" data-id="${esc(v.menuFor)}">删除</button><button data-act="mcancel">取消</button></div>` : '';
-        return `${head(`<span class="sb-pav sm" style="background-image:url('${esc(him.avatar)}')"></span><span><b>${esc(him.remark || him.name)}</b><small>${v.busy ? '对方正在输入…' : '在线'}</small></span>`, '<button class="sb-phx" data-act="phone-go" data-to="wx-contacts" aria-label="联系人">≡</button>')}
+        return `${head(`<span class="sb-pav sm" style="background-image:url('${esc(him.avatar)}')"></span><span><b>${esc(him.remark || him.name)}</b><small>${v.busy ? '对方正在输入…' : Wd().online}</small></span>`, '<button class="sb-phx" data-act="phone-go" data-to="wx-contacts" aria-label="联系人">≡</button>')}
  <div class="sb-msgs" data-keep="msgs">${rows || '<div class="sb-empty sm">还没聊过。说点什么吧。</div>'}
   ${pend ? `<div class="sb-pendnote">待发送 ${pend} 条 · 点 ↑ TA才回</div>` : ''}
   ${v.busy ? '<div class="sb-typing">· · ·</div>' : ''}
@@ -395,11 +391,11 @@ export function createUI(host) {
  ${v.plus ? `<div class="sb-ppanel">${[['emoji', '表情'], ['voice', '语音'], ['photos', '图片'], ['money', '转账'], ['redo', '重生成']].map(([k, n]) => `<button class="sb-app" data-act="pp" data-k="${k}"><span class="sb-ai sm">${svg(k)}</span><span class="sb-an">${n}</span></button>`).join('')}</div>` : ''}
  ${menu}`;
     }
-    const wxTabs = on => `<nav class="sb-wxtabs">${[['wx-contacts', '通讯录'], ['wx-moments', '朋友圈'], ['wx-me', '我']].map(([k, n]) => `<button data-act="phone-go" data-to="${k}" class="${on === k ? 'on' : ''}">${n}${k === 'wx-contacts' && host.unread() ? ` <b class="sb-badge">${host.unread()}</b>` : ''}</button>`).join('')}</nav>`;
+    const wxTabs = on => `<nav class="sb-wxtabs">${[['wx-contacts', Wd().contacts], ['wx-moments', Wd().moments], ['wx-me', Wd().me]].map(([k, n]) => `<button data-act="phone-go" data-to="${k}" class="${on === k ? 'on' : ''}">${n}${k === 'wx-contacts' && host.unread() ? ` <b class="sb-badge">${host.unread()}</b>` : ''}</button>`).join('')}</nav>`;
     function wxContactsHtml() {
         const him = host.him();
         const npcs = [...new Set([...host.state().moments.map(m => m.who), ...host.state().npcComments.map(c => c.who)])];
-        return `${head('通讯录')}
+        return `${head(Wd().contacts)}
  <div class="sb-list">
   <div class="sb-cap">friends · 好友</div>
   <button class="sb-cr" data-act="phone-go" data-to="wx-chat"><span class="sb-pav sm" style="background-image:url('${esc(him.avatar)}')"></span><span class="sb-crm"><b>${esc(him.remark || him.name)}</b><small>${esc(host.wechat().filter(m => m.type !== 'note').slice(-1)[0]?.text || him.sign || '点进去聊天')}</small></span>${host.unread() ? `<b class="sb-badge">${host.unread()}</b>` : ''}</button>
@@ -413,13 +409,13 @@ export function createUI(host) {
         const me = host.me();
         return `<div class="sb-wxfeed" data-keep="moments">
   <div class="sb-wcover ${sideCover('coverWx').cls}" style="${sideCover('coverWx').style}"><button class="sb-bk light" data-act="phone-back">‹</button>${coverBtn('coverWx')}<span class="sb-wme"><b>${esc(me.name)}</b><span class="sb-wav" style="background-image:url('${esc(me.avatar)}')"></span></span></div>
-  ${all.length ? all.slice(0, v.momentsN).map(p => postHtml(p, him)).join('') : '<div class="sb-empty">朋友圈还是空的</div>'}
+  ${all.length ? all.slice(0, v.momentsN).map(p => postHtml(p, him)).join('') : `<div class="sb-empty">${Wd().moments}还是空的</div>`}
   ${all.length > v.momentsN ? '<div class="sb-more">往下滑，再加载 10 条</div>' : all.length ? '<div class="sb-more">没有更早的了</div>' : ''}
  </div>${wxTabs('wx-moments')}`;
     }
     function wxMeHtml() {
         const me = host.me();
-        return `${head('我')}
+        return `${head(Wd().me)}
  <div class="sb-list"><div class="sb-mehead"><span class="sb-pav" style="background-image:url('${esc(me.avatar)}')"></span><span><b>${esc(me.name)}</b><small>在设置里改名字和头像</small></span></div>
   <button class="sb-srow" data-act="phone-go" data-to="set-me"><span>我的名字和头像</span><span class="sb-sv">›</span></button></div>${wxTabs('wx-me')}`;
     }
@@ -432,27 +428,27 @@ export function createUI(host) {
         if (v.xTab === 'me') return xMeHtml();
         return `<div class="sb-xpage" data-keep="x">
  <div class="sb-xcover ${sideCover('coverX').cls}" style="${sideCover('coverX').style}"><button class="sb-bk light" data-act="phone-back">‹</button>${coverBtn('coverX')}</div>
- <div class="sb-xtop"><span class="sb-xav" style="background-image:url('${esc(him.avatar)}')"></span><button class="sb-xbtn" data-act="phone-go" data-to="x-dm">私信</button><span class="sb-xbtn solid">关注</span></div>
- <div class="sb-xname">${esc(him.xname || him.name)}</div><div class="sb-handle left">${esc(him.xhandle || him.handle || '')}</div>
+ <div class="sb-xtop"><label class="sb-xav" style="background-image:url('${esc(him.xavatar)}')" title="点一下换TA在这里的头像">${him.xavatar ? '' : esc((him.xname || him.name).slice(0, 1))}<input type="file" accept="image/*" data-upload="him-xavatar" hidden></label><button class="sb-xbtn" data-act="xtab" data-x="dm">${Wd().dm}</button><span class="sb-xbtn solid">${Wd().follow}</span></div>
+ <button class="sb-xname" data-act="xname-him" title="点一下改网名">${esc(him.xname || him.name)} <small class="sb-pen">✎</small></button><div class="sb-handle left">${esc(him.xhandle || him.handle || '')}</div>
  ${him.sign ? `<div class="sb-xbio">${esc(him.sign)}</div>` : ''}
- <div class="sb-xstat"><span><b>${seed % 40 + 3}</b> 正在关注</span><span><b>${(seed * 37 % 4000 + 120).toLocaleString()}</b> 关注者</span></div>
+ <div class="sb-xstat"><span><b>${seed % 40 + 3}</b> ${Wd().following}</span><span><b>${(seed * 37 % 4000 + 120).toLocaleString()}</b> ${Wd().fans}</span></div>
  <div class="sb-xtabs"><span class="on">帖子</span><span>回复</span><span>媒体</span></div>
- ${list.length ? list.slice(0, v.xN).map(p => `<article class="sb-post him"><div class="sb-pav" style="background-image:url('${esc(him.avatar)}')"></div><div class="sb-pmain"><b class="sb-pname">${esc(him.xname || him.name)}</b> <small class="sb-dim">${esc(p.time)}</small><div class="sb-ptext">${nl(p.text)}</div>${p.pics?.length ? `<div class="sb-pics">${p.pics.map(x => `<span>${esc(x)}</span>`).join('')}</div>` : ''}</div></article>`).join('') : '<div class="sb-empty">TA还没在 X 上发过帖子</div>'}
+ ${list.length ? list.slice(0, v.xN).map(p => `<article class="sb-post him"><div class="sb-pav" style="background-image:url('${esc(him.xavatar)}')">${him.xavatar ? '' : esc((him.xname || him.name).slice(0, 1))}</div><div class="sb-pmain"><b class="sb-pname">${esc(him.xname || him.name)}</b> <small class="sb-dim">${esc(p.time)}</small><div class="sb-ptext">${nl(p.text)}</div>${p.pics?.length ? `<div class="sb-pics">${p.pics.map(x => `<span>${esc(x)}</span>`).join('')}</div>` : ''}</div></article>`).join('') : `<div class="sb-empty">TA还没在${Wd().x}上发过</div>`}
  ${list.length > v.xN ? '<button class="sb-more" data-act="xmore">再加载 10 条</button>' : ''}
  
 </div>${xNav()}`;
     }
-    const xNav = () => `<nav class="sb-wxtabs">${[['him', 'TA的主页'], ['me', '我的主页'], ['dm', '私信']].map(([k, n]) => `<button data-act="xtab" data-x="${k}" class="${(v.xTab || 'him') === k ? 'on' : ''}">${n}</button>`).join('')}</nav>`;
+    const xNav = () => `<nav class="sb-wxtabs">${[['him', Wd().xHim], ['me', Wd().xMe], ['dm', Wd().dm]].map(([k, n]) => `<button data-act="xtab" data-x="${k}" class="${(v.xTab || 'him') === k ? 'on' : ''}">${n}</button>`).join('')}</nav>`;
     // 我的 X 主页：你现在用的这个匿名号；可以发帖
     function xMeHtml() {
         const acc = host.xAccount(), me = host.me(), list = [...host.xMine()].reverse();
         return `<div class="sb-xpage" data-keep="xme">
  <div class="sb-xcover ${sideCover('coverXMe').cls}" style="${sideCover('coverXMe').style}"><button class="sb-bk light" data-act="phone-back">‹</button>${coverBtn('coverXMe')}</div>
- <div class="sb-xtop"><span class="sb-xav" style="background-image:url('${esc(acc.avatar ? host.img(acc.avatar) : me.avatar)}')"></span><label class="sb-xbtn">换头像<input type="file" accept="image/*" data-upload="xacc-avatar" hidden></label><button class="sb-xbtn" data-act="xacc-next">换号</button></div>
- <div class="sb-xname">${esc(acc.name)}</div><div class="sb-handle left">@${esc(acc.handle || acc.name)}</div>
- <div class="sb-xbio sb-dim">TA不知道这是你 · 换号和改网名也可以在私信右上 ···</div>
- <div class="sb-xcompose"><input data-xpost placeholder="有什么新鲜事？" enterkeyhint="send"><button class="sb-xbtn solid" data-act="xpost">发帖</button></div>
- ${list.length ? list.map(p => `<article class="sb-post"><div class="sb-pav" style="background-image:url('${esc(acc.avatar ? host.img(acc.avatar) : me.avatar)}')"></div><div class="sb-pmain"><b class="sb-pname">${esc(acc.name)}</b> <small class="sb-dim">${esc(p.time || '')}</small><div class="sb-ptext">${nl(p.text)}</div></div><button class="sb-phx" data-act="xpost-del" data-id="${esc(p.id)}" aria-label="删掉">×</button></article>`).join('') : '<div class="sb-empty">这个号还没发过帖子</div>'}
+ <div class="sb-xtop"><span class="sb-xav" style="background-image:url('${esc(acc.avatar ? host.img(acc.avatar) : '')}')">${acc.avatar ? '' : esc(acc.name.slice(0, 1))}</span><label class="sb-xbtn">换头像<input type="file" accept="image/*" data-upload="xacc-avatar" hidden></label><button class="sb-xbtn" data-act="xacc-next">换号</button></div>
+ <button class="sb-xname" data-act="xacc-rename" title="点一下改网名">${esc(acc.name)} <small class="sb-pen">✎</small></button><div class="sb-handle left">@${esc(acc.handle || acc.name)}</div>
+ <div class="sb-xbio sb-dim">TA不知道这是你 · 点网名就能改</div>
+ <div class="sb-xcompose"><input data-xpost placeholder="${Wd().compose}" enterkeyhint="send"><button class="sb-xbtn solid" data-act="xpost">${Wd().post}</button></div>
+ ${list.length ? list.map(p => `<article class="sb-post"><div class="sb-pav" style="background-image:url('${esc(acc.avatar ? host.img(acc.avatar) : '')}')">${acc.avatar ? '' : esc(acc.name.slice(0, 1))}</div><div class="sb-pmain"><b class="sb-pname">${esc(acc.name)}</b> <small class="sb-dim">${esc(p.time || '')}</small><div class="sb-ptext">${nl(p.text)}</div></div><button class="sb-phx" data-act="xpost-del" data-id="${esc(p.id)}" aria-label="删掉">×</button></article>`).join('') : '<div class="sb-empty">这个号还没发过帖子</div>'}
 </div>${xNav()}`;
     }
     // X 私信：你是匿名网友，TA不知道你是谁；可能已读不回、拉黑
@@ -468,9 +464,9 @@ export function createUI(host) {
   <button data-act="xacc-rename">改这个号的网名</button>
   <button data-act="xblock">${host.xIBlocked() ? '解除拉黑' : '拉黑TA'}</button>
  </div>` : '';
-        return `${head(`<span class="sb-pav sm" style="background-image:url('${esc(him.avatar)}')"></span><span><b>${esc(him.xname || him.name)}</b><small>你现在是「${esc(acc.name)}」</small></span>`, '<button class="sb-phx" data-act="dmmenu" aria-label="更多">···</button>')}
+        return `${head(`<span class="sb-pav sm" style="background-image:url('${esc(him.xavatar)}')">${him.xavatar ? '' : esc((him.xname || him.name).slice(0, 1))}</span><span><b>${esc(him.xname || him.name)}</b><small>你现在是「${esc(acc.name)}」</small></span>`, '<button class="sb-phx" data-act="dmmenu" aria-label="更多">···</button>')}
  <div class="sb-msgs" data-keep="dm">
-  <div class="sb-dmhead"><span class="sb-pav big" style="background-image:url('${esc(him.avatar)}')"></span><b>${esc(him.xname || him.name)}</b><small>你们没有互相关注 · TA不知道你是谁</small></div>
+  <div class="sb-dmhead"><span class="sb-pav big" style="background-image:url('${esc(him.xavatar)}')">${him.xavatar ? '' : esc((him.xname || him.name).slice(0, 1))}</span><b>${esc(him.xname || him.name)}</b><small>你们没有互相关注 · TA不知道你是谁</small></div>
   ${rows}
   ${pend ? `<div class="sb-pendnote">待发送 ${pend} 条 · 点 ↑ TA才看到</div>` : ''}
   ${v.busy ? '<div class="sb-typing">· · ·</div>' : ''}
@@ -509,18 +505,18 @@ export function createUI(host) {
     function pDiaryHtml(era) {
         const st = host.state(), hidden = host.meta().hidden || {};
         const list = st.diary.filter(d => !hidden[d.id]).reverse();
-        return `${head(ERA[era].diary)}<div class="sb-list">${list.length ? list.map(d => `<button class="sb-dold" data-act="diary-open" data-id="${esc(d.id)}"><span>${esc(d.time)}</span><span>${esc(d.title || d.text.slice(0, 12))}</span></button>`).join('') : '<div class="sb-empty">还没有</div>'}</div>`;
+        return `${head(Wd().diary)}<div class="sb-list">${list.length ? list.map(d => `<button class="sb-dold" data-act="diary-open" data-id="${esc(d.id)}"><span>${esc(d.time)}</span><span>${esc(d.title || d.text.slice(0, 12))}</span></button>`).join('') : '<div class="sb-empty">还没有</div>'}</div>`;
     }
     function pMemoHtml() {
         const st = host.state();
-        return `${head('备忘录')}<div class="sb-list">${st.memo.length ? st.memo.map(m => `<div class="sb-memo${m.done ? ' done' : ''}"><span class="sb-ck">${m.done ? '✓' : ''}</span>${esc(m.text)}</div>`).join('') : '<div class="sb-empty">TA还没记要做的事</div>'}</div>`;
+        return `${head(Wd().memo)}<div class="sb-list">${st.memo.length ? st.memo.map(m => `<div class="sb-memo${m.done ? ' done' : ''}"><span class="sb-ck">${m.done ? '✓' : ''}</span>${esc(m.text)}</div>`).join('') : '<div class="sb-empty">TA还没记要做的事</div>'}</div>`;
     }
     function pPhotosHtml() {
         const st = host.state();
         const pics = [...st.posts.flatMap(p => p.pics), ...st.xposts.flatMap(p => p.pics), ...host.wechat().filter(m => m.type === 'pic' && m.from === 'him').map(m => m.text)].reverse();
-        return `${head('相册')}<div class="sb-list"><div class="sb-album">${pics.length ? pics.map(p => `<span>${esc(p)}</span>`).join('') : ''}</div>${pics.length ? '' : '<div class="sb-empty">还没有照片</div>'}</div>`;
+        return `${head(Wd().photos)}<div class="sb-list"><div class="sb-album">${pics.length ? pics.map(p => `<span>${esc(p)}</span>`).join('') : ''}</div>${pics.length ? '' : '<div class="sb-empty">还没有照片</div>'}</div>`;
     }
-    function pMusicHtml() { return `${head('音乐')}<div class="sb-list">${musicHtml(host.state())}</div>`; }
+    function pMusicHtml() { return `${head(Wd().music)}<div class="sb-list">${musicHtml(host.state())}</div>`; }
 
     // 设置
     const row = (label, val, to) => `<button class="sb-srow" data-act="phone-go" data-to="${to}"><span>${label}</span><span class="sb-sv">${esc(val)} ›</span></button>`;
@@ -530,9 +526,9 @@ export function createUI(host) {
         const modeName = { weather: '跟天气', fixed: '固定一张', pick: 'TA来挑' }[c.cover?.mode || 'weather'];
         const eraName = { auto: '自动 · ' + ({ modern: '现代', minguo: '民国', ancient: '古风' }[host.guessedEra()]), modern: '现代', minguo: '民国', ancient: '古风' }[c.era || 'auto'];
         const apiName = s.api === 'own' ? (s.ownApi?.model || '自己填的') : '跟正文';
-        return `${head('设置')}<div class="sb-slist">
+        return `${head(Wd().set)}<div class="sb-slist">
  <div class="sb-sh">主页</div><div class="sb-sgrp">${row('头图', modeName, 'set-cover')}${row('TA的名片', host.him().name, 'set-him')}${row('我的名字和头像', host.me().name, 'set-me')}</div>
- <div class="sb-sh">API</div><div class="sb-sgrp">${row('小手机用哪个', apiName, 'set-api')}${row('回复时带什么', host.replyMode() === 'full' ? '整套（预设 + 世界书 + 剧情）' : '自己挑', 'set-reply')}${toggle('省一点', 'saveMode', s.saveMode, '这一轮只写时间、天气、在哪、心声')}</div>
+ <div class="sb-sh">API</div><div class="sb-sgrp">${row('小手机用哪个', apiName, 'set-api')}${row('TA什么时候回', host.settings().phoneWhen === 'next' ? '下一轮正文顺带回' : '马上回', 'set-when')}${row('回复时带什么', host.replyMode() === 'full' ? '整套（预设 + 世界书 + 剧情）' : '自己挑', 'set-reply')}${toggle('省一点', 'saveMode', s.saveMode, '这一轮只写时间、天气、在哪、心声')}</div>
  <div class="sb-sh">TA</div><div class="sb-sgrp">
   <label class="sb-srow"><span>时代</span><select data-cset="era">${[['auto', eraName.startsWith('自动') ? eraName : '自动'], ['modern', '现代'], ['minguo', '民国'], ['ancient', '古风']].map(([k, n]) => `<option value="${k}" ${(c.era || 'auto') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
   ${row('提示词', s.prompt ? '改过' : '默认', 'set-prompt')}
@@ -599,6 +595,14 @@ export function createUI(host) {
  </div>` : ''}
 </div>`;
     }
+    function setWhenHtml() {
+        const w = host.settings().phoneWhen || 'now';
+        const opt = (k, t, sub) => `<button class="sb-srow" data-act="when" data-w="${k}"><span>${t}<small>${sub}</small></span><span class="sb-sv">${w === k ? '✓' : ''}</span></button>`;
+        return `${head('TA什么时候回')}<div class="sb-list">
+ ${opt('now', '马上回', '点 ↑ 就单独请求一次，几秒后TA一条条回（按「小手机用哪个」「回复时带什么」）')}
+ ${opt('next', '下一轮正文顺带回', '点 ↑ 先发出去，等你在正文里回话时，TA写完正文顺带在手机上回你；不多请求、不多花钱，回得慢一点')}
+ <div class="sb-hint">「顺带回」用的是正文那个 API，带的就是正文的整套（预设、世界书都在）。</div></div>`;
+    }
     function setReplyHtml() {
         const s = host.settings(), c = host.replyCtx(), full = host.replyMode() === 'full', main = (s.api || 'main') === 'main';
         const tg = (label, key, sub = '') => `<label class="sb-srow"><span>${label}${sub ? `<small>${sub}</small>` : ''}</span><input type="checkbox" class="sb-tg" data-ctx="${key}" ${c[key] ? 'checked' : ''}></label>`;
@@ -633,6 +637,7 @@ export function createUI(host) {
                 break;
             case 'flip': v.flip = !v.flip; break;
             case 'nowbook': v.nowBook = !v.nowBook; v.bookN = 20; break;
+            case 'bookflip': v.bookFlip ??= {}; v.bookFlip[b.dataset.id] = !v.bookFlip[b.dataset.id]; break;
             case 'bookmore': v.bookN = (v.bookN || 20) + 20; break;
             case 'diary': v.diaryId = b.dataset.id; break;
             case 'diary-open': v.phone = false; v.drawer = true; v.tab = 'diary'; v.diaryId = b.dataset.id; break;
@@ -660,7 +665,7 @@ export function createUI(host) {
                 if (v.view === 'wx-moments') v.momentsN = 10;
                 break;
             case 'phone-back': {
-                const back = { 'wx-chat': 'wx-contacts', 'x-dm': 'x', 'set-reply': 'settings', 'set-cover': 'settings', 'set-him': 'settings', 'set-me': 'settings', 'set-prompt': 'settings', 'set-api': 'settings' }[v.view];
+                const back = { 'set-when': 'settings', 'wx-chat': 'wx-contacts', 'x-dm': 'x', 'set-reply': 'settings', 'set-cover': 'settings', 'set-him': 'settings', 'set-me': 'settings', 'set-prompt': 'settings', 'set-api': 'settings' }[v.view];
                 v.view = back || 'home'; v.plus = false; v.menuFor = ''; v.edit = null; break;
             }
             case 'phone-close': v.phone = false; v.plus = false; v.menuFor = ''; v.edit = null; break;
@@ -672,6 +677,10 @@ export function createUI(host) {
             case 'xacc-next': { const list = host.xAccounts(), i = list.findIndex(a => a.id === host.xAccount().id); host.setXAccount(list[(i + 1) % list.length].id); break; }
             case 'xpost': { const inp = root.querySelector('[data-xpost]'); if (inp?.value.trim()) { host.addXMine(inp.value.trim()); } break; }
             case 'xpost-del': host.delXMine(b.dataset.id); break;
+            case 'xname-him': {
+                const n = await host.prompt('TA在这里的网名', host.him().xname || host.him().name); if (n == null) return;
+                host.setCharCfg(c => { c.him = { ...(c.him || {}), xname: String(n).trim() }; }); break;
+            }
             case 'dmmenu': v.dmMenu = !v.dmMenu; break;
             case 'xacc': host.setXAccount(b.dataset.id); v.dmMenu = false; v.stick = true; break;
             case 'xacc-new': {
@@ -708,6 +717,7 @@ export function createUI(host) {
             case 'him-avatar-clear': host.setCharCfg(c => { c.him = { ...(c.him || {}), avatar: '' }; }); break;
             case 'prompt-reset': host.setSettings(s => { s.prompt = ''; }); break;
             case 'api': host.setSettings(s => { s.api = b.dataset.id; }); if (b.dataset.id !== 'own') v.view = 'settings'; break;
+            case 'when': host.setSettings(s => { s.phoneWhen = b.dataset.w; }); v.view = 'settings'; break;
             case 'rmode': host.setSettings(s => { s.replyMode = b.dataset.mode; }); break;
             case 'own-test': {
                 v.busy = true; render();
@@ -745,6 +755,7 @@ export function createUI(host) {
             if (kind === 'pick') host.setCharCfg(c => { c.cover = { ...(c.cover || {}), mode: 'pick', images: [...(c.cover?.images || []), { tag: '', src }] }; });
             if (kind === 'him-avatar') host.setCharCfg(c => { c.him = { ...(c.him || {}), avatar: src }; });
             if (kind === 'xacc-avatar') host.setXAccountAvatar(src);
+            if (kind === 'him-xavatar') host.setCharCfg(c => { c.him = { ...(c.him || {}), xavatar: src }; });
             if (/^cover(Wx|X|XMe)$/.test(kind)) { host.dropImage(host.charCfg()[kind]); host.setCharCfg(c => { c[kind] = src; }); }
             if (kind === 'me-avatar') host.setSettings(s => { s.me = { ...(s.me || {}), avatar: src }; });
         } else return;
@@ -798,6 +809,12 @@ export function createUI(host) {
             removed = host.takeLastRound();
             if (!removed.length) { host.toast('info', 'TA这一轮还没回，没东西可以重来'); return; }
         } else if (!host.wechat().some(m => m.pending)) { host.toast('info', '先说点什么，再点 ↑'); return; }
+        if (!redo && host.settings().phoneWhen === 'next') {
+            host.wechat().forEach(m => { if (m.pending) host.patchWechat(m.id, { pending: false, waiting: true }, true); });
+            host.saveMeta(); host.refreshInject();
+            host.toast('info', 'TA会在下一轮正文里顺带回你');
+            render(); return;
+        }
         host.wechat().forEach(m => { if (m.pending) host.patchWechat(m.id, { pending: false }, true); });
         host.saveMeta();
         v.busy = true; v.stick = true; render();
