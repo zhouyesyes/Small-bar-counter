@@ -464,3 +464,11 @@
 #sb-root .sb-wcovtop .sb-coverbtn.sb-side{position:static}
 #sb-root .sb-wcovtop .sb-gen{background:rgba(0,0,0,.4);color:#fff;border:0;border-radius:12px;padding:2px 10px;font-size:10.5px}
 #sb-root .sb-wsign{margin-top:-10px;padding-bottom:14px}
+/* 资料页 */
+#sb-root .sb-prof .sb-sh{margin:16px 2px 4px}
+#sb-root .sb-imgrow{cursor:pointer;border-bottom:1px solid var(--sb-line)}
+#sb-root .sb-thumb{width:54px;height:36px;border-radius:6px;background:var(--sb-soft) center/cover;font-size:11px;color:var(--sb-dim);display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+#sb-root .sb-accs{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 4px}
+#sb-root .sb-accs button{font-size:12px;border:1px solid var(--sb-line);border-radius:14px;padding:3px 10px;color:var(--sb-dim)}
+#sb-root .sb-accs button.on{background:var(--sb-fg);color:var(--sb-bg);border-color:var(--sb-fg)}
+#sb-root .sb-accs .add{border-style:dashed}

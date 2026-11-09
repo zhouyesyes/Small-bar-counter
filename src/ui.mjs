@@ -692,7 +692,8 @@ export function createUI(host) {
         const eraName = { auto: '自动 · ' + ({ modern: '现代', minguo: '民国', ancient: '古风' }[host.guessedEra()]), modern: '现代', minguo: '民国', ancient: '古风' }[c.era || 'auto'];
         const apiName = s.api === 'own' ? (s.ownApi?.model || '自己填的') : '跟正文';
         return `${head(Wd().set)}<div class="sb-slist">
- <div class="sb-sh">主页</div><div class="sb-sgrp">${row('头图', modeName, 'set-cover')}${row('TA的名片', host.him().name, 'set-him')}${row('我的名字和头像', host.me().name, 'set-me')}</div>
+ <div class="sb-sh">资料（各个平台上显示的，都在这里改）</div><div class="sb-sgrp">${row('TA的资料', host.him().name, 'set-him')}${row('我的资料', host.me().name, 'set-me')}</div>
+ <div class="sb-sh">主页</div><div class="sb-sgrp">${row('抽屉的头图', modeName, 'set-cover')}</div>
  <div class="sb-sh">API</div><div class="sb-sgrp">${row('小手机用哪个', apiName, 'set-api')}${row('TA什么时候回', host.settings().phoneWhen === 'next' ? '下一轮正文顺带回' : '马上回', 'set-when')}${row('回复时带什么', host.replyMode() === 'full' ? '整套（预设 + 世界书 + 剧情）' : '自己挑', 'set-reply')}${toggle('省一点', 'saveMode', s.saveMode, '正文只顺带写时间、天气、在哪、心声；小手机回消息时不顺带更新动态、日记、此刻')}</div>
  <div class="sb-sh">TA</div><div class="sb-sgrp">
   <label class="sb-srow"><span>时代</span><select data-cset="era">${[['auto', eraName.startsWith('自动') ? eraName : '自动'], ['modern', '现代'], ['minguo', '民国'], ['ancient', '古风']].map(([k, n]) => `<option value="${k}" ${(c.era || 'auto') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
@@ -718,25 +719,52 @@ export function createUI(host) {
 </div>`;
     }
     const field = (label, key, val, ph = '') => `<label class="sb-fld"><span>${label}</span><input data-him="${key}" value="${esc(val || '')}" placeholder="${esc(ph)}"></label>`;
+    // 资料汇总：按平台分组，点哪格改哪格（和各个页面上点了改是同一份）
+    const sec = t => `<div class="sb-sh">${t}</div>`;
+    const imgRow = (label, src, upload, clearAct, note = '') => `<label class="sb-srow sb-imgrow"><span>${label}${note ? `<small>${note}</small>` : ''}</span><span class="sb-thumb" style="${src ? `background-image:url('${esc(src)}')` : ''}">${src ? '' : '空'}</span><input type="file" accept="image/*" data-upload="${upload}" hidden></label>${src && clearAct ? `<button class="sb-link" data-act="${clearAct}">去掉这张</button>` : ''}`;
+    const fld = (label, attr, key, val, ph = '') => `<label class="sb-fld"><span>${label}</span><input ${attr}="${key}" value="${esc(val || '')}" placeholder="${esc(ph)}"></label>`;
     function setHimHtml() {
-        const h = host.charCfg().him || {}, him = host.him();
-        return `${head('TA的名片')}<div class="sb-list">
- <label class="sb-eav"><span class="sb-pav big" style="background-image:url('${esc(him.avatar)}')"></span><small>点头像换一张 · ${h.avatar ? '用的是你换的' : '现在用角色卡的'}</small><input type="file" accept="image/*" data-upload="him-avatar" hidden></label>
+        const c = host.charCfg(), h = c.him || {}, him = host.him();
+        const f = (label, key, ph) => fld(label, 'data-him', key, h[key], ph);
+        return `${head('TA的资料')}<div class="sb-list sb-prof">
+ ${sec('通用')}
+ <label class="sb-eav"><span class="sb-pav big" style="background-image:url('${esc(him.avatar)}')"></span><small>头像 · 点一下换 · ${h.avatar ? '用的是你换的' : '现在用角色卡的'}</small><input type="file" accept="image/*" data-upload="him-avatar" hidden></label>
  ${h.avatar ? '<button class="sb-link" data-act="him-avatar-clear">换回角色卡的头像</button>' : ''}
- ${field('名字', 'name', h.name, him.cardName)}
- ${field('微信备注', 'remark', h.remark, '你给TA起的备注，只有你看得见')}
- ${field('X 网名', 'xname', h.xname, him.name)}
- ${field('账号', 'handle', h.handle, '@…')}
- ${field('签名', 'sign', h.sign, '空着的话TA会自己写')}
- ${field('日记署名', 'penName', h.penName, him.name)}
- <div class="sb-hint">只改小吧台里显示的，不动角色卡。</div></div>`;
+ ${f('名字', 'name', him.cardName)}
+ ${f('签名', 'sign', '抽屉上那一句；空着的话TA会自己写')}
+ ${f('日记署名', 'penName', him.name)}
+ ${sec('微信')}
+ ${f('备注', 'remark', '你给TA起的备注，只有你看得见')}
+ ${sec('X')}
+ ${imgRow('X 头像', him.xavatar, 'him-xavatar', 'him-xavatar-clear', '和微信的分开')}
+ ${imgRow('X 背景', c.coverX ? host.img(c.coverX) : '', 'coverX', 'cover-x-clear')}
+ ${f('网名', 'xname', him.name)}
+ ${f('账号', 'handle', '不带 @')}
+ ${f('签名', 'xbio', '一句话')}
+ <button class="sb-link" data-act="gen" data-kind="xprofile">让TA自己填 X 资料</button>
+ <div class="sb-hint">只改小吧台里显示的，不动角色卡。剧情里TA想改 X 资料时也会自己改。</div></div>`;
     }
     function setMeHtml() {
-        const me = host.me(), m = host.settings().me || {};
-        return `${head('我的名字和头像')}<div class="sb-list">
- <label class="sb-eav"><span class="sb-pav big" style="background-image:url('${esc(me.avatar)}')"></span><small>点头像换一张</small><input type="file" accept="image/*" data-upload="me-avatar" hidden></label>
- <label class="sb-fld"><span>名字</span><input data-me="name" value="${esc(m.name || '')}" placeholder="${esc(me.cardName)}"></label>
- <div class="sb-hint">在TA的朋友圈、聊天里显示的名字。空着就用酒馆里你的名字。</div></div>`;
+        const me = host.me(), m = host.settings().me || {}, c = host.charCfg();
+        const f = (label, key, ph) => fld(label, 'data-me', key, m[key], ph);
+        const accs = host.xAccounts(), cur = host.xAccount();
+        return `${head('我的资料')}<div class="sb-list sb-prof">
+ ${sec('通用')}
+ <label class="sb-eav"><span class="sb-pav big" style="background-image:url('${esc(me.avatar)}')"></span><small>头像 · 点一下换</small><input type="file" accept="image/*" data-upload="me-avatar" hidden></label>
+ ${f('名字', 'name', me.cardName)}
+ <div class="sb-hint">在TA的朋友圈、聊天里显示的名字；空着就用酒馆里你的名字。</div>
+ ${sec('朋友圈')}
+ ${f('签名', 'sign', '朋友圈名字下面那一句')}
+ ${imgRow('朋友圈背景', c.coverWx ? host.img(c.coverWx) : '', 'coverWx', 'cover-wx-clear')}
+ ${sec('X 小号（TA不知道是你）')}
+ <div class="sb-accs">${accs.map(a => `<button data-act="xacc" data-id="${esc(a.id)}" class="${a.id === cur.id ? 'on' : ''}">${esc(a.name)}</button>`).join('')}<button data-act="xacc-new" class="add">＋ 新开一个</button></div>
+ ${fld('网名', 'data-acc', 'name', cur.name, '小号的网名')}
+ ${fld('账号', 'data-acc', 'handle', cur.handle, '不带 @')}
+ ${fld('签名', 'data-acc', 'bio', cur.bio, '一句话')}
+ ${imgRow('头像', cur.avatar ? host.img(cur.avatar) : '', 'xacc-avatar', '')}
+ ${imgRow('背景', cur.cover ? host.img(cur.cover) : '', 'xacc-cover', '')}
+ ${accs.length > 1 ? '<button class="sb-link" data-act="xacc-del">删掉这个小号</button>' : ''}
+</div>`;
     }
     function setPromptHtml() {
         const s = host.settings();
@@ -935,6 +963,9 @@ export function createUI(host) {
             case 'cover-mode': host.setCharCfg(c => { c.cover = { ...(c.cover || {}), mode: b.dataset.mode }; }); break;
             case 'cover-clear': host.dropImage(host.charCfg().cover?.fixed); host.setCharCfg(c => { c.cover.fixed = ''; }); break;
             case 'cover-del': host.dropImage(host.charCfg().cover?.images?.[Number(b.dataset.i)]?.src); host.setCharCfg(c => { c.cover.images.splice(Number(b.dataset.i), 1); }); break;
+            case 'him-xavatar-clear': host.dropImage(host.charCfg().him?.xavatar); host.setCharCfg(c => { c.him = { ...(c.him || {}), xavatar: '' }; }); break;
+            case 'cover-x-clear': host.dropImage(host.charCfg().coverX); host.setCharCfg(c => { c.coverX = ''; }); break;
+            case 'cover-wx-clear': host.dropImage(host.charCfg().coverWx); host.setCharCfg(c => { c.coverWx = ''; }); break;
             case 'him-avatar-clear': host.setCharCfg(c => { c.him = { ...(c.him || {}), avatar: '' }; }); break;
             case 'prompt-reset': host.setSettings(s => { s.prompt = ''; }); break;
             case 'api': host.setSettings(s => { s.api = b.dataset.id; }); if (b.dataset.id !== 'own') v.view = 'settings'; break;
@@ -966,6 +997,7 @@ export function createUI(host) {
         else if (t.dataset.own) host.setSettings(s => { s.ownApi = { ...(s.ownApi || {}), [t.dataset.own]: t.value.trim() }; });
         else if (t.dataset.cset) host.setCharCfg(c => { c[t.dataset.cset] = t.value; });
         else if (t.dataset.him != null) host.setCharCfg(c => { c.him = { ...(c.him || {}), [t.dataset.him]: t.value.trim() }; });
+        else if (t.dataset.acc != null) { host.setXAccountField(t.dataset.acc, t.value.trim().replace(t.dataset.acc === 'handle' ? /^@/ : /^$/, '')); }
         else if (t.dataset.me != null) host.setSettings(s => { s.me = { ...(s.me || {}), [t.dataset.me]: t.value.trim() }; });
         else if (t.dataset.tag != null) host.setCharCfg(c => { c.cover.images[Number(t.dataset.tag)].tag = t.value.trim(); });
         else if (t.dataset.prompt != null) host.setSettings(s => { s.prompt = t.value.trim() === host.defaultPrompt().trim() ? '' : t.value; });
