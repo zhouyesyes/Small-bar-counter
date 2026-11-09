@@ -150,6 +150,20 @@ body{margin:0;width:390px;height:844px;overflow:hidden;font:14px/1.5 -apple-syst
 .drawer.pf.mini .cover{height:56px}.drawer.pf.mini .cover>span:not(.x){display:none}.drawer.pf.mini .cover{font-size:0}
 .drawer.pf.mini .pfav,.drawer.pf.mini .pfhd,.drawer.pf.mini .pfbio,.drawer.pf.mini .pfmeta{display:none}
 .drawer.pf.mini .pfname{position:absolute;top:16px;left:16px;margin:0;color:#fff;font-size:15px}
+.phone.home{background:linear-gradient(180deg,var(--soft),var(--bg) 60%)}
+.sbar{display:flex;justify-content:space-between;align-items:center;padding:14px 22px 0;font-size:12px;font-weight:600}.sbar .close{color:var(--dim);font-weight:400;font-size:15px}
+.clock{text-align:center;margin-top:18px}.ct{font-size:54px;font-weight:200;letter-spacing:.02em;line-height:1}.cd{font-size:12px;color:var(--dim);margin-top:6px}
+.widget{margin:18px 18px 0;border:1px solid var(--line);border-radius:18px;padding:10px 12px;background:var(--bg)}
+.wcov{width:36px;height:36px;border-radius:6px;background:linear-gradient(135deg,#ccc,#555)}.dark .wcov{background:linear-gradient(135deg,#666,#222)}
+.apps{display:grid;grid-template-columns:repeat(4,1fr);gap:16px 0;padding:22px 14px 0}
+.app{display:flex;flex-direction:column;align-items:center;gap:5px}
+.ai{width:50px;height:50px;border-radius:14px;border:1px solid var(--line);background:var(--bg);display:flex;align-items:center;justify-content:center;position:relative}
+.ai svg{width:24px;height:24px;fill:none;color:var(--fg);stroke:var(--fg);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.ab{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;border-radius:9px;background:var(--fg);color:var(--bg);font-size:10px;display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--bg)}
+.an{font-size:11px}
+.dock{margin:auto 12px 0;display:flex;justify-content:space-around;padding:10px 0;border-radius:22px;background:var(--soft);border:1px solid var(--line)}.dock .an{font-size:10.5px}
+.dock .ai{background:var(--bg)}
+.hbar{width:100px;height:4px;border-radius:2px;background:var(--fg);opacity:.5;margin:10px auto 10px}
 </style></head><body>
 <div class="st">
   <div class="bar"><span style="font-size:13px;color:var(--fg)">阎守峥</span></div>
@@ -287,6 +301,28 @@ const profile=`<div class="shade"></div><div class="drawer pf">
  ${q.get('bg')?bgsheet:''}
 </div>`;
 const IC={home:'<svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9h-5v-6h-6v6H4z"/></svg>',search:'<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M16 16l4 4"/></svg>',bell:'<svg viewBox="0 0 24 24"><path d="M6 17V11a6 6 0 0112 0v6l2 2H4z"/><path d="M10 21h4"/></svg>',mail:'<svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 7l9 7 9-7"/></svg>'};
+const AP={
+ msg:'<path d="M4 6h16v10H9l-5 4z"/>',
+ x:'<text x="12" y="17.5" text-anchor="middle" font-size="16" font-weight="800" fill="currentColor" stroke="none" font-family="Helvetica,Arial">X</text>',
+ moments:'<circle cx="12" cy="12" r="7.5"/><path d="M12 4.5v6M19 9l-5.6 2M16.6 18.2L13 13M7.4 18.2L11 13M5 9l5.6 2"/>',
+ music:'<path d="M9 17V6l10-2v11"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="15" r="2"/>',
+ diary:'<path d="M6 4h11a1 1 0 011 1v15H7a1 1 0 01-1-1z"/><path d="M6 17h12M9 8h6"/>',
+ memo:'<rect x="5" y="4" width="14" height="16" rx="2"/><path d="M8.5 9l1.5 1.5L13 8M8.5 15h7"/>',
+ wallet:'<rect x="4" y="6" width="16" height="12" rx="2"/><path d="M15 12h5"/>',
+ photos:'<rect x="4" y="5" width="16" height="14" rx="2"/><path d="M4 16l5-5 4 4 2-2 5 5"/>',
+ set:'<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>'};
+const app=(k,n,b)=>`<div class="app"><div class="ai"><svg viewBox="0 0 24 24">${AP[k]}</svg>${b?`<span class="ab">${b}</span>`:''}</div><div class="an">${n}</div></div>`;
+const phhome=`<div class="shade"></div><div class="phone home">
+ <div class="sbar"><span>01:19</span><span class="close">×</span></div>
+ <div class="clock"><div class="ct">01:19</div><div class="cd">11月9日 周日 · 小雨</div></div>
+ <div class="widget"><div class="cap" style="font-size:9.5px">他在听</div><div style="display:flex;align-items:center;gap:10px;margin-top:6px"><div class="wcov"></div><div style="flex:1;min-width:0"><b style="font-size:13px">雨夜的街</b><div class="hd" style="font-size:11px">伞下只够站两个人</div></div><span style="font-size:14px">▶</span></div></div>
+ <div class="apps">
+  ${app('x','X')}${app('moments','朋友圈',1)}${app('diary','日记')}${app('memo','备忘录')}
+  ${app('photos','相册')}${app('wallet','钱包')}
+ </div>
+ <div class="dock">${app('msg','消息',2)}${app('music','音乐')}${app('set','设置')}</div>
+ <div class="hbar"></div>
+</div>`;
 const xpage=`<div class="shade"></div><div class="phone">
  <div class="ptabs"><span>聊天</span><span class="on">X</span><span class="close">×</span></div>
  <div class="xcover"><span class="xback">←</span>[ 背景 · 雨夜 ]</div>
@@ -318,6 +354,6 @@ const phone=`<div class="shade"></div><div class="phone">
  <div class="inp"><div class="plus">+</div><div class="field">说点什么</div><div class="send">↑</div></div>
 </div>`;
 document.getElementById('cat').src='cat-'+(q.get('t')==='dark'?'dark':'light')+'-'+(q.get('c')||'idle')+'.png'; if(s) document.getElementById('cat').style.display='none';
-document.getElementById('extra').innerHTML = s==='drawer'?drawer : s==='profile'?profile : s==='x'?xpage : s==='phone'?phone : '';
+document.getElementById('extra').innerHTML = s==='drawer'?drawer : s==='profile'?profile : s==='x'?xpage : s==='home'?phhome : s==='phone'?phone : '';
 if(q.get('scroll')){document.querySelector('.drawer.pf')?.classList.add('mini');const f=document.getElementById('feed');if(f)f.scrollTop=9999;}
 </script></body></html>
