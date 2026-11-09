@@ -45,7 +45,7 @@ export function createUI(host) {
     const player = createPlayer({
         load: () => (host.settings().music ??= { list: [], idx: 0, mode: 'all' }),
         save: () => host.setSettings(() => {}),
-        onChange: (kind, msg) => { if (kind === 'error') host.toast('warning', msg); render(); },
+        onChange: (kind, msg) => { if (kind === 'error') host.toast('warning', msg); if (kind === 'info') host.toast('info', msg); render(); },
     });
     const fmt = s => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
     // 每秒只改进度条和歌词那几个字，不整页重画
@@ -267,9 +267,9 @@ export function createUI(host) {
  <div class="sb-mctl"><button data-act="mmode" title="播放顺序">${modeIcon}</button><button data-act="mprev">⏮</button><button class="sb-mplay" data-act="mtoggle">${player.playing() ? '❚❚' : '▶'}</button><button data-act="mnext">⏭</button><button data-act="mlist" class="${v.mlist ? 'on' : ''}" title="歌单">☰</button></div>
  ${m?.title ? `<button class="sb-mhis" data-act="mhis">${Wd().listen}《${esc(m.title)}》${m.artist ? ' · ' + esc(m.artist) : ''} · 放这首</button>` : ''}
  <div class="sb-msearch"><input data-msearch placeholder="搜歌名、歌手，或贴网易云链接" enterkeyhint="search" value="${esc(v.mq || '')}"><button data-act="msearch">${v.msearching ? '…' : '搜'}</button></div>
- ${v.mres?.length ? `<div class="sb-mres">${v.mres.map((r, i) => `<div class="sb-mrow2"><span><b>${esc(r.title)}</b><small>${esc(r.artist)}</small></span><button data-act="madd" data-i="${i}" data-play="1">▶</button><button data-act="madd" data-i="${i}">＋</button></div>`).join('')}</div>` : ''}
+ ${v.mres?.length ? `<div class="sb-mres">${v.mres.map((r, i) => `<div class="sb-mrow2"><span><b>${esc(r.title)}</b><small>${esc(r.artist)}${r.src === 'qq' ? ' · QQ' : ''}</small></span><button data-act="madd" data-i="${i}" data-play="1">▶</button><button data-act="madd" data-i="${i}">＋</button></div>`).join('')}</div>` : ''}
  ${v.mlist ? `<div class="sb-mres"><div class="sb-cap" style="margin:6px 0">歌单 · ${list.length} 首</div>${list.map((r, i) => `<div class="sb-mrow2${t && r.id === t.id ? ' on' : ''}"><span data-act="mplayat" data-i="${i}"><b>${esc(r.title)}</b><small>${esc(r.artist)}</small></span><button data-act="mdelsong" data-i="${i}">×</button></div>`).join('') || '<div class="sb-empty sm">还没有歌</div>'}</div>` : ''}
- <div class="sb-mnote">歌来自第三方公开接口（网易云），会员歌和接口不通时放不了</div>
+ <div class="sb-mnote">歌来自第三方公开接口：先找网易云，搜不到或放不了再找 QQ 音乐；会员歌和接口都不通时放不了</div>
 </section>`;
     }
     async function musicSearch(q) {

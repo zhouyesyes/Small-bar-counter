@@ -6,6 +6,9 @@ export const MUSIC_APIS = [
     'https://api.injahow.cn/meting/', 'https://api.amarea.cn/meting/', 'https://api.moeyao.cn/meting/',
 ];
 
+// QQ 音乐的备用来源（参考 Rainday 用的 vkeys 接口）：网易云搜不到、或者放不出来时才去这里找
+export const QQ_API = 'https://api.vkeys.cn/v2/music/tencent';
+
 const str = v => String(v ?? '').trim();
 // 网易云：纯数字 ID，或者分享出来的链接
 export function neteaseId(raw) {
@@ -54,21 +57,58 @@ export async function searchSongs(q, page = 1) {
     q = str(q); if (!q) return [];
     const id = neteaseId(q);
     if (id) return [await songById(id)].filter(Boolean);
-    const { base, rows } = await ask({ server: 'netease', type: 'search', id: q, page, limit: 10 });
-    return rows.map(x => trackOf(x, base)).filter(Boolean);
+    let list = [];
+    try { const { base, rows } = await ask({ server: 'netease', type: 'search', id: q, page, limit: 10 }); list = rows.map(x => trackOf(x, base)).filter(Boolean); }
+    catch { list = []; }
+    if (list.length) return list;
+    return await searchQQ(q); // 网易云没有：去 QQ 音乐找
 }
+// QQ 音乐（备用）
+async function getJson(url, timeout = 12000) {
+    const c = new AbortController(), t = setTimeout(() => c.abort(), timeout);
+    try { const r = await fetch(url, { credentials: 'omit', referrerPolicy: 'no-referrer', signal: c.signal, cache: 'no-store' }); if (!r.ok) throw new Error('HTTP ' + r.status); return await r.json(); }
+    finally { clearTimeout(t); }
+}
+export async function searchQQ(q) {
+    try {
+        const d = await getJson(QQ_API + '?word=' + encodeURIComponent(q));
+        const rows = Array.isArray(d?.data) ? d.data : Array.isArray(d?.data?.list) ? d.data.list : [];
+        return rows.slice(0, 10).map(x => {
+            const id = str(x.id ?? x.mid ?? x.songmid); if (!id) return null;
+            const artist = Array.isArray(x.singer) ? x.singer.map(a => (typeof a === 'string' ? a : a?.name || '')).join(' / ') : str(x.singer ?? x.artist);
+            return { id, src: 'qq', title: str(x.song ?? x.name ?? x.title) || '未命名', artist, cover: str(x.cover ?? x.pic), lrc: '' };
+        }).filter(Boolean);
+    } catch { return []; }
+}
+// QQ 的歌要先问一次才拿得到播放地址
+async function qqUrl(t) {
+    const d = await getJson(QQ_API + '?id=' + encodeURIComponent(t.id));
+    const x = Array.isArray(d?.data) ? d.data[0] : d?.data || d;
+    if (!x?.url) throw new Error('QQ 音乐这首放不了');
+    if (x.cover && !t.cover) t.cover = x.cover;
+    if (x.lyric && !t.lrc) t.lrc = x.lyric;
+    return x.url;
+}
+// 网易云放不出来：按歌名 + 歌手去 QQ 找同一首
+const norm = s => str(s).toLowerCase().replace(/\([^)]*\)|（[^）]*）|\[[^\]]*\]/g, '').replace(/[\s·,，/&、]/g, '');
+export async function qqTwin(t) {
+    const list = await searchQQ([t.title, t.artist].filter(Boolean).join(' '));
+    return list.find(x => norm(x.title) === norm(t.title) && (!t.artist || !x.artist || norm(x.artist).includes(norm(t.artist).slice(0, 4)) || norm(t.artist).includes(norm(x.artist).slice(0, 4)))) || null;
+}
+export const sourceUrl = async t => (t.src === 'qq' ? await qqUrl(t) : playUrl(t));
 export async function songById(id) {
     const { base, rows } = await ask({ server: 'netease', type: 'song', id });
     return trackOf({ id, ...rows[0] }, base);
 }
 // 播放地址：Meting 的 url 接口会跳到真正的音频，<audio> 自己跟着跳
 export const playUrl = t => apiUrl(t.base || MUSIC_APIS[0], { server: 'netease', type: 'url', id: t.id });
-export const coverUrl = t => (t.cover && /^https?:/.test(t.cover) ? t.cover : apiUrl(t.base || MUSIC_APIS[0], { server: 'netease', type: 'pic', id: t.id }));
+export const coverUrl = t => (t.cover && /^https?:/.test(t.cover) ? t.cover : t.src === 'qq' ? '' : apiUrl(t.base || MUSIC_APIS[0], { server: 'netease', type: 'pic', id: t.id }));
 
 // 歌词：[mm:ss.xx] 一行一句
 export async function lyricOf(t) {
     let text = t.lrc;
     try {
+        if (t.src === 'qq' && !text) return [];
         if (!text || /^https?:/.test(text)) {
             const r = await fetch(/^https?:/.test(text || '') ? text : apiUrl(t.base || MUSIC_APIS[0], { server: 'netease', type: 'lrc', id: t.id }), { credentials: 'omit', referrerPolicy: 'no-referrer' });
             text = r.ok ? await r.text() : '';
@@ -99,9 +139,10 @@ export function createPlayer({ load, save, onChange }) {
         const s = st();
         if (i != null) { s.idx = Math.max(0, Math.min(s.list.length - 1, i)); save(); }
         const t = cur(); if (!t) return;
-        const src = playUrl(t);
-        if (audio.dataset.src !== src) { audio.src = src; audio.dataset.src = src; }
-        try { await audio.play(); } catch (e) { onChange?.('error', '放不出来（可能是会员歌或接口不通）'); }
+        let src;
+        try { src = await sourceUrl(t); } catch (e) { onChange?.('error', e?.message || '拿不到播放地址'); return; }
+        if (audio.dataset.src !== src) { audio.src = src; audio.dataset.src = src; audio.dataset.id = t.id; audio.dataset.tried = ''; }
+        try { await audio.play(); } catch (e) { if (e?.name !== 'NotAllowedError') await fallback(); else onChange?.('error', '点一下播放键继续'); }
         if (lrcFor !== t.id) { lrcFor = t.id; lrc = []; lyricOf(t).then(l => { if (lrcFor === t.id) { lrc = l; onChange?.(); } }); }
         onChange?.();
     }
@@ -113,7 +154,19 @@ export function createPlayer({ load, save, onChange }) {
     };
     const prev = () => { const s = st(); if (!s.list.length) return; s.idx = (s.idx - 1 + s.list.length) % s.list.length; save(); play(); };
     audio.addEventListener('ended', () => next(true));
-    audio.addEventListener('error', () => { if (audio.src) onChange?.('error', '这首放不了，换下一首'); });
+    // 放不出来：网易云的歌先去 QQ 找同一首，再不行就提示
+    async function fallback() {
+        const t = cur(); if (!t || audio.dataset.tried) { onChange?.('error', '这首放不了（可能是会员歌或接口不通）'); return; }
+        audio.dataset.tried = '1';
+        if (t.src !== 'qq') {
+            try {
+                const twin = await qqTwin(t);
+                if (twin) { const u = await qqUrl(twin); audio.src = u; audio.dataset.src = u; await audio.play(); onChange?.('info', '网易云放不了，换成 QQ 音乐的同一首'); return; }
+            } catch { /* 继续往下提示 */ }
+        }
+        onChange?.('error', '这首放不了（可能是会员歌或接口不通）');
+    }
+    audio.addEventListener('error', () => { if (audio.src) fallback(); });
     audio.addEventListener('play', () => onChange?.());
     audio.addEventListener('pause', () => onChange?.());
     return {
