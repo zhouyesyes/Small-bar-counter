@@ -6,7 +6,7 @@
     "js": "index.js",
     "css": "style.css",
     "author": "zhouyesyes",
-    "version": "0.5.3",
+    "version": "0.5.4",
     "homePage": "https://github.com/zhouyesyes/Small-bar-counter",
     "auto_update": true
 }

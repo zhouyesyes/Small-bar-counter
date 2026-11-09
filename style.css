@@ -34,17 +34,17 @@
 #sb-root .sb-logo{position:absolute;top:calc(14px + env(safe-area-inset-top));left:16px;color:#fff;font-size:11px;letter-spacing:.32em;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.3)}
 #sb-root .sb-x{position:absolute;top:calc(10px + env(safe-area-inset-top));right:12px;width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,.35);color:#fff;font-size:16px}
 #sb-root .sb-coverbtn{position:absolute;bottom:8px;left:10px;font-size:10.5px;border-radius:12px;background:rgba(0,0,0,.4);color:#fff;padding:2px 9px}
-#sb-root .sb-mininame{display:none;position:absolute;top:calc(14px + env(safe-area-inset-top));left:16px;color:#fff;font-weight:600;font-size:15px;text-shadow:0 1px 3px rgba(0,0,0,.35)}
+#sb-root .sb-mininame{color:#fff;font-weight:600;font-size:15px;text-shadow:0 1px 3px rgba(0,0,0,.35)}
+/* 滑下去以后顶上那条：盖在上面，只淡入淡出，不占位置 */
+#sb-root .sb-minibar{position:absolute;top:0;left:0;right:0;z-index:3;height:calc(54px + env(safe-area-inset-top));display:flex;align-items:flex-end;padding:0 12px 10px 16px;background:#999 center/cover no-repeat;opacity:0;pointer-events:none;transition:opacity .18s}
+#sb-root .sb-minibar .sb-x{position:static;margin-left:auto}
+#sb-root .sb-drawer.sb-mini .sb-minibar{opacity:1;pointer-events:auto}
 #sb-root .sb-av{display:block;cursor:pointer;width:78px;height:78px;flex:0 0 auto;border-radius:50%;margin:-39px auto 0;border:3px solid var(--sb-bg);background:#bbb center/cover;position:relative}
 #sb-root .sb-name{text-align:center;font-weight:600;font-size:17px;margin-top:6px;line-height:1.25}
 #sb-root .sb-handle{text-align:center;font-size:12px;color:var(--sb-dim)}#sb-root .sb-handle.left{text-align:left;padding:0 14px}
 #sb-root .sb-sign{text-align:center;font-size:13px;font-style:italic;margin:6px 22px 0}
 #sb-root .sb-meta{text-align:center;font-size:11.5px;color:var(--sb-dim);margin-top:6px;padding-bottom:10px;border-bottom:1px solid var(--sb-line)}
 #sb-root .sb-meta i{display:inline-block;width:12px}
-#sb-root .sb-drawer.sb-mini .sb-cover{height:calc(54px + env(safe-area-inset-top))}
-#sb-root .sb-drawer.sb-mini .sb-cover>:not(.sb-x):not(.sb-mininame){display:none}
-#sb-root .sb-drawer.sb-mini .sb-mininame{display:block}
-#sb-root .sb-drawer.sb-mini :is(.sb-av,.sb-name,.sb-handle,.sb-sign,.sb-meta){display:none}
 #sb-root .sb-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 #sb-root .sb-tabs{display:flex;flex:0 0 auto;border-top:1px solid var(--sb-line)}
 #sb-root .sb-tabs button{flex:1;padding:12px 0 10px;font-size:13px;color:var(--sb-dim)}

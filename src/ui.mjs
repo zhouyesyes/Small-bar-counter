@@ -113,8 +113,9 @@ export function createUI(host) {
             // 顶上收起 / 展开留一段余量：滑到底时页面变高变矮会来回弹，所以收起后要滑回很上面才展开
             if (e.target.classList?.contains('sb-body')) {
                 const d = root.querySelector('.sb-drawer'), y = e.target.scrollTop;
-                if (d && !d.classList.contains('sb-mini') && y > 160) { d.classList.add('sb-mini'); v.mini = true; }
-                else if (d && d.classList.contains('sb-mini') && y < 8) { d.classList.remove('sb-mini'); v.mini = false; }
+                // 只让上面那条细名字条淡入淡出：不改任何高度，滑到底、滑回头像时都不会跳
+                const on = y > 170;
+                if (d && on !== v.mini) { v.mini = on; d.classList.toggle('sb-mini', on); }
             }
             if (e.target.classList?.contains('sb-wxfeed') && e.target.scrollTop + e.target.clientHeight > e.target.scrollHeight - 40) {
                 const total = host.state().posts.length + host.state().moments.length;
@@ -200,17 +201,18 @@ export function createUI(host) {
         if (v.tab === 'diary') body = v.diaryId ? diaryOneHtml(st, him) : diaryListHtml(st);
         return `<div class="sb-shade" data-act="close"></div>
 <div class="sb-drawer${v.mini ? ' sb-mini' : ''}" role="dialog" aria-label="小吧台">
+ <div class="sb-minibar ${coverClass()}" style="${coverStyle()}"><span class="sb-mininame">${esc(him.name)}</span><button class="sb-x" data-act="close" aria-label="关上">×</button></div>
+ <div class="sb-body" data-keep="body">
  <div class="sb-cover ${coverClass()}" style="${coverStyle()}">
   <span class="sb-logo">SMALL BAR</span><button class="sb-x" data-act="close" aria-label="关上">×</button>
   <button class="sb-coverbtn" data-act="phone-go" data-to="set-cover">背景</button>
-  <span class="sb-mininame">${esc(him.name)}</span>
  </div>
  <label class="sb-av" style="background-image:url('${esc(him.avatar)}')" title="点一下换头像"><input type="file" accept="image/*" data-upload="him-avatar" hidden></label>
  <div class="sb-name">${esc(him.name)}</div>
  ${him.handle ? `<div class="sb-handle">${esc(him.handle)}</div>` : ''}
  ${him.sign || n.sign ? `<div class="sb-sign">${esc(him.sign || n.sign)}</div>` : ''}
  <div class="sb-meta">${[n.time, n.weather].filter(Boolean).map(esc).join('<i></i>') || '还没有状态 · 等TA下一次回复'}</div>
- <div class="sb-body" data-keep="body">${body}</div>
+ ${body}</div>
  <nav class="sb-tabs">${TAB_KEYS.map((k, i) => `<button data-act="tab" data-tab="${k}" class="${v.tab === k ? 'on' : ''}">${labels[i]}${k === 'phone' && host.unread() ? ` <b class="sb-badge">${host.unread()}</b>` : ''}</button>`).join('')}</nav>
 </div>`;
     }
