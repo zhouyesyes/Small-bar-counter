@@ -57,6 +57,25 @@ body{margin:0;width:390px;height:844px;overflow:hidden;font:14px/1.5 -apple-syst
 .plus{width:28px;height:28px;border-radius:50%;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--dim);font-size:16px}
 .field{flex:1;height:32px;border-radius:16px;background:var(--soft);display:flex;align-items:center;padding:0 12px;font-size:13px;color:var(--dim)}
 .send{width:30px;height:30px;border-radius:50%;background:var(--fg);color:var(--bg);display:flex;align-items:center;justify-content:center;font-size:14px}
+/* 抽屉顶上换成个人主页（11/9 她要的：有背景、头像居中、下面滑动态、只显示最新三条） */
+.drawer.pf{padding:0;gap:0}
+.cover{height:128px;flex:0 0 auto;position:relative;background:linear-gradient(160deg,#dcdcdc,#9a9a9a 55%,#5a5a5a);display:flex;align-items:flex-end;justify-content:flex-end;padding:8px 10px;font-size:10.5px;color:rgba(255,255,255,.8);letter-spacing:.06em}
+.dark .cover{background:linear-gradient(160deg,#3a3a3a,#1e1e1e 60%,#111);color:rgba(255,255,255,.45)}
+.cover .x{position:absolute;top:12px;right:14px;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.35);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px}
+.cover .logo{position:absolute;top:18px;left:16px;color:#fff;font-size:11px}
+.pfav{width:78px;height:78px;flex:0 0 auto;border-radius:50%;margin:-39px auto 0;border:3px solid var(--bg);background:linear-gradient(135deg,#bbb,#555);position:relative}
+.dark .pfav{background:linear-gradient(135deg,#777,#2a2a2a)}
+.pfname{text-align:center;font-weight:600;font-size:17px;margin-top:8px;line-height:1.2}
+.pfhd{text-align:center;font-size:12px;color:var(--dim)}
+.pfbio{text-align:center;font-size:13px;font-style:italic;margin:8px 22px 0}
+.pfmeta{display:flex;justify-content:center;gap:14px;font-size:11.5px;color:var(--dim);margin-top:8px}
+.pfmeta b{color:var(--fg);font-weight:600}
+.feedcap{margin:16px 16px 0;padding-bottom:8px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between}
+.feed{flex:1;overflow:hidden;position:relative}
+.feed .post{padding:12px 16px;border-bottom:1px solid var(--line)}
+.feed .media{height:74px}
+.below{flex:0 0 auto;padding:10px 16px 14px;border-top:1px solid var(--line);display:flex;gap:10px}
+.below .card{flex:1;padding:10px 12px;border-radius:12px}
 </style></head><body>
 <div class="st">
   <div class="bar"><span style="font-size:13px;color:var(--fg)">阎守峥</span></div>
@@ -96,6 +115,27 @@ const drawer=`<div class="shade"></div><div class="drawer">
  </div>
  <div class="card phonecard"><div class="row"><div class="av sm"></div><div><div style="font-weight:600;font-size:13.5px">小手机</div><div class="hd">早点睡 别熬了</div></div></div><span class="badge">2</span></div>
 </div>`;
+const P=(t,body,media,a)=>`<div class="post"><div class="av xs"></div><div style="flex:1"><div><b style="font-size:13px">阎守峥</b> <span class="hd">· ${t}</span></div>
+   <div class="body">${body}</div>${media?`<div class="media">[ 照片 · ${media} ]</div>`:''}
+   <div class="acts"><span>♡ ${a[0]}</span><span>○ ${a[1]}</span><span>↻ ${a[2]}</span></div></div></div>`;
+const profile=`<div class="shade"></div><div class="drawer pf">
+ <div class="cover"><span class="logo">SMALL BAR</span><span class="x">×</span>[ 背景图 ]</div>
+ <div class="pfav"></div>
+ <div class="pfname">阎守峥</div>
+ <div class="pfhd">@yan.shouzheng</div>
+ <div class="pfbio">the lighter burned down the world.</div>
+ <div class="pfmeta"><span>11.09 周日 01:19</span><span>小雨</span></div>
+ <div class="feedcap"><span class="cap">posts · 动态</span><span class="cap">最新 3 条</span></div>
+ <div class="feed">
+  ${P('刚刚','伞是旧的，人是新的。','',[12,3,0])}
+  ${P('2h','雨天适合早睡。','窗台上的一把旧伞',[128,14,3])}
+  ${P('昨天','巷口那家面馆关门了。','',[56,9,1])}
+ </div>
+ <div class="below">
+  <div class="card"><div class="cap">now · 此刻</div><div style="font-size:12.5px;margin-top:3px">巷口，伞下</div></div>
+  <div class="card"><div class="cap">小手机 <span class="badge" style="height:15px;min-width:15px;font-size:10px">2</span></div><div style="font-size:12.5px;margin-top:3px">早点睡 别熬了</div></div>
+ </div>
+</div>`;
 const phone=`<div class="shade"></div><div class="phone">
  <div class="ph"><div class="av sm"></div><div><div class="nm">阎守峥</div><div class="hd">在线</div></div><span class="close">×</span></div>
  <div class="msgs">
@@ -112,5 +152,5 @@ const phone=`<div class="shade"></div><div class="phone">
  <div class="inp"><div class="plus">+</div><div class="field">说点什么</div><div class="send">↑</div></div>
 </div>`;
 document.getElementById('cat').src='cat-'+(q.get('t')==='dark'?'dark':'light')+'-'+(q.get('c')||'idle')+'.png'; if(s) document.getElementById('cat').style.display='none';
-document.getElementById('extra').innerHTML = s==='drawer'?drawer : s==='phone'?phone : '';
+document.getElementById('extra').innerHTML = s==='drawer'?drawer : s==='profile'?profile : s==='phone'?phone : '';
 </script></body></html>
