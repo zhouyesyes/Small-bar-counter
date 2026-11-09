@@ -188,7 +188,7 @@ function storyTail(n = 6) {
 // ---------- 请他回（小手机、动态留言） ----------
 function keys() { return (ctx().extensionSettings.tavern_ruined_me_keys?.keys || []).filter(k => k.url); }
 // 回复时带什么：整套（交给酒馆拼，含预设）或自己挑
-function replyMode() { const s = settings(); if ((s.api || 'main') !== 'main') return 'pick'; return s.replyMode || (s.icMode === false ? 'pick' : 'full'); }
+function replyMode() { const s = settings(); if ((s.api || 'main') !== 'main') return 'pick'; return s.replyMode || 'pick'; } // 默认自己挑：不带预设，世界书照带（她 11/9 说的）
 function replyCtx() { return { card: true, persona: true, world: true, status: true, story: 6, ...(settings().ctx || {}) }; }
 // 世界书：用酒馆自己的触发规则，只取这次被聊天内容触发到的条目（试运行，不算真的触发）
 async function worldInfo(texts) {
