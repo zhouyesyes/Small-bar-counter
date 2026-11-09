@@ -61,7 +61,7 @@ export async function searchSongs(q, page = 1) {
     const id = neteaseId(q);
     if (id) return [await songById(id)].filter(Boolean);
     // 网易云和 QQ 一起问：网易云先回就用网易云；网易云 4 秒还没回、或者没搜到，用 QQ 的（不用干等）
-    const qq = searchQQ(q);
+    const qq = searchQQ(q, page);
     const meting = ask({ server: 'netease', type: 'search', id: q, page, limit: 20 }, { timeout: 4000 })
         .then(({ base, rows }) => rows.map(x => trackOf(x, base)).filter(Boolean));
     const gd = getJson(GD_API + '?' + new URLSearchParams({ types: 'search', source: 'netease', name: q, count: 20, pages: page }), 4000)
@@ -69,7 +69,7 @@ export async function searchSongs(q, page = 1) {
     // 两个网易云来源谁先回用谁（另一个也挂了才算没搜到）
     let list = await Promise.any([meting.then(l => l.length ? l : Promise.reject()), gd.then(l => l.length ? l : Promise.reject())]).catch(() => []);
     if (!list.length) list = await qq;
-    return rankSongs(list, q).slice(0, 12);
+    return rankSongs(list, q); // 一页最多 20 首，翻页看更多
 }
 // 搜出来的排个序：歌名正好是搜的那个 > 歌名开头是 > 歌名里有 > 歌手对得上；翻唱、伴奏、DJ、现场这些往后放
 const VARIANT = /cover|翻唱|翻自|伴奏|纯音乐|instrumental|karaoke|\bdj\b|remix|live|现场|版\)|版）|铃声|片段|女声版|男声版|抖音|0\.\d+x|倍速/i;
@@ -97,11 +97,11 @@ async function getJson(url, timeout = 12000) {
     try { const r = await fetch(url, { credentials: 'omit', referrerPolicy: 'no-referrer', signal: c.signal, cache: 'no-store' }); if (!r.ok) throw new Error('HTTP ' + r.status); return await r.json(); }
     finally { clearTimeout(t); }
 }
-export async function searchQQ(q) {
+export async function searchQQ(q, page = 1) {
     try {
-        const d = await getJson(QQ_API + '?word=' + encodeURIComponent(q));
+        const d = await getJson(QQ_API + '?word=' + encodeURIComponent(q) + '&page=' + page + '&num=20');
         const rows = Array.isArray(d?.data) ? d.data : Array.isArray(d?.data?.list) ? d.data.list : [];
-        return rows.slice(0, 10).map(x => {
+        return rows.slice(0, 20).map(x => {
             const id = str(x.id ?? x.mid ?? x.songmid); if (!id) return null;
             const artist = Array.isArray(x.singer) ? x.singer.map(a => (typeof a === 'string' ? a : a?.name || '')).join(' / ') : str(x.singer ?? x.artist);
             return { id, src: 'qq', title: str(x.song ?? x.name ?? x.title) || '未命名', artist, cover: str(x.cover ?? x.pic), lrc: '' };

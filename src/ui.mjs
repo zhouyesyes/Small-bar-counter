@@ -309,17 +309,22 @@ export function createUI(host) {
  <div class="sb-plists">${names.map(n => `<button data-act="mpl" data-n="${esc(n)}" class="${n === ms.active ? 'on' : ''}">${esc(n)} <small>${ms.lists[n].length}</small></button>`).join('')}<button data-act="mpl-new" class="add">＋ 新建歌单</button></div>
  ${m?.title ? `<button class="sb-mhis" data-act="mhis">${Wd().listen}《${esc(m.title)}》${m.artist ? ' · ' + esc(m.artist) : ''} · 放这首</button>` : ''}
  <div class="sb-msearch"><input data-msearch placeholder="搜歌名、歌手，或贴网易云链接" enterkeyhint="search" value="${esc(v.mq || '')}"><button data-act="msearch">${v.msearching ? '…' : '搜'}</button></div>
- ${v.mres?.length ? `<div class="sb-mres">${v.mres.map((r, i) => `<div class="sb-mrow2"><img class="sb-mthumb" src="${esc(coverUrl(r))}" loading="lazy" decoding="async" alt="" onerror="this.style.visibility='hidden'"><span><b>${esc(r.title)}</b><small>${esc(r.artist)}${r.src === 'qq' ? ' · QQ' : ''}</small></span><button data-act="madd" data-i="${i}" data-play="1">▶</button><button data-act="madd" data-i="${i}">＋</button></div>`).join('')}</div>` : ''}
+ ${v.mres?.length ? `<div class="sb-mres"><div class="sb-cap sb-row" style="margin:6px 0"><span>搜「${esc(v.mq)}」· 第 ${v.mpage || 1} 页</span><button class="sb-link" data-act="mclose">收起 ×</button></div>${v.mres.map((r, i) => `<div class="sb-mrow2"><img class="sb-mthumb" src="${esc(coverUrl(r))}" loading="lazy" decoding="async" alt="" onerror="this.style.visibility='hidden'"><span><b>${esc(r.title)}</b><small>${esc(r.artist)}${r.src === 'qq' ? ' · QQ' : ''}</small></span><button data-act="madd" data-i="${i}" data-play="1">▶</button><button data-act="madd" data-i="${i}">＋</button></div>`).join('')}
+  <div class="sb-mpager"><button data-act="mpage" data-d="-1" ${(v.mpage || 1) <= 1 || v.msearching ? 'disabled' : ''}>上一页</button><span>${v.mpage || 1}</span><button data-act="mpage" data-d="1" ${v.msearching ? 'disabled' : ''}>下一页</button><button data-act="mclose">收起</button></div></div>` : ''}
  ${v.mlist ? `<div class="sb-mres"><div class="sb-cap sb-row" style="margin:6px 0"><span>${esc(ms.active)} · ${list.length} 首</span><span><button class="sb-link" data-act="mpl-rename">改名</button>${names.length > 1 ? ' <button class="sb-link" data-act="mpl-del">删掉这个歌单</button>' : ''}</span></div>${list.map((r, i) => `<div class="sb-mrow2${t && r.id === t.id ? ' on' : ''}"><img class="sb-mthumb" src="${esc(coverUrl(r))}" loading="lazy" decoding="async" alt="" onerror="this.style.visibility='hidden'"><span data-act="mplayat" data-i="${i}"><b>${esc(r.title)}</b><small>${esc(r.artist)}</small></span><button data-act="mdelsong" data-i="${i}">×</button></div>`).join('') || '<div class="sb-empty sm">还没有歌</div>'}</div>` : ''}
  <div class="sb-mnote">歌来自第三方公开接口：先找网易云，搜不到或放不了再找 QQ 音乐；会员歌和接口都不通时放不了</div>
 </section>`;
     }
-    async function musicSearch(q) {
+    async function musicSearch(q, page = 1) {
         q = String(q || '').trim(); if (!q) return;
         v.mq = q; v.msearching = true; render();
-        try { v.mres = await searchSongs(q); if (!v.mres.length) host.toast('info', '没搜到'); }
+        try {
+            const res = await searchSongs(q, page);
+            if (!res.length) { host.toast('info', page > 1 ? '没有下一页了' : '没搜到'); if (page === 1) v.mres = []; }
+            else { v.mres = res; v.mpage = page; }
+        }
         catch (err) { host.toast('error', err?.message || '搜不了'); }
-        finally { v.msearching = false; render(); }
+        finally { v.msearching = false; render(); root.querySelector('.sb-mres')?.scrollIntoView({ block: 'nearest' }); }
     }
     function nowHtml(st) {
         const n = st.now;
@@ -777,6 +782,8 @@ export function createUI(host) {
             }
             case 'mseek': { const r = b.getBoundingClientRect(); player.seek((e.clientX - r.left) / r.width); tickMusic(); return; }
             case 'msearch': await musicSearch(root.querySelector('[data-msearch]')?.value); return;
+            case 'mclose': v.mres = []; v.mpage = 1; break;
+            case 'mpage': await musicSearch(v.mq, Math.max(1, (v.mpage || 1) + Number(b.dataset.d))); return;
             case 'madd': { const t = v.mres?.[Number(b.dataset.i)]; if (t) player.add(t, !!b.dataset.play); if (!b.dataset.play) host.toast('success', '加进歌单了'); return; }
             case 'mplayat': player.play(Number(b.dataset.i)); return;
             case 'mdelsong': player.remove(Number(b.dataset.i)); return;

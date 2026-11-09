@@ -381,3 +381,6 @@
 /* TA的 X 资料还空着 */
 #sb-root .sb-xfill{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 14px 0;padding:8px 10px;border:1px dashed var(--sb-line);border-radius:10px;font-size:12px;color:var(--sb-dim)}
 #sb-root .sb-xfill span{flex:1 1 100%}
+#sb-root .sb-mpager{display:flex;justify-content:center;align-items:center;gap:16px;padding:10px 0 4px;font-size:12px;color:var(--sb-dim)}
+#sb-root .sb-mpager button{font-size:12px;border:1px solid var(--sb-line);border-radius:14px;padding:3px 12px;color:var(--sb-fg)}
+#sb-root .sb-mpager button[disabled]{opacity:.35}
