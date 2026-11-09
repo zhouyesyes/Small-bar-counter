@@ -459,3 +459,8 @@
 #sb-root .sb-wb .sb-ht{flex:0 0 auto;border:0;color:#fff;font-size:11.5px;min-width:19px;height:19px;padding:0 3px;border-radius:4px;display:flex;align-items:center;justify-content:center}
 #sb-root .sb-wb .sb-ht.t-boom{background:#bd0000}#sb-root .sb-wb .sb-ht.t-boil{background:#f86400}#sb-root .sb-wb .sb-ht.t-hot{background:#ff9406}
 #sb-root .sb-wb .sb-ht.t-new{background:#ff3852}#sb-root .sb-wb .sb-ht.t-rec{background:#4c8bff}#sb-root .sb-wb .sb-ht.t-x{background:#bbb}
+/* 朋友圈：刷新和换背景一起放在背景图右上，离签名远一点（她说挨太近会点错） */
+#sb-root .sb-wcovtop{position:absolute;top:12px;right:10px;display:flex;gap:8px;align-items:center;z-index:1}
+#sb-root .sb-wcovtop .sb-coverbtn.sb-side{position:static}
+#sb-root .sb-wcovtop .sb-gen{background:rgba(0,0,0,.4);color:#fff;border:0;border-radius:12px;padding:2px 10px;font-size:10.5px}
+#sb-root .sb-wsign{margin-top:-10px;padding-bottom:14px}

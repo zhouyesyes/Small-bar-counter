@@ -509,9 +509,8 @@ export function createUI(host) {
         const all = [...st.posts.filter(p => !hidden[p.id]), ...st.moments].sort((a, b) => (b.at || 0) - (a.at || 0));
         const me = host.me();
         return `<div class="sb-wxfeed" data-keep="moments">
-  <div class="sb-wcover ${sideCover('coverWx').cls}" style="${sideCover('coverWx').style}"><button class="sb-bk light" data-act="phone-back">‹</button>${coverBtn('coverWx')}<span class="sb-wme"><button class="sb-edit" data-act="edit" data-scope="me" data-key="name" data-label="你在朋友圈里的名字"><b>${esc(me.name)}</b></button><label class="sb-wav" style="background-image:url('${esc(me.avatar)}')" title="点一下换头像"><input type="file" accept="image/*" data-upload="me-avatar" hidden></label></span></div>
+  <div class="sb-wcover ${sideCover('coverWx').cls}" style="${sideCover('coverWx').style}"><button class="sb-bk light" data-act="phone-back">‹</button><span class="sb-wcovtop">${genBtn('moments', '刷新')}${coverBtn('coverWx')}</span><span class="sb-wme"><button class="sb-edit" data-act="edit" data-scope="me" data-key="name" data-label="你在朋友圈里的名字"><b>${esc(me.name)}</b></button><label class="sb-wav" style="background-image:url('${esc(me.avatar)}')" title="点一下换头像"><input type="file" accept="image/*" data-upload="me-avatar" hidden></label></span></div>
   <button class="sb-wsign sb-edit" data-act="edit" data-scope="me" data-key="sign" data-label="你的签名">${esc(me.sign || '点这里写签名')}</button>
-  <div class="sb-genrow">${genBtn('moments', '刷新朋友圈')}</div>
   ${all.length ? all.slice(0, v.momentsN).map(p => postHtml(p, him)).join('') : `<div class="sb-empty">${Wd().moments}还是空的</div>`}
   ${all.length > v.momentsN ? '<div class="sb-more">往下滑，再加载 10 条</div>' : all.length ? '<div class="sb-more">没有更早的了</div>' : ''}
  </div>${wxTabs('wx-moments')}`;
