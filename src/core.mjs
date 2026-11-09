@@ -16,15 +16,30 @@ export function extractBlock(mes) {
 }
 
 // 一行一项「名字: 内容」，冒号中英文都行；同一个名字可以有好几行（动态、评论……）
+// 认得的名字才算新的一项；别的行（日记、动态写了好几段，正文里有「他说：」这种）接在上一项后面
+export const KEYS = new Set(['时间', '天气', '在哪', '地点', '穿着', '想要', '心声', '心声背面', '背面', '签名', '音乐', '在听', '备忘', '备忘+', '备忘✓', '完成',
+    '动态', '朋友圈', '朋友圈评论', '朋友圈点赞', '评论', '点赞', '回复', '日记', 'X', '推特', '推文', '微博', '热搜', '照片', 'X网名', 'X账号', 'X签名',
+    '微信', '消息', '好友申请', '微信拉黑', '微信解除拉黑', '通过好友申请', '背景']);
+const LONG = new Set(['日记', '动态', 'X', '推特', '微博']); // 能写好几段的
 export function parseBlock(raw) {
     const out = {};
-    for (const line of String(raw || '').split(/\r?\n/)) {
-        const m = line.trim().match(/^[-*·\s]*([^:：]{1,8})\s*[:：]\s*(.*)$/);
-        if (!m) continue;
-        const key = m[1].trim(), val = m[2].trim();
-        if (!val || /^(无|没有|none|null|-)$/i.test(val)) continue;
-        (out[key] ??= []).push(val);
+    let last = null; // 上一项：{ key, i }，后面的散行接上去
+    for (const line0 of String(raw || '').split(/\r?\n/)) {
+        const line = line0.trim();
+        const m = line.match(/^[-*·\s]*([^:：]{1,8})\s*[:：]\s*(.*)$/);
+        const key = m?.[1].trim();
+        if (m && KEYS.has(key)) {
+            const val = m[2].trim();
+            if (!val && LONG.has(key)) { (out[key] ??= []).push(''); last = { key, i: out[key].length - 1 }; continue; } // 「日记:」后面另起一行才写
+            last = null;
+            if (!val || /^(无|没有|none|null|-)$/i.test(val)) continue;
+            (out[key] ??= []).push(val);
+            if (LONG.has(key)) last = { key, i: out[key].length - 1 };
+            continue;
+        }
+        if (last && line) { const arr = out[last.key]; arr[last.i] = arr[last.i] ? arr[last.i] + '\n' + line : line; }
     }
+    for (const k of Object.keys(out)) { out[k] = out[k].filter(Boolean); if (!out[k].length) delete out[k]; }
     return out;
 }
 
@@ -87,7 +102,11 @@ export function buildState(msgs) {
         // 他回你的留言：「回复: 嗯，人也是。」接在你最近那条没回的留言后面（在界面那边对上）
         many(b, '回复').forEach((v, i) => st.replies.push({ id: id + '#r' + i, text: v, at }));
         many(b, '日记').forEach((v, i) => {
-            const [a, c] = split(v);
+            let [a, c] = split(v);
+            // 也认「标题：…」另起一行「正文：…」，或者第一行短短一句当标题、后面是正文
+            const t = String(a).match(/^标题\s*[:：]\s*([^\n]*)\n?([\s\S]*)$/);
+            if (!c && t) { a = t[1].trim(); c = t[2].replace(/^正文\s*[:：]\s*/, '').trim(); }
+            else if (!c && /\n/.test(a)) { const [h, ...rest] = a.split('\n'); if (h.length <= 16 && rest.join('').trim()) { a = h.trim(); c = rest.join('\n').trim(); } }
             const title = c ? a : '', text = c || a;
             if (text) st.diary.push({ id: id + '#d' + i, title, text, time: n.time || '', weather: n.weather || '', at });
         });

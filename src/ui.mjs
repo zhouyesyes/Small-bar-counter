@@ -3,7 +3,7 @@
 import { catSvg } from './cat.mjs';
 import { cropImage } from './crop.mjs';
 import { createPlayer, searchSongs, coverUrl, coverList, resolveCover } from './music.mjs';
-import { weatherTone, parsePhoneReply } from './core.mjs';
+import { weatherTone, parsePhoneReply, parseBlock } from './core.mjs';
 import { PHONE_RULES, LETTER_RULES, PHONE_STATUS, MANUAL, RELATION } from './prompt.mjs';
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -345,6 +345,15 @@ export function createUI(host) {
             const out = String(await host.ask(msgs, `【暂停正文，这一次不写正文】\n${rule}`) || '');
             let raw = host.extractBlock(out).raw;
             if (!raw && /[:：]/.test(out)) raw = out; // 没包 <!--SB 也认
+            // 要的东西真写了才算：以前状态段里只写了时间之类，也说「写好了」，其实日记没有
+            const want = { diary: ['日记'], post: ['动态'], x: ['X', '推特'], xfeed: ['推文'], moments: ['朋友圈'], weibo: ['微博', '热搜'], photos: ['照片'] }[kind];
+            const got = k => want.some(w => parseBlock(k)[w]?.length);
+            if (want && !got(raw)) {
+                // 日记没按格式（直接写成一段文字）：整段当日记收下
+                const prose = host.extractBlock(out).text.replace(/<[^>]+>/g, '').trim();
+                if (kind === 'diary' && prose.length > 20) raw = (raw ? raw + '\n' : '') + '日记:\n' + prose;
+                else throw new Error(`TA回了，但没按格式写${{ diary: '日记', post: '动态', x: 'X', xfeed: '推文', moments: '朋友圈', weibo: '微博', photos: '照片' }[kind]}，再点一次试试`);
+            }
             const id = host.addBlock(raw);
             if (!id) throw new Error('TA没写出来');
             if (redoOf) {
@@ -748,7 +757,7 @@ export function createUI(host) {
     function pDiaryHtml(era) {
         const st = host.state(), hidden = host.meta().hidden || {};
         const list = st.diary.filter(d => !hidden[d.id]).reverse();
-        return `${head(Wd().diary)}<div class="sb-list">${list.length ? list.map(d => `<button class="sb-dold" data-act="diary-open" data-id="${esc(d.id)}"><span>${esc(d.time)}</span><span>${esc(d.title || d.text.slice(0, 12))}</span></button>`).join('') : '<div class="sb-empty">还没有</div>'}</div>`;
+        return `${head(Wd().diary, genBtn('diary', '写一篇'))}<div class="sb-list">${list.length ? list.map(d => `<button class="sb-dold" data-act="diary-open" data-id="${esc(d.id)}"><span>${esc(d.time)}</span><span>${esc(d.title || d.text.slice(0, 12))}</span></button>`).join('') : '<div class="sb-empty">还没有</div>'}</div>`;
     }
     function pMemoHtml() {
         const st = host.state();
