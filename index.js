@@ -6,7 +6,7 @@ import { getContext } from '../../../extensions.js';
 import * as personas from '../../../personas.js';
 // 世界书：全局选中的书在 world-info.js 里；整个模块导入，按名字取
 import * as wi from '../../../world-info.js';
-import { extractBlock, buildState, guessEra } from './src/core.mjs';
+import { extractBlock, buildState, guessEra, parseBlock } from './src/core.mjs';
 import { DEFAULT_PROMPT, buildInjection } from './src/prompt.mjs';
 import { createUI } from './src/ui.mjs';
 import { saveImage, imageUrl, deleteImage } from './src/imgstore.mjs';
@@ -60,6 +60,7 @@ function absorb(id) {
     // 每一页回复各记各的，换页时换过来
     (m.extra.small_bar_swipes ??= {})[m.swipe_id ?? 0] = raw;
     if (Array.isArray(m.swipes) && m.swipe_id != null) m.swipes[m.swipe_id] = text;
+    applyProfile(raw);
     try { c.updateMessageBlock?.(id, m); } catch (e) { console.warn('[小吧台] 刷新这一楼失败', e); }
     return true;
 }
@@ -161,9 +162,21 @@ const xHost = {
     setXIBlocked: on => { xflag('xiblocked')[xAccount().id] = on; saveMeta(); },
 };
 
+// ---------- TA自己改 X 资料：状态段里写了「X网名 / X账号 / X签名」就记进这个聊天的名片 ----------
+function applyProfile(raw) {
+    const b = parseBlock(raw);
+    const pick = k => (b[k]?.length ? b[k][b[k].length - 1] : '');
+    const xname = pick('X网名'), handle = pick('X账号').replace(/^@/, ''), xbio = pick('X签名');
+    if (!xname && !handle && !xbio) return;
+    const c = charCfg(); c.him ??= {};
+    if (xname) c.him.xname = xname; if (handle) c.him.handle = handle; if (xbio) c.him.xbio = xbio;
+    c.xAsked = true; saveMeta();
+}
+
 // ---------- 不靠正文写的状态段 ----------
 function addBlock(raw) {
     raw = String(raw || '').trim(); if (!raw) return false;
+    applyProfile(raw);
     const m = meta(); m.blocks ??= [];
     m.blocks.push({ id: newId(), raw, at: Date.now() });
     saveMeta(); dirty(); refreshInject();
@@ -356,6 +369,7 @@ const host = {
     saveImage, img, dropImage: deleteImage, refreshInject,
     meta, saveMeta, state, unread, markRead, wechat, addWechat, patchWechat, deleteWechat, takeLastRound, restoreRound, repliesFor,
     ...xHost,
+    saveSettings,
     replyMode, replyCtx, worldInfo, testOwnApi, hasHelper, addBlock, extractBlock,
     him, me, charCard, era, guessedEra, storyTail, ask, hasChar,
     countTokens: async t => { if (!t) return 0; const c = ctx(); try { if (c.getTokenCountAsync) return await c.getTokenCountAsync(t); } catch { /* 算不了就估 */ } return Math.ceil(t.length / 1.6); },

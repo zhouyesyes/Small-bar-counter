@@ -164,7 +164,7 @@ export function createPlayer({ load, save, onChange, onStatus = () => {} }) {
         if (t.src === 'qq') save(); // 问地址时顺便拿到了封面、歌词
         if (audio.dataset.src !== src) { audio.src = src; audio.dataset.src = src; audio.dataset.id = t.id; audio.dataset.tried = ''; }
         try { await audio.play(); } catch (e) { if (e?.name !== 'NotAllowedError') await fallback(); else onChange?.('error', '点一下播放键继续'); }
-        if (lrcFor !== t.id) { lrcFor = t.id; lrc = []; lyricOf(t).then(l => { if (lrcFor === t.id) { lrc = l; onChange?.(); } }); }
+        if (lrcFor !== t.id) { lrcFor = t.id; lrc = []; lyricOf(t).then(l => { if (lrcFor === t.id) { lrc = l; onChange?.('state'); } }); }
         onChange?.();
     }
     const next = (auto) => {
@@ -197,11 +197,11 @@ export function createPlayer({ load, save, onChange, onStatus = () => {} }) {
         onChange?.('error', '这首放不了（可能是会员歌或接口不通）');
     }
     audio.addEventListener('error', () => { if (audio.src) fallback(); });
-    audio.addEventListener('play', () => onChange?.());
-    audio.addEventListener('pause', () => onChange?.());
+    audio.addEventListener('play', () => onChange?.('state'));
+    audio.addEventListener('pause', () => onChange?.('state'));
     return {
         audio, play, next, prev,
-        toggle: () => (audio.paused ? play() : (audio.pause(), onChange?.())),
+        toggle: () => (audio.paused ? play() : audio.pause()),
         seek: frac => { if (audio.duration) audio.currentTime = audio.duration * frac; },
         current: cur, playing: () => !audio.paused,
         lyric: () => lrc, line: () => lineAt(lrc, audio.currentTime || 0),

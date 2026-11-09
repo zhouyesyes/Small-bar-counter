@@ -53,19 +53,30 @@ export function createUI(host) {
     }
     const player = createPlayer({
         load: musicState,
-        save: () => host.setSettings(() => {}),
-        onChange: (kind, msg) => { if (kind === 'error') host.toast('warning', msg); if (kind === 'info') host.toast('info', msg); render(); },
+        save: () => host.saveSettings(),
+        onChange: (kind, msg) => {
+            if (kind === 'error') host.toast('warning', msg); if (kind === 'info') host.toast('info', msg);
+            if (kind === 'state') { patchMusic(); return; } // 只是播放 / 暂停：改按钮，不整页重画（滑着时不跳）
+            render();
+        },
         // 状态那行小字只改字，不整页重画（滑着的时候不跳）
         onStatus: text => { v.mstate = text; root?.querySelectorAll('.sb-mstate').forEach(el => { el.textContent = text; }); },
     });
     const fmt = s => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+    // 播放键、主页小卡片：只改这几处
+    function patchMusic() {
+        if (!root) return;
+        root.querySelectorAll('.sb-mplay').forEach(el => { el.innerHTML = mi(player.playing() ? 'pause' : 'play'); });
+        root.querySelectorAll('.sb-wplay').forEach(el => { el.innerHTML = mi(player.playing() ? 'pause' : 'play'); });
+        tickMusic();
+    }
     // 每秒只改进度条和歌词那几个字，不整页重画
     function tickMusic() {
         const a = player.audio, box = root?.querySelector('.sb-music'); if (!box) return;
         const bar = box.querySelector('.sb-mbar i'); if (bar) bar.style.width = (a.duration ? a.currentTime / a.duration * 100 : 0) + '%';
         const t = box.querySelector('.sb-mtime'); if (t) t.textContent = `${fmt(a.currentTime)} / ${fmt(a.duration)}`;
         const ly = player.lyric(), i = player.line(), el = box.querySelector('.sb-lyr');
-        if (el && ly.length && el.dataset.i !== String(i)) { el.dataset.i = i; el.innerHTML = [i - 1, i, i + 1].map(k => `<div class="${k === i ? 'cur' : ''}">${esc(ly[k]?.text || '')}</div>`).join(''); }
+        if (el && el.dataset.i !== String(i)) { el.dataset.i = i; el.innerHTML = [i - 1, i, i + 1].map(k => `<div class="${k === i ? 'cur' : ''}">${esc(ly[k]?.text || '')}</div>`).join(''); }
     }
 
     // ---------- 外壳 ----------
@@ -434,7 +445,9 @@ export function createUI(host) {
  <div class="sb-sbar"><span>${esc(clock)}</span><button class="sb-phx" data-act="phone-close" aria-label="关上">×</button></div>
  <div class="sb-clock${clock ? '' : ' sm'}">${esc(clock || (era === 'modern' ? '--:--' : (n.time || '').split(/\s+/).pop() || '—'))}</div>
  <div class="sb-cdate">${esc([date, n.weather].filter(Boolean).join(' · ') || '时间跟着剧情走')}</div>
- <button class="sb-widget" data-act="phone-go" data-to="music"><div class="sb-cap">${Wd().listen}</div><div class="sb-wrow"><span class="sb-wcov"></span><span><b>${esc(st.music?.title || '还没在听歌')}</b><small>${esc(st.music?.lyric || st.music?.artist || '')}</small></span></div></button>
+ ${(() => { const t = player.current(); return t
+    ? `<div class="sb-widget"><div class="sb-cap">正在放</div><div class="sb-wrow"><span class="sb-wcov" data-act="phone-go" data-to="music" style="background-image:url('${esc(coverUrl(t))}')"></span><span data-act="phone-go" data-to="music"><b>${esc(t.title)}</b><small>${esc(t.artist)}</small></span><button class="sb-wplay" data-act="mtoggle" aria-label="播放">${mi(player.playing() ? 'pause' : 'play')}</button></div></div>`
+    : `<button class="sb-widget" data-act="phone-go" data-to="music"><div class="sb-cap">${Wd().listen}</div><div class="sb-wrow"><span class="sb-wcov"></span><span><b>${esc(st.music?.title || '还没在听歌')}</b><small>${esc(st.music?.lyric || st.music?.artist || '点这里去放歌')}</small></span></div></button>`; })()}
  <div class="sb-apps">${era === 'modern' ? app('x', 'x', Wd().x) : `<button class="sb-app" data-act="phone-go" data-to="x"><span class="sb-ai sb-aitext">${Wd().x.slice(0, 1)}</span><span class="sb-an">${Wd().x}</span></button>`}${app('diary', 'diary', Wd().diary)}${app('memo', 'memo', Wd().memo)}${app('photos', 'photos', Wd().photos)}</div>
  <div class="sb-dock">${app('msg', 'wx-contacts', Wd().wechat, host.unread())}${app('music', 'music', Wd().music)}${app('set', 'settings', Wd().set)}</div>
 </div>`;
@@ -518,6 +531,7 @@ export function createUI(host) {
  <button class="sb-xname" data-act="xname-him" title="点一下改网名">${esc(him.xname || him.name)} <small class="sb-pen">✎</small></button>
  <button class="sb-handle left sb-edit" data-act="edit" data-scope="him" data-key="handle" data-label="TA的账号 ID（@ 后面那串）">@${esc((him.handle || '').replace(/^@/, '') || '点这里填账号')}</button>
  <button class="sb-xbio sb-edit" data-act="edit" data-scope="him" data-key="xbio" data-label="TA在这里的签名">${esc(him.xbio || him.sign || '点这里写签名')}</button>
+ ${!him.handle && !him.xbio && !host.charCfg().xAsked ? `<div class="sb-xfill"><span>TA在这里的网名、账号、签名还空着</span>${genBtn('xprofile', '让TA自己填')}<button class="sb-link" data-act="xfill-no">我自己填</button></div>` : ''}
  <div class="sb-xstat"><span><b>${seed % 40 + 3}</b> ${Wd().following}</span><span><b>${(seed * 37 % 4000 + 120).toLocaleString()}</b> ${Wd().fans}</span></div>
  <div class="sb-xtabs"><span class="on">帖子</span><span>回复</span><span>媒体</span></div>
  <div class="sb-genrow">${genBtn('x', '让TA现在发一条')}</div>
@@ -541,7 +555,7 @@ export function createUI(host) {
     function xMeHtml() {
         const acc = host.xAccount(), me = host.me(), list = [...host.xMine()].reverse();
         return `<div class="sb-xpage" data-keep="xme">
- <div class="sb-xcover ${sideCover('coverXMe').cls}" style="${sideCover('coverXMe').style}"><button class="sb-bk light" data-act="phone-back">‹</button>${coverBtn('coverXMe')}</div>
+ <div class="sb-xcover ${acc.cover ? 'sb-cover-img' : sideCover('coverXMe').cls}" style="${acc.cover ? `background-image:url('${host.img(acc.cover)}')` : sideCover('coverXMe').style}"><button class="sb-bk light" data-act="phone-back">‹</button>${coverBtn('xacc-cover')}</div>
  <div class="sb-xtop"><span class="sb-xav" style="background-image:url('${esc(acc.avatar ? host.img(acc.avatar) : '')}')">${acc.avatar ? '' : esc(acc.name.slice(0, 1))}</span><label class="sb-xbtn">换头像<input type="file" accept="image/*" data-upload="xacc-avatar" hidden></label><button class="sb-xbtn" data-act="xacc-next">换号</button></div>
  <button class="sb-xname" data-act="xacc-rename" title="点一下改网名">${esc(acc.name)} <small class="sb-pen">✎</small></button><button class="sb-handle left sb-edit" data-act="edit" data-scope="acc" data-key="handle" data-label="这个号的账号 ID（@ 后面那串）">@${esc((acc.handle || '').replace(/^@/, '') || '点这里填账号')}</button>
  <button class="sb-xbio sb-edit" data-act="edit" data-scope="acc" data-key="bio" data-label="这个号的签名">${esc(acc.bio || '点这里写签名')}</button>
@@ -742,23 +756,24 @@ export function createUI(host) {
             case 'mprev': player.prev(); return;
             case 'mmode': player.mode(); return;
             case 'mlist': v.mlist = !v.mlist; break;
-            case 'mpl': { const m = musicState(); m.active = b.dataset.n; m.idx = 0; v.mlist = true; host.setSettings(() => {}); break; }
+            case 'xfill-no': host.setCharCfg(c => { c.xAsked = true; }); break;
+            case 'mpl': { const m = musicState(); m.active = b.dataset.n; m.idx = 0; v.mlist = true; host.saveSettings(); break; }
             case 'mpl-new': {
                 const n = String(await host.prompt('新歌单叫什么？', '') || '').trim(); if (!n) return;
                 const m = musicState(); if (m.lists[n]) { host.toast('info', '已经有这个名字了'); return; }
-                m.lists[n] = []; m.active = n; m.idx = 0; v.mlist = true; host.setSettings(() => {}); break;
+                m.lists[n] = []; m.active = n; m.idx = 0; v.mlist = true; host.saveSettings(); break;
             }
             case 'mpl-rename': {
                 const m = musicState(), old = m.active;
                 const n = String(await host.prompt('歌单改个名字', old) || '').trim(); if (!n || n === old) return;
                 if (m.lists[n]) { host.toast('info', '已经有这个名字了'); return; }
                 const next = {}; for (const [k, val] of Object.entries(m.lists)) next[k === old ? n : k] = val; // 保持原来的顺序
-                m.lists = next; m.active = n; host.setSettings(() => {}); break;
+                m.lists = next; m.active = n; host.saveSettings(); break;
             }
             case 'mpl-del': {
                 const m = musicState();
                 if (!await host.confirm(`删掉歌单「${m.active}」？里面的 ${m.list.length} 首也一起去掉`)) return;
-                delete m.lists[m.active]; m.active = Object.keys(m.lists)[0]; m.idx = 0; host.setSettings(() => {}); break;
+                delete m.lists[m.active]; m.active = Object.keys(m.lists)[0]; m.idx = 0; host.saveSettings(); break;
             }
             case 'mseek': { const r = b.getBoundingClientRect(); player.seek((e.clientX - r.left) / r.width); tickMusic(); return; }
             case 'msearch': await musicSearch(root.querySelector('[data-msearch]')?.value); return;
@@ -901,6 +916,7 @@ export function createUI(host) {
             if (kind === 'pick') host.setCharCfg(c => { c.cover = { ...(c.cover || {}), mode: 'pick', images: [...(c.cover?.images || []), { tag: '', src }] }; });
             if (kind === 'him-avatar') host.setCharCfg(c => { c.him = { ...(c.him || {}), avatar: src }; });
             if (kind === 'xacc-avatar') host.setXAccountAvatar(src);
+            if (kind === 'xacc-cover') { host.dropImage(host.xAccount().cover); host.setXAccountField('cover', src); }
             if (kind === 'him-xavatar') host.setCharCfg(c => { c.him = { ...(c.him || {}), xavatar: src }; });
             if (/^cover(Wx|X|XMe)$/.test(kind)) { host.dropImage(host.charCfg()[kind]); host.setCharCfg(c => { c[kind] = src; }); }
             if (kind === 'me-avatar') host.setSettings(s => { s.me = { ...(s.me || {}), avatar: src }; });

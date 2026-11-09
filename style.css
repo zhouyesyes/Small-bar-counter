@@ -365,3 +365,19 @@
 #sb-root .sb-plists .add{border-style:dashed}
 #sb-root .sb-mres .sb-link{margin:0 0 0 8px;font-size:11px}
 #sb-root .sb-mstate{font-size:10.5px;color:var(--sb-dim);margin:-4px 0 8px;letter-spacing:.04em}
+
+/* 歌词固定三行高：字多也不把下面往下推（滑着不跳） */
+#sb-root .sb-music .sb-lyr{height:68px;min-height:0;overflow:hidden}
+#sb-root .sb-music .sb-lyr div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;height:22px;line-height:22px}
+#sb-root .sb-music .sb-lyr .cur{height:24px;line-height:24px}
+#sb-root .sb-mstate{height:14px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+/* 主页小卡片 */
+#sb-root .sb-widget .sb-wcov{background-size:cover;background-position:center;cursor:pointer}
+#sb-root .sb-wrow>span:nth-child(2){flex:1;min-width:0;cursor:pointer}
+#sb-root .sb-wrow small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#sb-root .sb-wplay{width:34px;height:34px;flex:0 0 auto;border-radius:50%;background:var(--sb-fg)!important;color:var(--sb-bg)!important;display:flex;align-items:center;justify-content:center}
+#sb-root .sb-wplay .sb-mi{width:16px;height:16px}
+#sb-root .sb-wplay .sb-mi svg path[d^="M8 5l"]{fill:currentColor}
+/* TA的 X 资料还空着 */
+#sb-root .sb-xfill{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 14px 0;padding:8px 10px;border:1px dashed var(--sb-line);border-radius:10px;font-size:12px;color:var(--sb-dim)}
+#sb-root .sb-xfill span{flex:1 1 100%}
