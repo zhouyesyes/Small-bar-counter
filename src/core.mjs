@@ -40,7 +40,7 @@ const pics = v => (v || '').replace(/^(照片|图片|图)\s*[:：]?/, '').split(
 // msgs: [{ id, raw, at }]，id 是这一楼稳定的编号（发出时间 + 第几页回复），at 是这一楼的时间（毫秒，排先后用）
 export function buildState(msgs) {
     const st = {
-        now: {}, nowLog: [], posts: [], moments: [], diary: [], memo: [], music: null, xposts: [], xfeed: [], weibo: [], hot: [], photos: [], wechat: [], npcComments: [], replies: [], cover: '',
+        now: {}, nowLog: [], posts: [], moments: [], diary: [], memo: [], music: null, xposts: [], xfeed: [], weibo: [], hot: [], photos: [], freq: [], blockedMe: false, wechat: [], npcComments: [], replies: [], cover: '',
     };
     for (const { id, raw, at = 0 } of msgs) {
         if (!raw) continue;
@@ -94,6 +94,10 @@ export function buildState(msgs) {
         if (hot.length) st.hot = hot;
         // 相册：TA拍的、存的照片
         many(b, '照片').forEach((v, i) => { const [desc, note] = split(v); if (desc) st.photos.push({ id: id + '#ph' + i, desc, note: note || '', time: n.time || '', at }); });
+        // 微信：有人加她好友；TA拉黑 / 解除拉黑她；她被拉黑后发的好友申请，TA通过了
+        many(b, '好友申请').forEach((v, i) => { const [who, text] = split(v); if (who) st.freq.push({ id: id + '#fr' + i, who, text: text || '', at }); });
+        if (b['微信拉黑']?.length) st.blockedMe = true;
+        if (b['微信解除拉黑']?.length || b['通过好友申请']?.length) st.blockedMe = false;
         many(b, '微信', '消息').forEach((v, i) => st.wechat.push({ id: id + '#w' + i, from: 'him', type: 'text', text: v, time: n.time || '', at }));
     }
     // 备忘最多 15 条：做完的先挪走

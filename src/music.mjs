@@ -58,7 +58,7 @@ function trackOf(x, base) {
     let dur = x.time ?? x.duration ?? x.interval ?? 0;
     dur = typeof dur === 'string' && dur.includes(':') ? dur.split(':').reduce((a, n) => a * 60 + (+n || 0), 0) : +dur || 0;
     if (dur > 3600) dur = Math.round(dur / 1000); // 有的接口给的是毫秒
-    return { id, title: str(x.name ?? x.title) || '未命名', artist, cover: str(x.pic ?? x.cover), lrc: str(x.lrc ?? x.lyric), base, direct, dur };
+    return { id, title: str(x.name ?? x.title) || '未命名', artist, cover: /^https?:/.test(str(x.pic ?? x.cover)) ? str(x.pic ?? x.cover) : '', picId: str(x.pic_id), lrc: str(x.lrc ?? x.lyric), base, direct, dur };
 }
 
 export async function searchSongs(q, page = 1) {
@@ -161,7 +161,24 @@ export async function songById(id) {
 }
 // 播放地址：Meting 的 url 接口会跳到真正的音频，<audio> 自己跟着跳
 export const playUrl = t => apiUrl(t.base || MUSIC_APIS[0], { server: 'netease', type: 'url', id: t.id });
-export const coverUrl = t => (t.cover && /^https?:/.test(t.cover) ? t.cover : t.src === 'qq' ? '' : apiUrl(t.base || MUSIC_APIS[0], { server: 'netease', type: 'pic', id: t.id }));
+// 封面：好几个地方都能拿，第一个加载不出来就换下一个（<img> 出错时自己往后换）
+export function coverList(t) {
+    const out = [];
+    if (t.cover && /^https?:/.test(t.cover)) out.push(t.cover);
+    if (t.src !== 'qq') for (const b of [...new Set([t.base, ...MUSIC_APIS].filter(Boolean))]) out.push(apiUrl(b, { server: 'netease', type: 'pic', id: t.id }));
+    return out;
+}
+export const coverUrl = t => coverList(t)[0] || '';
+// 没有现成封面的：问 GD 要一张真的图片地址，记在歌上（下次不用再问）
+export async function resolveCover(t) {
+    if (!t || (t.cover && /^https?:/.test(t.cover)) || t.src === 'qq') return false;
+    try {
+        const d = await getJson(GD_API + '?' + new URLSearchParams({ types: 'pic', source: 'netease', id: t.picId || t.id, size: 300 }), 5000);
+        const u = str(d?.url || d?.data?.url);
+        if (/^https?:/.test(u)) { t.cover = u.replace(/^http:/, 'https:'); return true; }
+    } catch { /* 拿不到就用别的 */ }
+    return false;
+}
 
 // 歌词：[mm:ss.xx] 一行一句
 export async function lyricOf(t) {
@@ -210,6 +227,7 @@ export function createPlayer({ load, save, onChange, onStatus = () => {} }) {
         watch();
         // 放不了时 <audio> 自己会发 error，由那边换来源；这里只管被浏览器拦下自动播放的情况
         try { await audio.play(); } catch (e) { if (e?.name === 'NotAllowedError') onChange?.('error', '点一下播放键继续'); }
+        if (!t.cover) resolveCover(t).then(ok => { if (ok) { save(); onChange?.(); } });
         if (lrcFor !== t.id) { lrcFor = t.id; lrc = []; lyricOf(t).then(l => { if (lrcFor === t.id) { lrc = l; onChange?.('state'); } }); }
         onChange?.();
     }

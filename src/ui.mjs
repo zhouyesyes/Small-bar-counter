@@ -1,7 +1,7 @@
 // 小吧台的界面：小猫入口、左边滑出的抽屉、弹出来的小手机
 // 只管画和点，数据和酒馆那边都从 host 拿（见 index.js），方便以后换酒馆版本
 import { catSvg } from './cat.mjs';
-import { createPlayer, searchSongs, coverUrl } from './music.mjs';
+import { createPlayer, searchSongs, coverUrl, coverList, resolveCover } from './music.mjs';
 import { weatherTone, parsePhoneReply } from './core.mjs';
 import { PHONE_RULES, LETTER_RULES, PHONE_STATUS, MANUAL } from './prompt.mjs';
 
@@ -62,6 +62,7 @@ export function createUI(host) {
         // 状态那行小字只改字，不整页重画（滑着的时候不跳）
         onStatus: text => { v.mstate = text; root?.querySelectorAll('.sb-mstxt').forEach(el => { el.textContent = text; }); },
     });
+    const coverImg = (t, cls) => { const l = coverList(t); return l.length ? `<img class="${cls}" src="${esc(l[0])}" data-alts="${esc(l.join('|'))}" loading="lazy" decoding="async" alt="" onerror="var a=(this.dataset.alts||'').split('|'),n=(+this.dataset.n||0)+1;this.dataset.n=n;if(a[n])this.src=a[n];else this.style.visibility='hidden'">` : `<span class="${cls}"></span>`; };
     const fmt = s => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
     // 播放键、主页小卡片：只改这几处
     function patchMusic() {
@@ -361,7 +362,7 @@ export function createUI(host) {
         return `<section class="sb-music">
  <div class="sb-cap">${t ? 'now playing' : 'music'} · ${Wd().music}</div>
  ${t ? `<div class="sb-mstate"><span class="sb-mstxt">${esc(v.mstate || (player.playing() ? '正在播放' : '点播放键开始'))}</span> <button class="sb-link" data-act="mskip">换个来源</button></div>` : ''}
- <div class="sb-bigcover" style="${t ? `background-image:url('${esc(coverUrl(t))}')` : ''}"></div>
+ <div class="sb-bigcover">${t ? coverImg(t, 'sb-bigimg') : ''}</div>
  <div class="sb-mt">${esc(t?.title || '还没放歌')}</div>
  <div class="sb-ma">${esc(t?.artist || '搜一首，或者放TA在听的')}</div>
  <div class="sb-lyr" data-i=""></div>
@@ -370,9 +371,9 @@ export function createUI(host) {
  <div class="sb-plists">${names.map(n => `<button data-act="mpl" data-n="${esc(n)}" class="${n === ms.active ? 'on' : ''}">${esc(n)} <small>${ms.lists[n].length}</small></button>`).join('')}<button data-act="mpl-new" class="add">＋ 新建歌单</button></div>
  ${m?.title ? `<button class="sb-mhis" data-act="mhis">${Wd().listen}《${esc(m.title)}》${m.artist ? ' · ' + esc(m.artist) : ''} · 放这首</button>` : ''}
  <div class="sb-msearch"><input data-msearch placeholder="搜歌名、歌手，或贴网易云链接" enterkeyhint="search" value="${esc(v.mq || '')}"><button data-act="msearch">${v.msearching ? '…' : '搜'}</button></div>
- ${v.mres?.length ? `<div class="sb-mres"><div class="sb-cap sb-row" style="margin:6px 0"><span>搜「${esc(v.mq)}」· 第 ${v.mpage || 1} 页</span><button class="sb-link" data-act="mclose">收起 ×</button></div>${v.mres.map((r, i) => `<div class="sb-mrow2"><img class="sb-mthumb" src="${esc(coverUrl(r))}" loading="lazy" decoding="async" alt="" onerror="this.style.visibility='hidden'"><span><b>${esc(r.title)}</b><small>${esc(r.artist)}${r.src === 'qq' ? ' · QQ' : ''}</small></span><button data-act="madd" data-i="${i}" data-play="1">▶</button><button data-act="madd" data-i="${i}">＋</button></div>`).join('')}
+ ${v.mres?.length ? `<div class="sb-mres"><div class="sb-cap sb-row" style="margin:6px 0"><span>搜「${esc(v.mq)}」· 第 ${v.mpage || 1} 页</span><button class="sb-link" data-act="mclose">收起 ×</button></div>${v.mres.map((r, i) => `<div class="sb-mrow2">${coverImg(r, 'sb-mthumb')}<span><b>${esc(r.title)}</b><small>${esc(r.artist)}${r.src === 'qq' ? ' · QQ' : ''}</small></span><button data-act="madd" data-i="${i}" data-play="1">▶</button><button data-act="madd" data-i="${i}">＋</button></div>`).join('')}
   <div class="sb-mpager"><button data-act="mpage" data-d="-1" ${(v.mpage || 1) <= 1 || v.msearching ? 'disabled' : ''}>上一页</button><span>${v.mpage || 1}</span><button data-act="mpage" data-d="1" ${v.msearching ? 'disabled' : ''}>下一页</button><button data-act="mclose">收起</button></div></div>` : ''}
- ${v.mlist ? `<div class="sb-mres"><div class="sb-cap sb-row" style="margin:6px 0"><span>${esc(ms.active)} · ${list.length} 首</span><span><button class="sb-link" data-act="mpl-rename">改名</button>${names.length > 1 ? ' <button class="sb-link" data-act="mpl-del">删掉这个歌单</button>' : ''}</span></div>${list.map((r, i) => `<div class="sb-mrow2${t && r.id === t.id ? ' on' : ''}"><img class="sb-mthumb" src="${esc(coverUrl(r))}" loading="lazy" decoding="async" alt="" onerror="this.style.visibility='hidden'"><span data-act="mplayat" data-i="${i}"><b>${esc(r.title)}</b><small>${esc(r.artist)}</small></span><button data-act="mdelsong" data-i="${i}">×</button></div>`).join('') || '<div class="sb-empty sm">还没有歌</div>'}</div>` : ''}
+ ${v.mlist ? `<div class="sb-mres"><div class="sb-cap sb-row" style="margin:6px 0"><span>${esc(ms.active)} · ${list.length} 首</span><span><button class="sb-link" data-act="mpl-rename">改名</button>${names.length > 1 ? ' <button class="sb-link" data-act="mpl-del">删掉这个歌单</button>' : ''}</span></div>${list.map((r, i) => `<div class="sb-mrow2${t && r.id === t.id ? ' on' : ''}">${coverImg(r, 'sb-mthumb')}<span data-act="mplayat" data-i="${i}"><b>${esc(r.title)}</b><small>${esc(r.artist)}</small></span><button data-act="mdelsong" data-i="${i}">×</button></div>`).join('') || '<div class="sb-empty sm">还没有歌</div>'}</div>` : ''}
  <div class="sb-mnote">歌来自第三方公开接口：先找网易云，搜不到或放不了再找 QQ 音乐；会员歌和接口都不通时放不了</div>
 </section>`;
     }
@@ -382,7 +383,7 @@ export function createUI(host) {
         try {
             const res = await searchSongs(q, page);
             if (!res.length) { host.toast('info', page > 1 ? '没有下一页了' : '没搜到'); if (page === 1) v.mres = []; }
-            else { v.mres = res; v.mpage = page; }
+            else { v.mres = res; v.mpage = page; Promise.all(res.slice(0, 20).map(t => resolveCover(t))).then(r => { if (r.some(Boolean) && v.mres === res) render(); }); }
         }
         catch (err) { host.toast('error', err?.message || '搜不了'); }
         finally { v.msearching = false; render(); root.querySelector('.sb-mres')?.scrollIntoView({ block: 'nearest' }); }
@@ -522,7 +523,7 @@ export function createUI(host) {
  <div class="sb-clock${clock ? '' : ' sm'}">${esc(clock || (era === 'modern' ? '--:--' : (n.time || '').split(/\s+/).pop() || '—'))}</div>
  <div class="sb-cdate">${esc([date, n.weather].filter(Boolean).join(' · ') || '时间跟着剧情走')}</div>
  ${(() => { const t = player.current(); return t
-    ? `<div class="sb-widget"><div class="sb-cap">正在放</div><div class="sb-wrow"><span class="sb-wcov" data-act="phone-go" data-to="music" style="background-image:url('${esc(coverUrl(t))}')"></span><span data-act="phone-go" data-to="music"><b>${esc(t.title)}</b><small>${esc(t.artist)}</small></span><button class="sb-wplay" data-act="mtoggle" aria-label="播放">${mi(player.playing() ? 'pause' : 'play')}</button></div></div>`
+    ? `<div class="sb-widget"><div class="sb-cap">正在放</div><div class="sb-wrow"><span class="sb-wcov" data-act="phone-go" data-to="music">${coverImg(t, 'sb-bigimg')}</span><span data-act="phone-go" data-to="music"><b>${esc(t.title)}</b><small>${esc(t.artist)}</small></span><button class="sb-wplay" data-act="mtoggle" aria-label="播放">${mi(player.playing() ? 'pause' : 'play')}</button></div></div>`
     : `<button class="sb-widget" data-act="phone-go" data-to="music"><div class="sb-cap">${Wd().listen}</div><div class="sb-wrow"><span class="sb-wcov"></span><span><b>${esc(st.music?.title || '还没在听歌')}</b><small>${esc(st.music?.lyric || st.music?.artist || '点这里去放歌')}</small></span></div></button>`; })()}
  <div class="sb-apps">${era === 'modern' ? app('x', 'x', Wd().x) : `<button class="sb-app" data-act="phone-go" data-to="x"><span class="sb-ai sb-aitext">${Wd().x.slice(0, 1)}</span><span class="sb-an">${Wd().x}</span></button>`}${`<button class="sb-app" data-act="phone-go" data-to="weibo"><span class="sb-ai sb-aitext">${Wd().weibo.slice(0, 1)}</span><span class="sb-an">${Wd().weibo}</span></button>`}${app('diary', 'diary', Wd().diary)}${app('memo', 'memo', Wd().memo)}${app('photos', 'photos', Wd().photos)}</div>
  <div class="sb-dock">${app('msg', 'wx-contacts', Wd().wechat, host.unread())}${app('music', 'music', Wd().music)}${app('set', 'settings', Wd().set)}</div>
@@ -538,7 +539,7 @@ export function createUI(host) {
         else if (m.type === 'sticker') inner = `<span class="sb-stk">（${esc(m.text)}）</span>`;
         else if (m.type === 'money') inner = `<div class="sb-trt">¥ ${Number(m.amount || 0).toFixed(2)}</div><div class="sb-dim">${esc(m.text || '转账')}</div><div class="sb-trs">${m.status === 'taken' ? '已收下' : m.status === 'back' ? '已退回' : me ? '等TA收' : '点一下：收下 / 退回'}</div>`;
         else inner = nl(m.text);
-        const cls = `sb-b ${me ? 'u' : 'c'} t-${m.type}${m.pending ? ' pend' : ''}`;
+        const cls = `sb-b ${me ? 'u' : 'c'} t-${m.type}${m.pending ? ' pend' : ''}${m.rejected ? ' rej' : ''}`;
         return `<div class="${cls}" data-msg="${esc(m.id)}" data-act="${m.type === 'voice' || m.type === 'pic' ? 'bopen' : m.type === 'money' && !me && m.status === 'sent' ? 'money' : ''}" data-id="${esc(m.id)}">${inner}</div>`;
     }
     function wxChatHtml() {
@@ -553,9 +554,13 @@ export function createUI(host) {
             if (host.era() === 'modern') { const me = m.from === 'me'; return t + `<div class="sb-mrow ${me ? 'u' : 'c'}"><span class="sb-mav" style="background-image:url('${esc(me ? host.me().avatar : him.avatar)}')"></span>${bubble(m)}</div>`; }
             return t + bubble(m);
         }).join('');
+        const blockedMe = host.state().blockedMe, iBlocked = host.meta().wxBlock?.him, req = host.meta().myReq;
+        const banner = iBlocked ? `<div class="sb-wxban">你把TA拉黑了，TA发的消息你收不到 <button class="sb-link" data-act="wxblock" data-k="him">解除拉黑</button></div>`
+            : blockedMe ? `<div class="sb-wxban">消息已发出，但被对方拒收了。${req?.text && !req.done ? '好友申请已发送，等TA通过' : '<button class="sb-link" data-act="wxreq">发送朋友验证</button>'}</div>` : '';
         const menu = v.menuFor ? `<div class="sb-sheet"><button data-act="medit" data-id="${esc(v.menuFor)}">编辑</button><button data-act="mdel" data-id="${esc(v.menuFor)}">删除</button><button data-act="mcancel">取消</button></div>` : '';
         return `${head(`<span class="sb-pav sm" style="background-image:url('${esc(him.avatar)}')"></span><span><b>${esc(him.remark || him.name)}</b><small>${v.busy ? '对方正在输入…' : Wd().online}</small></span>`, '<button class="sb-phx" data-act="phone-go" data-to="wx-contacts" aria-label="联系人">≡</button>')}
  <div class="sb-msgs sb-wxchat" data-keep="msgs">${rows || '<div class="sb-empty sm">还没聊过。说点什么吧。</div>'}
+  ${banner}
   ${pend ? `<div class="sb-pendnote">待发送 ${pend} 条 · 点 ↑ TA才回</div>` : ''}
   ${v.busy ? '<div class="sb-typing">· · ·</div>' : ''}
  </div>
@@ -564,15 +569,23 @@ export function createUI(host) {
  ${menu}`;
     }
     const wxTabs = on => `<nav class="sb-wxtabs">${[['wx-contacts', Wd().contacts], ['wx-moments', Wd().moments]].map(([k, n]) => `<button data-act="phone-go" data-to="${k}" class="${on === k ? 'on' : ''}">${n}${k === 'wx-contacts' && host.unread() ? ` <b class="sb-badge">${host.unread()}</b>` : ''}</button>`).join('')}</nav>`;
+    // 通讯录：新的朋友（好友申请）、好友、黑名单
     function wxContactsHtml() {
-        const him = host.him();
-        const npcs = [...new Set([...host.state().moments.map(m => m.who), ...host.state().npcComments.map(c => c.who)])];
+        const him = host.him(), st = host.state(), m = host.meta();
+        const done = m.freqDone || {}, blocked = m.wxBlock || {};
+        const accepted = st.freq.filter(r => done[r.id] === 'ok').map(r => r.who);
+        const npcs = [...new Set([...st.moments.map(x => x.who), ...st.npcComments.map(c => c.who), ...accepted])].filter(n => n && n !== him.name && !blocked[n]);
+        const pend = st.freq.filter(r => !done[r.id]);
+        const row = (key, name, sub, av, chat) => `<div class="sb-cr">${chat ? `<button class="sb-crm sb-crbtn" data-act="phone-go" data-to="wx-chat">` : '<span class="sb-crm sb-crbtn">'}<span class="sb-pav sm" style="${av ? `background-image:url('${esc(av)}')` : ''}">${av ? '' : esc(name.slice(0, 1))}</span><span class="sb-crm"><b>${esc(name)}</b><small>${esc(sub)}</small></span>${chat ? '</button>' : '</span>'}
+   ${chat && host.unread() ? `<b class="sb-badge">${host.unread()}</b>` : ''}<button class="sb-crmore" data-act="crmenu" data-k="${esc(key)}">···</button></div>
+   ${v.crmenu === key ? `<div class="sb-cacts sb-cracts"><button data-act="wxblock" data-k="${esc(key)}">${blocked[key] ? '解除拉黑' : '拉黑'}</button></div>` : ''}`;
         return `${head(Wd().contacts)}
  <div class="sb-list">
-  <div class="sb-cap">friends · 好友</div>
-  <button class="sb-cr" data-act="phone-go" data-to="wx-chat"><span class="sb-pav sm" style="background-image:url('${esc(him.avatar)}')"></span><span class="sb-crm"><b>${esc(him.remark || him.name)}</b><small>${esc(host.wechat().filter(m => m.type !== 'note').slice(-1)[0]?.text || him.sign || '点进去聊天')}</small></span>${host.unread() ? `<b class="sb-badge">${host.unread()}</b>` : ''}</button>
-  ${npcs.map(n => `<div class="sb-cr"><span class="sb-pav sm">${esc(n.slice(0, 1))}</span><span><b>${esc(n)}</b><small>在朋友圈里出现过</small></span></div>`).join('')}
-  <div class="sb-empty sm">好友申请和拉黑下一版接上</div>
+  ${pend.length ? `<div class="sb-cap">新的朋友</div>${pend.map(r => `<div class="sb-cr"><span class="sb-pav sm">${esc(r.who.slice(0, 1))}</span><span class="sb-crm"><b>${esc(r.who)}</b><small>${esc(r.text || '请求添加你为朋友')}</small></span><button class="sb-xbtn" data-act="freq" data-id="${esc(r.id)}" data-v="no">拒绝</button><button class="sb-xbtn solid" data-act="freq" data-id="${esc(r.id)}" data-v="ok">通过</button></div>`).join('')}` : ''}
+  <div class="sb-cap" style="margin-top:10px">friends · 好友</div>
+  ${blocked.him ? '' : row('him', him.remark || him.name, st.blockedMe ? 'TA把你拉黑了' : (host.wechat().filter(x => x.type !== 'note').slice(-1)[0]?.text || him.sign || '点进去聊天'), him.avatar, true)}
+  ${npcs.map(n => row(n, n, accepted.includes(n) ? '通过了好友申请' : '在朋友圈里出现过', '', false)).join('')}
+  ${Object.keys(blocked).some(k => blocked[k]) ? `<div class="sb-cap" style="margin-top:14px">黑名单</div>${Object.keys(blocked).filter(k => blocked[k]).map(k => `<div class="sb-cr dim"><span class="sb-pav sm">${esc((k === 'him' ? him.name : k).slice(0, 1))}</span><span class="sb-crm"><b>${esc(k === 'him' ? (him.remark || him.name) : k)}</b><small>你拉黑了${k === 'him' ? 'TA' : '对方'}</small></span><button class="sb-xbtn" data-act="wxblock" data-k="${esc(k)}">解除</button></div>`).join('')}` : ''}
  </div>${wxTabs('wx-contacts')}`;
     }
     function wxMomentsHtml() {
@@ -583,7 +596,7 @@ export function createUI(host) {
   <div class="sb-wcover ${sideCover('coverWx').cls}" style="${sideCover('coverWx').style}"><button class="sb-bk light" data-act="phone-back">‹</button><span class="sb-wcovtop">${genBtn('moments', '刷新')}${coverBtn('coverWx')}</span><span class="sb-wme"><button class="sb-edit" data-act="edit" data-scope="me" data-key="name" data-label="你在朋友圈里的名字"><b>${esc(me.name)}</b></button><label class="sb-wav" style="background-image:url('${esc(me.avatar)}')" title="点一下换头像"><input type="file" accept="image/*" data-upload="me-avatar" hidden></label></span></div>
   <button class="sb-wsign sb-edit" data-act="edit" data-scope="me" data-key="sign" data-label="你的签名">${esc(me.sign || '点这里写签名')}</button>
   ${all.length ? all.slice(0, v.momentsN).map(p => postHtml(p, him)).join('') : `<div class="sb-empty">${Wd().moments}还是空的</div>`}
-  ${all.length > v.momentsN ? '<div class="sb-more">往下滑，再加载 10 条</div>' : all.length ? '<div class="sb-more">没有更早的了</div>' : ''}
+  ${all.length > v.momentsN ? `<button class="sb-more" data-act="lmore">再看 10 条（还有 ${all.length - v.momentsN} 条）</button>` : all.length ? '<div class="sb-more">没有更早的了</div>' : ''}
  </div>${wxTabs('wx-moments')}`;
     }
     function wxMeHtml() {
@@ -914,6 +927,19 @@ export function createUI(host) {
             case 'mprev': player.prev(); return;
             case 'mmode': player.mode(); return;
             case 'mlist': v.mlist = !v.mlist; break;
+            case 'crmenu': v.crmenu = v.crmenu === b.dataset.k ? '' : b.dataset.k; break;
+            case 'wxblock': {
+                const k = b.dataset.k; meta.wxBlock ??= {}; meta.wxBlockAt ??= {};
+                const on = !meta.wxBlock[k];
+                if (on && !await host.confirm(`把${k === 'him' ? 'TA' : k}拉黑？拉黑后收不到对方的消息`)) return;
+                meta.wxBlock[k] = on; meta.wxBlockAt[k] = Date.now(); v.crmenu = ''; host.saveMeta(); host.refreshInject(); break;
+            }
+            case 'freq': meta.freqDone ??= {}; meta.freqDone[b.dataset.id] = b.dataset.v; host.saveMeta(); break;
+            case 'wxreq': {
+                const t = await host.prompt('朋友验证（发给TA的话）', '我是' + host.me().name); if (!t) return;
+                meta.myReq = { text: String(t).trim(), at: Date.now() }; host.saveMeta(); host.refreshInject();
+                host.toast('info', '好友申请发出去了，TA下一轮正文里决定通不通过'); break;
+            }
             case 'wbtab': v.wbTab = b.dataset.t; break;
             case 'wbmore': v.wbN = (v.wbN || 15) + 15; break;
             case 'xacc-del': {
@@ -1179,6 +1205,10 @@ export function createUI(host) {
             removed = host.takeLastRound();
             if (!removed.length) { host.toast('info', 'TA这一轮还没回，没东西可以重来'); return; }
         } else if (!host.wechat().some(m => m.pending)) { host.toast('info', '先说点什么，再点 ↑'); return; }
+        if (!redo && host.state().blockedMe) {
+            host.wechat().forEach(m => { if (m.pending) host.patchWechat(m.id, { pending: false, rejected: true }, true); });
+            host.saveMeta(); host.toast('info', '消息已发出，但被对方拒收了'); render(); return;
+        }
         if (!redo && host.settings().phoneWhen === 'next') {
             host.wechat().forEach(m => { if (m.pending) host.patchWechat(m.id, { pending: false, waiting: true }, true); });
             host.saveMeta(); host.refreshInject();

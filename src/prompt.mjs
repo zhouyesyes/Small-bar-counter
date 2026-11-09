@@ -25,6 +25,9 @@ X: 正文（X 是{{char}}比较私人的地方：小号心情、深夜的念头�
 热搜: 词条｜热度｜热/新/沸（这个世界此刻的微博热搜，偶尔）
 X网名 / X账号 / X签名: 新的（只有剧情里{{char}}想改自己的 X 资料时才写）
 微信: 内容（{{char}}想在手机上主动给 {{user}} 发消息时才写）
+好友申请: 名字｜验证消息（剧情里有人在微信上加 {{user}} 好友时，偶尔）
+微信拉黑: 是（只有剧情里{{char}}真的在微信上把 {{user}} 拉黑时才写）
+微信解除拉黑: 是（{{char}}把 {{user}} 从黑名单里放出来时）
 {{背景}}`;
 
 export const LETTER_RULES = `你们在书信往来。回一封信：几句话就好，一行一句，口吻合乎你们所处的年代。
@@ -60,7 +63,7 @@ export const PHONE_RULES = `你在用手机和对方聊天。像真人发消息�
 [转账]金额｜留言`;
 
 // 每轮注入正文的那一段：规则 + 现在的状态（{{char}}不用每次从头想）+ 她在小手机里新说的话
-export function buildInjection({ prompt, coverTags, state, wechatTail, myComments, waiting, saveMode, channel = '手机上的聊天' }) {
+export function buildInjection({ prompt, coverTags, state, wechatTail, myComments, waiting, wxNote, saveMode, channel = '手机上的聊天' }) {
     let text = (prompt || DEFAULT_PROMPT).replace('{{背景}}', coverTags?.length ? `背景: 从这几个里挑一个最合适此刻的：${coverTags.join('、')}` : '');
     if (saveMode) text += '\n（省一点：这一轮只写 时间、天气、在哪、心声 这几项）';
     const n = state?.now || {};
@@ -68,6 +71,7 @@ export function buildInjection({ prompt, coverTags, state, wechatTail, myComment
     if (cur) text += `\n上一轮的状态：${cur}`;
     if (wechatTail) text += `\n\n你们最近${channel}（{{char}} 记得这些）：\n${wechatTail}`;
     if (waiting) text += `\n\n{{user}} 刚在手机上发来、还没回的消息：\n${waiting}\n这一轮请在状态段里用「微信:」回她，一行一条（可以好几行）。`;
+    if (wxNote) text += `\n\n${wxNote}`;
     if (myComments) text += `\n\n{{user}} 在{{char}}动态下的留言（还没回）：\n${myComments}`;
     return text;
 }

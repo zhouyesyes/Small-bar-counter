@@ -98,7 +98,8 @@ const newId = () => 'w' + Date.now().toString(36) + (seq++).toString(36);
 function wechat() {
     const m = meta(), st = state();
     const mine = m.wechat.map((x, i) => ({ ...x, _o: i }));
-    const fromStory = st.wechat.map(x => ({ ...x, ...(m.wechatPatch?.[x.id] || {}), story: true })).filter(x => !x.deleted);
+    const blockAt = m.wxBlock?.him ? (m.wxBlockAt?.him || 0) : 0; // 她把TA拉黑以后，TA发的收不到
+    const fromStory = st.wechat.map(x => ({ ...x, ...(m.wechatPatch?.[x.id] || {}), story: true })).filter(x => !x.deleted && !(blockAt && x.at > blockAt));
     return [...mine, ...fromStory].sort((a, b) => (a.at || 0) - (b.at || 0) || (a._o ?? 0) - (b._o ?? 0));
 }
 function addWechat(x) { meta().wechat.push({ id: newId(), at: Date.now(), time: state().now.time || '', ...x }); saveMeta(); refreshInject(); }
@@ -362,7 +363,15 @@ function refreshInject() {
     const list = wechat().filter(m => m.type !== 'note'); // 连正文里TA顺带回的一起看：TA回过了就不再催
     let k = list.length; while (k > 0 && list[k - 1].from === 'me') k--;
     const waiting = list.slice(k).filter(m => m.waiting && !m.pending).map(m => '- ' + (m.type === 'text' ? m.text : `[${m.type}]${m.text || ''}`)).join('\n');
-    const text = buildInjection({ prompt: s.prompt, coverTags: tags, state: state(), wechatTail: tail, myComments, waiting, saveMode: s.saveMode, channel: era() === 'modern' ? '在手机上的聊天' : '的书信往来' });
+    // 微信的拉黑和好友申请，让TA知道
+    const m0 = meta(), st0 = state();
+    if (!st0.blockedMe && m0.myReq && !m0.myReq.done) m0.myReq.done = true; // TA通过了（或者没拉黑了），这份申请就算完了
+    const wxNote = [
+        st0.blockedMe ? '（{{char}}现在在微信上把 {{user}} 拉黑了：{{user}} 发的微信你收不到。）' : '',
+        st0.blockedMe && m0.myReq?.text && !m0.myReq.done ? `{{user}} 被拉黑后给你发了微信好友申请，验证消息：「${m0.myReq.text}」。如果你愿意通过，在状态段里写「通过好友申请: 是」；不想通过就不写。` : '',
+        m0.wxBlock?.him ? '（{{user}} 在微信上把{{char}}拉黑了：你发的微信她收不到。）' : '',
+    ].filter(Boolean).join('\n');
+    const text = buildInjection({ prompt: s.prompt, coverTags: tags, state: state(), wechatTail: tail, myComments, waiting, wxNote, saveMode: s.saveMode, channel: era() === 'modern' ? '在手机上的聊天' : '的书信往来' });
     // 1 = 放在聊天里（IN_CHAT），深度 0 = 最后面，0 = 系统身份
     c.setExtensionPrompt(INJECT_KEY, text, 1, 0, false, 0);
 }
