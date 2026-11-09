@@ -49,3 +49,13 @@ export async function deleteImage(src) {
     try { await tx('readwrite', s => s.delete(id)); } catch { /* 删不掉就算了 */ }
     if (urls.has(id)) { URL.revokeObjectURL(urls.get(id)); urls.delete(id); }
 }
+
+// 清理数据用：浏览器里存着的所有图（编号 + 大小）
+export async function listImages() {
+    const d = await db();
+    return new Promise((resolve, reject) => {
+        const out = [], req = d.transaction(STORE, 'readonly').objectStore(STORE).openCursor();
+        req.onsuccess = () => { const c = req.result; if (!c) return resolve(out); out.push({ src: 'idb:' + c.key, size: c.value?.size || 0 }); c.continue(); };
+        req.onerror = () => reject(req.error);
+    });
+}

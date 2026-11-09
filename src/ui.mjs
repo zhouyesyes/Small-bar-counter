@@ -503,7 +503,7 @@ export function createUI(host) {
         const views = {
             home: homeHtml, 'wx-chat': wxChatHtml, 'wx-contacts': wxContactsHtml, 'wx-moments': wxMomentsHtml, 'wx-me': wxMeHtml,
             x: xHtml, 'x-dm': xDmHtml, weibo: weiboHtml, diary: pDiaryHtml, memo: pMemoHtml, photos: pPhotosHtml, music: pMusicHtml,
-            settings: setHtml, 'set-cover': setCoverHtml, 'set-him': setHimHtml, 'set-me': setMeHtml, 'set-prompt': setPromptHtml, 'set-api': setApiHtml, 'set-reply': setReplyHtml, 'set-when': setWhenHtml,
+            settings: setHtml, 'set-cover': setCoverHtml, 'set-him': setHimHtml, 'set-me': setMeHtml, 'set-prompt': setPromptHtml, 'set-api': setApiHtml, 'set-reply': setReplyHtml, 'set-when': setWhenHtml, 'set-clean': setCleanHtml,
         };
         return views;
     }
@@ -825,6 +825,24 @@ export function createUI(host) {
     // 设置
     const row = (label, val, to) => `<button class="sb-srow" data-act="phone-go" data-to="${to}"><span>${label}</span><span class="sb-sv">${esc(val)} ›</span></button>`;
     const toggle = (label, key, on, sub = '') => `<label class="sb-srow"><span>${label}${sub ? `<small>${sub}</small>` : ''}</span><input type="checkbox" class="sb-tg" data-set="${key}" ${on ? 'checked' : ''}></label>`;
+    // 清理数据：图（存在这台手机的浏览器里）+ 这个聊天里小手机的记录
+    const kb = n => (n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB');
+    function setCleanHtml() {
+        const c = v.clean || {}, r = c.res;
+        const act = (a, label, sub, val) => `<button class="sb-srow" data-act="${a}" ${c.busy ? 'disabled' : ''}><span>${label}${sub ? `<small>${sub}</small>` : ''}</span><span class="sb-sv">${val} ›</span></button>`;
+        return `${head('清理数据')}<div class="sb-slist">
+ <div class="sb-hint">接口不会存下来：歌单里每首歌只记歌名和几个链接，很小；歌词和封面只在这次打开时记着，关了酒馆就没了。<br>会越攒越多的是两样：你传的图（存在这台手机的浏览器里，换掉的、聊天删掉的旧图会留着），和每个聊天里小手机的记录（存在聊天文件里，聊天删了就跟着没了）。</div>
+ <div class="sb-sh">图片</div><div class="sb-sgrp">
+  ${act('clean-scan', '查一查', r ? `一共 ${r.all.length} 张，${kb(r.all.reduce((n, x) => n + x.size, 0))}` : '看看存了多少张、哪些已经没在用', c.busy === 'scan' ? '在查…' : '查')}
+  ${r ? act('clean-imgs', `删掉没在用的 ${r.unused.length} 张`, r.unused.length ? `换掉的旧头像、背景，和已经删掉的聊天里的图，${kb(r.unused.reduce((n, x) => n + x.size, 0))}` : '没有没在用的图', r.unused.length ? '删' : '—') : ''}
+  ${r?.unknown ? `<div class="sb-srow"><span>还有 ${r.unknown} 张认不出是哪个聊天的<small>以前传的；进那个聊天打开一次小吧台就认得了。认不出的先不动</small></span></div>` : ''}
+  <div class="sb-srow"><span><small>以后在酒馆里删聊天，那个聊天传的图会一起删掉</small></span></div>
+ </div>
+ <div class="sb-sh">这个聊天 · 小手机记录约 ${kb(host.chatBytes())}</div><div class="sb-sgrp">
+  ${act('clean-trim', '清掉旧的刷新内容', '朋友圈、X、微博、热搜刷出来的，只留最近 5 次；重新生成此刻时没选中的那几版。日记、动态、微信不动', '清')}
+  ${act('clean-wipe', '清空这个聊天的小手机', '微信、朋友圈、评论、刷出来的内容、此刻的版本都清掉；资料、背景、X 小号留着。正文楼层里写的不受影响', '清空')}
+ </div></div>`;
+    }
     function setHtml() {
         const s = host.settings(), c = host.charCfg();
         const modeName = { weather: '跟天气', fixed: '固定一张', pick: 'TA来挑' }[c.cover?.mode || 'weather'];
@@ -844,7 +862,8 @@ export function createUI(host) {
   <label class="sb-srow"><span>外观</span><select data-set="theme">${[['auto', '跟酒馆'], ['light', '浅色'], ['dark', '深色']].map(([k, n]) => `<option value="${k}" ${(s.theme || 'auto') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
   ${toggle('小猫入口', 'cat', s.cat !== false)}
   <label class="sb-srow"><span>小猫高度<small>离屏幕顶上的百分比</small></span><input type="number" min="10" max="85" class="sb-num" data-set="catTop" value="${Number(s.catTop) || 46}"></label>
- </div></div>`;
+ </div> <div class="sb-sh">数据</div><div class="sb-sgrp">${row('清理数据', '图片、这个聊天的记录', 'set-clean')}</div>
+</div>`;
     }
     function setCoverHtml() {
         const c = host.charCfg().cover || { mode: 'weather' };
@@ -983,6 +1002,22 @@ export function createUI(host) {
             case 'mmode': player.mode(); return;
             case 'mlist': v.mlist = !v.mlist; break;
             case 'nowver': nowSwitch(+b.dataset.d); return;
+            case 'clean-scan': {
+                v.clean = { busy: 'scan' }; render();
+                try { v.clean = { res: await host.scanImages() }; } catch (err) { v.clean = {}; host.toast('error', '查不了：' + (err?.message || err)); }
+                break;
+            }
+            case 'clean-imgs': {
+                const list = v.clean?.res?.unused || []; if (!list.length) return;
+                if (!await host.confirm(`删掉这 ${list.length} 张没在用的图？删了找不回来`)) return;
+                await host.dropImages(list); host.toast('success', `删掉了 ${list.length} 张`);
+                v.clean = { res: await host.scanImages() }; break;
+            }
+            case 'clean-trim': { const n = host.trimChat(); host.toast('success', n > 0 ? `清掉了 ${kb(n)}` : '没有要清的'); break; }
+            case 'clean-wipe': {
+                if (!await host.confirm('清空这个聊天的小手机？微信、朋友圈、评论、刷出来的内容都会没了（资料和背景留着）')) return;
+                host.wipeChat(); host.toast('success', '清空了'); break;
+            }
             case 'crmenu': v.crmenu = v.crmenu === b.dataset.k ? '' : b.dataset.k; break;
             case 'wxblock': {
                 const k = b.dataset.k; meta.wxBlock ??= {}; meta.wxBlockAt ??= {};
@@ -1119,7 +1154,7 @@ export function createUI(host) {
                 if (v.view === 'wx-moments') v.momentsN = 10;
                 break;
             case 'phone-back': {
-                const back = { 'set-when': 'settings', 'wx-chat': 'wx-contacts', 'x-dm': 'x', 'set-reply': 'settings', 'set-cover': 'settings', 'set-him': 'settings', 'set-me': 'settings', 'set-prompt': 'settings', 'set-api': 'settings' }[v.view];
+                const back = { 'set-when': 'settings', 'wx-chat': 'wx-contacts', 'x-dm': 'x', 'set-reply': 'settings', 'set-cover': 'settings', 'set-him': 'settings', 'set-me': 'settings', 'set-prompt': 'settings', 'set-api': 'settings', 'set-clean': 'settings' }[v.view];
                 v.view = back || 'home'; v.plus = false; v.menuFor = ''; v.edit = null; break;
             }
             case 'phone-close':

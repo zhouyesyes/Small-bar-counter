@@ -9,7 +9,7 @@ import * as wi from '../../../world-info.js';
 import { extractBlock, buildState, guessEra, parseBlock, stripNow } from './src/core.mjs';
 import { DEFAULT_PROMPT, buildInjection } from './src/prompt.mjs';
 import { createUI } from './src/ui.mjs';
-import { saveImage, imageUrl, deleteImage } from './src/imgstore.mjs';
+import { saveImage, imageUrl, deleteImage, listImages } from './src/imgstore.mjs';
 
 const NS = 'small_bar';          // 扩展设置里的位置
 const META = 'small_bar';        // 每个聊天自己的数据（chat_metadata 里）
@@ -363,6 +363,99 @@ async function testOwnApi() {
 // 她传的图只存在这台手机的浏览器里（她 11/9 说的：不要存服务器），见 src/imgstore.mjs
 const img = src => imageUrl(src, () => { ui.render(); });
 
+// ---------- 清理数据（她 11/9 要的） ----------
+// 图存在浏览器里，背景、头像大多跟着聊天走（存在聊天自己的数据里）：聊天删了、图换了，旧图会一直留着
+// 所以每张图记一下是哪个聊天传的（settings.imgOwner），清理时就知道哪些已经没人用了
+const chatKey = () => { const c = ctx(); if (c.chatId == null) return ''; return (c.groupId ? 'g:' + c.groupId : 'c:' + (c.characters?.[c.characterId]?.avatar ?? c.characterId)) + '|' + c.chatId; };
+const refsIn = obj => new Set((JSON.stringify(obj ?? null).match(/idb:[a-z0-9]+/gi) || []));
+const owners = () => (settings().imgOwner ??= {});
+async function saveImageHere(dataUrl) {
+    const src = await saveImage(dataUrl);
+    owners()[src] = chatKey() || 'global'; saveSettings();
+    return src;
+}
+// 进一个聊天：它在用的图，以前没记是谁的，补记上（老图也就慢慢认得了）
+function claimImages() {
+    const key = chatKey(); if (!key) return;
+    const o = owners(); let n = 0;
+    for (const src of refsIn(ctx().chatMetadata?.[META])) if (!o[src]) { o[src] = key; n++; }
+    if (n) saveSettings();
+}
+// 酒馆里删了聊天：那个聊天传的图一起删（设置里还在用的不删，比如你的头像）
+async function onChatGone(name) {
+    const c = ctx(), who = c.groupId ? 'g:' + c.groupId : 'c:' + (c.characters?.[c.characterId]?.avatar ?? c.characterId);
+    const key = who + '|' + name, o = owners(), keep = refsIn({ ...settings(), imgOwner: null });
+    let n = 0;
+    for (const [src, k] of Object.entries(o)) if (k === key) { if (!keep.has(src)) await deleteImage(src); delete o[src]; n++; }
+    if (n) saveSettings();
+}
+// 这个角色 / 群聊现在有哪些聊天（照酒馆「聊天记录」窗口问；查不了返回 null）
+async function chatsOf(who) {
+    const c = ctx();
+    if (who.startsWith('g:')) { const g = (c.groups || []).find(x => 'g:' + x.id === who); return g ? (Array.isArray(g.chats) ? new Set(g.chats.map(String)) : null) : ((c.groups || []).length ? new Set() : null); }
+    const file = who.slice(2);
+    if ((c.characters || []).length && !(c.characters || []).some(x => x.avatar === file)) return new Set(); // 角色删了
+    try {
+        const r = await fetch('/api/characters/chats', { method: 'POST', headers: c.getRequestHeaders(), body: JSON.stringify({ avatar_url: file, simple: true }) });
+        if (!r.ok) return null;
+        const d = await r.json();
+        if (d && !Array.isArray(d) && d.error) return new Set();
+        return new Set((Array.isArray(d) ? d : Object.values(d || {})).map(x => String(x?.file_name ?? '').replace(/\.jsonl$/i, '')).filter(Boolean));
+    } catch { return null; }
+}
+// 查一遍：哪些图没人用了。{ all: [{src,size}], unused: [...], unknown: 没记是谁的、现在也看不出来的张数 }
+async function scanImages() {
+    claimImages();
+    const all = await listImages(), o = owners(), here = chatKey();
+    const used = new Set([...refsIn({ ...settings(), imgOwner: null }), ...refsIn(ctx().chatMetadata?.[META])]);
+    const alive = new Map(); // 谁 → 现在有的聊天
+    const unused = []; let unknown = 0;
+    for (const im of all) {
+        if (used.has(im.src)) continue;
+        const k = o[im.src];
+        if (!k) { unknown++; continue; }
+        if (k === here || k === 'global') { unused.push(im); continue; } // 这个聊天传的、已经换掉的
+        const [who, ...rest] = k.split('|'), name = rest.join('|');
+        if (!alive.has(who)) alive.set(who, await chatsOf(who));
+        const have = alive.get(who);
+        if (have && !have.has(name)) unused.push(im); // 那个聊天已经删了
+    }
+    return { all, unused, unknown };
+}
+async function dropImages(list) {
+    const o = owners();
+    for (const im of list) { await deleteImage(im.src); delete o[im.src]; }
+    saveSettings();
+}
+// 这个聊天里小手机的数据：刷出来的旧内容只留最近 5 次；重新生成时没选中的此刻版本删掉
+const FEED = /^[-*·\s]*(朋友圈|朋友圈评论|朋友圈点赞|推文|微博|热搜)\s*[:：]/;
+function trimChat() {
+    const m = meta(), before = JSON.stringify(m).length;
+    const blocks = m.blocks || [];
+    // 此刻没选中的版本（只删小手机里点按钮写的那几版；正文楼层里的不动）
+    const off = new Set();
+    for (const g of Object.values(m.nowVer || {})) { g.ids.forEach((id, i) => { if (i !== g.pick && blocks.some(b => b.id === id)) off.add(id); }); }
+    for (const g of Object.values(m.nowVer || {})) { const keep = g.ids[g.pick]; g.ids = g.ids.filter(id => !off.has(id)); g.pick = Math.max(0, g.ids.indexOf(keep)); }
+    for (const [k, g] of Object.entries(m.nowVer || {})) if (g.ids.length < 2) delete m.nowVer[k];
+    let list = blocks.filter(b => !off.has(b.id));
+    // 刷出来的朋友圈 / X / 微博 / 热搜：最近 5 次刷出来的留着，更早的把这些行剪掉（日记、动态、此刻都不动）
+    const feedIdx = list.map((b, i) => (String(b.raw).split(/\r?\n/).some(l => FEED.test(l)) ? i : -1)).filter(i => i >= 0);
+    const old = new Set(feedIdx.slice(0, Math.max(0, feedIdx.length - 5)));
+    list = list.map((b, i) => (old.has(i) ? { ...b, raw: String(b.raw).split(/\r?\n/).filter(l => !FEED.test(l)).join('\n').trim() } : b)).filter(b => b.raw);
+    m.blocks = list;
+    saveMeta(); dirty(); refreshInject();
+    return before - JSON.stringify(m).length;
+}
+// 清空这个聊天的小手机：资料、背景、换过的头像（cfg）留着，别的都清
+function wipeChat() {
+    const m = ctx().chatMetadata[META] || {};
+    for (const k of Object.keys(m)) if (k !== 'cfg' && k !== 'xacc' && k !== 'xcur') delete m[k];
+    m.wechat = [];
+    saveMeta(); dirty(); refreshInject();
+}
+const chatBytes = () => JSON.stringify(ctx().chatMetadata?.[META] || {}).length;
+
+
 // ---------- 正文里带上手机里最近的事（她 11/9 选的 C：条数她定，0 = 不带） ----------
 // 只挑TA知道的：微信 / 书信往来、她发的朋友圈、她和TA的动态下面的留言
 function phoneEvents(n) {
@@ -421,7 +514,8 @@ function hasChar() { const c = ctx(); return c.characterId != null && c.characte
 const host = {
     settings, setSettings: f => { f(settings()); saveSettings(); refreshInject(); },
     charCfg, setCharCfg: f => { f(charCfg()); saveMeta(); refreshInject(); },
-    saveImage, img, dropImage: deleteImage, refreshInject,
+    saveImage: saveImageHere, img, dropImage: src => { if (src) delete owners()[src]; return deleteImage(src); }, refreshInject,
+    scanImages, dropImages, trimChat, wipeChat, chatBytes,
     meta, saveMeta, state, unread, markRead, wechat, addWechat, patchWechat, deleteWechat, takeLastRound, restoreRound, repliesFor,
     ...xHost,
     saveSettings,
@@ -480,7 +574,9 @@ jQuery(() => {
     };
     if (!addWand()) { let n = 0; const t = setInterval(() => { if (addWand() || ++n > 30) clearInterval(t); }, 1000); }
     const on = (type, f) => { if (type) ev.on(type, f); };
-    on(T.CHAT_CHANGED, () => { ui.reset(); absorbAll(); refresh(); });
+    on(T.CHAT_CHANGED, () => { ui.reset(); absorbAll(); refresh(); claimImages(); });
+    on(T.CHAT_DELETED, name => { onChatGone(name); });
+    on(T.GROUP_CHAT_DELETED, name => { onChatGone(name); });
     on(T.MESSAGE_RECEIVED, id => { if (absorb(Number(id))) ctx().saveChat?.(); refresh(); });
     on(T.CHARACTER_MESSAGE_RENDERED, id => { if (absorb(Number(id))) ctx().saveChat?.(); refresh(); });
     on(T.MESSAGE_SWIPED, id => onSwiped(Number(id)));
