@@ -188,6 +188,15 @@ body{margin:0;width:390px;height:844px;overflow:hidden;font:14px/1.5 -apple-syst
 .read{align-self:flex-end;font-size:10.5px;color:var(--dim)}
 .dmmenu{position:absolute;top:58px;right:12px;width:178px;background:var(--bg);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 26px rgba(0,0,0,.18);padding:4px 0}
 .dmi{padding:9px 14px;font-size:13px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}.dmi:last-child{border:0}.dmi .hd{font-size:11px}
+.wcover{height:120px;flex:0 0 auto;position:relative;background:linear-gradient(160deg,#cfcfcf,#7d7d7d 60%,#4a4a4a)}
+.dark .wcover{background:linear-gradient(160deg,#3a3a3a,#1e1e1e 60%,#111)}
+.wme{position:absolute;right:14px;bottom:-18px;display:flex;align-items:flex-end;gap:8px}.wme span{color:#fff;font-weight:600;font-size:14px;margin-bottom:24px;text-shadow:0 1px 3px rgba(0,0,0,.4)}
+.wav{width:52px;height:52px;border-radius:10px;background:linear-gradient(135deg,#eee,#999);border:2px solid var(--bg)}
+.wfeed{flex:1;overflow:hidden;padding-top:22px}
+.wfeed .mo{padding:10px 14px}.wfeed .mo .body{font-size:13px}.wfeed .mgrid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.av.him{outline:1.5px solid var(--fg);outline-offset:1px}
+.loadmore{text-align:center;font-size:11.5px;color:var(--dim);padding:10px}
+.wtabs{display:flex;border-top:1px solid var(--line);font-size:12px;color:var(--dim)}.wtabs span{flex:1;text-align:center;padding:9px 0 4px}.wtabs .on{color:var(--fg);font-weight:600}
 </style></head><body>
 <div class="st">
   <div class="bar"><span style="font-size:13px;color:var(--fg)">阎守峥</span></div>
@@ -341,10 +350,9 @@ const phhome=`<div class="shade"></div><div class="phone home">
  <div class="clock"><div class="ct">01:19</div><div class="cd">11月9日 周日 · 小雨</div></div>
  <div class="widget"><div class="cap" style="font-size:9.5px">他在听</div><div style="display:flex;align-items:center;gap:10px;margin-top:6px"><div class="wcov"></div><div style="flex:1;min-width:0"><b style="font-size:13px">雨夜的街</b><div class="hd" style="font-size:11px">伞下只够站两个人</div></div><span style="font-size:14px">▶</span></div></div>
  <div class="apps">
-  ${app('x','X')}${app('moments','朋友圈',1)}${app('diary','日记')}${app('memo','备忘录')}
-  ${app('photos','相册')}
+  ${app('x','X')}${app('diary','日记')}${app('memo','备忘录')}${app('photos','相册')}
  </div>
- <div class="dock">${app('msg','消息',2)}${app('music','音乐')}${app('set','设置')}</div>
+ <div class="dock">${app('msg','微信',3)}${app('music','音乐')}${app('set','设置')}</div>
  <div class="hbar"></div>
 </div>`;
 const xpage=`<div class="shade"></div><div class="phone">
@@ -444,6 +452,21 @@ const xdm=`<div class="shade"></div><div class="phone">
  <div class="inp"><div class="plus">+</div><div class="field">发私信</div><div class="send">↑</div></div>
  <div class="hbar"></div>
 </div>`;
+const WM=(who,t,body,pics,extra,mine)=>`<div class="mo"><div class="av xs${who==='阎守峥'?' him':''}"></div><div style="flex:1;min-width:0"><b class="mn">${who}</b>
+  <div class="body">${body}</div>${pics?`<div class="mgrid">${pics.map(x=>`<span>${x}</span>`).join('')}</div>`:''}
+  <div class="mt"><span>${t}</span><span class="mmore">··</span></div>${extra?`<div class="mbox">${extra}</div>`:''}</div></div>`;
+const wx=`<div class="shade"></div><div class="phone">
+ <div class="wcover"><span class="bk" style="color:#fff;position:absolute;top:12px;left:14px">‹</span><span style="position:absolute;top:13px;right:14px;color:#fff;font-size:15px">◎</span><div class="wme"><span>我</span><div class="wav"></div></div></div>
+ <div class="wfeed">
+  ${WM('阿宁','20 分钟前','面馆老板回来了！！下礼拜一开门',['卷帘门拉起来了'],'<div class="mlike">♡ 陈叔</div>')}
+  ${WM('阎守峥','11.09 01:02 · 巷口','伞是旧的，人是新的。','', '<div class="mlike">♡ 我，陈叔，阿宁</div><div class="mc"><b>我</b>：伞明明是新买的</div><div class="mc"><b>阎守峥</b> 回复 <b>我</b>：嗯，人也是。</div>')}
+  ${WM('陈叔','11.08 21:15','货到了，明早码头见。别迟到。','','<div class="mlike">♡ 阎守峥</div>')}
+  ${WM('阎守峥','11.08 19:40','今天的面没吃上。',['卷帘门','门上的告示'],'')}
+  <div class="loadmore">往下滑，再加载 10 条</div>
+ </div>
+ <div class="wtabs"><span>聊天 <span class="badge sm">2</span></span><span>通讯录</span><span class="on">朋友圈</span><span>我</span></div>
+ <div class="hbar" style="margin-top:4px"></div>
+</div>`;
 const contacts=`<div class="shade"></div><div class="phone">
  <div class="ph"><span class="bk">‹</span><div class="nm" style="flex:1">联系人</div><span class="close">＋</span></div>
  <div class="clist">
@@ -459,6 +482,6 @@ const contacts=`<div class="shade"></div><div class="phone">
  <div class="hbar"></div>
 </div>`;
 document.getElementById('cat').src='cat-'+(q.get('t')==='dark'?'dark':'light')+'-'+(q.get('c')||'idle')+'.png'; if(s) document.getElementById('cat').style.display='none';
-document.getElementById('extra').innerHTML = s==='drawer'?drawer : s==='profile'?profile : s==='x'?xpage : s==='home'?phhome : s==='plus'?chatplus : s==='contacts'?contacts : s==='settings'?settings : s==='dm'?xdm : s==='phone'?phone : '';
+document.getElementById('extra').innerHTML = s==='drawer'?drawer : s==='profile'?profile : s==='x'?xpage : s==='home'?phhome : s==='plus'?chatplus : s==='contacts'?contacts : s==='settings'?settings : s==='wx'?wx : s==='dm'?xdm : s==='phone'?phone : '';
 if(q.get('scroll')){document.querySelector('.drawer.pf')?.classList.add('mini');const f=document.getElementById('feed');if(f)f.scrollTop=9999;}
 </script></body></html>
