@@ -2,7 +2,7 @@
 // 只管画和点，数据和酒馆那边都从 host 拿（见 index.js），方便以后换酒馆版本
 import { catSvg } from './cat.mjs';
 import { createPlayer, searchSongs, coverUrl, coverList, resolveCover } from './music.mjs';
-import { weatherTone, parsePhoneReply } from './core.mjs';
+import { weatherTone, parsePhoneReply, knows } from './core.mjs';
 import { PHONE_RULES, LETTER_RULES, PHONE_STATUS, MANUAL } from './prompt.mjs';
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -264,23 +264,28 @@ export function createUI(host) {
 </div>`;
     }
 
+    // 圈子：她自己是 me，TA是 ta，别人看状态段 / 她在通讯录里改的：her（她的朋友）/ him（TA那边的）/ both（都认识）
+    const sideOf = n => (n === host.me().name ? 'me' : n === host.him().name ? 'ta' : host.state().circle[n] || 'her');
+    const postSide = p => (p.mine ? 'me' : !p.who ? 'ta' : sideOf(p.who));
     const avatarOf = who => (who === 'him' ? host.him().avatar : who === 'me' ? host.me().avatar : '');
     // 一条帖子下面的评论：别人写的（状态段里来的）+ 她和TA在这里写的，按时间排
     function commentList(post) {
         const meta = host.meta(), ed = meta.cedit || {};
         const me = host.me().name, him = host.him().name;
         const nameOf = w => (w === 'me' ? me : w === 'him' ? him : w);
-        const npc = host.state().npcComments.filter(c => c.post === post.id).map(c => ({ id: c.id, who: c.who, text: c.text, at: c.at, src: 'npc' }));
+        // 不认识发帖人的人不会在下面留言（TA写错了也不显示）
+        const npc = host.state().npcComments.filter(c => c.post === post.id && knows(sideOf(c.who), postSide(post))).map(c => ({ id: c.id, who: c.who, text: c.text, at: c.at, src: 'npc' }));
         const mine = (meta.comments?.[post.id] || []).map((c, i) => ({ id: c.id || post.id + '#c' + i, who: nameOf(c.who), to: c.to !== undefined ? (c.to ? nameOf(c.to) : '') : (c.who === 'him' ? me : ''), text: c.text, at: c.at, src: 'mine', i }));
         const rep = host.repliesFor(post.id).map((r, i) => ({ id: r.id || post.id + '#r' + i, who: him, to: me, text: r.text, at: r.at, src: 'npc' }));
         return [...npc, ...mine, ...rep].filter(c => !ed[c.id]?.deleted).map(c => ({ ...c, text: ed[c.id]?.text ?? c.text })).sort((a, b) => (a.at || 0) - (b.at || 0));
     }
+    // 点赞的人：只从认识发帖人的人里挑几个（同一条每次挑的一样）；别人的帖子赞少一点
     function likersOf(post) {
         const meta = host.meta(), st = host.state(), me = host.me().name, him = host.him().name;
-        const author = post.who || him;
-        const known = [...new Set([him, ...st.moments.map(m => m.who), ...st.npcComments.map(c => c.who)])].filter(n => n && n !== author && n !== me);
+        const author = post.mine ? me : post.who || him, side = postSide(post);
+        const known = [...new Set([him, ...Object.keys(st.circle), ...st.moments.map(m => m.who)])].filter(n => n && n !== author && n !== me && knows(sideOf(n), side));
         let h = [...String(post.id)].reduce((n, c) => (n * 31 + c.charCodeAt(0)) >>> 0, 3);
-        const pick = known.filter(() => ((h = (h * 1103515245 + 12345) >>> 0) % 3) === 0).slice(0, 5);
+        const pick = known.filter(() => ((h = (h * 1103515245 + 12345) >>> 0) % 3) === 0).slice(0, side === 'ta' || side === 'me' ? 5 : 3);
         const commenters = commentList(post).map(c => c.who).filter(n => n !== me && n !== author);
         return [...new Set([meta.likes?.[post.id] && me, ...pick, ...commenters.slice(0, 2)].filter(Boolean))];
     }
@@ -577,23 +582,27 @@ export function createUI(host) {
         const him = host.him(), st = host.state(), m = host.meta();
         const done = m.freqDone || {}, blocked = m.wxBlock || {};
         const accepted = st.freq.filter(r => done[r.id] === 'ok').map(r => r.who);
-        const npcs = [...new Set([...st.moments.map(x => x.who), ...st.npcComments.map(c => c.who), ...accepted])].filter(n => n && n !== him.name && !blocked[n]);
+        const people = [...new Set([...st.moments.map(x => x.who), ...st.npcComments.map(c => c.who), ...Object.keys(st.circle), ...accepted])].filter(n => n && n !== him.name && n !== host.me().name && !blocked[n]);
+        const npcs = people.filter(n => sideOf(n) !== 'him' || accepted.includes(n)), his = people.filter(n => !npcs.includes(n));
+        const CIRCLE = { her: '你的朋友', both: '你们都认识', him: '只认识TA' };
         const pend = st.freq.filter(r => !done[r.id]);
         const row = (key, name, sub, av, chat) => `<div class="sb-cr">${chat ? `<button class="sb-crm sb-crbtn" data-act="phone-go" data-to="wx-chat">` : '<span class="sb-crm sb-crbtn">'}<span class="sb-pav sm" style="${av ? `background-image:url('${esc(av)}')` : ''}">${av ? '' : esc(name.slice(0, 1))}</span><span class="sb-crm"><b>${esc(name)}</b><small>${esc(sub)}</small></span>${chat ? '</button>' : '</span>'}
    ${chat && host.unread() ? `<b class="sb-badge">${host.unread()}</b>` : ''}<button class="sb-crmore" data-act="crmenu" data-k="${esc(key)}">···</button></div>
-   ${v.crmenu === key ? `<div class="sb-cacts sb-cracts"><button data-act="wxblock" data-k="${esc(key)}">${blocked[key] ? '解除拉黑' : '拉黑'}</button></div>` : ''}`;
+   ${v.crmenu === key ? `<div class="sb-cacts sb-cracts">${key === 'him' ? '' : Object.entries(CIRCLE).map(([c, n]) => `<button data-act="circle" data-k="${esc(key)}" data-v="${c}" class="${sideOf(key) === c ? 'on' : ''}">${n}</button>`).join('')}<button data-act="wxblock" data-k="${esc(key)}">${blocked[key] ? '解除拉黑' : '拉黑'}</button></div>` : ''}`;
         return `${head(Wd().contacts)}
  <div class="sb-list">
   ${pend.length ? `<div class="sb-cap">新的朋友</div>${pend.map(r => `<div class="sb-cr"><span class="sb-pav sm">${esc(r.who.slice(0, 1))}</span><span class="sb-crm"><b>${esc(r.who)}</b><small>${esc(r.text || '请求添加你为朋友')}</small></span><button class="sb-xbtn" data-act="freq" data-id="${esc(r.id)}" data-v="no">拒绝</button><button class="sb-xbtn solid" data-act="freq" data-id="${esc(r.id)}" data-v="ok">通过</button></div>`).join('')}` : ''}
   <div class="sb-cap" style="margin-top:10px">friends · 好友</div>
   ${blocked.him ? '' : row('him', him.remark || him.name, st.blockedMe ? 'TA把你拉黑了' : (host.wechat().filter(x => x.type !== 'note').slice(-1)[0]?.text || him.sign || '点进去聊天'), him.avatar, true)}
-  ${npcs.map(n => row(n, n, accepted.includes(n) ? '通过了好友申请' : '在朋友圈里出现过', '', false)).join('')}
+  ${npcs.map(n => row(n, n, accepted.includes(n) ? '通过了好友申请' : CIRCLE[sideOf(n)], '', false)).join('')}
+  ${his.length ? `<div class="sb-cap" style="margin-top:14px">TA那边的人 · 你们还不认识</div><div class="sb-dimrows">${his.map(n => row(n, n, '只在TA的动态下面出现过', '', false)).join('')}</div>` : ''}
   ${Object.keys(blocked).some(k => blocked[k]) ? `<div class="sb-cap" style="margin-top:14px">黑名单</div>${Object.keys(blocked).filter(k => blocked[k]).map(k => `<div class="sb-cr dim"><span class="sb-pav sm">${esc((k === 'him' ? him.name : k).slice(0, 1))}</span><span class="sb-crm"><b>${esc(k === 'him' ? (him.remark || him.name) : k)}</b><small>你拉黑了${k === 'him' ? 'TA' : '对方'}</small></span><button class="sb-xbtn" data-act="wxblock" data-k="${esc(k)}">解除</button></div>`).join('')}` : ''}
  </div>${wxTabs('wx-contacts')}`;
     }
     function wxMomentsHtml() {
         const st = host.state(), him = host.him(), hidden = host.meta().hidden || {};
-        const all = [...st.posts.filter(p => !hidden[p.id]), ...st.moments, ...myMoments()].sort((a, b) => (b.at || 0) - (a.at || 0));
+        // 只认识TA的人发的朋友圈，她刷不到
+        const all = [...st.posts.filter(p => !hidden[p.id]), ...st.moments.filter(p => sideOf(p.who) !== 'him'), ...myMoments()].sort((a, b) => (b.at || 0) - (a.at || 0));
         const me = host.me();
         const compose = v.mcompose ? `<div class="sb-mcomp">
    <textarea data-mtext rows="3" placeholder="这一刻的想法…">${esc(v.mdraft || '')}</textarea>
@@ -944,6 +953,7 @@ export function createUI(host) {
                 if (on && !await host.confirm(`把${k === 'him' ? 'TA' : k}拉黑？拉黑后收不到对方的消息`)) return;
                 meta.wxBlock[k] = on; meta.wxBlockAt[k] = Date.now(); v.crmenu = ''; host.saveMeta(); host.refreshInject(); break;
             }
+            case 'circle': meta.circle ??= {}; meta.circle[b.dataset.k] = b.dataset.v; v.crmenu = ''; host.saveMeta(); host.refreshInject(); break;
             case 'freq': meta.freqDone ??= {}; meta.freqDone[b.dataset.id] = b.dataset.v; host.saveMeta(); break;
             case 'wxreq': {
                 const t = await host.prompt('朋友验证（发给TA的话）', '我是' + host.me().name); if (!t) return;
@@ -1319,7 +1329,7 @@ export function createUI(host) {
     const allPosts = () => { const st = host.state(); return [...st.posts, ...st.moments, ...myMoments()]; };
     async function reactTo(post) {
         const him = host.him(), me = host.me().name;
-        const rule = `${me}刚发了一条朋友圈：「${post.text}」${post.pics.length ? `（配图：${post.pics.join('、')}）` : ''}。写 2～4 条认识她的人在下面的评论（可以有你${him.cardName}自己，用「${him.name}」这个名字），口吻各像各的。只写一段 <!--SB … SB-->，每条一行「评论: 名字｜内容」。不要写别的。`;
+        const rule = `${me}刚发了一条朋友圈：「${post.text}」${post.pics.length ? `（配图：${post.pics.join('、')}）` : ''}。写 2～4 条认识她的人在下面的评论（可以有你${him.cardName}自己，用「${him.name}」这个名字），口吻各像各的。${(() => { const c = host.state().circle, mine = Object.keys(c).filter(n => c[n] !== 'him'), not = Object.keys(c).filter(n => c[n] === 'him'); return (mine.length ? `她的朋友有：${mine.slice(-10).join('、')}。` : '') + (not.length ? `${not.slice(-10).join('、')}只认识你、不认识她，刷不到这条，不要写他们。` : ''); })()}只写一段 <!--SB … SB-->，每条一行「评论: 名字｜内容」。不要写别的。`;
         v.busy = 'react'; render();
         try {
             const msgs = [{ role: 'system', content: await buildSys('', rule, [post.text]) }, { role: 'user', content: '（现在写）' }];
@@ -1356,7 +1366,7 @@ export function createUI(host) {
         const scene = `${author}发了一条朋友圈：「${post.text}」。下面是这条下面的评论：\n${log}`;
         const ask = isHim
             ? `你是${him.cardName}（在这里叫「${him.name}」）。请你回复「${me}」最新那条评论。`
-            : `「${who}」是剧情里${him.cardName}和${me}都认识的人。请你按「${who}」的身份、和他们的关系，回复「${me}」最新那条评论。`;
+            : `「${who}」是剧情里${{ her: `${me}的朋友`, him: `${him.cardName}那边的人`, both: `${him.cardName}和${me}都认识的人` }[sideOf(who)] || '认识' + me + '的人'}。请你按「${who}」的身份、和他们的关系，回复「${me}」最新那条评论。`;
         v.busy = true; render();
         try {
             const msgs = [

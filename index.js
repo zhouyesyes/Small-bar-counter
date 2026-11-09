@@ -37,6 +37,15 @@ const saveMeta = () => ctx().saveMetadataDebounced?.() ?? ctx().saveMetadata?.()
 const msgId = (m) => `${m.send_date || ''}|${m.swipe_id ?? 0}`;
 const msgAt = (m) => { const t = Date.parse(m.send_date); return Number.isFinite(t) ? t : 0; };
 let cache = null;
+// 谁认识谁，告诉TA：别让她的朋友跑去TA的动态下面留言
+function circleNote(circle) {
+    const g = { her: [], him: [], both: [] };
+    for (const [n, c] of Object.entries(circle || {})) g[c]?.push(n);
+    if (!g.her.length && !g.him.length && !g.both.length) return '';
+    const part = [g.her.length && `只认识 {{user}} 的：${g.her.slice(-12).join('、')}`, g.him.length && `只认识{{char}}的：${g.him.slice(-12).join('、')}`, g.both.length && `两边都认识的：${g.both.slice(-12).join('、')}`].filter(Boolean).join('；');
+    return `谁认识谁（${part}）。只认识 {{user}} 的人不会在{{char}}的动态下面评论；只认识{{char}}的人刷不到 {{user}} 的朋友圈；朋友圈里互相评论的也得是认识的人。`;
+}
+
 function state() {
     if (cache) return cache;
     const chat = ctx().chat || [];
@@ -44,6 +53,7 @@ function state() {
     // 不在正文里写的：小手机回消息时顺带写的、她点按钮让TA写的，存在这个聊天的数据里
     const extra = (ctx().chatMetadata?.[META]?.blocks || []).map(b => ({ id: b.id, raw: b.raw, at: b.at }));
     cache = buildState([...fromChat, ...extra].sort((a, b) => (a.at || 0) - (b.at || 0)));
+    Object.assign(cache.circle, ctx().chatMetadata?.[META]?.circle || {}); // 她在通讯录里改过的圈子
     return cache;
 }
 const dirty = () => { cache = null; };
@@ -372,6 +382,7 @@ function refreshInject() {
         st0.blockedMe ? '（{{char}}现在在微信上把 {{user}} 拉黑了：{{user}} 发的微信你收不到。）' : '',
         st0.blockedMe && m0.myReq?.text && !m0.myReq.done ? `{{user}} 被拉黑后给你发了微信好友申请，验证消息：「${m0.myReq.text}」。如果你愿意通过，在状态段里写「通过好友申请: 是」；不想通过就不写。` : '',
         m0.wxBlock?.him ? '（{{user}} 在微信上把{{char}}拉黑了：你发的微信她收不到。）' : '',
+        circleNote(st0.circle),
     ].filter(Boolean).join('\n');
     const text = buildInjection({ prompt: s.prompt, coverTags: tags, state: state(), wechatTail: tail, myComments, waiting, wxNote: [wxNote, myM && `{{user}} 最近发的朋友圈（你刷得到）：\n${myM}`].filter(Boolean).join('\n\n'), saveMode: s.saveMode, channel: era() === 'modern' ? '在手机上的聊天' : '的书信往来' });
     // 1 = 放在聊天里（IN_CHAT），深度 0 = 最后面，0 = 系统身份
