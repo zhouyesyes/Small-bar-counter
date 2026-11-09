@@ -87,6 +87,24 @@ export function createUI(host) {
         root.addEventListener('click', onClick);
         root.addEventListener('keydown', onKey);
         root.addEventListener('change', onChange);
+        // 浮窗小手机：按住顶上那条拖着走（松手记住位置）
+        let pd = null;
+        root.addEventListener('pointerdown', e => {
+            const g = e.target.closest?.('.sb-grip'); if (!g) return;
+            const ph = g.closest('.sb-float'), r = ph.getBoundingClientRect();
+            pd = { ph, dx: e.clientX - r.left, dy: e.clientY - r.top, id: e.pointerId };
+            try { g.setPointerCapture(e.pointerId); } catch { /* 旧浏览器 */ }
+            e.preventDefault();
+        });
+        root.addEventListener('pointermove', e => {
+            if (!pd || e.pointerId !== pd.id) return;
+            const W = root.clientWidth, H = root.clientHeight, w = pd.ph.offsetWidth, h = pd.ph.offsetHeight;
+            const x = Math.max(4 - w * 0.6, Math.min(W - w * 0.4, e.clientX - pd.dx)), y = Math.max(0, Math.min(H - 60, e.clientY - pd.dy));
+            Object.assign(pd.ph.style, { left: x + 'px', top: y + 'px', transform: 'none', bottom: 'auto' });
+            pd.x = Math.round(x); pd.y = Math.round(y); e.preventDefault();
+        });
+        const endPd = () => { if (!pd) return; const d = pd; pd = null; if (d.x != null) { host.settings().phonePos = { x: d.x, y: d.y }; host.saveSettings(); lastHtml = ''; } };
+        root.addEventListener('pointerup', endPd); root.addEventListener('pointercancel', endPd);
         // 小猫：点一下打开；按住上下拖，挪到左边任意高度（松手记住）
         let drag = null;
         root.addEventListener('pointerdown', e => {
@@ -167,7 +185,7 @@ export function createUI(host) {
         const keepScroll = [...root.querySelectorAll('[data-keep]')].map(el => [el.dataset.keep, el.scrollTop]);
         const html = (s.cat !== false && !v.drawer && !v.phone ? `<button class="sb-cat" style="top:${Number(s.catTop) || 46}%" aria-label="打开小吧台（上下拖可以挪位置）"></button>` : '')
             + (v.drawer ? drawerHtml(era) : '')
-            + (v.phone ? phoneHtml(era) : '');
+            + (v.phone ? floatHtml(era) : '');
         if (html === lastHtml) return; // 什么都没变：不重画，进新聊天时不来回闪
         lastHtml = html;
         root.innerHTML = html;
@@ -210,6 +228,14 @@ export function createUI(host) {
         if (v.tab === 'posts') body = postsHtml(st, him) + musicHtml(st);
         if (v.tab === 'now') body = v.nowBook ? nowBookHtml() : nowHtml(st);
         if (v.tab === 'diary') body = v.diaryId ? diaryOneHtml(st, him) : diaryListHtml(st);
+        const tabsNav = `<nav class="sb-tabs">${TAB_KEYS.map((k, i) => `<button data-act="tab" data-tab="${k}" class="${v.tab === k ? 'on' : ''}">${labels[i]}${k === 'phone' && host.unread() ? ` <b class="sb-badge">${host.unread()}</b>` : ''}</button>`).join('')}</nav>`;
+        // 小手机那一格：手机直接嵌在抽屉里（不另外弹出来）
+        if (v.tab === 'phone') return `<div class="sb-shade" data-act="close"></div>
+<div class="sb-drawer sb-phonemode" role="dialog" aria-label="小吧台">
+ <div class="sb-pmhead ${coverClass()}" style="${coverStyle()}"><span class="sb-mininame">${esc(him.name)}</span><button class="sb-x" data-act="close" aria-label="关上">×</button></div>
+ <div class="sb-phone sb-inline${era !== 'modern' ? ' sb-letterbox' : ''}">${phoneInner(era)}</div>
+ ${tabsNav}
+</div>`;
         return `<div class="sb-shade" data-act="close"></div>
 <div class="sb-drawer${v.mini ? ' sb-mini' : ''}" role="dialog" aria-label="小吧台">
  <div class="sb-minibar ${coverClass()}" style="${coverStyle()}"><span class="sb-mininame">${esc(him.name)}</span><button class="sb-x" data-act="close" aria-label="关上">×</button></div>
@@ -224,7 +250,7 @@ export function createUI(host) {
  ${him.sign || n.sign ? `<div class="sb-sign">${esc(him.sign || n.sign)}</div>` : ''}
  <div class="sb-meta">${[n.time, n.weather].filter(Boolean).map(esc).join('<i></i>') || '还没有状态 · 等TA下一次回复'}</div>
  ${body}</div>
- <nav class="sb-tabs">${TAB_KEYS.map((k, i) => `<button data-act="tab" data-tab="${k}" class="${v.tab === k ? 'on' : ''}">${labels[i]}${k === 'phone' && host.unread() ? ` <b class="sb-badge">${host.unread()}</b>` : ''}</button>`).join('')}</nav>
+ ${tabsNav}
 </div>`;
     }
 
@@ -397,12 +423,21 @@ export function createUI(host) {
             x: xHtml, 'x-dm': xDmHtml, weibo: weiboHtml, diary: pDiaryHtml, memo: pMemoHtml, photos: pPhotosHtml, music: pMusicHtml,
             settings: setHtml, 'set-cover': setCoverHtml, 'set-him': setHimHtml, 'set-me': setMeHtml, 'set-prompt': setPromptHtml, 'set-api': setApiHtml, 'set-reply': setReplyHtml, 'set-when': setWhenHtml,
         };
-        // 古风、民国没有手机：换成书信（设置页还用同一个框）
+        return views;
+    }
+    function phoneInner(era) {
+        const views = phoneHtml(era);
+        // 古风、民国没有手机：聊天那页换成书信
         const letters = era !== 'modern' && v.view === 'wx-chat';
         const inner = letters ? letterHtml(era) : (views[v.view] || homeHtml)(era);
         const bar = v.view !== 'home' ? '<button class="sb-hbar" data-act="phone-go" data-to="home" aria-label="回主页"></button>' : '<div class="sb-hbar idle"></div>';
-        return `<div class="sb-shade" data-act="phone-close"></div>
-<div class="sb-phone${era !== 'modern' ? ' sb-letterbox' : ''}" role="dialog" aria-label="${WORDS[era].phone}">${inner}${bar}</div>`;
+        return inner + bar;
+    }
+    // 浮在屏幕上的小手机（从酒馆魔杖菜单「酒吧小手机」打开）：不挡聊天、不点外面也不会关，只有 × 关；按住顶上那条能拖着走
+    function floatHtml(era) {
+        const pos = host.settings().phonePos || {};
+        const style = pos.x != null ? `left:${pos.x}px;top:${pos.y}px;transform:none;bottom:auto` : '';
+        return `<div class="sb-phone sb-float${era !== 'modern' ? ' sb-letterbox' : ''}" role="dialog" aria-label="${WORDS[era].phone}" style="${style}"><div class="sb-grip" title="按住拖动"><i></i></div>${phoneInner(era)}</div>`;
     }
     // ---------- 古风 / 民国：不用小手机，换成书信 ----------
     const LETTER = {
@@ -826,7 +861,7 @@ export function createUI(host) {
             case 'open': v.drawer = true; break;
             case 'close': v.drawer = false; v.diaryId = ''; v.mini = false; break;
             case 'tab':
-                if (b.dataset.tab === 'phone') { v.phone = true; v.view = 'home'; v.drawer = false; host.markRead(); }
+                if (b.dataset.tab === 'phone') { v.tab = 'phone'; v.phone = false; if (v.tab !== 'phone' || !v.view) v.view = 'home'; host.markRead(); }
                 else { v.tab = b.dataset.tab; v.diaryId = ''; v.nowBook = false; v.mini = false; }
                 break;
             case 'flip': v.flip = !v.flip; break;
@@ -907,7 +942,10 @@ export function createUI(host) {
                 if (!await host.confirm('删掉这篇？（只是在小吧台里不显示，正文不动）')) return;
                 meta.hidden ??= {}; meta.hidden[b.dataset.id] = true; host.saveMeta(); v.diaryId = ''; break;
             case 'phone-go':
-                v.phone = true; v.drawer = false; v.plus = false; v.menuFor = ''; v.edit = null;
+                if (b.closest('.sb-float')) v.phone = true;
+                else if (v.drawer) { v.tab = 'phone'; v.phone = false; }
+                else v.phone = true;
+                v.plus = false; v.menuFor = ''; v.edit = null;
                 v.prev = v.view; v.view = b.dataset.to;
                 if (v.view === 'wx-chat' || v.view === 'x-dm') { if (v.view === 'wx-chat') host.markRead(); v.stick = true; }
                 v.dmMenu = false;
@@ -917,7 +955,9 @@ export function createUI(host) {
                 const back = { 'set-when': 'settings', 'wx-chat': 'wx-contacts', 'x-dm': 'x', 'set-reply': 'settings', 'set-cover': 'settings', 'set-him': 'settings', 'set-me': 'settings', 'set-prompt': 'settings', 'set-api': 'settings' }[v.view];
                 v.view = back || 'home'; v.plus = false; v.menuFor = ''; v.edit = null; break;
             }
-            case 'phone-close': v.phone = false; v.plus = false; v.menuFor = ''; v.edit = null; break;
+            case 'phone-close':
+                if (b.closest('.sb-float')) v.phone = false; else { v.drawer = false; v.tab = 'posts'; }
+                v.plus = false; v.menuFor = ''; v.edit = null; break;
             case 'xmore': v.xN += 10; break;
             case 'lmore': v.momentsN += 10; break;
             case 'xtab':
@@ -1180,6 +1220,7 @@ export function createUI(host) {
     return {
         mount, render,
         open: () => { v.drawer = true; render(); },
+        openPhone: () => { v.phone = true; v.view ||= 'home'; if (v.drawer && v.tab === 'phone') v.tab = 'posts'; render(); },
         reset: () => { v.drawer = false; v.phone = false; v.view = 'home'; v.diaryId = ''; v.edit = null; v.menuFor = ''; v.busy = false; render(); },
         isOpen: () => v.drawer || v.phone,
     };

@@ -472,3 +472,14 @@
 #sb-root .sb-accs button{font-size:12px;border:1px solid var(--sb-line);border-radius:14px;padding:3px 10px;color:var(--sb-dim)}
 #sb-root .sb-accs button.on{background:var(--sb-fg);color:var(--sb-bg);border-color:var(--sb-fg)}
 #sb-root .sb-accs .add{border-style:dashed}
+
+/* 小手机嵌在抽屉里（抽屉的「小手机」那一格） */
+#sb-root .sb-drawer.sb-phonemode{padding-bottom:env(safe-area-inset-bottom)}
+#sb-root .sb-pmhead{flex:0 0 auto;height:calc(48px + env(safe-area-inset-top));display:flex;align-items:flex-end;padding:0 12px 9px 16px;background:#999 center/cover no-repeat}
+#sb-root .sb-pmhead .sb-x{position:static;margin-left:auto}
+#sb-root .sb-phone.sb-inline{position:relative;left:auto;bottom:auto;transform:none;width:100%;height:auto;flex:1;min-height:0;border:0;border-radius:0;box-shadow:none;animation:none}
+#sb-root .sb-phone.sb-inline .sb-hbar{margin:6px auto 6px}
+/* 浮在屏幕上的小手机：不加暗底，按住顶上那条拖 */
+#sb-root .sb-phone.sb-float{z-index:5;height:min(560px,calc(100% - 120px))}
+#sb-root .sb-grip{flex:0 0 auto;height:16px;display:flex;align-items:center;justify-content:center;cursor:grab;touch-action:none;margin-bottom:-6px;position:relative;z-index:3}
+#sb-root .sb-grip i{width:44px;height:4px;border-radius:2px;background:var(--sb-dim);opacity:.5}

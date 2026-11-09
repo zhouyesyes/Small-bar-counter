@@ -409,6 +409,18 @@ jQuery(() => {
     const c = ctx(), ev = c.eventSource, T = c.eventTypes || c.event_types;
     ui.mount();
     settingsPanel();
+    // 酒馆输入框左边魔杖菜单里加一项「酒吧小手机」：打开浮在屏幕上的小手机
+    const addWand = () => {
+        const menu = document.getElementById('extensionsMenu');
+        if (!menu || document.getElementById('sb-wand')) return !!menu;
+        const item = document.createElement('div');
+        item.id = 'sb-wand'; item.className = 'list-group-item flex-container flexGap5';
+        item.innerHTML = '<div class="fa-solid fa-mobile-screen extensionsMenuExtensionButton"></div><span>酒吧小手机</span>';
+        item.addEventListener('click', () => { ui.openPhone(); });
+        menu.appendChild(item);
+        return true;
+    };
+    if (!addWand()) { let n = 0; const t = setInterval(() => { if (addWand() || ++n > 30) clearInterval(t); }, 1000); }
     const on = (type, f) => { if (type) ev.on(type, f); };
     on(T.CHAT_CHANGED, () => { ui.reset(); absorbAll(); refresh(); });
     on(T.MESSAGE_RECEIVED, id => { if (absorb(Number(id))) ctx().saveChat?.(); refresh(); });
