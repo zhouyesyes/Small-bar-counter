@@ -1,6 +1,7 @@
 // 小吧台的界面：小猫入口、左边滑出的抽屉、弹出来的小手机
 // 只管画和点，数据和酒馆那边都从 host 拿（见 index.js），方便以后换酒馆版本
 import { catSvg } from './cat.mjs';
+import { cropImage } from './crop.mjs';
 import { createPlayer, searchSongs, coverUrl, coverList, resolveCover } from './music.mjs';
 import { weatherTone, parsePhoneReply } from './core.mjs';
 import { PHONE_RULES, LETTER_RULES, PHONE_STATUS, MANUAL, RELATION } from './prompt.mjs';
@@ -1200,8 +1201,14 @@ export function createUI(host) {
         else if (t.dataset.tag != null) host.setCharCfg(c => { c.cover.images[Number(t.dataset.tag)].tag = t.value.trim(); });
         else if (t.dataset.prompt != null) host.setSettings(s => { s.prompt = t.value.trim() === host.defaultPrompt().trim() ? '' : t.value; });
         else if (t.dataset.upload && t.files?.[0]) {
-            const kind = t.dataset.upload;
-            let src = await shrink(t.files[0], kind.includes('avatar') ? 320 : 900);
+            const kind = t.dataset.upload, file = t.files[0];
+            t.value = ''; // 同一张图还能再选一次
+            // 先调位置：框的比例照用的地方（抽屉头图 330×128、朋友圈 330×120、X 330×84、头像圆的）
+            const frame = kind.includes('avatar') ? { ratio: 1, round: true, outW: 320 }
+                : kind === 'coverWx' ? { ratio: 330 / 120 } : /^(coverX|coverXMe|xacc-cover)$/.test(kind) ? { ratio: 330 / 84 } : { ratio: 330 / 128 };
+            let src;
+            try { src = await cropImage(file, frame); } catch (err) { host.toast('error', err?.message || '这张图读不出来'); return; }
+            if (!src) return; // 点了取消
             src = await host.saveImage(src); // 只存在这台手机的浏览器里，设置里记个编号
             if (kind === 'fixed') host.setCharCfg(c => { c.cover = { ...(c.cover || {}), mode: 'fixed', fixed: src }; });
             if (kind === 'pick') host.setCharCfg(c => { c.cover = { ...(c.cover || {}), mode: 'pick', images: [...(c.cover?.images || []), { tag: '', src }] }; });
@@ -1214,22 +1221,6 @@ export function createUI(host) {
         } else return;
         render();
     }
-    // 传的图压小一点再存（存在酒馆的扩展设置里，太大会拖慢酒馆）
-    function shrink(file, max) {
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.onload = () => {
-                const k = Math.min(1, max / Math.max(img.width, img.height));
-                const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
-                c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-                URL.revokeObjectURL(img.src);
-                resolve(c.toDataURL('image/jpeg', 0.82));
-            };
-            img.onerror = () => reject(new Error('这张图读不出来'));
-            img.src = URL.createObjectURL(file);
-        });
-    }
-
     // ---------- 小手机聊天 ----------
     function queueMine(m) {
         if (m.type === 'text' && !String(m.text || '').trim()) return;
