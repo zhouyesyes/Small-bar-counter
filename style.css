@@ -284,3 +284,35 @@
 #sb-root .sb-genrow{display:flex;justify-content:flex-end;padding:8px 16px 0}
 #sb-root .sb-gen{font-size:10.5px;color:var(--sb-dim);border:1px dashed var(--sb-line);border-radius:10px;padding:1px 9px}
 #sb-root .sb-gen[disabled]{opacity:.5}
+
+/* 点了就能改的字 */
+#sb-root .sb-edit{display:block;text-align:left;cursor:pointer}
+#sb-root .sb-xbio.sb-edit{width:calc(100% - 28px)}
+#sb-root .sb-wsign{width:100%;text-align:right!important;padding:6px 14px 0;font-size:12px;color:var(--sb-dim);margin-top:-14px}
+#sb-root .sb-wme .sb-edit{display:inline}#sb-root label.sb-wav{cursor:pointer}
+#sb-root .sb-ph .sb-gen{margin-left:auto}
+/* 现代的微信聊天：和真的微信一个颜色（她 11/9 要的） */
+#sb-root.sb-era-modern .sb-phone:has(.sb-wxchat){background:#ededed}
+#sb-root.sb-era-modern .sb-phone:has(.sb-wxchat) .sb-ph,#sb-root.sb-era-modern .sb-phone:has(.sb-wxchat) .sb-inp,#sb-root.sb-era-modern .sb-phone:has(.sb-wxchat) .sb-ppanel{background:#f7f7f7;border-color:#e0e0e0}
+#sb-root.sb-era-modern .sb-wxchat{background:#ededed;gap:12px}
+#sb-root.sb-era-modern .sb-wxchat .sb-time,#sb-root.sb-era-modern .sb-wxchat .sb-note{color:#b2b2b2}
+#sb-root .sb-mrow{display:flex;align-items:flex-start;gap:8px;max-width:100%}
+#sb-root .sb-mrow.u{flex-direction:row-reverse}
+#sb-root .sb-mav{width:36px;height:36px;flex:0 0 auto;border-radius:5px;background:#c8c8c8 center/cover}
+#sb-root .sb-mrow .sb-b{max-width:calc(100% - 96px);align-self:auto;border-radius:5px!important;border:0!important;position:relative;padding:8px 11px;font-size:14.5px}
+#sb-root .sb-mrow .sb-b.c{background:#fff;color:#111}
+#sb-root .sb-mrow .sb-b.u{background:#95ec69;color:#111}
+#sb-root .sb-mrow .sb-b.c::before,#sb-root .sb-mrow .sb-b.u::before{content:"";position:absolute;top:13px;width:0;height:0;border:5px solid transparent}
+#sb-root .sb-mrow .sb-b.c::before{left:-9px;border-right-color:#fff}
+#sb-root .sb-mrow .sb-b.u::before{right:-9px;border-left-color:#95ec69}
+#sb-root .sb-mrow .sb-b.t-money{background:#fa9d3b;color:#fff;min-width:170px}#sb-root .sb-mrow .sb-b.t-money::before{border-left-color:#fa9d3b;border-right-color:transparent}
+#sb-root .sb-mrow .sb-b.c.t-money::before{border-right-color:#fa9d3b;border-left-color:transparent}
+#sb-root .sb-mrow .sb-b.t-money .sb-dim,#sb-root .sb-mrow .sb-b.t-money .sb-trs{color:rgba(255,255,255,.85);border-color:rgba(255,255,255,.4)}
+#sb-root .sb-mrow .sb-b.u .sb-dim{color:#111;opacity:.6}
+#sb-root.sb-era-modern .sb-wxchat .sb-pendnote,#sb-root.sb-era-modern .sb-wxchat .sb-typing{color:#999}
+#sb-root.sb-era-modern.sb-dark .sb-phone:has(.sb-wxchat),#sb-root.sb-era-modern.sb-dark .sb-wxchat{background:#111}
+#sb-root.sb-era-modern.sb-dark .sb-phone:has(.sb-wxchat) .sb-ph,#sb-root.sb-era-modern.sb-dark .sb-phone:has(.sb-wxchat) .sb-inp,#sb-root.sb-era-modern.sb-dark .sb-phone:has(.sb-wxchat) .sb-ppanel{background:#1e1e1e;border-color:#2a2a2a}
+#sb-root.sb-dark .sb-mrow .sb-b.c{background:#2c2c2c;color:#e5e5e5}#sb-root.sb-dark .sb-mrow .sb-b.c::before{border-right-color:#2c2c2c}
+#sb-root.sb-dark .sb-mrow .sb-b.u{background:#3eb575;color:#111}#sb-root.sb-dark .sb-mrow .sb-b.u::before{border-left-color:#3eb575}
+#sb-root.sb-dark .sb-mav{background-color:#3a3a3a}
+#sb-root .sb-wme .sb-edit{margin-bottom:22px}#sb-root .sb-wme .sb-edit b{margin:0}

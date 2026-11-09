@@ -151,6 +151,7 @@ const xHost = {
     newXAccount: name => { const a = { id: 'a' + Date.now().toString(36), name: name || '小号' }; xAccounts().push(a); meta().xcur = a.id; saveMeta(); },
     renameXAccount: name => { xAccount().name = name; saveMeta(); },
     setXAccountAvatar: src => { xAccount().avatar = src; saveMeta(); },
+    setXAccountField: (k, val) => { xAccount()[k] = val; saveMeta(); },
     xMine: () => { const m = meta(); m.xmine ??= {}; return (m.xmine[xAccount().id] ??= []); },
     addXMine: text => { const m = meta(); m.xmine ??= {}; (m.xmine[xAccount().id] ??= []).push({ id: newId(), text, at: Date.now(), time: state().now.time || '' }); saveMeta(); },
     delXMine: id => { const list = meta().xmine?.[xAccount().id] || []; const i = list.findIndex(p => p.id === id); if (i >= 0) list.splice(i, 1); saveMeta(); },
@@ -175,7 +176,7 @@ function him() {
     const h = charCfg().him || {};
     const name = h.name || ch.name || c.name2 || '他';
     return {
-        cardName: ch.name || c.name2 || '他', name, xavatar: h.xavatar ? img(h.xavatar) : '', remark: h.remark || '', xname: h.xname || '', handle: h.handle || '', xhandle: h.handle || '',
+        cardName: ch.name || c.name2 || '他', name, xavatar: h.xavatar ? img(h.xavatar) : '', xbio: h.xbio || '', remark: h.remark || '', xname: h.xname || '', handle: h.handle || '', xhandle: h.handle || '',
         sign: h.sign || '', penName: h.penName || '',
         avatar: (h.avatar && img(h.avatar)) || (ch.avatar ? (c.getThumbnailUrl?.('avatar', ch.avatar) ?? `/thumbnail?type=avatar&file=${encodeURIComponent(ch.avatar)}`) : ''),
     };
@@ -185,7 +186,7 @@ function me() {
     const pu = c.powerUserSettings || {};
     const file = personas.user_avatar || '';
     return {
-        cardName: c.name1 || '我', name: s.me.name || c.name1 || '我',
+        cardName: c.name1 || '我', name: s.me.name || c.name1 || '我', sign: s.me.sign || '',
         avatar: (s.me.avatar && img(s.me.avatar)) || (file ? `/thumbnail?type=persona&file=${encodeURIComponent(file)}` : ''),
         persona: pu.persona_description || '',
     };

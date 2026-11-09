@@ -37,7 +37,7 @@ const pics = v => (v || '').replace(/^(照片|图片|图)\s*[:：]?/, '').split(
 // msgs: [{ id, raw, at }]，id 是这一楼稳定的编号（发出时间 + 第几页回复），at 是这一楼的时间（毫秒，排先后用）
 export function buildState(msgs) {
     const st = {
-        now: {}, nowLog: [], posts: [], moments: [], diary: [], memo: [], music: null, xposts: [], wechat: [], npcComments: [], replies: [], cover: '',
+        now: {}, nowLog: [], posts: [], moments: [], diary: [], memo: [], music: null, xposts: [], xfeed: [], wechat: [], npcComments: [], replies: [], cover: '',
     };
     for (const { id, raw, at = 0 } of msgs) {
         if (!raw) continue;
@@ -80,6 +80,11 @@ export function buildState(msgs) {
         const mu = one(b, '音乐', '在听');
         if (mu) { const [title, artist, lyric] = split(mu); st.music = { title, artist: artist || '', lyric: lyric || '' }; }
         many(b, 'X', '推特').forEach((v, i) => st.xposts.push({ id: id + '#x' + i, text: split(v)[0], pics: pics(split(v)[1]), time: n.time || '', at }));
+        // X 首页上这个世界里各种人的帖子：「推文: 网名｜@账号｜正文｜照片描述」
+        many(b, '推文').forEach((v, i) => {
+            const [who, handle, text, p] = split(v);
+            if (who && text) st.xfeed.push({ id: id + '#f' + i, who, handle: handle || '', text, pics: pics(p), time: n.time || '', at });
+        });
         many(b, '微信', '消息').forEach((v, i) => st.wechat.push({ id: id + '#w' + i, from: 'him', type: 'text', text: v, time: n.time || '', at }));
     }
     // 备忘最多 15 条：做完的先挪走
