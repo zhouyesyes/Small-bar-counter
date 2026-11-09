@@ -344,3 +344,8 @@
 #sb-root .sb-post,#sb-root .sb-mrow2{contain:layout paint}
 #sb-root .sb-bigcover{box-shadow:0 10px 24px rgba(0,0,0,.18)}
 #sb-root .sb-drawer .sb-cover{transition:none}
+
+/* 封面小一点；搜索结果、歌单前面带小封面 */
+#sb-root .sb-bigcover{width:84px!important;height:84px!important;border-radius:10px!important}
+#sb-root .sb-music .sb-mt{margin-top:10px}
+#sb-root .sb-mthumb{width:38px;height:38px;flex:0 0 auto;border-radius:6px;object-fit:cover;background:var(--sb-soft)}
