@@ -44,7 +44,7 @@
 #sb-root .sb-handle{text-align:center;font-size:12px;color:var(--sb-dim)}#sb-root .sb-handle.left{text-align:left;padding:0 14px}
 #sb-root .sb-sign{text-align:center;font-size:13px;font-style:italic;margin:6px 22px 0}
 #sb-root .sb-meta{text-align:center;font-size:11.5px;color:var(--sb-dim);margin-top:6px;padding-bottom:10px;border-bottom:1px solid var(--sb-line)}
-#sb-root .sb-meta i{display:inline-block;width:12px}
+#sb-root .sb-meta span{display:block;line-height:1.5;padding:0 18px}
 #sb-root .sb-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 #sb-root .sb-tabs{display:flex;flex:0 0 auto;border-top:1px solid var(--sb-line)}
 #sb-root .sb-tabs button{flex:1;padding:12px 0 10px;font-size:13px;color:var(--sb-dim)}

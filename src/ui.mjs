@@ -267,7 +267,7 @@ export function createUI(host) {
  <div class="sb-name">${esc(him.name)}</div>
  ${him.handle ? `<div class="sb-handle">${esc(him.handle)}</div>` : ''}
  ${him.sign || n.sign ? `<div class="sb-sign">${esc(him.sign || n.sign)}</div>` : ''}
- <div class="sb-meta">${[n.time, n.weather].filter(Boolean).map(esc).join('<i></i>') || '还没有状态 · 等TA下一次回复'}</div>
+ <div class="sb-meta">${[n.time, n.weather].filter(Boolean).map(x => `<span>${esc(x)}</span>`).join('') || '还没有状态 · 等TA下一次回复'}</div>
  ${body}</div>
  ${tabsNav}
 </div>`;
