@@ -506,8 +506,8 @@
 #sb-root{--wx-name:#576b95}
 #sb-root.sb-dark{--wx-name:#7d90a9}
 #sb-root .sb-post .sb-pname{color:var(--wx-name);font-size:15px}
-#sb-root .sb-post.him .sb-pav{outline:0}
-#sb-root .sb-pav{border-radius:6px!important}
+#sb-root .sb-post.him .sb-pav{outline:1.5px solid var(--sb-fg);outline-offset:1px}
+#sb-root .sb-pav{border-radius:50%!important}
 #sb-root .sb-cbox{background:var(--sb-soft);border-radius:4px;padding:5px 8px;margin-top:8px;font-size:13px;line-height:1.55}
 #sb-root .sb-likes{display:flex;flex-wrap:wrap;align-items:center;gap:0 2px;color:var(--wx-name);padding-bottom:4px;margin-bottom:4px}
 #sb-root .sb-likes svg{width:13px;height:13px;fill:none;stroke:var(--wx-name);stroke-width:1.8;margin-right:4px}
