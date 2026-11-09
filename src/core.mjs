@@ -34,6 +34,7 @@ const AGO = ['刚刚', '8分钟前', '23分钟前', '1小时前', '2小时前', 
 const ago = (t, i) => (t && !/^(照片|图)/.test(t) ? t : AGO[Math.min(i, AGO.length - 1)]);
 const one = (b, ...keys) => { for (const k of keys) if (b[k]?.length) return b[k][b[k].length - 1]; return ''; };
 const many = (b, ...keys) => keys.flatMap(k => b[k] || []);
+const names = v => String(v || '').split(/[,，、\s]+/).map(x => x.trim()).filter(x => x && !/^(无|没有|none|-|她|他|TA|都|都认识)$/i.test(x)); // 后面那几个是旧写法（关系标记）留下的
 const pics = v => (v || '').replace(/^(照片|图片|图)\s*[:：]?/, '').split(/[,，、]/).map(x => x.trim()).filter(Boolean);
 
 // 把整段聊天（只看他的楼）里的状态段按顺序叠起来，得到现在的样子
@@ -41,9 +42,8 @@ const pics = v => (v || '').replace(/^(照片|图片|图)\s*[:：]?/, '').split(
 export function buildState(msgs) {
     const st = {
         now: {}, nowLog: [], posts: [], moments: [], diary: [], memo: [], music: null, xposts: [], xfeed: [], weibo: [], hot: [], photos: [], freq: [], blockedMe: false, wechat: [], npcComments: [], replies: [], cover: '',
-        circle: {}, // 谁认识谁：名字 → her（只认识她）/ him（只认识TA）/ both（都认识）
+        likes: {}, // 谁点了赞：帖子 id → [名字]（TA按关系写的，界面不自己猜）
     };
-    const said = {}; // 状态段里明说了的圈子；没明说的最后再猜
     for (const { id, raw, at = 0 } of msgs) {
         if (!raw) continue;
         const b = parseBlock(raw);
@@ -61,12 +61,17 @@ export function buildState(msgs) {
             st.posts.push({ id: id + '#p' + i, who: '', text, pics: pics(p), place: place || '', time: n.time || '', at });
         });
         many(b, '朋友圈').forEach((v, i) => {
-            const [who, text, p, t, c] = split(v);
+            const [who, text, p, t, lk] = split(v);
             if (!who || !text) return;
             st.moments.push({ id: id + '#m' + i, who, text, pics: pics(p), time: ago(t, i), at: at - i });
-            if (circleWord(c)) said[who] = circleWord(c);
+            if (names(lk).length) st.likes[id + '#m' + i] = names(lk);
         });
-        many(b, '圈子').forEach(v => { const [who, c] = split(v); if (who && circleWord(c)) said[who] = circleWord(c); });
+        // 点赞：「点赞: 名字、名字」给TA最新那条动态；「朋友圈点赞: 发帖人｜名字、名字」给那个人最近那条
+        many(b, '点赞').forEach(v => { const last = st.posts[st.posts.length - 1]; if (last) st.likes[last.id] = [...new Set([...(st.likes[last.id] || []), ...names(v)])]; });
+        many(b, '朋友圈点赞').forEach(v => {
+            const [owner, lk] = split(v); const post = [...st.moments].reverse().find(m => m.who === owner);
+            if (post) st.likes[post.id] = [...new Set([...(st.likes[post.id] || []), ...names(lk)])];
+        });
         // 朋友圈里别人之间的互动：「朋友圈评论: 发帖人｜评论人｜内容」，挂在发帖人最近那条下面
         many(b, '朋友圈评论').forEach((v, i) => {
             const [owner, who, text] = split(v);
@@ -111,12 +116,6 @@ export function buildState(msgs) {
         if (b['微信解除拉黑']?.length || b['通过好友申请']?.length) st.blockedMe = false;
         many(b, '微信', '消息').forEach((v, i) => st.wechat.push({ id: id + '#w' + i, from: 'him', type: 'text', text: v, time: n.time || '', at }));
     }
-    // 圈子：明说的为准；朋友圈出现在她手机里的，算她的朋友；只在TA动态下留过言的，算TA那边的；在别人朋友圈下留言的，跟发帖人一边
-    Object.assign(st.circle, said);
-    const owner = new Map(st.moments.map(m => [m.id, m.who])), mine = new Set(st.posts.map(p => p.id));
-    for (const m of st.moments) st.circle[m.who] ??= 'her';
-    for (const c of st.npcComments) if (mine.has(c.post)) st.circle[c.who] ??= 'him';
-    for (const c of st.npcComments) if (owner.has(c.post)) st.circle[c.who] ??= st.circle[owner.get(c.post)] || 'her';
     // 备忘最多 15 条：做完的先挪走
     while (st.memo.length > 15) {
         const i = st.memo.findIndex(x => x.done);
@@ -132,27 +131,6 @@ export function stripNow(raw) {
         const m = line.trim().match(/^[-*·\s]*([^:：]{1,8})\s*[:：]/);
         return !(m && NOW_KEYS.includes(m[1].trim()));
     }).join('\n');
-}
-
-// 「她 / TA / 都认识」→ her / him / both；认不出就空
-export function circleWord(w) {
-    const s = String(w || '').trim();
-    if (!s) return '';
-    if (/都|共同|两边|两个|both/i.test(s)) return 'both';
-    if (/^(TA|他|him|char)/i.test(s) || /\{\{char\}\}/.test(s)) return 'him';
-    if (/^(她|我|her|user)/i.test(s) || /\{\{user\}\}/.test(s)) return 'her';
-    return '';
-}
-
-// 两个人认不认识：传进来的是「边」—— 'me' 是她自己，'ta' 是TA自己，别人是圈子 her / him / both
-// 她的朋友和TA那边的人不认识；同一边的人当作认识（朋友圈里互相点赞评论就够用了）
-export function knows(a, b) {
-    if (!a || !b) return false;
-    const pair = [a, b].sort().join('+');
-    if (pair === 'me+ta') return true;
-    if (a === 'me' || b === 'me') return [a, b].some(x => x === 'her' || x === 'both');
-    if (a === 'ta' || b === 'ta') return [a, b].some(x => x === 'him' || x === 'both');
-    return a === b || a === 'both' || b === 'both';
 }
 
 // 他在小手机里的回复：一行一条；[语音] [图片] [转账]金额｜留言 [表情]名字

@@ -43,15 +43,6 @@ function memoNote(memo) {
     return left.length ? `{{char}}备忘录里还没做完的事：\n${left.join('\n')}\n做完了的，在状态段里写「完成: 那件事」（照原话）；不打算做了也可以写「完成:」划掉。` : '';
 }
 
-// 谁认识谁，告诉TA：别让她的朋友跑去TA的动态下面留言
-function circleNote(circle) {
-    const g = { her: [], him: [], both: [] };
-    for (const [n, c] of Object.entries(circle || {})) g[c]?.push(n);
-    if (!g.her.length && !g.him.length && !g.both.length) return '';
-    const part = [g.her.length && `只认识 {{user}} 的：${g.her.slice(-12).join('、')}`, g.him.length && `只认识{{char}}的：${g.him.slice(-12).join('、')}`, g.both.length && `两边都认识的：${g.both.slice(-12).join('、')}`].filter(Boolean).join('；');
-    return `谁认识谁（${part}）。只认识 {{user}} 的人不会在{{char}}的动态下面评论；只认识{{char}}的人刷不到 {{user}} 的朋友圈；朋友圈里互相评论的也得是认识的人。`;
-}
-
 function state() {
     if (cache) return cache;
     cache = stateWithout(null);
@@ -68,7 +59,6 @@ function stateWithout(except) {
     for (const g of Object.values(ctx().chatMetadata?.[META]?.nowVer || {})) g.ids.forEach((id, i) => { if (i !== g.pick) off.add(id); });
     const all = [...fromChat, ...extra].map(b => (off.has(b.id) ? { ...b, raw: stripNow(b.raw) } : b));
     const st = buildState(all.sort((a, b) => (a.at || 0) - (b.at || 0)));
-    Object.assign(st.circle, ctx().chatMetadata?.[META]?.circle || {}); // 她在通讯录里改过的圈子
     return st;
 }
 const dirty = () => { cache = null; };
@@ -398,7 +388,6 @@ function refreshInject() {
         st0.blockedMe ? '（{{char}}现在在微信上把 {{user}} 拉黑了：{{user}} 发的微信你收不到。）' : '',
         st0.blockedMe && m0.myReq?.text && !m0.myReq.done ? `{{user}} 被拉黑后给你发了微信好友申请，验证消息：「${m0.myReq.text}」。如果你愿意通过，在状态段里写「通过好友申请: 是」；不想通过就不写。` : '',
         m0.wxBlock?.him ? '（{{user}} 在微信上把{{char}}拉黑了：你发的微信她收不到。）' : '',
-        circleNote(st0.circle),
         memoNote(st0.memo),
     ].filter(Boolean).join('\n');
     const text = buildInjection({ prompt: s.prompt, coverTags: tags, state: state(), wechatTail: tail, myComments, waiting, wxNote: [wxNote, myM && `{{user}} 最近发的朋友圈（你刷得到）：\n${myM}`].filter(Boolean).join('\n\n'), saveMode: s.saveMode, channel: era() === 'modern' ? '在手机上的聊天' : '的书信往来' });
