@@ -483,3 +483,21 @@
 #sb-root .sb-phone.sb-float{z-index:5;height:min(560px,calc(100% - 120px))}
 #sb-root .sb-grip{flex:0 0 auto;height:16px;display:flex;align-items:center;justify-content:center;cursor:grab;touch-action:none;margin-bottom:-6px;position:relative;z-index:3}
 #sb-root .sb-grip i{width:44px;height:4px;border-radius:2px;background:var(--sb-dim);opacity:.5}
+
+/* 滑下去以后顶上那条：纯色，不再切一块头图 */
+#sb-root .sb-minibar{background:var(--sb-bg)!important;border-bottom:1px solid var(--sb-line);align-items:center;padding-top:env(safe-area-inset-top)}
+#sb-root .sb-minibar .sb-mininame{color:var(--sb-fg);text-shadow:none}
+#sb-root .sb-minibar .sb-x{background:var(--sb-soft);color:var(--sb-fg)}
+/* 评论 */
+#sb-root .sb-c{cursor:pointer;border-radius:4px;padding:1px 2px}
+#sb-root .sb-c.on{background:var(--sb-line)}
+#sb-root .sb-cacts{display:flex;gap:6px;flex-wrap:wrap;margin:3px 0 5px}
+#sb-root .sb-cacts button{font-size:11.5px;border:1px solid var(--sb-line);border-radius:12px;padding:1px 9px;color:var(--sb-fg);background:var(--sb-bg)}
+#sb-root .sb-cin{display:block;margin-top:6px}
+#sb-root .sb-cin textarea{display:block;width:100%;min-height:38px;max-height:140px;resize:none;font-size:14px!important;line-height:1.5;padding:8px 10px!important;background:var(--sb-bg)!important;border-radius:10px!important}
+#sb-root .sb-cbtns{display:flex;justify-content:flex-end;gap:6px;margin-top:6px}
+#sb-root .sb-cbtns button{font-size:12px;border:1px solid var(--sb-line);border-radius:14px;padding:3px 12px;white-space:nowrap}
+#sb-root .sb-cbtns button:last-child{background:var(--sb-fg);color:var(--sb-bg);border-color:var(--sb-fg)}
+#sb-root .sb-cbtns button[disabled]{opacity:.4}
+#sb-root .sb-cto{font-size:11.5px;color:var(--sb-dim);margin-bottom:4px}#sb-root .sb-cto button{margin-left:4px}
+#sb-root .sb-pbtns{display:flex;gap:2px;align-items:center}

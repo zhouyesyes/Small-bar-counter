@@ -179,13 +179,14 @@ export const lineAt = (lrc, sec) => { let cur = -1; for (let i = 0; i < lrc.leng
 export function createPlayer({ load, save, onChange, onStatus = () => {} }) {
     const audio = new Audio();
     audio.preload = 'none';
-    let lrc = [], lrcFor = '', sources = [], srcIdx = 0;
+    let lrc = [], lrcFor = '', sources = [], srcIdx = 0, playing = null; // playing：真正在响的那首（切歌单不影响它）
     const st = () => load(); // { list: [], idx, mode }
     const cur = () => st().list[st().idx];
     async function play(i) {
         const s = st();
         if (i != null) { s.idx = Math.max(0, Math.min(s.list.length - 1, i)); save(); }
         const t = cur(); if (!t) return;
+        playing = t;
         let src;
         onStatus(t.src === 'qq' ? '正在问 QQ 音乐要播放地址…' : '正在连网易云…');
         try { sources = await sourceList(t); srcIdx = 0; src = sources[0]; } catch (e) { onStatus('拿不到播放地址'); onChange?.('error', e?.message || '拿不到播放地址'); return; }
@@ -207,7 +208,7 @@ export function createPlayer({ load, save, onChange, onStatus = () => {} }) {
     audio.addEventListener('ended', () => next(true));
     // 只有 30 秒左右、整首明明更长：多半是会员歌的试听片段，换下一个来源
     audio.addEventListener('loadedmetadata', () => {
-        const t = cur();
+        const t = playing || cur();
         if (t && t.src !== 'qq' && t.dur > 60 && audio.duration > 0 && audio.duration < 45 && srcIdx + 1 < sources.length) { onStatus('这个来源只有试听片段，换一个…'); fallback(); }
     });
     // 现在在干嘛：给界面那一行小字
@@ -219,7 +220,7 @@ export function createPlayer({ load, save, onChange, onStatus = () => {} }) {
     audio.addEventListener('pause', () => { if (!audio.ended && audio.currentTime > 0) onStatus('暂停了'); });
     // 放不出来：网易云的歌先去 QQ 找同一首，再不行就提示
     async function fallback() {
-        const t = cur(); if (!t) return;
+        const t = playing || cur(); if (!t) return;
         // 先在这首歌的备用来源里一个个换（QR 也是这样，有的节点能放完整的会员歌）
         if (srcIdx + 1 < sources.length) {
             srcIdx++; const u = sources[srcIdx];
@@ -247,7 +248,7 @@ export function createPlayer({ load, save, onChange, onStatus = () => {} }) {
         audio, play, next, prev,
         toggle: () => (audio.paused ? play() : audio.pause()),
         seek: frac => { if (audio.duration) audio.currentTime = audio.duration * frac; },
-        current: cur, playing: () => !audio.paused,
+        current: () => playing || cur(), playing: () => !audio.paused,
         lyric: () => lrc, line: () => lineAt(lrc, audio.currentTime || 0),
         add(t, andPlay) {
             const s = st();

@@ -87,6 +87,12 @@ export function createUI(host) {
         root.addEventListener('click', onClick);
         root.addEventListener('keydown', onKey);
         root.addEventListener('change', onChange);
+        // 评论框：跟着字多自动变高；打到一半的字记着，重画也不丢
+        root.addEventListener('input', e => {
+            const t = e.target; if (!t.matches?.('[data-cin]')) return;
+            t.style.height = 'auto'; t.style.height = Math.min(140, t.scrollHeight) + 'px';
+            (v.cdraft ??= {})[t.dataset.cin] = t.value;
+        });
         // 浮窗小手机：按住顶上那条拖着走（松手记住位置）
         let pd = null;
         root.addEventListener('pointerdown', e => {
@@ -238,7 +244,7 @@ export function createUI(host) {
 </div>`;
         return `<div class="sb-shade" data-act="close"></div>
 <div class="sb-drawer${v.mini ? ' sb-mini' : ''}" role="dialog" aria-label="小吧台">
- <div class="sb-minibar ${coverClass()}" style="${coverStyle()}"><span class="sb-mininame">${esc(him.name)}</span><button class="sb-x" data-act="close" aria-label="关上">×</button></div>
+ <div class="sb-minibar"><span class="sb-mininame">${esc(him.name)}</span><button class="sb-x" data-act="close" aria-label="关上">×</button></div>
  <div class="sb-body" data-keep="body">
  <div class="sb-cover ${coverClass()}" style="${coverStyle()}">
   <span class="sb-logo">SMALL BAR</span><button class="sb-x" data-act="close" aria-label="关上">×</button>
@@ -255,25 +261,41 @@ export function createUI(host) {
     }
 
     const avatarOf = who => (who === 'him' ? host.him().avatar : who === 'me' ? host.me().avatar : '');
+    // 一条帖子下面的评论：别人写的（状态段里来的）+ 她和TA在这里写的，按时间排
+    function commentList(post) {
+        const meta = host.meta(), ed = meta.cedit || {};
+        const me = host.me().name, him = host.him().name;
+        const nameOf = w => (w === 'me' ? me : w === 'him' ? him : w);
+        const npc = host.state().npcComments.filter(c => c.post === post.id).map(c => ({ id: c.id, who: c.who, text: c.text, at: c.at, src: 'npc' }));
+        const mine = (meta.comments?.[post.id] || []).map((c, i) => ({ id: c.id || post.id + '#c' + i, who: nameOf(c.who), to: c.to ? nameOf(c.to) : (c.who === 'him' ? me : ''), text: c.text, at: c.at, src: 'mine', i }));
+        const rep = host.repliesFor(post.id).map((r, i) => ({ id: r.id || post.id + '#r' + i, who: him, to: me, text: r.text, at: r.at, src: 'npc' }));
+        return [...npc, ...mine, ...rep].filter(c => !ed[c.id]?.deleted).map(c => ({ ...c, text: ed[c.id]?.text ?? c.text })).sort((a, b) => (a.at || 0) - (b.at || 0));
+    }
     function commentsHtml(post, interactive) {
         const meta = host.meta();
-        const mine = (meta.comments?.[post.id] || []);
-        const npc = host.state().npcComments.filter(c => c.post === post.id);
-        const all = [...npc.map(c => ({ ...c, who: c.who })), ...mine.map(c => ({ ...c, who: c.who === 'me' ? host.me().name : c.who === 'him' ? host.him().name : c.who, reply: c.who === 'him' }))]
-            .concat(host.repliesFor(post.id).map(r => ({ who: host.him().name, text: r.text, reply: true, at: r.at })))
-            .sort((a, b) => (a.at || 0) - (b.at || 0));
+        const all = commentList(post);
         const liked = meta.likes?.[post.id];
         const likers = [liked && host.me().name].filter(Boolean);
         if (!all.length && !likers.length && !interactive) return '';
+        const to = v.replyTo?.post === post.id ? v.replyTo.who : '';
         return `<div class="sb-cbox">
   ${likers.length ? `<div class="sb-likes">♡ ${likers.map(esc).join('，')}</div>` : ''}
-  ${all.map(c => `<div class="sb-c"><b>${esc(c.who)}</b>${c.reply ? ` 回复 <b>${esc(host.me().name)}</b>` : ''}：${esc(c.text)}</div>`).join('')}
-  ${interactive ? `<div class="sb-cin"><input data-cin="${esc(post.id)}" placeholder="留言…" enterkeyhint="send"><button data-act="ask-reply" data-post="${esc(post.id)}" ${v.busy ? 'disabled' : ''}>让TA回</button></div>` : ''}
+  ${all.map(c => `<div class="sb-c${v.cmenu === c.id ? ' on' : ''}" data-act="cmenu" data-id="${esc(c.id)}"><b>${esc(c.who)}</b>${c.to ? ` 回复 <b>${esc(c.to)}</b>` : ''}：${esc(c.text)}</div>
+   ${v.cmenu === c.id ? `<div class="sb-cacts">${c.who !== host.me().name ? `<button data-act="creply" data-post="${esc(post.id)}" data-who="${esc(c.who)}">回复${esc(c.who)}</button>` : ''}<button data-act="cedit" data-id="${esc(c.id)}">编辑</button><button data-act="cdel" data-id="${esc(c.id)}">删除</button></div>` : ''}`).join('')}
+  ${interactive ? `<div class="sb-cin">
+   ${to ? `<div class="sb-cto">回复 ${esc(to)} <button data-act="creply-x">×</button></div>` : ''}
+   <textarea data-cin="${esc(post.id)}" rows="1" placeholder="${to ? '回复 ' + esc(to) + '…' : '留言…'}">${esc(v.cdraft?.[post.id] || '')}</textarea>
+   <div class="sb-cbtns"><button data-act="csend" data-post="${esc(post.id)}">发送</button><button data-act="csend" data-post="${esc(post.id)}" data-ask="1" ${v.busy ? 'disabled' : ''}>发送并让${esc(to || 'TA')}回</button></div>
+  </div>` : ''}
  </div>`;
     }
     function postHtml(p, him, interactive = true) {
+        p.author = p.who || '';
         const who = p.who || him.name, isHim = !p.who;
         const meta = host.meta();
+        const ped = meta.pedit?.[p.id];
+        if (ped?.deleted) return '';
+        if (ped?.text != null) p = { ...p, text: ped.text };
         return `<article class="sb-post${isHim ? ' him' : ''}">
  <div class="sb-pav" style="background-image:url('${esc(isHim ? him.avatar : '')}')">${isHim ? '' : esc(who.slice(0, 1))}</div>
  <div class="sb-pmain">
@@ -281,8 +303,9 @@ export function createUI(host) {
   <div class="sb-ptext">${nl(p.text)}</div>
   ${p.pics?.length ? `<div class="sb-pics">${p.pics.map(x => `<span>${esc(x)}</span>`).join('')}</div>` : ''}
   <div class="sb-pfoot"><span>${esc([p.time, p.place].filter(Boolean).join(' · '))}</span>
-   ${isHim ? `<button data-act="like" data-post="${esc(p.id)}" class="${meta.likes?.[p.id] ? 'on' : ''}">${meta.likes?.[p.id] ? '♥' : '♡'}</button>` : ''}</div>
-  ${commentsHtml(p, interactive && isHim)}
+   <span class="sb-pbtns"><button data-act="pmenu" data-post="${esc(p.id)}" aria-label="更多">··</button><button data-act="like" data-post="${esc(p.id)}" class="${meta.likes?.[p.id] ? 'on' : ''}">${meta.likes?.[p.id] ? '♥' : '♡'}</button></span></div>
+  ${v.pmenu === p.id ? `<div class="sb-cacts"><button data-act="pedit" data-post="${esc(p.id)}">编辑这条</button><button data-act="pdel" data-post="${esc(p.id)}">删掉这条</button></div>` : ''}
+  ${commentsHtml(p, interactive)}
  </div>
 </article>`;
     }
@@ -290,6 +313,9 @@ export function createUI(host) {
     const genBtn = (kind, label) => `<button class="sb-gen" data-act="gen" data-kind="${kind}" ${v.busy ? 'disabled' : ''}>${v.busy === kind ? '在写……' : label}</button>`;
     async function generate(kind) {
         if (v.busy) return;
+        // 重新生成此刻：写一份新的，盖掉现在这份（被盖掉的那页不进此刻簿）
+        const redoOf = kind === 'now-redo' ? host.state().nowLog.slice(-1)[0]?.id : null;
+        if (kind === 'now-redo') kind = 'now';
         v.busy = kind; render();
         try {
             const rule = MANUAL[kind];
@@ -298,6 +324,7 @@ export function createUI(host) {
             let raw = host.extractBlock(out).raw;
             if (!raw && /[:：]/.test(out)) raw = out; // 没包 <!--SB 也认
             if (!host.addBlock(raw)) throw new Error('TA没写出来');
+            if (redoOf) { const m = host.meta(); m.hidden ??= {}; m.hidden[redoOf] = true; host.saveMeta(); }
             host.toast('success', '写好了');
         } catch (err) { host.toast('error', '没写成：' + (err?.message || err)); }
         finally { v.busy = false; render(); }
@@ -357,7 +384,7 @@ export function createUI(host) {
         const row = (k, val, extra = '') => val ? `<div class="sb-k">${k}</div><div>${extra}${esc(val)}</div>` : '';
         const has = n.where || n.wear || n.want || n.voice;
         return `<div class="sb-pad sb-nowpad">
- <div class="sb-nowtop">${genBtn('now', '刷新此刻')}${st.nowLog.length ? `<button class="sb-bookbtn" data-act="nowbook" title="以前的此刻">${Wd().book}</button>` : ''}</div>
+ <div class="sb-nowtop">${st.nowLog.length ? genBtn('now-redo', '重新生成') : ''}${genBtn('now', '刷新此刻')}${st.nowLog.length ? `<button class="sb-bookbtn" data-act="nowbook" title="以前的此刻">${Wd().book}</button>` : ''}</div>
  ${has ? `<div class="sb-grid">${row('在哪', n.where)}${row('穿着', n.wear)}${row('想要', n.want, '<span class="sb-heart">♥</span>')}</div>` : '<div class="sb-empty">还没有此刻的状态。<br>TA下一次回复后就会有。</div>'}
  ${n.voice ? `<div class="sb-voice"><div><span class="sb-k">${v.flip ? '心声 · 背面' : '心声'}</span><br>${esc(v.flip && n.voiceBack ? n.voiceBack : n.voice)}</div>${n.voiceBack ? '<button class="sb-flip" data-act="flip">翻面</button>' : ''}</div>` : ''}
  <div class="sb-cap sb-row"><span>memo · 备忘录</span><span>${st.memo.length} / 15</span></div>
@@ -367,7 +394,8 @@ export function createUI(host) {
     // 此刻的本子：每一轮的此刻一页，新的在上面，按日子分开
     function nowBookHtml() {
         const st = host.state();
-        const list = st.nowLog.slice().reverse().slice(0, v.bookN || 20);
+        const hiddenNow = host.meta().hidden || {};
+        const list = st.nowLog.filter(p => !hiddenNow[p.id]).reverse().slice(0, v.bookN || 20);
         let lastDay = '';
         const pages = list.map(p => {
             const day = String(p.time || '').split(/\s+/)[0] || '';
@@ -932,6 +960,33 @@ export function createUI(host) {
             case 'diary-open': v.phone = false; v.drawer = true; v.tab = 'diary'; v.diaryId = b.dataset.id; break;
             case 'like': meta.likes ??= {}; meta.likes[b.dataset.post] = !meta.likes[b.dataset.post]; host.saveMeta(); break;
             case 'ask-reply': await askReply(b.dataset.post); return;
+            case 'cmenu': v.cmenu = v.cmenu === b.dataset.id ? '' : b.dataset.id; break;
+            case 'creply': v.replyTo = { post: b.dataset.post, who: b.dataset.who }; v.cmenu = ''; render(); root.querySelector(`[data-cin="${CSS.escape(b.dataset.post)}"]`)?.focus(); return;
+            case 'creply-x': v.replyTo = null; break;
+            case 'csend': {
+                const ta = root.querySelector(`[data-cin="${CSS.escape(b.dataset.post)}"]`);
+                const text = ta?.value.trim(); if (!text) { host.toast('info', '先写点什么'); return; }
+                const to = v.replyTo?.post === b.dataset.post ? v.replyTo.who : '';
+                addComment(b.dataset.post, text, to);
+                if (v.cdraft) delete v.cdraft[b.dataset.post];
+                if (b.dataset.ask) await askReply(b.dataset.post, to); else { v.replyTo = null; render(); }
+                return;
+            }
+            case 'cedit': {
+                const c = findComment(b.dataset.id); if (!c) return;
+                const t = await host.prompt('改这条评论', c.text); if (t == null) return;
+                meta.cedit ??= {}; meta.cedit[b.dataset.id] = { ...(meta.cedit[b.dataset.id] || {}), text: String(t).trim() }; v.cmenu = ''; host.saveMeta(); break;
+            }
+            case 'cdel': meta.cedit ??= {}; meta.cedit[b.dataset.id] = { deleted: true }; v.cmenu = ''; host.saveMeta(); break;
+            case 'pmenu': v.pmenu = v.pmenu === b.dataset.post ? '' : b.dataset.post; break;
+            case 'pedit': {
+                const p = allPosts().find(x => x.id === b.dataset.post); if (!p) return;
+                const t = await host.prompt('改这条', meta.pedit?.[p.id]?.text ?? p.text); if (t == null) return;
+                meta.pedit ??= {}; meta.pedit[p.id] = { text: String(t).trim() }; v.pmenu = ''; host.saveMeta(); break;
+            }
+            case 'pdel':
+                if (!await host.confirm('删掉这条？（只是在小吧台里不显示）')) return;
+                meta.pedit ??= {}; meta.pedit[b.dataset.post] = { deleted: true }; v.pmenu = ''; host.saveMeta(); break;
             case 'dlike': meta.diaryLikes ??= {}; meta.diaryLikes[b.dataset.id] = !meta.diaryLikes[b.dataset.id]; host.saveMeta(); break;
             case 'dnote': {
                 const t = await host.prompt('给TA留个小纸条', meta.diaryNotes?.[b.dataset.id] || '');
@@ -1033,7 +1088,7 @@ export function createUI(host) {
         if (t.matches?.('[data-msearch]')) { e.preventDefault(); musicSearch(t.value); return; }
         if (t.matches?.('[data-xpost]')) { e.preventDefault(); if (t.value.trim()) { host.addXMine(t.value.trim()); render(); } }
         if (t.matches?.('[data-xdm]')) { e.preventDefault(); if (t.value.trim()) { host.addXdm({ from: 'me', text: t.value.trim(), pending: true }); t.value = ''; v.stick = true; render(); root.querySelector('[data-xdm]')?.focus(); } }
-        if (t.matches?.('[data-cin]')) { e.preventDefault(); addComment(t.dataset.cin, t.value); }
+
         if (t.matches?.('[data-edit]')) { e.preventDefault(); root.querySelector('[data-act="medit-ok"]')?.click(); }
     }
     async function onChange(e) {
@@ -1196,33 +1251,41 @@ export function createUI(host) {
     }
 
     // ---------- 动态留言 ----------
-    function addComment(postId, text) {
+    const allPosts = () => { const st = host.state(); return [...st.posts, ...st.moments]; };
+    function findComment(id) { for (const p of allPosts()) { const c = commentList(p).find(x => x.id === id); if (c) return c; } return null; }
+    function addComment(postId, text, to = '') {
         text = String(text || '').trim(); if (!text) return;
         const meta = host.meta();
-        meta.comments ??= {}; (meta.comments[postId] ??= []).push({ who: 'me', text, at: Date.now() });
-        host.saveMeta(); render();
+        meta.comments ??= {}; (meta.comments[postId] ??= []).push({ id: 'c' + Date.now().toString(36), who: 'me', to, text, at: Date.now() });
+        host.saveMeta();
     }
-    async function askReply(postId) {
-        const inp = root.querySelector(`[data-cin="${CSS.escape(postId)}"]`);
-        if (inp?.value.trim()) addComment(postId, inp.value);
-        const meta = host.meta();
-        const mine = meta.comments?.[postId] || [];
-        if (!mine.some(c => c.who === 'me')) { host.toast('info', '先留一句言，再点让TA回'); return; }
-        const post = [...host.state().posts].find(p => p.id === postId);
+    // 让对方回：回给她的是谁就由谁来回（TA自己，或者朋友圈里的别人）
+    async function askReply(postId, to = '') {
+        const post = allPosts().find(p => p.id === postId);
+        if (!post) return;
+        const him = host.him(), me = host.me().name;
+        const author = post.who || him.name;
+        const who = to || author; // 没点谁回复，就是帖子主人来回
+        const isHim = who === him.name;
+        const log = commentList(post).map(c => `${c.who}${c.to ? ' 回复 ' + c.to : ''}：${c.text}`).join('\n');
+        const scene = `${author}发了一条朋友圈：「${post.text}」。下面是这条下面的评论：\n${log}`;
+        const ask = isHim
+            ? `你是${him.cardName}（在这里叫「${him.name}」）。请你回复「${me}」最新那条评论。`
+            : `「${who}」是剧情里${him.cardName}和${me}都认识的人。请你按「${who}」的身份、和他们的关系，回复「${me}」最新那条评论。`;
         v.busy = true; render();
         try {
-            const him = host.him();
             const msgs = [
-                { role: 'system', content: await buildSys(`你发了一条朋友圈：「${post?.text || ''}」。下面是留言，请你回复「${host.me().name}」最新那条留言。`, '只写回复的那一句话，短一点，像朋友圈回复，不要引号和名字。', [post?.text || '', ...mine.map(c => c.text)]) },
-                { role: 'user', content: mine.map(c => `${c.who === 'me' ? host.me().name : him.name}：${c.text}`).join('\n') },
+                { role: 'system', content: await buildSys(scene, ask + ' 只写回复的那一句话，短一点，像朋友圈回复，不要引号和名字。', [post.text, ...commentList(post).map(c => c.text)]) },
+                { role: 'user', content: '（她在等回复）' },
             ];
-            const text = await host.ask(msgs, `【暂停正文，这一次不写正文】\n你发了一条朋友圈：「${post?.text || ''}」。留言：\n${msgs[1].content}\n\n只写你回复「${host.me().name}」最新那条留言的一句话，短一点，不要引号和名字。`);
-            const line = String(text || '').split(/\r?\n/).map(x => x.trim()).filter(Boolean)[0];
-            if (!line) throw new Error('TA没回出东西');
-            mine.push({ who: 'him', text: line.replace(/^[^：:]{1,8}[：:]/, '').trim(), at: Date.now() });
+            const text = await host.ask(msgs, `【暂停正文，这一次不写正文】\n${scene}\n\n${ask} 只写那一句话，短一点，不要引号和名字。`);
+            const line = String(host.extractBlock(String(text || '')).text).split(/\r?\n/).map(x => x.trim()).filter(Boolean)[0];
+            if (!line) throw new Error('没回出东西');
+            const meta = host.meta();
+            (meta.comments[postId] ??= []).push({ id: 'c' + Date.now().toString(36), who: isHim ? 'him' : who, to: 'me', text: line.replace(/^[^：:]{1,8}[：:]/, '').trim(), at: Date.now() });
             host.saveMeta();
         } catch (err) { host.toast('error', '没回成：' + (err?.message || err)); }
-        finally { v.busy = false; render(); }
+        finally { v.busy = false; v.replyTo = null; render(); }
     }
 
     return {

@@ -29,6 +29,9 @@ export function parseBlock(raw) {
 }
 
 const split = v => String(v).split(/[｜|]/).map(x => x.trim());
+// 同一批刷出来的帖子：TA写了时间就用；没写就按先后排开（刚刚、8分钟前……），不会每条都一模一样
+const AGO = ['刚刚', '8分钟前', '23分钟前', '1小时前', '2小时前', '4小时前', '昨天', '昨天', '2天前', '3天前'];
+const ago = (t, i) => (t && !/^(照片|图)/.test(t) ? t : AGO[Math.min(i, AGO.length - 1)]);
 const one = (b, ...keys) => { for (const k of keys) if (b[k]?.length) return b[k][b[k].length - 1]; return ''; };
 const many = (b, ...keys) => keys.flatMap(k => b[k] || []);
 const pics = v => (v || '').replace(/^(照片|图片|图)\s*[:：]?/, '').split(/[,，、]/).map(x => x.trim()).filter(Boolean);
@@ -56,8 +59,8 @@ export function buildState(msgs) {
             st.posts.push({ id: id + '#p' + i, who: '', text, pics: pics(p), place: place || '', time: n.time || '', at });
         });
         many(b, '朋友圈').forEach((v, i) => {
-            const [who, text, p] = split(v);
-            if (who && text) st.moments.push({ id: id + '#m' + i, who, text, pics: pics(p), time: n.time || '', at });
+            const [who, text, p, t] = split(v);
+            if (who && text) st.moments.push({ id: id + '#m' + i, who, text, pics: pics(p), time: ago(t, i), at: at - i });
         });
         // 别人在他最新一条动态下面留言：「评论: 陈叔｜这么晚还不睡？」
         many(b, '评论').forEach((v, i) => {
@@ -82,11 +85,11 @@ export function buildState(msgs) {
         many(b, 'X', '推特').forEach((v, i) => st.xposts.push({ id: id + '#x' + i, text: split(v)[0], pics: pics(split(v)[1]), time: n.time || '', at }));
         // X 首页上这个世界里各种人的帖子：「推文: 网名｜@账号｜正文｜照片描述」
         many(b, '推文').forEach((v, i) => {
-            const [who, handle, text, p] = split(v);
-            if (who && text) st.xfeed.push({ id: id + '#f' + i, who, handle: handle || '', text, pics: pics(p), time: n.time || '', at });
+            const [who, handle, text, p, t] = split(v);
+            if (who && text) st.xfeed.push({ id: id + '#f' + i, who, handle: handle || '', text, pics: pics(p), time: ago(t, i), at: at - i });
         });
         // 微博：广场上的帖子；热搜：每次写了就换成新的一批
-        many(b, '微博').forEach((v, i) => { const [who, text, p] = split(v); if (who && text) st.weibo.push({ id: id + '#wb' + i, who, text, pics: pics(p), time: n.time || '', at }); });
+        many(b, '微博').forEach((v, i) => { const [who, text, p, t] = split(v); if (who && text) st.weibo.push({ id: id + '#wb' + i, who, text, pics: pics(p), time: ago(t, i), at: at - i }); });
         const hot = many(b, '热搜').map(v => { const [word, heat, tag] = split(v); return word ? { word: word.replace(/^#|#$/g, ''), heat: heat || '', tag: tag || '' } : null; }).filter(Boolean);
         if (hot.length) st.hot = hot;
         // 相册：TA拍的、存的照片
