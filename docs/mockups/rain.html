@@ -1,0 +1,35 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>
+/* 雨丝样子图：同一张「照片」上，不加 / 少一点 / 多一点 */
+body{margin:0;width:390px;background:#fff;font:13px -apple-system,"PingFang SC",sans-serif;color:#111}
+.dark{background:#0b0b0b;color:#f2f2f2}
+.item{padding:14px 16px 6px}.lab{font-size:12px;color:#8a8a8a;margin-bottom:6px;letter-spacing:.06em}
+canvas{display:block;width:358px;height:150px;border-radius:12px}
+</style></head><body>
+<div id="root"></div>
+<script>
+const q=new URLSearchParams(location.search);if(q.get('t')==='dark')document.body.classList.add('dark');
+const W=358,H=150,S=2;
+// 假装是她传的一张照片：夜里的街，远处几团模糊的灯
+function photo(c){
+  const g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,'#2b3038');g.addColorStop(.6,'#4a4f57');g.addColorStop(1,'#1d1f23');c.fillStyle=g;c.fillRect(0,0,W,H);
+  c.fillStyle='#16181c';[[0,60,50,90],[48,40,40,110],[86,75,60,75],[250,50,46,100],[294,30,64,120]].forEach(r=>c.fillRect(...r));
+  let seed=7;const rnd=()=>(seed=(seed*9301+49297)%233280)/233280;
+  for(let i=0;i<14;i++){const x=rnd()*W,y=50+rnd()*70,r=6+rnd()*12;const gg=c.createRadialGradient(x,y,0,x,y,r);const col=rnd()<.5?'255,214,150':'235,235,255';gg.addColorStop(0,`rgba(${col},.75)`);gg.addColorStop(1,`rgba(${col},0)`);c.fillStyle=gg;c.beginPath();c.arc(x,y,r,0,7);c.fill();}
+  c.fillStyle='rgba(255,255,255,.06)';c.fillRect(0,128,W,22);
+}
+// 像素雨丝：对齐 3px 的格子，斜着三四格一道，半透明白
+function rain(c,n,seed){
+  const P=3;const rnd=()=>(seed=(seed*9301+49297)%233280)/233280;
+  for(let i=0;i<n;i++){const x=Math.floor(rnd()*W/P)*P,y=Math.floor(rnd()*H/P)*P,len=3+Math.floor(rnd()*2),a=.35+rnd()*.35;
+    c.fillStyle=`rgba(255,255,255,${a})`;for(let k=0;k<len;k++)c.fillRect(x-k*P*0.5|0,y+k*P,P-1,P);}
+}
+// 像素小雪：一颗一格，偶尔一颗十字
+function snow(c,n,seed){const P=3;const rnd=()=>(seed=(seed*9301+49297)%233280)/233280;
+  for(let i=0;i<n;i++){const x=Math.floor(rnd()*W/P)*P,y=Math.floor(rnd()*H/P)*P;c.fillStyle=`rgba(255,255,255,${.5+rnd()*.4})`;
+    if(rnd()<.25){c.fillRect(x,y-P,P,P);c.fillRect(x-P,y,P*3,P);c.fillRect(x,y+P,P,P);}else c.fillRect(x,y,P,P);}}
+const rows=[['不加 · 你的图原样',0],['小雨 · 稀稀几道，慢慢往下飘',28],['大雨 · 密一点，快一点',90],['顺便：下雪也能这样',-60]];
+const root=document.getElementById('root');
+rows.forEach(([lab,n])=>{const d=document.createElement('div');d.className='item';d.innerHTML=`<div class="lab">${lab}</div>`;const cv=document.createElement('canvas');cv.width=W*S;cv.height=H*S;d.appendChild(cv);root.appendChild(d);
+  const c=cv.getContext('2d');c.scale(S,S);c.imageSmoothingEnabled=false;photo(c);if(n>0)rain(c,n,n*13);if(n<0)snow(c,-n,5);});
+</script></body></html>
