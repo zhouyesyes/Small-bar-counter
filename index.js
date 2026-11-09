@@ -180,22 +180,40 @@ function charCard() {
 const guessedEra = () => guessEra(charCard());
 const era = () => { const e = charCfg().era; return e && e !== 'auto' ? e : guessedEra(); };
 // 最近几楼正文（给小手机回复当背景）
-function storyTail() {
+function storyTail(n = 6) {
     const chat = ctx().chat || [];
-    return chat.slice(-6).filter(m => !m.is_system).map(m => `${m.is_user ? me().cardName : him().cardName}：${String(m.mes || '').slice(0, 600)}`).join('\n');
+    return chat.slice(-n).filter(m => !m.is_system).map(m => `${m.is_user ? me().cardName : him().cardName}：${String(m.mes || '').slice(0, 600)}`).join('\n');
 }
 
 // ---------- 请他回（小手机、动态留言） ----------
 function keys() { return (ctx().extensionSettings.tavern_ruined_me_keys?.keys || []).filter(k => k.url); }
+// 回复时带什么：整套（交给酒馆拼，含预设）或自己挑
+function replyMode() { const s = settings(); if ((s.api || 'main') !== 'main') return 'pick'; return s.replyMode || (s.icMode === false ? 'pick' : 'full'); }
+function replyCtx() { return { card: true, persona: true, world: true, status: true, story: 6, ...(settings().ctx || {}) }; }
+// 世界书：用酒馆自己的触发规则，只取这次被聊天内容触发到的条目（试运行，不算真的触发）
+async function worldInfo(texts) {
+    const c = ctx();
+    if (typeof c.getWorldInfoPrompt !== 'function') return '';
+    try {
+        const ch = c.characters?.[c.characterId] || {}, d = ch.data || ch;
+        const scan = [...texts].reverse();
+        const r = await c.getWorldInfoPrompt(scan, c.maxContext || 8192, true, {
+            personaDescription: c.powerUserSettings?.persona_description || '', characterDescription: d.description || '', characterPersonality: d.personality || '',
+            characterDepthPrompt: '', scenario: d.scenario || '', creatorNotes: d.creator_notes || '', trigger: 'normal',
+        });
+        return String(r?.worldInfoString || '').trim().slice(0, 8000);
+    } catch (e) { console.warn('[小吧台] 读世界书失败', e); return ''; }
+}
+
 async function ask(messages, quiet) {
     const s = settings();
     const c = ctx();
     // 角色卡在「懒加载」时只有名字没有设定（酒馆 1.18 / TauriTavern 都可能）：先补全
     try { await c.unshallowCharacter?.(c.characterId); } catch { /* 没有就算了 */ }
-    const key = s.api && s.api !== 'main' ? keys().find(k => k.id === s.api) : null;
-    if (!key) {
-        // 跟正文、而且开着「带上预设和世界书」：用酒馆自己的安静生成，和正文同一套预设、世界书、上下文，更不容易 OOC
-        if (quiet && s.icMode !== false && typeof c.generateQuietPrompt === 'function') {
+    const api = s.api || 'main';
+    if (api === 'main') {
+        // 整套：用酒馆自己的安静生成，和正文同一套预设、世界书、上下文
+        if (quiet && replyMode() === 'full' && typeof c.generateQuietPrompt === 'function') {
             c.setExtensionPrompt?.(INJECT_KEY, '', 1, 0); // 这一下不要让 TA 顺带写状态段
             try {
                 const out = await c.generateQuietPrompt({ quietPrompt: quiet, responseLength: 400, removeReasoning: true });
@@ -207,14 +225,43 @@ async function ask(messages, quiet) {
         const rest = messages.filter(m => m.role !== 'system');
         return await c.generateRaw({ systemPrompt: sys, prompt: rest, responseLength: 400 });
     }
-    // 钥匙本里的一条：经酒馆服务器转一下（手机上直接请求会被跨域拦）
-    const res = await fetch('/api/backends/chat-completions/generate', {
-        method: 'POST', headers: ctx().getRequestHeaders(), cache: 'no-cache',
-        body: JSON.stringify({ chat_completion_source: 'openai', reverse_proxy: key.url, proxy_password: key.key, model: key.model, messages, stream: false, max_tokens: 400, temperature: 0.9 }),
+    const conf = api === 'own' ? s.ownApi : keys().find(k => k.id === api);
+    if (!conf?.url) throw new Error('小手机的 API 还没填好（设置 → 小手机用哪个）');
+    return await callApi(conf, messages);
+}
+const apiBase = u => String(u || '').trim().replace(/\/+(chat\/completions|completions|models)\/?$/i, '').replace(/\/+$/, '');
+// 先经酒馆后端转一下（手机上直接请求常被跨域拦）；后端不认（比如 TauriTavern 没有这条路）再直接请求
+async function callApi(conf, messages) {
+    const body = { model: conf.model, messages, stream: false, max_tokens: 400, temperature: 0.9 };
+    let res = null;
+    try {
+        res = await fetch('/api/backends/chat-completions/generate', {
+            method: 'POST', headers: ctx().getRequestHeaders(), cache: 'no-cache',
+            body: JSON.stringify({ chat_completion_source: 'openai', reverse_proxy: apiBase(conf.url), proxy_password: conf.key, ...body }),
+        });
+    } catch { res = null; }
+    if (res && ![404, 405, 501].includes(res.status)) {
+        const data = await res.json().catch(() => null);
+        if (res.ok && data && !data.error) return data?.choices?.[0]?.message?.content ?? '';
+        throw new Error(data?.error?.message || data?.error || ('返回 ' + res.status));
+    }
+    const r2 = await fetch(apiBase(conf.url) + '/chat/completions', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + conf.key }, body: JSON.stringify(body),
     });
+    const data = await r2.json().catch(() => ({}));
+    if (!r2.ok) throw new Error(data?.error?.message || ('返回 ' + r2.status));
+    return data?.choices?.[0]?.message?.content ?? '';
+}
+async function testOwnApi() {
+    const o = settings().ownApi || {};
+    if (!o.url) throw new Error('先填地址');
+    let res = null;
+    try { res = await fetch('/api/backends/chat-completions/status', { method: 'POST', headers: ctx().getRequestHeaders(), body: JSON.stringify({ chat_completion_source: 'openai', reverse_proxy: apiBase(o.url), proxy_password: o.key }) }); } catch { res = null; }
+    if (!res || [404, 405, 501].includes(res.status)) res = await fetch(apiBase(o.url) + '/models', { headers: { Authorization: 'Bearer ' + o.key } });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok || data?.error) throw new Error(data?.error?.message || data?.error || ('酒馆返回 ' + res.status));
-    return data?.choices?.[0]?.message?.content ?? data?.content ?? '';
+    if (!res.ok || data?.error) throw new Error(data?.error?.message || data?.error || ('返回 ' + res.status));
+    const list = Array.isArray(data) ? data : data.data || data.models || [];
+    return list.map(m => (typeof m === 'string' ? m : m.id || m.name)).filter(Boolean);
 }
 
 // ---------- 图片 ----------
@@ -247,6 +294,7 @@ const host = {
     saveImage, img, dropImage: deleteImage,
     meta, saveMeta, state, unread, markRead, wechat, addWechat, patchWechat, deleteWechat, takeLastRound, restoreRound, repliesFor,
     ...xHost,
+    replyMode, replyCtx, worldInfo, testOwnApi,
     him, me, charCard, era, guessedEra, storyTail, keys, ask, hasChar,
     defaultPrompt: () => DEFAULT_PROMPT,
     toast: (kind, msg) => globalThis.toastr?.[kind]?.(msg, '小吧台'),

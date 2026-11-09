@@ -265,7 +265,7 @@ export function createUI(host) {
         const views = {
             home: homeHtml, 'wx-chat': wxChatHtml, 'wx-contacts': wxContactsHtml, 'wx-moments': wxMomentsHtml, 'wx-me': wxMeHtml,
             x: xHtml, 'x-dm': xDmHtml, diary: pDiaryHtml, memo: pMemoHtml, photos: pPhotosHtml, music: pMusicHtml,
-            settings: setHtml, 'set-cover': setCoverHtml, 'set-him': setHimHtml, 'set-me': setMeHtml, 'set-prompt': setPromptHtml, 'set-api': setApiHtml,
+            settings: setHtml, 'set-cover': setCoverHtml, 'set-him': setHimHtml, 'set-me': setMeHtml, 'set-prompt': setPromptHtml, 'set-api': setApiHtml, 'set-reply': setReplyHtml,
         };
         // 古风、民国没有手机：换成书信（设置页还用同一个框）
         const letters = era !== 'modern' && !v.view.startsWith('set');
@@ -456,7 +456,7 @@ export function createUI(host) {
         const log = host.xdm().filter(m => m.type !== 'note').slice(-40).map(m => `${m.from === 'me' ? acc.name : '你'}：${m.text}`).join('\n');
         try {
             const out = String(await host.ask([
-                { role: 'system', content: `你是 ${him.cardName}。设定：\n${host.charCard()}\n\n${rules}` },
+                { role: 'system', content: await buildSys('', rules, host.xdm().slice(-6).map(m => m.text || '')) },
                 { role: 'user', content: log },
             ], `【暂停正文，这一次不写正文】\n${rules}\n\n私信记录：\n${log}\n\n现在只写你回的私信。`) || '');
             if (/\[拉黑\]/.test(out)) { host.addXdm({ type: 'note', text: '你已被对方拉黑' }); host.setXBlocked(true); }
@@ -491,14 +491,13 @@ export function createUI(host) {
         const s = host.settings(), c = host.charCfg();
         const modeName = { weather: '跟天气', fixed: '固定一张', pick: 'TA来挑' }[c.cover?.mode || 'weather'];
         const eraName = { auto: '自动 · ' + ({ modern: '现代', minguo: '民国', ancient: '古风' }[host.guessedEra()]), modern: '现代', minguo: '民国', ancient: '古风' }[c.era || 'auto'];
-        const apiName = s.api && s.api !== 'main' ? (host.keys().find(k => k.id === s.api)?.name || '钥匙本里的一条') : '跟正文';
+        const apiName = s.api === 'own' ? (s.ownApi?.model || '自己填的') : s.api && s.api !== 'main' ? (host.keys().find(k => k.id === s.api)?.name || '钥匙本里的一条') : '跟正文';
         return `${head('设置')}<div class="sb-slist">
  <div class="sb-sh">主页</div><div class="sb-sgrp">${row('头图', modeName, 'set-cover')}${row('TA的名片', host.him().name, 'set-him')}${row('我的名字和头像', host.me().name, 'set-me')}</div>
- <div class="sb-sh">API</div><div class="sb-sgrp">${row('小手机用哪个', apiName, 'set-api')}${toggle('带上预设和世界书', 'icMode', s.icMode !== false, '跟正文时：小手机回复用酒馆同一套预设、世界书和剧情，更不容易 OOC')}${toggle('省一点', 'saveMode', s.saveMode, '这一轮只写时间、天气、在哪、心声')}</div>
+ <div class="sb-sh">API</div><div class="sb-sgrp">${row('小手机用哪个', apiName, 'set-api')}${row('回复时带什么', host.replyMode() === 'full' ? '整套（预设 + 世界书 + 剧情）' : '自己挑', 'set-reply')}${toggle('省一点', 'saveMode', s.saveMode, '这一轮只写时间、天气、在哪、心声')}</div>
  <div class="sb-sh">TA</div><div class="sb-sgrp">
   <label class="sb-srow"><span>时代</span><select data-cset="era">${[['auto', eraName.startsWith('自动') ? eraName : '自动'], ['modern', '现代'], ['minguo', '民国'], ['ancient', '古风']].map(([k, n]) => `<option value="${k}" ${(c.era || 'auto') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
   ${row('提示词', s.prompt ? '改过' : '默认', 'set-prompt')}
-  <label class="sb-srow"><span>手机聊天记几条<small>带进正文和小手机回复</small></span><input type="number" min="0" max="2000" class="sb-num" data-set="wxMemory" value="${Number(s.wxMemory ?? 50)}"></label>
  </div>
  <div class="sb-sh">其他</div><div class="sb-sgrp">
   <label class="sb-srow"><span>外观</span><select data-set="theme">${[['auto', '跟酒馆'], ['light', '浅色'], ['dark', '深色']].map(([k, n]) => `<option value="${k}" ${(s.theme || 'auto') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
@@ -547,10 +546,37 @@ export function createUI(host) {
  <textarea class="sb-prompt" data-prompt>${esc(s.prompt || host.defaultPrompt())}</textarea></div>`;
     }
     function setApiHtml() {
-        const s = host.settings(), keys = host.keys();
+        const s = host.settings(), keys = host.keys(), o = s.ownApi || {};
+        const mark = id => (s.api || 'main') === id ? '✓' : '';
         return `${head('小手机用哪个')}<div class="sb-list">
- <button class="sb-srow" data-act="api" data-id="main"><span>跟正文<small>用酒馆现在连着的那个</small></span><span class="sb-sv">${!s.api || s.api === 'main' ? '✓' : ''}</span></button>
- ${keys.length ? `<div class="sb-cap">钥匙本 · 酒馆你害我不浅</div>${keys.map(k => `<button class="sb-srow" data-act="api" data-id="${esc(k.id)}"><span>${esc(k.name)}<small>${esc(k.model || '没选模型')}</small></span><span class="sb-sv">${s.api === k.id ? '✓' : ''}</span></button>`).join('')}` : '<div class="sb-hint">装了「酒馆你害我不浅」并在钥匙本里存过钥匙，这里就能挑。</div>'}
+ <button class="sb-srow" data-act="api" data-id="main"><span>跟正文<small>用酒馆现在连着的那个</small></span><span class="sb-sv">${mark('main')}</span></button>
+ <button class="sb-srow" data-act="api" data-id="own"><span>自己填一个<small>小吧台单独用的 API，不影响正文</small></span><span class="sb-sv">${mark('own')}</span></button>
+ ${s.api === 'own' ? `<div class="sb-ownapi">
+  <label class="sb-fld"><span>地址</span><input data-own="url" value="${esc(o.url || '')}" placeholder="https://…/v1"></label>
+  <label class="sb-fld"><span>密钥</span><input data-own="key" type="password" value="${esc(o.key || '')}" placeholder="sk-…" autocomplete="off"></label>
+  <label class="sb-fld"><span>模型</span><input data-own="model" value="${esc(o.model || '')}" placeholder="比如 gpt-4o-mini" list="sb-models"></label>
+  <datalist id="sb-models">${(v.models || []).map(m => `<option value="${esc(m)}">`).join('')}</datalist>
+  <button class="sb-lgo" data-act="own-test" ${v.busy ? 'disabled' : ''}>测一下、拉模型列表</button>
+  <div class="sb-hint">密钥只存在你酒馆的设置里，只发给你填的这个地址。</div>
+ </div>` : ''}
+ ${keys.length ? `<div class="sb-cap" style="margin-top:12px">「酒馆你害我不浅」的钥匙本（有就能挑，没装也不影响）</div>${keys.map(k => `<button class="sb-srow" data-act="api" data-id="${esc(k.id)}"><span>${esc(k.name)}<small>${esc(k.model || '没选模型')}</small></span><span class="sb-sv">${mark(k.id)}</span></button>`).join('')}` : ''}
+</div>`;
+    }
+    function setReplyHtml() {
+        const s = host.settings(), c = host.replyCtx(), full = host.replyMode() === 'full', main = (s.api || 'main') === 'main';
+        const tg = (label, key, sub = '') => `<label class="sb-srow"><span>${label}${sub ? `<small>${sub}</small>` : ''}</span><input type="checkbox" class="sb-tg" data-ctx="${key}" ${c[key] ? 'checked' : ''}></label>`;
+        return `${head('回复时带什么')}<div class="sb-list">
+ <div class="sb-hint">小手机、留言、私信，TA每回一次都要请求一次。这里挑这一次带哪些东西进去：带得越全越像TA，也越费。</div>
+ <div class="sb-seg"><button data-act="rmode" data-mode="full" class="${full ? 'on' : ''}" ${main ? '' : 'disabled'}>整套</button><button data-act="rmode" data-mode="pick" class="${full ? '' : 'on'}">自己挑</button></div>
+ <div class="sb-hint">${full ? '整套：交给酒馆拼，和正文一样带上你的预设、世界书、角色卡、人设和整段剧情。' : main ? '自己挑：只带下面勾上的，不走预设。' : '用的不是「跟正文」，酒馆的预设拼不进去，只能自己挑。'}</div>
+ ${full ? '' : `<div class="sb-sgrp">
+  ${tg('角色卡', 'card', 'TA的设定、性格、场景')}
+  ${tg('我的人设', 'persona', '你在酒馆里的人设描述')}
+  ${tg('世界书', 'world', '只带这次聊天触发到的条目')}
+  ${tg('此刻状态', 'status', '时间、天气、TA在哪')}
+  <label class="sb-srow"><span>最近正文几楼<small>0 就是不带剧情</small></span><input type="number" min="0" max="40" class="sb-num" data-ctx="story" value="${Number(c.story ?? 6)}"></label>
+  <label class="sb-srow"><span>手机聊天记几条<small>小手机自己的聊天记录</small></span><input type="number" min="0" max="2000" class="sb-num" data-set="wxMemory" value="${Number(s.wxMemory ?? 50)}"></label>
+ </div>`}
 </div>`;
     }
 
@@ -594,7 +620,7 @@ export function createUI(host) {
                 if (v.view === 'wx-moments') v.momentsN = 10;
                 break;
             case 'phone-back': {
-                const back = { 'x-dm': 'x', 'set-cover': 'settings', 'set-him': 'settings', 'set-me': 'settings', 'set-prompt': 'settings', 'set-api': 'settings' }[v.view];
+                const back = { 'x-dm': 'x', 'set-reply': 'settings', 'set-cover': 'settings', 'set-him': 'settings', 'set-me': 'settings', 'set-prompt': 'settings', 'set-api': 'settings' }[v.view];
                 v.view = back || 'home'; v.plus = false; v.menuFor = ''; v.edit = null; break;
             }
             case 'phone-close': v.phone = false; v.plus = false; v.menuFor = ''; v.edit = null; break;
@@ -635,7 +661,14 @@ export function createUI(host) {
             case 'cover-del': host.dropImage(host.charCfg().cover?.images?.[Number(b.dataset.i)]?.src); host.setCharCfg(c => { c.cover.images.splice(Number(b.dataset.i), 1); }); break;
             case 'him-avatar-clear': host.setCharCfg(c => { c.him = { ...(c.him || {}), avatar: '' }; }); break;
             case 'prompt-reset': host.setSettings(s => { s.prompt = ''; }); break;
-            case 'api': host.setSettings(s => { s.api = b.dataset.id; }); v.view = 'settings'; break;
+            case 'api': host.setSettings(s => { s.api = b.dataset.id; }); if (b.dataset.id !== 'own') v.view = 'settings'; break;
+            case 'rmode': host.setSettings(s => { s.replyMode = b.dataset.mode; }); break;
+            case 'own-test': {
+                v.busy = true; render();
+                try { v.models = await host.testOwnApi(); host.toast('success', `连上了，有 ${v.models.length} 个模型`); }
+                catch (err) { host.toast('error', '连不上：' + (err?.message || err)); }
+                finally { v.busy = false; } break;
+            }
         }
         render();
     }
@@ -650,6 +683,8 @@ export function createUI(host) {
     async function onChange(e) {
         const t = e.target;
         if (t.dataset.set) host.setSettings(s => { s[t.dataset.set] = t.type === 'checkbox' ? t.checked : t.type === 'number' ? Number(t.value) : t.value; });
+        else if (t.dataset.ctx) host.setSettings(s => { s.ctx = { ...host.replyCtx(), [t.dataset.ctx]: t.type === 'checkbox' ? t.checked : Number(t.value) }; });
+        else if (t.dataset.own) host.setSettings(s => { s.ownApi = { ...(s.ownApi || {}), [t.dataset.own]: t.value.trim() }; });
         else if (t.dataset.cset) host.setCharCfg(c => { c[t.dataset.cset] = t.value; });
         else if (t.dataset.him != null) host.setCharCfg(c => { c.him = { ...(c.him || {}), [t.dataset.him]: t.value.trim() }; });
         else if (t.dataset.me != null) host.setSettings(s => { s.me = { ...(s.me || {}), [t.dataset.me]: t.value.trim() }; });
@@ -718,7 +753,7 @@ export function createUI(host) {
         host.saveMeta();
         v.busy = true; v.stick = true; render();
         try {
-            const msgs = phoneMessages();
+            const msgs = await phoneMessages();
             const text = await host.ask(msgs, quietOf(msgs, host.era() === 'modern' ? '现在只写你在手机上回的消息，一行一条。' : '现在只写你回的信，一行一句。'));
             const list = parsePhoneReply(text);
             if (!list.length) throw new Error('TA没回出东西');
@@ -739,21 +774,32 @@ export function createUI(host) {
         const log = msgs.slice(1).map(m => `${m.role === 'user' ? host.me().name : host.him().cardName}：${m.content}`).join('\n');
         return `【暂停正文，这一次不写正文】\n${sys}\n\n${log}\n\n${tail}`;
     }
-    function phoneMessages() {
-        const him = host.him(), me = host.me();
-        const card = host.charCard();
+    // 回复时带什么：她在设置里挑（角色卡、人设、世界书、此刻、最近几楼正文）
+    async function buildSys(intro, rules, scan = []) {
+        const him = host.him(), me = host.me(), c = host.replyCtx();
         const n = host.state().now;
-        const sys = [
-            `你是 ${him.cardName}。下面是你的设定：\n${card}`,
-            me.persona ? `对方（${me.cardName}）的设定：\n${me.persona}` : '',
-            host.era() === 'modern' ? `现在你们在手机上聊天，对方在你手机里叫「${me.name}」。` : `现在你们在书信往来，对方署名「${me.name}」。`,
-            n.time || n.where ? `此刻：${[n.time, n.weather, n.where && '你在' + n.where].filter(Boolean).join('，')}` : '',
-            host.storyTail() ? `最近发生的事（正文）：\n${host.storyTail()}` : '',
-            host.era() === 'modern' ? PHONE_RULES : LETTER_RULES,
+        const story = c.story > 0 ? host.storyTail(c.story) : '';
+        const world = c.world ? await host.worldInfo([story, ...scan].filter(Boolean)) : '';
+        return [
+            c.card ? `你是 ${him.cardName}。下面是你的设定：\n${host.charCard()}` : `你是 ${him.cardName}。`,
+            c.persona && me.persona ? `对方（${me.cardName}）的设定：\n${me.persona}` : '',
+            world ? `相关设定（世界书）：\n${world}` : '',
+            intro,
+            c.status && (n.time || n.where) ? `此刻：${[n.time, n.weather, n.where && '你在' + n.where].filter(Boolean).join('，')}` : '',
+            story ? `最近发生的事（正文）：\n${story}` : '',
+            rules,
         ].filter(Boolean).join('\n\n');
-        const msgs = [{ role: 'system', content: sys }];
+    }
+    async function phoneMessages() {
+        const me = host.me();
         const N = Number(host.settings().wxMemory ?? 50);
-        for (const m of host.wechat().filter(x => x.type !== 'note').slice(-Math.max(1, N))) {
+        const list = host.wechat().filter(x => x.type !== 'note').slice(-Math.max(1, N));
+        const sys = await buildSys(
+            host.era() === 'modern' ? `现在你们在手机上聊天，对方在你手机里叫「${me.name}」。` : `现在你们在书信往来，对方署名「${me.name}」。`,
+            host.era() === 'modern' ? PHONE_RULES : LETTER_RULES,
+            list.slice(-6).map(m => m.text || ''));
+        const msgs = [{ role: 'system', content: sys }];
+        for (const m of list) {
             const txt = m.type === 'voice' ? `[语音]${m.text}` : m.type === 'pic' ? `[图片]${m.text}` : m.type === 'sticker' ? `[表情]${m.text}` : m.type === 'money' ? `[转账]${m.amount}｜${m.text || ''}${m.status === 'taken' ? '（已收下）' : m.status === 'back' ? '（已退回）' : ''}` : m.text;
             const role = m.from === 'me' ? 'user' : 'assistant';
             const last = msgs[msgs.length - 1];
@@ -781,7 +827,7 @@ export function createUI(host) {
         try {
             const him = host.him();
             const msgs = [
-                { role: 'system', content: `你是 ${him.cardName}。设定：\n${host.charCard()}\n\n你发了一条朋友圈：「${post?.text || ''}」。下面是留言，请你回复「${host.me().name}」最新那条留言。只写回复的那一句话，短一点，像朋友圈回复，不要引号和名字。` },
+                { role: 'system', content: await buildSys(`你发了一条朋友圈：「${post?.text || ''}」。下面是留言，请你回复「${host.me().name}」最新那条留言。`, '只写回复的那一句话，短一点，像朋友圈回复，不要引号和名字。', [post?.text || '', ...mine.map(c => c.text)]) },
                 { role: 'user', content: mine.map(c => `${c.who === 'me' ? host.me().name : him.name}：${c.text}`).join('\n') },
             ];
             const text = await host.ask(msgs, `【暂停正文，这一次不写正文】\n你发了一条朋友圈：「${post?.text || ''}」。留言：\n${msgs[1].content}\n\n只写你回复「${host.me().name}」最新那条留言的一句话，短一点，不要引号和名字。`);
