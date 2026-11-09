@@ -197,6 +197,13 @@ body{margin:0;width:390px;height:844px;overflow:hidden;font:14px/1.5 -apple-syst
 .av.him{outline:1.5px solid var(--fg);outline-offset:1px}
 .loadmore{text-align:center;font-size:11.5px;color:var(--dim);padding:10px}
 .wtabs{display:flex;border-top:1px solid var(--line);font-size:12px;color:var(--dim)}.wtabs span{flex:1;text-align:center;padding:9px 0 4px}.wtabs .on{color:var(--fg);font-weight:600}
+.eav{display:flex;flex-direction:column;align-items:center;margin:14px 0 8px}
+.fld{border-bottom:1px solid var(--line);padding:9px 2px}.fk{font-size:11px;color:var(--dim);letter-spacing:.06em}.fv{font-size:14px;margin-top:2px}.fv.ph{color:var(--dim);font-size:12.5px}
+.mehead{display:flex;align-items:center;gap:12px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:12px}
+.acc{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px 2px;margin-top:10px}
+.acct{display:flex;align-items:center;gap:8px;font-size:14px}.atag{font-size:10px;border:1px solid var(--line);border-radius:4px;padding:0 5px;color:var(--dim)}
+.ast{margin-left:auto;font-size:11px;border-radius:10px;padding:1px 8px;background:var(--soft);color:var(--fg)}
+.acc .srow{font-size:12.5px;padding:6px 0}
 </style></head><body>
 <div class="st">
   <div class="bar"><span style="font-size:13px;color:var(--fg)">阎守峥</span></div>
@@ -467,6 +474,33 @@ const wx=`<div class="shade"></div><div class="phone">
  <div class="wtabs"><span>聊天 <span class="badge sm">2</span></span><span>通讯录</span><span class="on">朋友圈</span><span>我</span></div>
  <div class="hbar" style="margin-top:4px"></div>
 </div>`;
+const field=(k,v,ph)=>`<div class="fld"><div class="fk">${k}</div><div class="fv${v?'':' ph'}">${v||ph}</div></div>`;
+const edithim=`<div class="shade"></div><div class="phone">
+ <div class="ph"><span class="bk">‹</span><div class="nm" style="flex:1">他的名片</div><span class="hd" style="color:var(--fg);font-weight:600">保存</span></div>
+ <div class="slist" style="background:var(--bg)">
+  <div class="eav"><div class="av" style="width:72px;height:72px"></div><div class="hd" style="margin-top:6px">点头像换一张 · 现在用角色卡的</div></div>
+  ${field('名字','阎守峥')}
+  ${field('微信备注','阎','你给他起的备注，只有你看得见')}
+  ${field('X 网名','守夜人')}
+  ${field('X 账号','@yan.shouzheng')}
+  ${field('签名','the lighter burned down the world.')}
+  <div class="hd" style="margin:12px 2px 0;line-height:1.6">只改小吧台里显示的，不动角色卡。签名空着的话，他会自己写。</div>
+ </div>
+ <div class="hbar"></div>
+</div>`;
+const acct=(tag,name,sub,state,n,on)=>`<div class="acc"><div class="acct"><span class="atag">${tag}</span><b>${name}</b><span class="ast">${state}</span></div><div class="hd" style="margin:3px 0 8px">${sub}</div>
+ <div class="srow"><span>记最近几条</span><span class="sv">${n} <i>›</i></span></div><div class="srow"><span>带进正文</span>${tg(on)}</div></div>`;
+const accounts=`<div class="shade"></div><div class="phone">
+ <div class="ph"><span class="bk">‹</span><div class="nm" style="flex:1">我的账号</div><span class="close">＋</span></div>
+ <div class="slist">
+  <div class="mehead"><div class="av" style="width:48px;height:48px"></div><div><b style="font-size:15px">我</b><div class="hd">现实里的名字和头像 · 点这里改</div></div></div>
+  <div class="hd" style="margin:10px 4px 0;line-height:1.6">右边小字是他认没认出你：跟着剧情和聊天走，你不用设；他不会轻易认出来。这里只是让你看看他现在到哪一步了。</div>
+  ${acct('微信','我','现实里的你，他认识','认识',50,true)}
+  ${acct('X','雨巷','匿名，他在 X 上遇到的网友','有点怀疑',30,false)}
+  ${acct('X','夜航','另一个小号','陌生',30,false)}
+ </div>
+ <div class="hbar"></div>
+</div>`;
 const contacts=`<div class="shade"></div><div class="phone">
  <div class="ph"><span class="bk">‹</span><div class="nm" style="flex:1">联系人</div><span class="close">＋</span></div>
  <div class="clist">
@@ -482,6 +516,6 @@ const contacts=`<div class="shade"></div><div class="phone">
  <div class="hbar"></div>
 </div>`;
 document.getElementById('cat').src='cat-'+(q.get('t')==='dark'?'dark':'light')+'-'+(q.get('c')||'idle')+'.png'; if(s) document.getElementById('cat').style.display='none';
-document.getElementById('extra').innerHTML = s==='drawer'?drawer : s==='profile'?profile : s==='x'?xpage : s==='home'?phhome : s==='plus'?chatplus : s==='contacts'?contacts : s==='settings'?settings : s==='wx'?wx : s==='dm'?xdm : s==='phone'?phone : '';
+document.getElementById('extra').innerHTML = s==='drawer'?drawer : s==='profile'?profile : s==='x'?xpage : s==='home'?phhome : s==='plus'?chatplus : s==='contacts'?contacts : s==='settings'?settings : s==='wx'?wx : s==='edithim'?edithim : s==='accounts'?accounts : s==='dm'?xdm : s==='phone'?phone : '';
 if(q.get('scroll')){document.querySelector('.drawer.pf')?.classList.add('mini');const f=document.getElementById('feed');if(f)f.scrollTop=9999;}
 </script></body></html>
