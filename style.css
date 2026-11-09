@@ -318,7 +318,7 @@
 #sb-root .sb-wme .sb-edit{margin-bottom:22px}#sb-root .sb-wme .sb-edit b{margin:0}
 
 /* 音乐播放器 */
-#sb-root .sb-bigcover{background-size:cover;background-position:center}
+#sb-root .sb-bigcover,#sb-root.sb-dark .sb-bigcover{background-size:cover!important;background-position:center!important;background-repeat:no-repeat!important}
 #sb-root .sb-music .sb-lyr{min-height:66px;margin-top:10px;font-size:12.5px;font-weight:400;color:var(--sb-dim);line-height:1.8}
 #sb-root .sb-music .sb-lyr .cur{color:var(--sb-fg);font-size:14.5px;font-weight:600}
 #sb-root .sb-mbar{display:block;width:100%;height:14px;padding:6px 0!important;margin-top:8px}
