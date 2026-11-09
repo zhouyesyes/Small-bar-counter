@@ -1,6 +1,7 @@
 // 小吧台的界面：小猫入口、左边滑出的抽屉、弹出来的小手机
 // 只管画和点，数据和酒馆那边都从 host 拿（见 index.js），方便以后换酒馆版本
 import { catSvg } from './cat.mjs';
+import { createPlayer, searchSongs, coverUrl } from './music.mjs';
 import { weatherTone, parsePhoneReply } from './core.mjs';
 import { PHONE_RULES, LETTER_RULES, PHONE_STATUS, MANUAL } from './prompt.mjs';
 
@@ -40,6 +41,21 @@ const svg = k => `<svg viewBox="0 0 24 24">${ICON[k]}</svg>`;
 export function createUI(host) {
     const v = { drawer: false, tab: 'posts', diaryId: '', phone: false, view: 'home', plus: false, momentsN: 10, xN: 10, busy: false, flip: false, menuFor: '', edit: null };
     let root, catBlink = 0, lastHtml = '';
+    // 音乐：歌单存在扩展设置里（不跟聊天走）；播放器不随界面重画
+    const player = createPlayer({
+        load: () => (host.settings().music ??= { list: [], idx: 0, mode: 'all' }),
+        save: () => host.setSettings(() => {}),
+        onChange: (kind, msg) => { if (kind === 'error') host.toast('warning', msg); render(); },
+    });
+    const fmt = s => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+    // 每秒只改进度条和歌词那几个字，不整页重画
+    function tickMusic() {
+        const a = player.audio, box = root?.querySelector('.sb-music'); if (!box) return;
+        const bar = box.querySelector('.sb-mbar i'); if (bar) bar.style.width = (a.duration ? a.currentTime / a.duration * 100 : 0) + '%';
+        const t = box.querySelector('.sb-mtime'); if (t) t.textContent = `${fmt(a.currentTime)} / ${fmt(a.duration)}`;
+        const ly = player.lyric(), i = player.line(), el = box.querySelector('.sb-lyr');
+        if (el && ly.length && el.dataset.i !== String(i)) { el.dataset.i = i; el.innerHTML = [i - 1, i, i + 1].map(k => `<div class="${k === i ? 'cur' : ''}">${esc(ly[k]?.text || '')}</div>`).join(''); }
+    }
 
     // ---------- 外壳 ----------
     function mount() {
@@ -89,6 +105,7 @@ export function createUI(host) {
                 if (v.momentsN < total) { v.momentsN += 10; render(); }
             }
         }, true);
+        setInterval(tickMusic, 1000);
         setInterval(() => { if (!v.drawer && !v.phone && root.isConnected) { catBlink = 1; drawCat(); setTimeout(() => { catBlink = 0; drawCat(); }, 160); } }, 4200);
         render();
     }
@@ -238,15 +255,29 @@ export function createUI(host) {
         return btn + list.map(p => postHtml(p, him)).join('') + `<div class="sb-more">只显示最新三条 · 更早的在${ERA[host.era()].wechat}里 <button data-act="phone-go" data-to="wx-moments">去看 →</button></div>`;
     }
     function musicHtml(st) {
-        const m = st.music;
+        const m = st.music, t = player.current(), list = host.settings().music?.list || [], mode = host.settings().music?.mode || 'all';
+        const modeIcon = { all: '⟳', one: '①', shuffle: '⤮' }[mode];
         return `<section class="sb-music">
- <div class="sb-cap">now playing · TA在听</div>
- <div class="sb-bigcover"></div>
- <div class="sb-mt">${esc(m?.title || '还没在听歌')}</div>
- <div class="sb-ma">${esc(m?.artist || 'TA听歌的时候会出现在这里')}</div>
- ${m?.lyric ? `<div class="sb-lyr">${esc(m.lyric)}</div>` : ''}
- <div class="sb-mnote">播放和搜歌下一版接上</div>
+ <div class="sb-cap">${t ? 'now playing' : 'music'} · ${Wd().music}</div>
+ <div class="sb-bigcover" style="${t ? `background-image:url('${esc(coverUrl(t))}')` : ''}"></div>
+ <div class="sb-mt">${esc(t?.title || '还没放歌')}</div>
+ <div class="sb-ma">${esc(t?.artist || '搜一首，或者放TA在听的')}</div>
+ <div class="sb-lyr" data-i=""></div>
+ ${t ? `<button class="sb-mbar" data-act="mseek"><i></i></button><div class="sb-mtime">0:00 / 0:00</div>` : ''}
+ <div class="sb-mctl"><button data-act="mmode" title="播放顺序">${modeIcon}</button><button data-act="mprev">⏮</button><button class="sb-mplay" data-act="mtoggle">${player.playing() ? '❚❚' : '▶'}</button><button data-act="mnext">⏭</button><button data-act="mlist" class="${v.mlist ? 'on' : ''}" title="歌单">☰</button></div>
+ ${m?.title ? `<button class="sb-mhis" data-act="mhis">${Wd().listen}《${esc(m.title)}》${m.artist ? ' · ' + esc(m.artist) : ''} · 放这首</button>` : ''}
+ <div class="sb-msearch"><input data-msearch placeholder="搜歌名、歌手，或贴网易云链接" enterkeyhint="search" value="${esc(v.mq || '')}"><button data-act="msearch">${v.msearching ? '…' : '搜'}</button></div>
+ ${v.mres?.length ? `<div class="sb-mres">${v.mres.map((r, i) => `<div class="sb-mrow2"><span><b>${esc(r.title)}</b><small>${esc(r.artist)}</small></span><button data-act="madd" data-i="${i}" data-play="1">▶</button><button data-act="madd" data-i="${i}">＋</button></div>`).join('')}</div>` : ''}
+ ${v.mlist ? `<div class="sb-mres"><div class="sb-cap" style="margin:6px 0">歌单 · ${list.length} 首</div>${list.map((r, i) => `<div class="sb-mrow2${t && r.id === t.id ? ' on' : ''}"><span data-act="mplayat" data-i="${i}"><b>${esc(r.title)}</b><small>${esc(r.artist)}</small></span><button data-act="mdelsong" data-i="${i}">×</button></div>`).join('') || '<div class="sb-empty sm">还没有歌</div>'}</div>` : ''}
+ <div class="sb-mnote">歌来自第三方公开接口（网易云），会员歌和接口不通时放不了</div>
 </section>`;
+    }
+    async function musicSearch(q) {
+        q = String(q || '').trim(); if (!q) return;
+        v.mq = q; v.msearching = true; render();
+        try { v.mres = await searchSongs(q); if (!v.mres.length) host.toast('info', '没搜到'); }
+        catch (err) { host.toast('error', err?.message || '搜不了'); }
+        finally { v.msearching = false; render(); }
     }
     function nowHtml(st) {
         const n = st.now;
@@ -675,6 +706,22 @@ export function createUI(host) {
                 break;
             case 'flip': v.flip = !v.flip; break;
             case 'gen': await generate(b.dataset.kind); return;
+            case 'mtoggle': await player.toggle(); return;
+            case 'mnext': player.next(); return;
+            case 'mprev': player.prev(); return;
+            case 'mmode': player.mode(); return;
+            case 'mlist': v.mlist = !v.mlist; break;
+            case 'mseek': { const r = b.getBoundingClientRect(); player.seek((e.clientX - r.left) / r.width); tickMusic(); return; }
+            case 'msearch': await musicSearch(root.querySelector('[data-msearch]')?.value); return;
+            case 'madd': { const t = v.mres?.[Number(b.dataset.i)]; if (t) player.add(t, !!b.dataset.play); if (!b.dataset.play) host.toast('success', '加进歌单了'); return; }
+            case 'mplayat': player.play(Number(b.dataset.i)); return;
+            case 'mdelsong': player.remove(Number(b.dataset.i)); return;
+            case 'mhis': { // TA在听的那首：搜歌名 + 歌手，放第一首
+                const m = host.state().music; if (!m?.title) return;
+                try { const r = await searchSongs([m.title, m.artist].filter(Boolean).join(' ')); if (!r.length) throw new Error('没搜到这首'); player.add(r[0], true); }
+                catch (err) { host.toast('error', err?.message || '搜不了'); }
+                return;
+            }
             case 'edit': {
                 const { scope, key, label } = b.dataset;
                 const cur = scope === 'him' ? (host.charCfg().him?.[key] || '') : scope === 'acc' ? (host.xAccount()[key] || '') : (host.settings().me?.[key] || '');
@@ -781,6 +828,7 @@ export function createUI(host) {
         if (e.key !== 'Enter' || e.isComposing) return;
         const t = e.target;
         if (t.matches?.('[data-wx]')) { e.preventDefault(); queueMine({ type: 'text', text: t.value }); t.value = ''; }
+        if (t.matches?.('[data-msearch]')) { e.preventDefault(); musicSearch(t.value); return; }
         if (t.matches?.('[data-xpost]')) { e.preventDefault(); if (t.value.trim()) { host.addXMine(t.value.trim()); render(); } }
         if (t.matches?.('[data-xdm]')) { e.preventDefault(); if (t.value.trim()) { host.addXdm({ from: 'me', text: t.value.trim(), pending: true }); t.value = ''; v.stick = true; render(); root.querySelector('[data-xdm]')?.focus(); } }
         if (t.matches?.('[data-cin]')) { e.preventDefault(); addComment(t.dataset.cin, t.value); }

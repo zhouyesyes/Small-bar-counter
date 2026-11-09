@@ -316,3 +316,25 @@
 #sb-root.sb-dark .sb-mrow .sb-b.u{background:#3eb575;color:#111}#sb-root.sb-dark .sb-mrow .sb-b.u::before{border-left-color:#3eb575}
 #sb-root.sb-dark .sb-mav{background-color:#3a3a3a}
 #sb-root .sb-wme .sb-edit{margin-bottom:22px}#sb-root .sb-wme .sb-edit b{margin:0}
+
+/* 音乐播放器 */
+#sb-root .sb-bigcover{background-size:cover;background-position:center}
+#sb-root .sb-music .sb-lyr{min-height:66px;margin-top:10px;font-size:12.5px;font-weight:400;color:var(--sb-dim);line-height:1.8}
+#sb-root .sb-music .sb-lyr .cur{color:var(--sb-fg);font-size:14.5px;font-weight:600}
+#sb-root .sb-mbar{display:block;width:100%;height:14px;padding:6px 0!important;margin-top:8px}
+#sb-root .sb-mbar i{display:block;height:2px;width:0;background:var(--sb-fg);border-radius:1px;box-shadow:inset 0 0 0 0 var(--sb-line);position:relative}
+#sb-root .sb-mbar{background:linear-gradient(var(--sb-line),var(--sb-line)) center/100% 2px no-repeat!important}
+#sb-root .sb-mtime{font-size:10.5px;color:var(--sb-dim);text-align:right}
+#sb-root .sb-mctl{display:flex;justify-content:space-between;align-items:center;margin:10px 6px 0}
+#sb-root .sb-mctl button{font-size:17px;color:var(--sb-fg);padding:4px 8px}#sb-root .sb-mctl button.on{opacity:.5}
+#sb-root .sb-mplay{width:50px;height:50px;border-radius:50%;background:var(--sb-fg)!important;color:var(--sb-bg)!important;font-size:16px!important}
+#sb-root .sb-mhis{display:block;width:100%;margin-top:12px;font-size:11.5px;color:var(--sb-dim);border:1px dashed var(--sb-line);border-radius:12px;padding:5px 8px}
+#sb-root .sb-msearch{display:flex;gap:6px;margin-top:12px}
+#sb-root .sb-msearch input{flex:1;min-width:0;border-radius:16px;padding:6px 12px;font-size:12.5px}
+#sb-root .sb-msearch button{font-size:12.5px;border:1px solid var(--sb-line);border-radius:16px;padding:0 12px}
+#sb-root .sb-mres{text-align:left;margin-top:8px}
+#sb-root .sb-mrow2{display:flex;align-items:center;gap:6px;padding:7px 2px;border-bottom:1px solid var(--sb-line)}
+#sb-root .sb-mrow2 span{flex:1;min-width:0;cursor:pointer}#sb-root .sb-mrow2 b{font-size:13px;font-weight:600}
+#sb-root .sb-mrow2 small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#sb-root .sb-mrow2 button{font-size:13px;padding:2px 8px;color:var(--sb-dim)}
+#sb-root .sb-mrow2.on b{text-decoration:underline}
