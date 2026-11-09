@@ -10,6 +10,7 @@ export const MUSIC_APIS = [
 export const QQ_API = 'https://api.vkeys.cn/v2/music/tencent';
 
 const str = v => String(v ?? '').trim();
+const norm = s => str(s).toLowerCase().replace(/\([^)]*\)|（[^）]*）|\[[^\]]*\]/g, '').replace(/[\s·,，/&、]/g, '');
 // 网易云：纯数字 ID，或者分享出来的链接
 export function neteaseId(raw) {
     const s = str(raw);
@@ -58,10 +59,27 @@ export async function searchSongs(q, page = 1) {
     const id = neteaseId(q);
     if (id) return [await songById(id)].filter(Boolean);
     let list = [];
-    try { const { base, rows } = await ask({ server: 'netease', type: 'search', id: q, page, limit: 10 }); list = rows.map(x => trackOf(x, base)).filter(Boolean); }
+    try { const { base, rows } = await ask({ server: 'netease', type: 'search', id: q, page, limit: 20 }); list = rows.map(x => trackOf(x, base)).filter(Boolean); }
     catch { list = []; }
-    if (list.length) return list;
-    return await searchQQ(q); // 网易云没有：去 QQ 音乐找
+    if (!list.length) list = await searchQQ(q); // 网易云没有：去 QQ 音乐找
+    return rankSongs(list, q).slice(0, 12);
+}
+// 搜出来的排个序：歌名正好是搜的那个 > 歌名开头是 > 歌名里有 > 歌手对得上；翻唱、伴奏、DJ、现场这些往后放
+const VARIANT = /cover|翻唱|翻自|伴奏|纯音乐|instrumental|karaoke|\bdj\b|remix|live|现场|版\)|版）|铃声|片段|女声版|男声版|抖音|0\.\d+x|倍速/i;
+export function rankSongs(list, q) {
+    const nq = norm(q), words = str(q).split(/\s+/).map(norm).filter(Boolean);
+    const score = (t, i) => {
+        const title = norm(t.title), artist = norm(t.artist);
+        let s = 0;
+        if (title === nq) s += 100;
+        else if (title.startsWith(nq)) s += 60;
+        else if (title.includes(nq)) s += 35;
+        // 搜「歌名 歌手」：每个词在歌名或歌手里都算分
+        for (const w of words) { if (title.includes(w)) s += 12; if (artist.includes(w)) s += 18; }
+        if (VARIANT.test(t.title)) s -= 45;
+        return s - i * 0.5; // 分一样时照接口原来的顺序
+    };
+    return list.map((t, i) => ({ t, s: score(t, i) })).sort((a, b) => b.s - a.s).map(x => x.t);
 }
 // QQ 音乐（备用）
 async function getJson(url, timeout = 12000) {
@@ -90,7 +108,6 @@ async function qqUrl(t) {
     return x.url;
 }
 // 网易云放不出来：按歌名 + 歌手去 QQ 找同一首
-const norm = s => str(s).toLowerCase().replace(/\([^)]*\)|（[^）]*）|\[[^\]]*\]/g, '').replace(/[\s·,，/&、]/g, '');
 export async function qqTwin(t) {
     const list = await searchQQ([t.title, t.artist].filter(Boolean).join(' '));
     return list.find(x => norm(x.title) === norm(t.title) && (!t.artist || !x.artist || norm(x.artist).includes(norm(t.artist).slice(0, 4)) || norm(t.artist).includes(norm(x.artist).slice(0, 4)))) || null;

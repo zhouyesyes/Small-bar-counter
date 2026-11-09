@@ -99,7 +99,12 @@ export function createUI(host) {
         for (const t of ['pointerup', 'pointercancel', 'pointerleave', 'scroll']) root.addEventListener(t, () => clearTimeout(timer), true);
         // 往下滑时抽屉顶上收成一条
         root.addEventListener('scroll', e => {
-            if (e.target.classList?.contains('sb-body')) root.querySelector('.sb-drawer')?.classList.toggle('sb-mini', e.target.scrollTop > 120);
+            // 顶上收起 / 展开留一段余量：滑到底时页面变高变矮会来回弹，所以收起后要滑回很上面才展开
+            if (e.target.classList?.contains('sb-body')) {
+                const d = root.querySelector('.sb-drawer'), y = e.target.scrollTop;
+                if (d && !d.classList.contains('sb-mini') && y > 160) d.classList.add('sb-mini');
+                else if (d && d.classList.contains('sb-mini') && y < 8) d.classList.remove('sb-mini');
+            }
             if (e.target.classList?.contains('sb-wxfeed') && e.target.scrollTop + e.target.clientHeight > e.target.scrollHeight - 40) {
                 const total = host.state().posts.length + host.state().moments.length;
                 if (v.momentsN < total) { v.momentsN += 10; render(); }

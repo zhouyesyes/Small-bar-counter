@@ -88,7 +88,7 @@
 /* 音乐 */
 #sb-root .sb-music{position:relative;overflow:hidden;padding:24px 20px 26px;border-top:1px solid var(--sb-line);text-align:center;isolation:isolate}
 /* 封面后面一层放大、模糊的影子，往下淡出去 */
-#sb-root .sb-music::before{content:"";position:absolute;inset:-40px -40px 30%;z-index:-1;background:radial-gradient(60% 55% at 50% 38%,#9a9a9a,transparent 70%),radial-gradient(40% 40% at 30% 20%,#d0d0d0,transparent 70%);filter:blur(24px);opacity:.55}
+#sb-root .sb-music::before{content:"";position:absolute;inset:-40px -40px 30%;z-index:-1;background:radial-gradient(70% 60% at 50% 35%,rgba(150,150,150,.55),transparent 75%);opacity:1}
 #sb-root.sb-dark .sb-music::before{background:radial-gradient(60% 55% at 50% 38%,#4a4a4a,transparent 70%),radial-gradient(40% 40% at 30% 20%,#2c2c2c,transparent 70%);opacity:.8}
 #sb-root .sb-cap{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--sb-dim);margin-bottom:10px}
 #sb-root .sb-cap.sb-row{display:flex;justify-content:space-between;margin:20px 0 6px}
@@ -338,3 +338,9 @@
 #sb-root .sb-mrow2 small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #sb-root .sb-mrow2 button{font-size:13px;padding:2px 8px;color:var(--sb-dim)}
 #sb-root .sb-mrow2.on b{text-decoration:underline}
+
+/* 滑起来顺一点：滚动区域单独一层，别的东西不跟着重画 */
+#sb-root .sb-body,#sb-root .sb-list,#sb-root .sb-msgs,#sb-root .sb-wxfeed,#sb-root .sb-xpage,#sb-root .sb-slist{transform:translateZ(0);overflow-anchor:none}
+#sb-root .sb-post,#sb-root .sb-mrow2{contain:layout paint}
+#sb-root .sb-bigcover{box-shadow:0 10px 24px rgba(0,0,0,.18)}
+#sb-root .sb-drawer .sb-cover{transition:none}
