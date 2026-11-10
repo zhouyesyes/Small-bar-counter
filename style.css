@@ -654,3 +654,28 @@
 #sb-root .sb-music .sb-lyr .cur .sb-lyric-word.active{color:var(--sb-fg)}
 
 #sb-root .sb-music>.sb-mstate{margin:8px 0 10px;text-align:right}
+
+/* Smaller type and a collapsible, persistent mini player. */
+#sb-root .sb-track-meta .sb-mt{font-size:14px;line-height:1.45}
+#sb-root .sb-music .sb-lyr .sb-lyric-line.cur{font-size:16px;line-height:1.55}
+#sb-root .sb-music .sb-lyr .sb-lyric-line{font-size:12px}
+#sb-root .sb-music-toggle{width:calc(100% + 32px);cursor:pointer;text-align:left}
+#sb-root .sb-music-caret{margin-left:auto;font-size:14px;letter-spacing:0}
+#sb-root .sb-music-extras[hidden]{display:none!important}
+#sb-root .sb-music.is-mini .sb-lyr{height:58px;padding:12px 0;margin:8px 0}
+#sb-root .sb-music.is-mini .sb-lyr .sb-lyric-line.cur{font-size:14px}
+#sb-root .sb-music.is-mini .sb-mctl{margin-bottom:0}
+#sb-root .sb-music.is-mini .sb-track-head{margin:8px 0}
+#sb-root .sb-song-pop{position:fixed;z-index:15;pointer-events:auto;padding:6px;background:var(--sb-bg);color:var(--sb-fg);border:1px solid var(--sb-accent);border-radius:14px;box-shadow:0 4px 16px #0002;text-align:left;font-size:12px}
+#sb-root .sb-song-pop-title{display:flex;align-items:center;gap:8px;padding:4px 7px 7px;border-bottom:1px solid var(--sb-line);margin-bottom:3px;font-size:11px;color:var(--sb-dim)}
+#sb-root .sb-song-pop-title>span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#sb-root .sb-song-pop-title button{font-size:18px;width:24px;min-height:24px}
+#sb-root .sb-song-pop>button,#sb-root .sb-song-pop-choices>button{display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%;text-align:left;padding:10px 9px;border-radius:8px;font-size:12px}
+#sb-root .sb-song-pop button:hover,#sb-root .sb-song-pop button:focus-visible{background:var(--sb-accent);color:var(--sb-ink);outline:0}
+#sb-root .sb-song-pop button:disabled{opacity:.55;cursor:default;background:var(--sb-soft);color:var(--sb-dim)}
+#sb-root .sb-song-pop button span{font-size:10px;color:inherit}
+#sb-root .sb-song-pop .sb-song-pop-back{color:var(--sb-dim);font-size:11px}
+#sb-root .sb-song-pop-choices{max-height:220px;overflow:auto;overscroll-behavior:contain}
+#sb-root .sb-song-pop p{margin:8px;font-size:11px;color:var(--sb-dim)}
+
+#sb-root .sb-music.is-mini .sb-lyr:has(.sb-lyric-empty){display:none}
