@@ -13,7 +13,7 @@ export function palette(mode, colors = {}) {
     let dim = mix(bg, fg, .48);
     for (let t = .5; contrast(dim, bg) < 4.5 && t <= 1; t += .02) dim = mix(bg, fg, t);
     if (contrast(dim, bg) < 4.5) dim = fg;
-    const soft = mix(bg, fg === '#ffffff' ? '#000000' : '#ffffff', .045), line = mix(bg, fg, .17);
+    const soft = mix(bg, fg === '#ffffff' ? '#000000' : '#ffffff', .045), line = accent;
     const ink = contrast(accent, '#ffffff') > contrast(accent, '#000000') ? '#ffffff' : '#000000';
     return { bg, fg, dim, soft, line, accent, ink };
 }
@@ -25,6 +25,9 @@ export function modeFor(settings = {}) {
 export function applyPalette(el, settings, mode = modeFor(settings)) {
     const p = palette(mode, settings.splash?.colors?.[mode]);
     el.dataset.mode = mode;
+    const width = Number(settings.splash?.pageWidth);
+    if (Number.isFinite(width) && width >= 60 && width <= 100) el.style.setProperty('--sb-page-width', `min(600px, ${width}vw)`);
+    else el.style.removeProperty('--sb-page-width');
     el.style.setProperty('--sb-card', mix(p.bg, mode === 'dark' ? '#000000' : '#ffffff', mode === 'dark' ? .16 : .5));
     for (const [k, v] of Object.entries(p)) el.style.setProperty('--sb-' + k, v);
     return p;

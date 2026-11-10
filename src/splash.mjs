@@ -18,8 +18,8 @@ function scaleTicket() {
     const shape = `M22 0H426Q448 0 448 22V${y-r}A${r} ${r} 0 0 0 448 ${y+r}V${height-22}Q448 ${height} 426 ${height}H22Q0 ${height} 0 ${height-22}V${y+r}A${r} ${r} 0 0 0 0 ${y-r}V22Q0 0 22 0Z`;
     const svg = body => `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${height}" viewBox="0 0 ${w} ${height}">${body}</svg>`)}")`;
     ticket.style.setProperty('--sb-ticket-mask', svg(`<path d="${shape}" fill="white"/>`));
-    const color = root.dataset.mode === 'light' ? '#77777780' : '#ffffff55';
-    ticket.style.setProperty('--sb-ticket-outline', svg(`<path d="${shape}" fill="none" stroke="${color.slice(0,7)}" stroke-opacity="${root.dataset.mode === 'light' ? '.5' : '.34'}" stroke-width="2"/>`));
+    const color = getComputedStyle(root).getPropertyValue('--sb-accent').trim() || '#b0b0b0';
+    ticket.style.setProperty('--sb-ticket-outline', svg(`<path d="${shape}" fill="none" stroke="${color}" stroke-opacity="1" stroke-width="2"/>`));
 
 }
 window.addEventListener('resize', scaleTicket);
@@ -180,6 +180,7 @@ export function openSplashSettings() {
     panel.innerHTML = `<style>${styles}</style><div class="sb-custom"><header><b>SMALL BAR / APPEARANCE</b><button data-close aria-label="Close settings">×</button></header>
     <label>Show on startup<input type="checkbox" data-key="enabled" ${s.enabled !== false ? 'checked' : ''}></label>
     <label>Mode<select data-theme>${['auto','light','dark'].map(x=>`<option ${settings.theme === x ? 'selected' : ''}>${x}</option>`).join('')}</select></label>
+    <label>页面宽度<select data-key="pageWidth" aria-label="页面宽度"><option value="" ${!s.pageWidth ? 'selected' : ''}>默认</option>${[60,65,70,75,80,85,90,95,100].map(width=>`<option value="${width}" ${Number(s.pageWidth) === width ? 'selected' : ''}>${width}%</option>`).join('')}</select></label>
     ${['light','dark'].map(mode => `<fieldset><legend>${mode.toUpperCase()}</legend>${['bg','accent'].map(key => `<label>${key === 'bg' ? 'Background' : 'Button'}<input type="color" data-mode="${mode}" data-color="${key}" value="${esc(s.colors[mode]?.[key] || defaults[mode][key])}"></label>`).join('')}</fieldset>`).join('')}
     <fieldset><legend>卡片文字 · CARD DETAILS</legend><p>修改后自动保存，下次打开也会保留。</p>
     ${[['quote','头像旁的小字','a quiet seat, kept for you'],['table','座位 · SEAT','by the window'],['order','酒单 · DRINK','the usual'],['date','日期 · DATE（留空用今天）',''],['signature','底部署名 · SIGNED, WITH LOVE','yesyes']].map(([key,label,value])=>`<label>${label}<input type="text" data-key="${key}" maxlength="${key === 'quote' ? 120 : 60}" value="${esc(s[key] ?? value)}"></label>`).join('')}</fieldset>

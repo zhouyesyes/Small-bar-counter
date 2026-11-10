@@ -215,9 +215,13 @@ export async function resolveCover(t, { refresh = false } = {}) {
 // （以前只问一个节点，那个节点挂了或者歌是从 GD 搜到的，就一直没歌词）
 const gotLrc = new Map();
 const lrcText = raw => {
+    if (raw && typeof raw === 'object') {
+        for (const key of ['yrc', 'lyric', 'lrc', 'data']) { const text = lrcText(raw[key]); if (text) return text; }
+        return '';
+    }
     const s = String(raw || '').trim();
     if (!s.startsWith('{')) return s;
-    try { const d = JSON.parse(s); return str(d.lyric ?? d.lrc ?? d.data?.lyric ?? d.data?.lrc); } catch { return ''; }
+    try { return lrcText(JSON.parse(s)); } catch { return ''; }
 };
 async function fetchText(url, timeout = 6000) {
     const c = new AbortController(), t = setTimeout(() => c.abort(), timeout);
@@ -233,6 +237,7 @@ export async function lyricOf(t) {
     if (t.src !== 'qq') {
         const id = t.lyricId || t.id;
         // Meting 节点一起问，第一个有歌词的算
+        tries.push(() => Promise.any([...new Set([t.base, ...MUSIC_APIS].filter(Boolean))].map(b => fetchText(apiUrl(b, { server: 'netease', type: 'yrc', id }), 1500).then(x => (parseLrc(lrcText(x)).length ? x : Promise.reject())))).catch(() => ''));
         tries.push(() => Promise.any([...new Set([t.base, ...MUSIC_APIS].filter(Boolean))].map(b => fetchText(apiUrl(b, { server: 'netease', type: 'lrc', id })).then(x => (parseLrc(lrcText(x)).length ? x : Promise.reject())))).catch(() => ''));
         tries.push(() => fetchText(GD_API + '?' + new URLSearchParams({ types: 'lyric', source: 'netease', id })));
     }
@@ -243,6 +248,14 @@ export async function lyricOf(t) {
     return [];
 }
 export function parseLrc(text) {
+    text = lrcText(text);
+    const precise = [];
+    for (const row of text.split(/\r?\n/)) {
+        const head = row.match(/^\[(\d+),(\d+)\]/); if (!head) continue;
+        const words = [...row.slice(head[0].length).matchAll(/\((\d+),(\d+),\d+\)([^()]*)/g)].map(m => ({ text:m[3], start:+m[1]/1000, end:(+m[1]+ +m[2])/1000 }));
+        if (words.length) precise.push({t:+head[1]/1000,text:words.map(w=>w.text).join(''),words});
+    }
+    if (precise.length) return precise.sort((a,b)=>a.t-b.t);
     const out = [];
     for (const line of String(text || '').split(/\r?\n/)) {
         const tags = [...line.matchAll(/\[(\d{1,2}):(\d{1,2}(?:\.\d+)?)\]/g)];
@@ -250,7 +263,13 @@ export function parseLrc(text) {
         if (!tags.length || !words) continue;
         for (const m of tags) out.push({ t: +m[1] * 60 + +m[2], text: words });
     }
-    return out.sort((a, b) => a.t - b.t);
+    out.sort((a, b) => a.t - b.t);
+    // Ordinary LRC has only line timing. Estimate character timing for visual progress.
+    return out.map((line, index) => {
+        const duration = Math.max(.2, Math.min(8, (out[index + 1]?.t ?? line.t + 4) - line.t));
+        const chars = Array.from(line.text);
+        return {...line, estimated: true, words: chars.map((text, i) => ({text, start:line.t + duration*i/chars.length, end:line.t + duration*(i+1)/chars.length}))};
+    });
 }
 export const lineAt = (lrc, sec) => { let cur = -1; for (let i = 0; i < lrc.length; i++) { if (lrc[i].t <= sec + 0.2) cur = i; else break; } return cur; };
 
@@ -278,7 +297,8 @@ export function createPlayer({ load, save, onChange, onStatus = () => {} }) {
         // 放不了时 <audio> 自己会发 error，由那边换来源；这里只管被浏览器拦下自动播放的情况
         try { await audio.play(); } catch (e) { if (e?.name === 'NotAllowedError') onChange?.('error', '点一下播放键继续'); }
         if (!t.cover) resolveCover(t).then(ok => { if (ok) { save(); onChange?.(); } });
-        if (lrcFor !== t.id) { lrcFor = t.id; lrc = []; lyricOf(t).then(l => { if (lrcFor === t.id) { lrc = l; onChange?.('state'); } }); }
+        const key = (t.src || 'n') + ':' + t.id;
+        if (lrcFor !== key || !lrc.length) { lrcFor = key; lrc = []; lyricOf(t).then(l => { if (lrcFor === key) { lrc = l; onChange?.('state'); } }); }
         onChange?.();
     }
     const next = (auto) => {

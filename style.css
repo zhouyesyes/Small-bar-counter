@@ -29,7 +29,7 @@
 #sb-root.sb-anim .sb-phone{animation:sb-up .22s ease-out}
 
 /* 抽屉 */
-#sb-root .sb-drawer{position:absolute;top:0;left:0;height:100%;width:min(330px,86vw);background:var(--sb-bg);border-right:1px solid var(--sb-line);display:flex;flex-direction:column;pointer-events:auto;touch-action:pan-y;overscroll-behavior:contain;padding-bottom:env(safe-area-inset-bottom)}
+#sb-root .sb-drawer{position:absolute;top:0;left:0;height:100%;width:var(--sb-page-width,min(330px,86vw));background:var(--sb-bg);border-right:1px solid var(--sb-line);display:flex;flex-direction:column;pointer-events:auto;touch-action:pan-y;overscroll-behavior:contain;padding-bottom:env(safe-area-inset-bottom)}
 #sb-root .sb-cover{height:128px;flex:0 0 auto;position:relative;background:#999 center/cover no-repeat;transition:height .2s}
 #sb-root .sb-logo{position:absolute;top:calc(14px + env(safe-area-inset-top));left:16px;color:#fff;font-size:11px;letter-spacing:.32em;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.3)}
 #sb-root .sb-x{position:absolute;top:calc(10px + env(safe-area-inset-top));right:12px;width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,.35);color:#fff;font-size:16px}
@@ -546,7 +546,7 @@
 #sb-root .sb-tabs button.on{color:var(--sb-accent);border-bottom-color:var(--sb-accent)}
 #sb-root input[type=checkbox],#sb-root input[type=range]{accent-color:var(--sb-accent)}
 
-#sb-root .sb-landing .sb-body{overflow-y:auto;flex:1;min-height:0}#sb-root .sb-landing .sb-sign{padding:0 20px;margin-bottom:26px}#sb-root .sb-landing .sb-music{padding-bottom:24px}
+#sb-root .sb-landing .sb-body{overflow-y:auto;flex:1;min-height:0}#sb-root .sb-landing .sb-sign{padding:0 20px;margin-bottom:26px}#sb-root .sb-landing .sb-music{padding-bottom:16px}
 #sb-root .sb-landing .sb-cover{height:auto;aspect-ratio:448/200;background-position:50% 45%}
 
 /* Center music controls independently of inherited font baselines. */
@@ -561,7 +561,7 @@
 #sb-root [data-bg-target],#sb-root [data-bg-settings]{cursor:pointer}
 
 /* Full lyric view: manual browsing temporarily suspends following playback. */
-#sb-root .sb-music .sb-lyr{position:relative;height:196px;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:70px 0;box-sizing:border-box;scrollbar-width:none;overflow-anchor:none}
+#sb-root .sb-music .sb-lyr{position:relative;height:112px;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:40px 0;box-sizing:border-box;scrollbar-width:none;overflow-anchor:none}
 #sb-root .sb-music .sb-lyr::-webkit-scrollbar{display:none}
 #sb-root .sb-music .sb-lyr .sb-lyric-line{display:block;width:100%;min-height:28px;height:auto;margin:0;padding:4px 8px;border:0;background:transparent;color:var(--sb-dim);font:inherit;line-height:20px;text-align:center;white-space:normal;overflow-wrap:anywhere;cursor:pointer}
 #sb-root .sb-music .sb-lyr .sb-lyric-line.cur{height:auto;min-height:28px;line-height:20px;font-size:14px;font-weight:600;color:var(--sb-fg)}
@@ -571,19 +571,86 @@
 #sb-root .sb-personal-edit svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 
 /* Personal receipt and music use quiet surfaces tinted by the chosen accent. */
-#sb-root .sb-home-tab{margin:22px 20px 30px;padding:16px 18px;background:color-mix(in srgb,var(--sb-accent) 9%,var(--sb-bg));border:1px solid color-mix(in srgb,var(--sb-accent) 24%,var(--sb-line));border-radius:14px}
+#sb-root .sb-home-tab{margin:22px 20px 30px;padding:16px 18px;background:color-mix(in srgb,var(--sb-accent) 9%,var(--sb-bg));border:1px solid var(--sb-accent);border-radius:14px}
 #sb-root .sb-home-tab>div{display:flex;align-items:baseline;gap:12px;padding:5px 0;font:11px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace}
 #sb-root .sb-home-tab dt{display:flex;align-items:baseline;gap:10px;flex:1;color:var(--sb-dim);letter-spacing:.12em}
 #sb-root .sb-home-tab dt:after{content:'';flex:1;border-bottom:1px dotted var(--sb-line)}
 #sb-root .sb-home-tab dd{margin:0;max-width:65%;overflow-wrap:anywhere;text-align:right;color:var(--sb-fg)}
 #sb-root .sb-landing .sb-sign{margin-bottom:0;padding:0 24px 4px}
-#sb-root .sb-music{margin:20px 14px;padding:24px 16px;border:1px solid color-mix(in srgb,var(--sb-accent) 20%,var(--sb-line));border-radius:18px;background:color-mix(in srgb,var(--sb-accent) 5%,var(--sb-bg))}
-#sb-root .sb-music>.sb-cap{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:16px}
+#sb-root .sb-music{margin:16px 14px;padding:16px 14px;border:1px solid var(--sb-accent);border-radius:18px;background:color-mix(in srgb,var(--sb-accent) 5%,var(--sb-bg))}
+#sb-root .sb-music>.sb-cap{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px}
 #sb-root .sb-music>.sb-cap:before{content:'';width:6px;height:6px;border-radius:50%;background:var(--sb-accent)}
 #sb-root .sb-mctl button:not(.sb-mplay){border-radius:50%;background:color-mix(in srgb,var(--sb-accent) 12%,var(--sb-bg));min-width:32px;min-height:32px}
 #sb-root .sb-mctl button.on{background:var(--sb-accent);color:var(--sb-ink)}
-#sb-root .sb-msearch button{background:color-mix(in srgb,var(--sb-accent) 14%,var(--sb-bg));border-color:color-mix(in srgb,var(--sb-accent) 35%,var(--sb-line))}
+#sb-root .sb-msearch button{background:color-mix(in srgb,var(--sb-accent) 14%,var(--sb-bg));border-color:var(--sb-accent)}
 #sb-root .sb-plists button:not(.on){background:color-mix(in srgb,var(--sb-accent) 7%,var(--sb-bg))}
 
-#sb-root .sb-widget{background:color-mix(in srgb,var(--sb-accent) 5%,var(--sb-bg));border-color:color-mix(in srgb,var(--sb-accent) 20%,var(--sb-line))}
+#sb-root .sb-widget{background:color-mix(in srgb,var(--sb-accent) 5%,var(--sb-bg));border-color:var(--sb-accent)}
 #sb-root .sb-mstate .sb-link{margin:0}
+
+#sb-root .sb-home-tab{width:72%;max-width:280px;margin:12px auto 22px;padding:7px 12px;border-radius:9px}
+#sb-root .sb-home-tab>div{padding:2px 0;font-size:10px;line-height:1.5}
+#sb-root .sb-mstate{height:auto;min-height:14px;white-space:normal;overflow:visible}
+#sb-root .sb-mstxt:not(:empty){margin-right:6px}
+#sb-root .sb-lyric-word{color:var(--sb-dim)}
+#sb-root .sb-lyric-word.played{color:var(--sb-fg)}
+#sb-root .sb-lyric-word.active{color:var(--sb-fg);text-decoration:underline;text-decoration-color:var(--sb-accent);text-underline-offset:4px}
+
+#sb-root .sb-mrow2:has(button[data-act="msong-menu"]){grid-template-columns:38px minmax(0,1fr) auto auto}
+#sb-root .sb-song-menu{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;padding:12px;background:var(--sb-soft);border:1px solid var(--sb-line);border-radius:12px}
+#sb-root .sb-song-menu>span{width:100%;font-size:12px}
+#sb-root .sb-song-menu button{padding:5px 8px;border:1px solid var(--sb-line);border-radius:12px;font-size:12px}
+
+/* Compact player shared by the landing, character drawer and phone. */
+#sb-root .sb-bigcover{width:64px!important;height:64px!important;border-radius:8px!important}
+#sb-root .sb-music .sb-mt{font-size:15px;margin-top:7px;line-height:1.4}
+#sb-root .sb-music .sb-ma{font-size:11.5px;line-height:1.5}
+#sb-root .sb-mctl{margin:7px 2px 0}
+#sb-root .sb-mctl .sb-mplay{width:42px;height:42px;flex-basis:42px}
+#sb-root .sb-music .sb-lyr{margin-top:8px}
+#sb-root .sb-music .sb-lyr:has(.sb-lyric-empty){height:38px;padding:8px 0}
+#sb-root .sb-plists{margin-top:8px;gap:5px}
+#sb-root .sb-plists button{font-size:11px;padding:3px 8px}
+#sb-root .sb-msearch{margin-top:8px}
+#sb-root .sb-mnote{margin-top:9px;font-size:10px;line-height:1.5}
+#sb-root .sb-mrow2{padding:5px 2px}
+#sb-root .sb-mrow2 .sb-mthumb{width:32px;height:32px;min-width:32px}
+#sb-root .sb-mrow2{grid-template-columns:32px minmax(0,1fr) auto}
+#sb-root .sb-mrow2:has(button[data-act="madd"]),#sb-root .sb-mrow2:has(button[data-act="msong-menu"]){grid-template-columns:32px minmax(0,1fr) auto auto}
+
+/* A narrow receipt with plain background and shorter dotted leaders. */
+#sb-root .sb-home-tab{width:62%;max-width:240px;padding:0;margin:12px auto 20px;background:none;border:0;border-radius:0;box-shadow:none}
+#sb-root .sb-home-tab>div{gap:8px;font-size:11px;line-height:1.5;padding:2px 0}
+#sb-root .sb-home-tab dt{gap:6px;letter-spacing:.08em}
+
+/* Selected lyric-focused layout; inset only a little more than the compact card. */
+#sb-root .sb-music{margin-left:20px;margin-right:20px;background:var(--sb-bg);padding:18px 16px}
+#sb-root .sb-track-head{display:flex;align-items:center;gap:11px;text-align:left;margin:10px 0 12px}
+#sb-root .sb-track-head .sb-bigcover{width:46px!important;height:46px!important;flex:0 0 46px;margin:0}
+#sb-root .sb-track-meta{flex:1;min-width:0}
+#sb-root .sb-track-meta .sb-mt{margin:0;font-size:17px;overflow-wrap:anywhere}
+#sb-root .sb-music .sb-lyr{height:154px;padding:54px 0;text-align:left;margin:12px 0}
+#sb-root .sb-music .sb-lyr .sb-lyric-line{font-size:13px;text-align:left;line-height:23px;min-height:33px;padding:5px 0}
+#sb-root .sb-music .sb-lyr .sb-lyric-line.cur{font-size:19px;line-height:1.55;min-height:36px;padding-left:12px;position:relative}
+#sb-root .sb-music .sb-lyr .sb-lyric-line.cur:before{content:'';position:absolute;left:0;top:11px;width:3px;height:18px;border-radius:2px;background:var(--sb-accent)}
+#sb-root .sb-music .sb-lyr:has(.sb-lyric-empty){height:38px;padding:8px 0;text-align:left}
+#sb-root .sb-music .sb-mctl{margin:8px 5px 14px}
+#sb-root .sb-music .sb-mctl button:not(.sb-mplay){background:transparent}
+#sb-root .sb-music .sb-plists{border-top:1px solid var(--sb-accent);padding-top:12px}
+
+/* Edge-to-edge section rules and a compact, three-row queue. */
+#sb-root .sb-music>.sb-cap{margin:-18px -16px 0;padding:12px 16px;border-bottom:1px solid var(--sb-accent);justify-content:flex-start}
+#sb-root .sb-music .sb-plists{margin-left:-16px;margin-right:-16px;padding:12px 16px 0}
+#sb-root .sb-queue{margin:10px -16px 0;padding:8px 16px 0;border-top:1px solid var(--sb-accent);text-align:left}
+#sb-root .sb-queue-scroll{max-height:132px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--sb-accent) transparent}
+#sb-root .sb-queue-scroll .sb-mrow2{height:44px;padding:5px 0}
+#sb-root .sb-queue-scroll .sb-mrow2 b{font-size:12px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#sb-root .sb-queue-scroll .sb-mrow2 small{font-size:10px}
+#sb-root .sb-music .sb-lyr{--lyric-past:color-mix(in srgb,var(--sb-fg) 58%,var(--sb-bg));--lyric-future:color-mix(in srgb,var(--sb-fg) 35%,var(--sb-bg))}
+#sb-root .sb-music .sb-lyr .played-line,#sb-root .sb-music .sb-lyr .played-line .sb-lyric-word{color:var(--lyric-past)}
+#sb-root .sb-music .sb-lyr .upcoming-line,#sb-root .sb-music .sb-lyr .upcoming-line .sb-lyric-word{color:var(--lyric-future)}
+#sb-root .sb-music .sb-lyr .cur .sb-lyric-word{color:var(--lyric-future)}
+#sb-root .sb-music .sb-lyr .cur .sb-lyric-word.played{color:var(--lyric-past)}
+#sb-root .sb-music .sb-lyr .cur .sb-lyric-word.active{color:var(--sb-fg)}
+
+#sb-root .sb-music>.sb-mstate{margin:8px 0 10px;text-align:right}
