@@ -268,6 +268,7 @@ export function createUI(host) {
  <label class="sb-av" style="background-image:url('${esc(p.avatar)}')" title="点一下换头像"><input type="file" accept="image/*" data-upload="opening-avatar" hidden></label>
  <div class="sb-name" data-act="home-name" role="button" tabindex="0">${esc(p.name)}</div><div class="sb-sign" data-act="home-sign" role="button" tabindex="0">${esc(p.sign)}</div>
 
+ <dl class="sb-home-tab" aria-label="个人单据">${[['SEAT',p.table],['DRINK',p.order],['DATE',p.date]].map(([label,value])=>`<div><dt>${label}</dt><dd>${esc(value)}</dd></div>`).join('')}</dl>
  ${musicHtml({})}</div></div>`;
     }
     function drawerHtml(era) {
