@@ -21,7 +21,7 @@ function paint() {
     applyPalette(root, settings);
     root.querySelector('[data-signature]').value = cfg().signature ?? 'yesyes';
     root.querySelector('[data-remember]').checked = cfg().remember === true;
-    root.querySelector('[data-save-label]').textContent = cfg().remember === true ? 'tab saved' : 'save my tab';
+    root.querySelector('[data-save-label]').textContent = 'keep my tab open';
     root.querySelector('[data-quote]').textContent = cfg().quote ?? 'a quiet seat, kept for you';
     root.querySelector('[data-table]').textContent = cfg().table ?? 'by the window';
     root.querySelector('[data-order]').textContent = cfg().order ?? 'the usual';
@@ -78,8 +78,8 @@ export function startSplash(force = false) {
     <div class="sb-ticket-frame"><section class="sb-ticket"><div class="sb-ticket-head" role="button" tabindex="0" aria-expanded="false" aria-controls="sb-ticket-details" aria-label="Expand your tab"><div class="sb-ticket-cover"><img data-image="cover" alt="" hidden><span>SMALL BAR</span><span>NO.0137</span></div>
     <div class="sb-ticket-profile"><div class="sb-ticket-avatar"><img data-image="avatar" alt="Your avatar" hidden></div><p data-quote></p><span class="sb-unfold-mark" aria-hidden="true">⌄</span></div></div>
     <div class="sb-ticket-body" id="sb-ticket-details" aria-hidden="true" inert><p class="sb-tab-title">HOUSE TAB</p><dl><div><dt>SEAT</dt><dd data-table></dd></div><div><dt>DRINK</dt><dd data-order></dd></div><div><dt>DATE</dt><dd data-date>${stamp}</dd></div></dl>
-    <label class="sb-sign-label">TAB HOLDER<span class="sb-sign-field"><span aria-hidden="true">×</span><input data-signature aria-label="Signature" maxlength="60" autocomplete="nickname"></span></label><div class="sb-stamp" aria-hidden="true">REGULAR<br>SINCE<br>${date.getFullYear()}</div>
-    <label class="sb-remember"><input data-remember type="checkbox"><span data-save-label aria-live="polite">save my tab</span></label><footer><div class="sb-barcode" aria-hidden="true"><i></i><span>0137 ${date.getFullYear()}</span></div><div class="sb-footer-actions"><button class="sb-pour">come on in</button><button class="sb-pass">only passing by →</button></div></footer></div></section></div>
+    <label class="sb-sign-label">SIGNED, WITH LOVE<span class="sb-sign-field"><span aria-hidden="true">×</span><input data-signature aria-label="Signature" maxlength="60" autocomplete="nickname"></span></label><div class="sb-stamp" aria-hidden="true">REGULAR<br>SINCE<br>${date.getFullYear()}</div>
+    <label class="sb-remember"><input data-remember type="checkbox"><span data-save-label aria-live="polite">keep my tab open</span></label><footer><div class="sb-barcode" aria-hidden="true"><i></i><span>0137 ${date.getFullYear()}</span></div><div class="sb-footer-actions"><button class="sb-pour">pour me one</button><button class="sb-pass">only passing by →</button></div></footer></div></section></div>
     <section class="sb-pouring" hidden><svg viewBox="0 0 48 80" aria-hidden="true"><defs><clipPath id="sb-glass-clip"><path d="M9 8H39V20C39 40 9 40 9 20Z"/></clipPath></defs><g clip-path="url(#sb-glass-clip)"><rect class="sb-wine" x="8" y="8" width="32" height="30"/></g><path d="M9 8H39V20C39 40 9 40 9 20ZM24 36V70M15 70H33" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg><div><p data-status aria-live="polite">pouring your usual</p><small data-percent></small><div class="sb-progress" role="progressbar" aria-label="Small Bar startup stages" aria-valuemin="0" aria-valuemax="100"><i></i></div><small class="sb-progress-note">preparing small bar</small></div></section>`;
     document.documentElement.appendChild(root); paint();
     root.querySelector('.sb-splash-close').onclick = dismiss;
@@ -99,9 +99,9 @@ export function startSplash(force = false) {
     remember.onchange = () => {
         const s = (settings.splash ??= {}); s.remember = remember.checked;
         if (remember.checked) s.signature = signature.value.trim();
-        persist(); saveLabel.textContent = remember.checked ? 'tab saved' : 'save my tab';
+        persist(); saveLabel.textContent = 'keep my tab open';
     };
-    signature.oninput = () => { remember.checked = false; saveLabel.textContent = 'save my tab'; };
+    signature.oninput = () => { remember.checked = false; saveLabel.textContent = 'keep my tab open'; };
     root.querySelector('.sb-pour').onclick = () => {
         const s = (settings.splash ??= {}); s.remember = root.querySelector('[data-remember]').checked;
         if (s.remember) s.signature = signature.value.trim();
@@ -130,9 +130,9 @@ export function openSplashSettings() {
     <label>Mode<select data-theme>${['auto','light','dark'].map(x=>`<option ${settings.theme === x ? 'selected' : ''}>${x}</option>`).join('')}</select></label>
     ${['light','dark'].map(mode => `<fieldset><legend>${mode.toUpperCase()}</legend>${['bg','accent'].map(key => `<label>${key === 'bg' ? 'Background' : 'Button'}<input type="color" data-mode="${mode}" data-color="${key}" value="${esc(s.colors[mode]?.[key] || defaults[mode][key])}"></label>`).join('')}</fieldset>`).join('')}
     <fieldset><legend>卡片文字 · CARD DETAILS</legend><p>修改后自动保存，下次打开也会保留。</p>
-    ${[['quote','头像旁的小字','a quiet seat, kept for you'],['table','座位 · SEAT','by the window'],['order','酒单 · DRINK','the usual'],['date','日期 · DATE（留空用今天）',''],['signature','底部署名 · TAB HOLDER','yesyes']].map(([key,label,value])=>`<label>${label}<input type="text" data-key="${key}" maxlength="${key === 'quote' ? 120 : 60}" value="${esc(s[key] ?? value)}"></label>`).join('')}</fieldset>
+    ${[['quote','头像旁的小字','a quiet seat, kept for you'],['table','座位 · SEAT','by the window'],['order','酒单 · DRINK','the usual'],['date','日期 · DATE（留空用今天）',''],['signature','底部署名 · SIGNED, WITH LOVE','yesyes']].map(([key,label,value])=>`<label>${label}<input type="text" data-key="${key}" maxlength="${key === 'quote' ? 120 : 60}" value="${esc(s[key] ?? value)}"></label>`).join('')}</fieldset>
     ${[['cover','Card photo'],['avatar','Avatar']].map(([key,label])=>`<label>${label}<input type="file" accept="image/*" data-upload="${key}"></label><button data-clear="${key}">Reset ${label.toLowerCase()}</button>`).join('')}
-    <p class="sb-upload-status" role="status"></p><p>照片保存在这台设备的浏览器。卡片上的 save my tab 会立即保存当前署名；修改署名后，再勾选即可重新保存。</p><button data-preview>Preview opening</button></div>`;
+    <p class="sb-upload-status" role="status"></p><p>照片保存在这台设备的浏览器。卡片上的 keep my tab open 会立即保存当前署名；修改署名后，再勾选即可重新保存。</p><button data-preview>Preview opening</button></div>`;
     document.documentElement.appendChild(panel); applyPalette(panel, settings);
     const close = () => { panel.remove(); panel = null; if (focus?.isConnected) focus.focus(); };
     panel.querySelector('[data-close]').onclick = close;
@@ -239,4 +239,11 @@ const styles = `
 #sb-splash .sb-barcode span{grid-column:1;grid-row:2;align-self:start;font-size:11px;letter-spacing:.22em;color:color-mix(in srgb,var(--sb-fg) 38%,var(--sb-card))}
 #sb-splash .sb-pour{grid-column:2;grid-row:1;min-height:36px;height:36px;padding:7px 14px;line-height:20px}
 #sb-splash .sb-pass{grid-column:2;grid-row:2;justify-self:end;align-self:start;margin:0;line-height:16px}
+
+/* Round native color pickers, including Safari's inner swatch. */
+#sb-splash-settings input[type=color]{appearance:none;-webkit-appearance:none;flex:0 0 32px;width:32px;min-width:32px;max-width:32px;height:32px;padding:0;border:1px solid var(--sb-line);border-radius:50%;overflow:hidden;background:transparent;cursor:pointer}
+#sb-splash-settings input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+#sb-splash-settings input[type=color]::-webkit-color-swatch{border:0;border-radius:50%}
+#sb-splash-settings input[type=color]::-moz-color-swatch{border:0;border-radius:50%}
+#sb-splash .sb-pouring p{font:400 14px/1.5 -apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;letter-spacing:.03em}
 `;
