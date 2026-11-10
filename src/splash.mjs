@@ -2,17 +2,30 @@ import { applyPalette, defaults } from './palette.mjs';
 import { imageUrl, saveImage } from './imgstore.mjs';
 const KEY = 'small_bar_splash_v1';
 const defaultImages = { cover: new URL('../assets/opening/cover.jpg', import.meta.url).href, avatar: new URL('../assets/opening/avatar.jpg', import.meta.url).href };
-function scaleTicket() { const frame = root?.querySelector('.sb-ticket-frame'); if (frame) root.style.setProperty('--sb-ticket-scale', frame.getBoundingClientRect().width / 448); }
+function scaleTicket() {
+    const frame = root?.querySelector('.sb-ticket-frame'); if (!frame) return;
+    const scale = frame.getBoundingClientRect().width / 448;
+    root.style.setProperty('--sb-ticket-scale', scale);
+    frame.style.height = `${frame.querySelector('.sb-ticket').offsetHeight * scale}px`;
+}
 window.addEventListener('resize', scaleTicket);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let settings = {}, save = () => {}, root, panel, ready = false, failed = false, entered = false, stage = 0;
-let previousFocus, unlockTimer, observer, appReadyCleanup, needsMount = false, hostDone = false;
+let previousFocus, unlockTimer, observer, appReadyCleanup, needsMount = false, hostDone = false, replaying = false, replayFrame = 0;
 try { const cached = JSON.parse(localStorage.getItem(KEY) || '{}'); if (cached && typeof cached === 'object') settings = cached; } catch { /* unavailable cache */ }
 const cfg = () => settings.splash || {};
+let profileGetter = () => ({});
+export function setSplashProfile(resolve) { profileGetter = resolve; paintImages(); }
+function paintImages() {
+    root?.querySelectorAll('[data-image]').forEach(el => {
+        const src = cfg()[el.dataset.image] || (el.dataset.image === 'avatar' ? profileGetter().avatar : '') || defaultImages[el.dataset.image];
+        if (src) image(src, el);
+    });
+}
 function persist() { try { localStorage.setItem(KEY, JSON.stringify({ enabled: settings.enabled, theme: settings.theme, splash: cfg() })); } catch {} save(); }
 function image(src, node) { const update = () => { const url = imageUrl(src, update); if (url && node.isConnected) { node.src = url; node.hidden = false; } }; update(); }
 function dismiss() {
-    clearTimeout(unlockTimer); observer?.disconnect(); appReadyCleanup?.();
+    clearTimeout(unlockTimer); cancelAnimationFrame(replayFrame); replaying = false; observer?.disconnect(); appReadyCleanup?.();
     root?.remove(); root = null;
     if (!panel?.isConnected && previousFocus?.isConnected) previousFocus.focus();
 }
@@ -26,7 +39,7 @@ function paint() {
     root.querySelector('[data-table]').textContent = cfg().table ?? 'by the window';
     root.querySelector('[data-order]').textContent = cfg().order ?? 'the usual';
     root.querySelector('[data-date]').textContent = cfg().date || root.dataset.today;
-    root.querySelectorAll('[data-image]').forEach(el => { el.hidden = true; const src = cfg()[el.dataset.image] || (el.dataset.image === 'avatar' ? settings.me?.avatar : '') || defaultImages[el.dataset.image]; if (src) image(src, el); });
+    paintImages();
     scaleTicket();
     progress(stage);
 }
@@ -34,7 +47,7 @@ export function progress(value) {
     stage = Math.max(stage, Math.min(1, value));
     if (needsMount && hostDone && stage >= 2 / 3 && !ready && !failed) { splashReady(); return; }
     if (!root) return;
-    root.style.setProperty('--sb-progress', stage);
+    if (!replaying) root.style.setProperty('--sb-progress', stage);
     root.querySelector('[data-percent]').textContent = `${Math.round(stage * 100)}%`;
     root.querySelector('[role=progressbar]').setAttribute('aria-valuenow', Math.round(stage * 100));
 }
@@ -45,6 +58,20 @@ export function splashReady() {
     ready = true; progress(1); observer?.disconnect(); appReadyCleanup?.();
     if (root) root.querySelector('[data-status]').textContent = 'your seat is ready';
     if (entered) { clearTimeout(unlockTimer); unlockTimer = setTimeout(dismiss, 650); }
+}
+function replayReadyPour() {
+    if (!root || !ready || failed) return;
+    const activeRoot = root;
+    replaying = true; clearTimeout(unlockTimer);
+    root.querySelector('[data-status]').textContent = 'your seat is ready';
+    root.style.setProperty('--sb-progress', 0);
+    // Establish an empty visible glass once; then let the compositor fill it.
+    getComputedStyle(root.querySelector('.sb-wine')).transform;
+    replayFrame = requestAnimationFrame(() => {
+        if (root !== activeRoot || failed) return;
+        root.style.setProperty('--sb-progress', 1);
+        unlockTimer = setTimeout(dismiss, 550);
+    });
 }
 export function splashFailed() {
     failed = true; clearTimeout(unlockTimer);
@@ -77,9 +104,9 @@ export function startSplash(force = false) {
     root.innerHTML = `<style>${styles}</style><button class="sb-splash-close" aria-label="Close">×</button><button class="sb-splash-edit" aria-label="Customize">Customize</button>
     <div class="sb-ticket-frame"><section class="sb-ticket"><div class="sb-ticket-head" role="button" tabindex="0" aria-expanded="false" aria-controls="sb-ticket-details" aria-label="Expand your tab"><div class="sb-ticket-cover"><img data-image="cover" alt="" hidden><span>SMALL BAR</span><span>NO.0137</span></div>
     <div class="sb-ticket-profile"><div class="sb-ticket-avatar"><img data-image="avatar" alt="Your avatar" hidden></div><p data-quote></p><span class="sb-unfold-mark" aria-hidden="true">⌄</span></div></div>
-    <div class="sb-ticket-body" id="sb-ticket-details" aria-hidden="true" inert><p class="sb-tab-title">HOUSE TAB</p><dl><div><dt>SEAT</dt><dd data-table></dd></div><div><dt>DRINK</dt><dd data-order></dd></div><div><dt>DATE</dt><dd data-date>${stamp}</dd></div></dl>
+    <div class="sb-ticket-body" id="sb-ticket-details" aria-hidden="true" inert hidden><p class="sb-tab-title">HOUSE TAB</p><dl><div><dt>SEAT</dt><dd data-table></dd></div><div><dt>DRINK</dt><dd data-order></dd></div><div><dt>DATE</dt><dd data-date>${stamp}</dd></div></dl>
     <label class="sb-sign-label">SIGNED, WITH LOVE<span class="sb-sign-field"><span aria-hidden="true">×</span><input data-signature aria-label="Signature" maxlength="60" autocomplete="nickname"></span></label><div class="sb-stamp" aria-hidden="true">REGULAR<br>SINCE<br>${date.getFullYear()}</div>
-    <label class="sb-remember"><input data-remember type="checkbox"><span data-save-label aria-live="polite">keep my tab open</span></label><footer><div class="sb-barcode" aria-hidden="true"><i></i><span>0137 ${date.getFullYear()}</span></div><div class="sb-footer-actions"><button class="sb-pour">pour me one</button><button class="sb-pass">only passing by →</button></div></footer></div></section></div>
+    <label class="sb-remember"><input data-remember type="checkbox"><span data-save-label aria-live="polite">keep my tab open</span></label></div><div class="sb-ticket-actions"><footer><div class="sb-barcode" aria-hidden="true"><i></i><span>0137 ${date.getFullYear()}</span></div><div class="sb-footer-actions"><button class="sb-pour">pour me one</button><button class="sb-pass">only passing by →</button></div></footer></div></section></div>
     <section class="sb-pouring" hidden><svg viewBox="0 0 48 80" aria-hidden="true"><defs><clipPath id="sb-glass-clip"><path d="M9 8H39V20C39 40 9 40 9 20Z"/></clipPath></defs><g clip-path="url(#sb-glass-clip)"><rect class="sb-wine" x="8" y="8" width="32" height="30"/></g><path d="M9 8H39V20C39 40 9 40 9 20ZM24 36V70M15 70H33" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg><div><p data-status aria-live="polite">pouring your usual</p><small data-percent></small><div class="sb-progress" role="progressbar" aria-label="Small Bar startup stages" aria-valuemin="0" aria-valuemax="100"><i></i></div><small class="sb-progress-note">preparing small bar</small></div></section>`;
     document.documentElement.appendChild(root); paint();
     root.querySelector('.sb-splash-close').onclick = dismiss;
@@ -91,7 +118,8 @@ export function startSplash(force = false) {
         root.querySelector('.sb-ticket-frame').classList.toggle('is-expanded', expanded);
         toggle.setAttribute('aria-expanded', String(expanded));
         toggle.setAttribute('aria-label', expanded ? 'Fold your tab' : 'Expand your tab');
-        details.inert = !expanded; details.setAttribute('aria-hidden', String(!expanded));
+        details.hidden = !expanded; details.inert = !expanded; details.setAttribute('aria-hidden', String(!expanded));
+        scaleTicket();
     };
     toggle.onclick = toggleTicket;
     toggle.onkeydown = event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggleTicket(); } };
@@ -107,7 +135,7 @@ export function startSplash(force = false) {
         if (s.remember) s.signature = signature.value.trim();
         persist();
         entered = true; root.querySelector('.sb-ticket-frame').hidden = true; root.querySelector('.sb-pouring').hidden = false;
-        if (ready) splashReady(); else if (failed) splashFailed();
+        if (ready) replayReadyPour(); else if (failed) splashFailed();
     };
     root.onkeydown = e => { if (e.key === 'Escape') dismiss(); trapFocus(e, root); };
     root.focus({ preventScroll: true });
@@ -246,4 +274,17 @@ const styles = `
 #sb-splash-settings input[type=color]::-webkit-color-swatch{border:0;border-radius:50%}
 #sb-splash-settings input[type=color]::-moz-color-swatch{border:0;border-radius:50%}
 #sb-splash .sb-pouring p{font:400 14px/1.5 -apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;letter-spacing:.03em}
+
+/* Resize once per tap. Keep the entry footer outside the collapsible receipt. */
+#sb-splash .sb-ticket-frame,#sb-splash .sb-ticket-frame.is-expanded{transition:none}
+#sb-splash .sb-ticket,#sb-splash .is-expanded .sb-ticket{height:auto;transition:none}
+#sb-splash .sb-ticket-body,#sb-splash .is-expanded .sb-ticket-body{height:auto;padding-bottom:0;opacity:1;transform:none;transition:none;will-change:auto}
+#sb-splash .sb-ticket-body .sb-remember{margin-bottom:0}
+#sb-splash .is-expanded .sb-ticket-body{animation:sb-receipt-reveal .14s ease-out}
+#sb-splash .sb-ticket-actions{position:relative;z-index:1;background:var(--sb-card);padding:18px 24px 20px}
+#sb-splash .sb-ticket{-webkit-mask-image:radial-gradient(circle at 0 291px,transparent 12px,#000 13px),radial-gradient(circle at 100% 291px,transparent 12px,#000 13px);-webkit-mask-composite:source-in;mask-image:radial-gradient(circle at 0 291px,transparent 12px,#000 13px),radial-gradient(circle at 100% 291px,transparent 12px,#000 13px);mask-composite:intersect}
+@keyframes sb-receipt-reveal{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){#sb-splash .sb-ticket-body{animation:none!important}}
+
+#sb-splash .sb-wine,#sb-splash .sb-progress i{transition-duration:.45s}
 `;

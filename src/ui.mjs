@@ -908,14 +908,16 @@ export function createUI(host) {
  <div class="sb-hint">只改小吧台里显示的，不动角色卡。剧情里TA想改 X 资料时也会自己改。</div></div>`;
     }
     function setMeHtml() {
-        const me = host.me(), m = host.settings().me || {}, c = host.charCfg();
+        const me = host.me(), m = host.meCfg(), c = host.charCfg();
         const f = (label, key, ph) => fld(label, 'data-me', key, m[key], ph);
         const accs = host.xAccounts(), cur = host.xAccount();
         return `${head('我的资料')}<div class="sb-list sb-prof">
  ${sec('通用')}
- <label class="sb-eav"><span class="sb-pav big" style="background-image:url('${esc(me.avatar)}')"></span><small>头像 · 点一下换</small><input type="file" accept="image/*" data-upload="me-avatar" hidden></label>
+ <label class="sb-eav"><span class="sb-pav big" style="background-image:url('${esc(me.avatar)}')"></span><small>头像 · 只改这个聊天 · 点一下换</small><input type="file" accept="image/*" data-upload="me-avatar" hidden></label>
+ ${m.avatar ? '<button class="sb-link" data-act="me-avatar-clear">恢复当前酒馆人设头像</button>' : ''}
  ${f('名字', 'name', me.cardName)}
- <div class="sb-hint">在TA的朋友圈、聊天里显示的名字；空着就用酒馆里你的名字。</div>
+ <div class="sb-hint">名字、头像和签名只在当前聊天使用；留空时跟随当前酒馆人设。</div>
+ ${Object.keys(host.settings().me || {}).length ? '<button class="sb-link" data-act="me-legacy-copy">把以前保存的资料用在这个聊天</button>' : ''}
  ${sec('朋友圈')}
  ${f('签名', 'sign', '朋友圈名字下面那一句')}
  ${imgRow('朋友圈背景', c.coverWx ? host.img(c.coverWx) : '', 'coverWx', 'cover-wx-clear')}
@@ -1073,14 +1075,16 @@ export function createUI(host) {
                 catch (err) { host.toast('error', err?.message || '搜不了'); }
                 return;
             }
+            case 'me-avatar-clear': host.setMeProfile({ avatar: '' }); break;
+            case 'me-legacy-copy': host.setMeProfile({ ...(host.settings().me || {}) }); break;
             case 'edit': {
                 const { scope, key, label } = b.dataset;
-                const cur = scope === 'him' ? (host.charCfg().him?.[key] || '') : scope === 'acc' ? (host.xAccount()[key] || '') : (host.settings().me?.[key] || '');
+                const cur = scope === 'him' ? (host.charCfg().him?.[key] || '') : scope === 'acc' ? (host.xAccount()[key] || '') : (host.meCfg()[key] || '');
                 const val = await host.prompt(label, cur); if (val == null) return;
                 const t = String(val).trim();
                 if (scope === 'him') host.setCharCfg(c => { c.him = { ...(c.him || {}), [key]: t }; });
                 else if (scope === 'acc') host.setXAccountField(key, t);
-                else host.setSettings(st => { st.me = { ...(st.me || {}), [key]: t }; });
+                else host.setMeProfile({ [key]: t });
                 break;
             }
             case 'nowbook': v.nowBook = !v.nowBook; v.bookN = 20; break;
@@ -1247,7 +1251,7 @@ export function createUI(host) {
         else if (t.dataset.cset) host.setCharCfg(c => { c[t.dataset.cset] = t.value; });
         else if (t.dataset.him != null) host.setCharCfg(c => { c.him = { ...(c.him || {}), [t.dataset.him]: t.value.trim() }; });
         else if (t.dataset.acc != null) { host.setXAccountField(t.dataset.acc, t.value.trim().replace(t.dataset.acc === 'handle' ? /^@/ : /^$/, '')); }
-        else if (t.dataset.me != null) host.setSettings(s => { s.me = { ...(s.me || {}), [t.dataset.me]: t.value.trim() }; });
+        else if (t.dataset.me != null) host.setMeProfile({ [t.dataset.me]: t.value.trim() });
         else if (t.dataset.tag != null) host.setCharCfg(c => { c.cover.images[Number(t.dataset.tag)].tag = t.value.trim(); });
         else if (t.dataset.prompt != null) host.setSettings(s => { s.prompt = t.value.trim() === host.defaultPrompt().trim() ? '' : t.value; });
         else if (t.dataset.upload && t.files?.[0]) {
@@ -1267,7 +1271,7 @@ export function createUI(host) {
             if (kind === 'xacc-cover') { host.dropImage(host.xAccount().cover); host.setXAccountField('cover', src); }
             if (kind === 'him-xavatar') host.setCharCfg(c => { c.him = { ...(c.him || {}), xavatar: src }; });
             if (/^cover(Wx|X|XMe)$/.test(kind)) { host.dropImage(host.charCfg()[kind]); host.setCharCfg(c => { c[kind] = src; }); }
-            if (kind === 'me-avatar') host.setSettings(s => { s.me = { ...(s.me || {}), avatar: src }; });
+            if (kind === 'me-avatar') host.setMeProfile({ avatar: src });
         } else return;
         render();
     }

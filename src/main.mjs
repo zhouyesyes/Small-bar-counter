@@ -1,8 +1,9 @@
+import { resolveMe } from './profile.mjs';
 // 小吧台 —— 入口：把界面接到酒馆上
 // 只从 extensions.js 拿 getContext（酒馆 1.18 起它带了要用的全部东西），不逐个 import script.js 里的名字：
 // 酒馆版本差一点、少一个名字，整个扩展就加载不出来（「酒馆你害我不浅」0.6.0 踩过）
 import { getContext } from '../../../../extensions.js';
-import { progress, openSplashSettings } from './splash.mjs';
+import { progress, openSplashSettings, setSplashProfile } from './splash.mjs';
 // 你现在用的人设头像在 personas.js 里；整个模块导入，按名字取，没有也不报错
 import * as personas from '../../../../personas.js';
 // 世界书：全局选中的书在 world-info.js 里；整个模块导入，按名字取
@@ -219,16 +220,12 @@ function him() {
         avatar: (h.avatar && img(h.avatar)) || (ch.avatar ? (c.getThumbnailUrl?.('avatar', ch.avatar) ?? `/thumbnail?type=avatar&file=${encodeURIComponent(ch.avatar)}`) : ''),
     };
 }
-function me() {
-    const c = ctx(), s = settings();
-    const pu = c.powerUserSettings || {};
-    const file = personas.user_avatar || '';
-    return {
-        cardName: c.name1 || '我', name: s.me.name || c.name1 || '我', sign: s.me.sign || '',
-        avatar: (s.me.avatar && img(s.me.avatar)) || (file ? `/thumbnail?type=persona&file=${encodeURIComponent(file)}` : ''),
-        persona: pu.persona_description || '',
-    };
+function me() { return resolveMe(ctx(), personas.user_avatar || '', img); }
+function setMeProfile(patch) {
+    const c = charCfg(); c.me = { ...(c.me || {}), ...patch };
+    saveMeta(); refreshInject(); setSplashProfile(me);
 }
+
 function charCard() {
     const c = ctx(), ch = c.characters?.[c.characterId] || {};
     const d = ch.data || ch;
@@ -362,7 +359,7 @@ async function testOwnApi() {
 
 // ---------- 图片 ----------
 // 她传的图只存在这台手机的浏览器里（她 11/9 说的：不要存服务器），见 src/imgstore.mjs
-const img = src => imageUrl(src, () => { ui.render(); });
+const img = src => imageUrl(src, () => { ui.render(); setSplashProfile(me); });
 
 // ---------- 清理数据（她 11/9 要的） ----------
 // 图存在浏览器里，背景、头像大多跟着聊天走（存在聊天自己的数据里）：聊天删了、图换了，旧图会一直留着
@@ -514,6 +511,7 @@ function hasChar() { const c = ctx(); return c.characterId != null && c.characte
 // ---------- 接起来 ----------
 const host = {
     settings, setSettings: f => { f(settings()); saveSettings(); refreshInject(); },
+    meCfg: () => charCfg().me || {}, setMeProfile,
     charCfg, setCharCfg: f => { f(charCfg()); saveMeta(); refreshInject(); },
     saveImage: saveImageHere, img, dropImage: src => { if (src) delete owners()[src]; return deleteImage(src); }, refreshInject,
     scanImages, dropImages, trimChat, wipeChat, chatBytes,
@@ -615,6 +613,7 @@ window.addEventListener('small-bar-appearance', () => ui.render());
 jQuery(() => {
     const c = ctx(), ev = c.eventSource, T = c.eventTypes || c.event_types;
     ui.mount();
+    setSplashProfile(me);
     progress(2 / 3);
     settingsPanel();
     // 酒馆输入框左边魔杖菜单里加一项「酒吧小手机」：打开浮在屏幕上的小手机
@@ -630,7 +629,9 @@ jQuery(() => {
     };
     if (!addWand()) { let n = 0; const t = setInterval(() => { if (addWand() || ++n > 30) clearInterval(t); }, 1000); }
     const on = (type, f) => { if (type) ev.on(type, f); };
-    on(T.CHAT_CHANGED, () => { ui.reset(); absorbAll(); refresh(); claimImages(); });
+    on(T.CHAT_CHANGED, () => { ui.reset(); absorbAll(); refresh(); claimImages(); setSplashProfile(me); });
+    on(T.PERSONA_CHANGED, () => { setSplashProfile(me); refresh(); });
+    on(T.PERSONA_UPDATED, () => { setSplashProfile(me); refresh(); });
     on(T.CHAT_DELETED, name => { onChatGone(name); });
     on(T.GROUP_CHAT_DELETED, name => { onChatGone(name); });
     on(T.MESSAGE_RECEIVED, id => { if (absorb(Number(id))) ctx().saveChat?.(); refresh(); });
