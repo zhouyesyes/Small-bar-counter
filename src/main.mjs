@@ -3,7 +3,7 @@ import { resolveMe } from './profile.mjs';
 // 只从 extensions.js 拿 getContext（酒馆 1.18 起它带了要用的全部东西），不逐个 import script.js 里的名字：
 // 酒馆版本差一点、少一个名字，整个扩展就加载不出来（「酒馆你害我不浅」0.6.0 踩过）
 import { getContext } from '../../../../extensions.js';
-import { progress, openSplashSettings, setSplashProfile, openingArtwork } from './splash.mjs';
+import { progress, openSplashSettings, setSplashProfile } from './splash.mjs';
 // 你现在用的人设头像在 personas.js 里；整个模块导入，按名字取，没有也不报错
 import * as personas from '../../../../personas.js';
 // 世界书：全局选中的书在 world-info.js 里；整个模块导入，按名字取
@@ -512,8 +512,9 @@ function hasChar() { const c = ctx(); return c.characterId != null && c.characte
 // ---------- 接起来 ----------
 const host = {
     settings, setSettings: f => { f(settings()); saveSettings(); refreshInject(); },
-    openingProfile: () => { const s = settings().splash || {}, art = openingArtwork(me()); return { avatar: img(art.avatar), cover: img(art.cover), name: s.signature ?? 'yesyes', sign: s.quote ?? 'a quiet seat, kept for you' }; },
-    setOpeningImage: (kind, src) => { (settings().splash ??= {})[kind] = src; owners()[src] = 'global'; saveSettings(); setSplashProfile(me); },
+    openingProfile: () => { const h = settings().home || {}; return { avatar: img(h.avatar || new URL('../assets/opening/avatar.jpg', import.meta.url).href), cover: img(h.cover || new URL('../assets/opening/cover.jpg', import.meta.url).href), name: h.name ?? 'yesyes', sign: h.sign ?? 'a quiet seat, kept for you' }; },
+    setHomeProfile: patch => { Object.assign(settings().home ??= {}, patch); saveSettings(); },
+    setOpeningImage: (kind, src) => { (settings().home ??= {})[kind] = src; owners()[src] = 'global'; saveSettings(); },
     meCfg: () => charCfg().me || {}, setMeProfile,
     charCfg, setCharCfg: f => { f(charCfg()); saveMeta(); refreshInject(); },
     saveImage: saveImageHere, img, dropImage: src => { if (src) delete owners()[src]; return deleteImage(src); }, refreshInject,

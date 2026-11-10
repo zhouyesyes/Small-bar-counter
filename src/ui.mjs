@@ -257,8 +257,9 @@ export function createUI(host) {
   <label class="sb-coverbtn">换背景<input type="file" accept="image/*" data-upload="opening-cover" hidden></label>
  </div>
  <label class="sb-av" style="background-image:url('${esc(p.avatar)}')" title="点一下换头像"><input type="file" accept="image/*" data-upload="opening-avatar" hidden></label>
- <div class="sb-name">${esc(p.name)}</div><div class="sb-sign">${esc(p.sign)}</div>
- <button class="sb-more" data-act="splash-settings">头像、背景与配色</button>
+ <div class="sb-name" data-act="home-name" role="button" tabindex="0">${esc(p.name)}</div><div class="sb-sign" data-act="home-sign" role="button" tabindex="0">${esc(p.sign)}</div>
+ <button class="sb-more" data-act="home-settings">编辑我的主页</button>
+ ${v.homeSettings ? `<div class="sb-sgrp" aria-label="个人主页设置"><div class="sb-hint">仅用于此主页，独立于聊天人设与开场卡片。</div><label class="sb-more">更换主页头像<input type="file" accept="image/*" data-upload="opening-avatar" hidden></label><label class="sb-more">更换主页背景<input type="file" accept="image/*" data-upload="opening-cover" hidden></label><button class="sb-more" data-act="home-name">修改名字</button><button class="sb-more" data-act="home-sign">修改签名</button></div>` : ''}
  ${musicHtml({})}</div></div>`;
     }
     function drawerHtml(era) {
@@ -1002,6 +1003,15 @@ export function createUI(host) {
         if (!act) return;
         const meta = host.meta();
         switch (act) {
+            case 'home-settings': v.homeSettings = !v.homeSettings; break;
+            case 'home-name':
+            case 'home-sign': {
+                const key = act === 'home-name' ? 'name' : 'sign';
+                const value = await host.prompt(key === 'name' ? '主页名字' : '主页签名', host.openingProfile()[key]);
+                if (value == null) return;
+                host.setHomeProfile({ [key]: value }); break;
+            }
+
             case 'open': v.drawer = true; break;
             case 'close': v.drawer = false; v.diaryId = ''; v.mini = false; break;
             case 'tab':

@@ -553,3 +553,8 @@
 
 #sb-root .sb-landing .sb-body{overflow-y:auto;flex:1;min-height:0}#sb-root .sb-landing .sb-sign{padding:0 20px}#sb-root .sb-landing .sb-music{padding-bottom:24px}
 #sb-root .sb-landing .sb-cover{height:auto;aspect-ratio:448/200;background-position:50% 45%}
+
+/* Center music controls independently of inherited font baselines. */
+#sb-root .sb-mctl button,#sb-root .sb-wplay{display:inline-flex;align-items:center;justify-content:center;line-height:1;box-sizing:border-box}
+#sb-root .sb-mctl .sb-mplay{padding:0;flex:0 0 50px}
+#sb-root .sb-mi svg{display:block}
