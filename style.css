@@ -587,3 +587,16 @@
 
 #sb-root .sb-widget{background:color-mix(in srgb,var(--sb-accent) 5%,var(--sb-bg));border-color:color-mix(in srgb,var(--sb-accent) 20%,var(--sb-line))}
 #sb-root .sb-mstate .sb-link{margin:0}
+
+#sb-root .sb-home-tab{width:72%;max-width:280px;margin:12px auto 22px;padding:7px 12px;border-radius:9px}
+#sb-root .sb-home-tab>div{padding:2px 0;font-size:10px;line-height:1.5}
+#sb-root .sb-mstate{height:auto;min-height:14px;white-space:normal;overflow:visible}
+#sb-root .sb-mstxt:not(:empty){margin-right:6px}
+#sb-root .sb-lyric-word{color:var(--sb-dim)}
+#sb-root .sb-lyric-word.played{color:var(--sb-fg)}
+#sb-root .sb-lyric-word.active{color:var(--sb-fg);text-decoration:underline;text-decoration-color:var(--sb-accent);text-underline-offset:4px}
+
+#sb-root .sb-mrow2:has(button[data-act="msong-menu"]){grid-template-columns:38px minmax(0,1fr) auto auto}
+#sb-root .sb-song-menu{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;padding:12px;background:var(--sb-soft);border:1px solid var(--sb-line);border-radius:12px}
+#sb-root .sb-song-menu>span{width:100%;font-size:12px}
+#sb-root .sb-song-menu button{padding:5px 8px;border:1px solid var(--sb-line);border-radius:12px;font-size:12px}
