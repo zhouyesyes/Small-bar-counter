@@ -1,3 +1,4 @@
+import { artwork, artworkMode } from './artwork.mjs';
 import { resolveMe } from './profile.mjs';
 // 小吧台 —— 入口：把界面接到酒馆上
 // 只从 extensions.js 拿 getContext（酒馆 1.18 起它带了要用的全部东西），不逐个 import script.js 里的名字：
@@ -512,9 +513,9 @@ function hasChar() { const c = ctx(); return c.characterId != null && c.characte
 // ---------- 接起来 ----------
 const host = {
     settings, setSettings: f => { f(settings()); saveSettings(); refreshInject(); },
-    openingProfile: () => { const h = settings().home || {}; return { avatar: img(h.avatar || new URL('../assets/opening/avatar.jpg', import.meta.url).href), cover: img(h.cover || new URL('../assets/opening/cover.jpg', import.meta.url).href), name: h.name ?? 'yesyes', sign: h.sign ?? 'a quiet seat, kept for you' }; },
+    openingProfile: () => { const h = settings().home || {}, art = artwork(h, artworkMode(settings())); return { avatar: img(art.avatar), cover: img(art.cover), name: h.name ?? 'yesyes', sign: h.sign ?? 'a quiet seat, kept for you' }; },
     setHomeProfile: patch => { Object.assign(settings().home ??= {}, patch); saveSettings(); },
-    setOpeningImage: (kind, src) => { (settings().home ??= {})[kind] = src; owners()[src] = 'global'; saveSettings(); },
+    setOpeningImage: (kind, src, mode = artworkMode(settings())) => { const home = (settings().home ??= {}); ((home.images ??= {})[mode] ??= {})[kind] = src; owners()[src] = 'global'; saveSettings(); },
     meCfg: () => charCfg().me || {}, setMeProfile,
     charCfg, setCharCfg: f => { f(charCfg()); saveMeta(); refreshInject(); },
     saveImage: saveImageHere, img, dropImage: src => { if (src) delete owners()[src]; return deleteImage(src); }, refreshInject,

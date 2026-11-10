@@ -1,5 +1,5 @@
 // Two editable colors per mode; all derived text meets WCAG AA for normal text.
-export const defaults = { dark: { bg: '#322d31', accent: '#c08291' }, light: { bg: '#e6e2e3', accent: '#c08291' } };
+export const defaults = { dark: { bg: '#181818', accent: '#b0b0b0' }, light: { bg: '#f2f2f2', accent: '#404040' } };
 const valid = c => /^#[0-9a-f]{6}$/i.test(c || '');
 const rgb = c => c.slice(1).match(/../g).map(v => parseInt(v, 16));
 const hex = a => '#' + a.map(v => Math.round(v).toString(16).padStart(2, '0')).join('');

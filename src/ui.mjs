@@ -1,3 +1,5 @@
+import { updateLyrics } from './music-lyrics.mjs';
+import { bindMusicCovers } from './music-cover.mjs';
 import { applyPalette } from './palette.mjs';
 import { openSplashSettings } from './splash.mjs';
 // 小吧台的界面：小猫入口、左边滑出的抽屉、弹出来的小手机
@@ -65,7 +67,8 @@ export function createUI(host) {
         // 状态那行小字只改字，不整页重画（滑着的时候不跳）
         onStatus: text => { v.mstate = text; root?.querySelectorAll('.sb-mstxt').forEach(el => { el.textContent = text; }); },
     });
-    const coverImg = (t, cls) => { const l = coverList(t); return l.length ? `<img class="${cls}" src="${esc(l[0])}" data-alts="${esc(l.join('|'))}" loading="lazy" decoding="async" alt="" onerror="var a=(this.dataset.alts||'').split('|'),n=(+this.dataset.n||0)+1;this.dataset.n=n;if(a[n])this.src=a[n];else this.style.visibility='hidden'">` : `<span class="${cls}"></span>`; };
+    const coverTracks = new Map();
+    const coverImg = (t, cls) => { const key = `${t.src || 'netease'}:${t.id}`; coverTracks.set(key, t); const url = coverList(t)[0]; return `<img class="${cls}" ${url ? `src="${esc(url)}"` : ''} data-cover-key="${esc(key)}" decoding="async" alt="">`; };
     const fmt = s => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
     // 播放键、主页小卡片：只改这几处
     function patchMusic() {
@@ -83,7 +86,7 @@ export function createUI(host) {
         const bar = box.querySelector('.sb-mbar i'); if (bar) bar.style.width = (a.duration ? a.currentTime / a.duration * 100 : 0) + '%';
         const t = box.querySelector('.sb-mtime'); if (t) t.textContent = `${fmt(a.currentTime)} / ${fmt(a.duration)}`;
         const ly = player.lyric(), i = player.line(), el = box.querySelector('.sb-lyr');
-        if (el && el.dataset.i !== String(i)) { el.dataset.i = i; el.innerHTML = [i - 1, i, i + 1].map(k => `<div class="${k === i ? 'cur' : ''}">${esc(ly[k]?.text || '')}</div>`).join(''); }
+        updateLyrics(el, ly, i, `${player.current()?.src || ''}:${player.current()?.id || ''}`);
     }
 
     // ---------- 外壳 ----------
@@ -215,6 +218,7 @@ export function createUI(host) {
         if (html === lastHtml) return; // 什么都没变：不重画，进新聊天时不来回闪
         lastHtml = html;
         root.innerHTML = html;
+        bindMusicCovers(root, coverTracks, coverList, resolveCover, () => host.saveSettings());
         root.querySelectorAll('[data-bg-picker]').forEach(input => {
             const cover = input.closest('.sb-cover,.sb-wcover,.sb-xcover');
             if (cover) { cover.dataset.bgTarget = input.dataset.upload; cover.tabIndex = 0; cover.setAttribute('role', 'button'); cover.setAttribute('aria-label', '更换背景'); }
@@ -263,7 +267,7 @@ export function createUI(host) {
  <label class="sb-av" style="background-image:url('${esc(p.avatar)}')" title="点一下换头像"><input type="file" accept="image/*" data-upload="opening-avatar" hidden></label>
  <div class="sb-name" data-act="home-name" role="button" tabindex="0">${esc(p.name)}</div><div class="sb-sign" data-act="home-sign" role="button" tabindex="0">${esc(p.sign)}</div>
  <button class="sb-more" data-act="home-settings">编辑我的主页</button>
- ${v.homeSettings ? `<div class="sb-sgrp" aria-label="个人主页设置"><div class="sb-hint">仅用于此主页，独立于聊天人设与开场卡片。</div><label class="sb-more">更换主页头像<input type="file" accept="image/*" data-upload="opening-avatar" hidden></label><label class="sb-more">更换主页背景<input type="file" accept="image/*" data-upload="opening-cover" hidden></label><button class="sb-more" data-act="home-name">修改名字</button><button class="sb-more" data-act="home-sign">修改签名</button></div>` : ''}
+ ${v.homeSettings ? `<div class="sb-sgrp" aria-label="个人主页设置"><div class="sb-hint">仅用于此主页，独立于聊天人设与开场卡片。</div>${['light','dark'].map(mode => `<div class="sb-cap">${mode === 'light' ? '日间图片' : '夜间图片'}</div><label class="sb-more">更换头像<input type="file" accept="image/*" data-upload="opening-avatar-${mode}" hidden></label><label class="sb-more">更换横图<input type="file" accept="image/*" data-upload="opening-cover-${mode}" hidden></label>`).join('')}<button class="sb-more" data-act="home-name">修改名字</button><button class="sb-more" data-act="home-sign">修改签名</button></div>` : ''}
  ${musicHtml({})}</div></div>`;
     }
     function drawerHtml(era) {
@@ -419,9 +423,10 @@ export function createUI(host) {
  <div class="sb-bigcover">${t ? coverImg(t, 'sb-bigimg') : ''}</div>
  <div class="sb-mt">${esc(t?.title || '还没放歌')}</div>
  <div class="sb-ma">${esc(t?.artist || '搜一首喜欢的歌')}</div>
- <div class="sb-lyr" data-i=""></div>
+
  ${t ? `<button class="sb-mbar" data-act="mseek"><i></i></button><div class="sb-mtime">0:00 / 0:00</div>` : ''}
  <div class="sb-mctl"><button data-act="mmode" title="${{ all: '列表循环', one: '单曲循环', shuffle: '随机' }[mode]}">${mi(mode)}</button><button data-act="mprev" aria-label="上一首">${mi('prev')}</button><button class="sb-mplay" data-act="mtoggle" aria-label="播放">${mi(player.playing() ? 'pause' : 'play')}</button><button data-act="mnext" aria-label="下一首">${mi('next')}</button><button data-act="mlist" class="${v.mlist ? 'on' : ''}" aria-label="歌单">${mi('list')}</button></div>
+ <div class="sb-lyr" aria-label="滚动歌词"></div>
  <div class="sb-plists">${names.map(n => `<button data-act="mpl" data-n="${esc(n)}" class="${n === ms.active ? 'on' : ''}">${esc(n)} <small>${ms.lists[n].length}</small></button>`).join('')}<button data-act="mpl-new" class="add">＋ 新建歌单</button></div>
  ${m?.title ? `<button class="sb-mhis" data-act="mhis">${Wd().listen}《${esc(m.title)}》${m.artist ? ' · ' + esc(m.artist) : ''} · 放这首</button>` : ''}
  <div class="sb-msearch"><input data-msearch placeholder="搜歌名、歌手，或贴网易云链接" enterkeyhint="search" value="${esc(v.mq || '')}"><button data-act="msearch">${v.msearching ? '…' : '搜'}</button></div>
@@ -1100,6 +1105,7 @@ export function createUI(host) {
                 if (!await host.confirm(`删掉歌单「${m.active}」？里面的 ${m.list.length} 首也一起去掉`)) return;
                 delete m.lists[m.active]; m.active = Object.keys(m.lists)[0]; m.idx = 0; host.saveSettings(); break;
             }
+            case 'mlyric': { const line = player.lyric()[Number(b.dataset.line)]; if (line && Number.isFinite(player.audio.duration) && player.audio.duration > 0) { player.seek(Math.max(0, Math.min(1, line.t / player.audio.duration))); tickMusic(); } return; }
             case 'mseek': { const r = b.getBoundingClientRect(); player.seek((e.clientX - r.left) / r.width); tickMusic(); return; }
             case 'msearch': await musicSearch(root.querySelector('[data-msearch]')?.value); return;
             case 'mclose': v.mres = []; v.mpage = 1; break;
@@ -1303,7 +1309,7 @@ export function createUI(host) {
             try { src = await cropImage(file, frame); } catch (err) { host.toast('error', err?.message || '这张图读不出来'); return; }
             if (!src) return; // 点了取消
             src = await host.saveImage(src); // 只存在这台手机的浏览器里，设置里记个编号
-            if (kind === 'opening-cover' || kind === 'opening-avatar') host.setOpeningImage(kind === 'opening-cover' ? 'cover' : 'avatar', src);
+            if (/^opening-(cover|avatar)(-(light|dark))?$/.test(kind)) { const [, field, , mode] = kind.match(/^opening-(cover|avatar)(-(light|dark))?$/); host.setOpeningImage(field, src, mode); }
             if (kind === 'fixed') host.setCharCfg(c => { c.cover = { ...(c.cover || {}), mode: 'fixed', fixed: src }; });
             if (kind === 'pick') host.setCharCfg(c => { c.cover = { ...(c.cover || {}), mode: 'pick', images: [...(c.cover?.images || []), { tag: '', src }] }; });
             if (kind === 'him-avatar') host.setCharCfg(c => { c.him = { ...(c.him || {}), avatar: src }; });
