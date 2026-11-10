@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="780" height="900" viewBox="0 0 780 900">
+<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2b3340"/><stop offset=".55" stop-color="#4a4f57"/><stop offset="1" stop-color="#8a8580"/></linearGradient>
+<filter id="b"><feGaussianBlur stdDeviation="14"/></filter><filter id="b2"><feGaussianBlur stdDeviation="4"/></filter></defs>
+<rect width="780" height="900" fill="url(#g)"/>
+<g filter="url(#b)" opacity=".85">
+<circle cx="120" cy="420" r="46" fill="#f2c27b"/><circle cx="300" cy="380" r="30" fill="#ffe0a8"/><circle cx="520" cy="450" r="56" fill="#e8a965"/>
+<circle cx="660" cy="360" r="34" fill="#fbd9a0"/><circle cx="420" cy="520" r="40" fill="#c98b5a"/><circle cx="60" cy="560" r="30" fill="#ffd79a"/>
+<circle cx="720" cy="560" r="44" fill="#f0b778"/><circle cx="250" cy="600" r="50" fill="#b9825a"/></g>
+<rect y="640" width="780" height="260" fill="#55504a" opacity=".55"/>
+<g stroke="#ffffff" stroke-opacity=".18" stroke-width="2" filter="url(#b2)">
+<path d="M40 0l-30 900M140 0l-30 900M230 0l-30 900M330 0l-30 900M430 0l-30 900M520 0l-30 900M620 0l-30 900M720 0l-30 900"/></g>
+</svg>
