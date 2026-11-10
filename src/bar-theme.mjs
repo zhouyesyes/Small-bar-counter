@@ -55,8 +55,8 @@ export function barCss(p) {
     const page = {
         '--sb-bar-ink': p.fg, '--sb-bar-sub': p.dim, '--sb-bar-bg': p.bg, '--sb-bar-text': mix(p.bg, p.fg, .76),
         '--sb-bar-paper': mix(p.bg, light ? '#ffffff' : '#000000', light ? .5 : .16), '--sb-bar-line': mix(p.bg, p.fg, .14),
-        '--sb-bar-dot': mix(p.bg, p.fg, .28), '--sb-bar-off': mix(p.bg, p.fg, .4), '--sb-bar-btn': p.accent, '--sb-bar-btntext': p.ink,
-        '--sb-bar-card': light ? '#404040' : '#2a2a2a', '--sb-bar-cardtext': '#f2f2f2',
+        '--sb-bar-dot': mix(p.bg, p.fg, .28), '--sb-bar-accent': p.accent, '--sb-bar-off': mix(p.bg, p.fg, .4), '--sb-bar-btn': p.accent, '--sb-bar-btntext': p.ink,
+        '--sb-bar-card': mix(p.bg, p.accent, .12), '--sb-bar-cardtext': p.fg,
     };
     const pageVars = Object.entries(page).map(([k, v]) => `${k}: ${v};`).join(' ');
     return `html.sb-bar { ${vars} ${pageVars} }
@@ -102,3 +102,4 @@ export function applyBarTheme(settings, ctx) {
         media.addEventListener('change', media.sb);
     }
 }
+

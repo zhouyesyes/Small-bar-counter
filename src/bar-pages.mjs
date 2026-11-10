@@ -9,14 +9,21 @@ const val = id => document.getElementById(id)?.value ?? '';
 const optText = id => { const s = document.getElementById(id); return s?.selectedOptions?.[0]?.textContent?.trim() || ''; };
 const checked = id => !!document.getElementById(id)?.checked;
 const click = id => document.getElementById(id)?.click();
-const glass = new URL('../assets/bar/glass.svg', import.meta.url).href;
+const glass = new URL('../assets/bar/glass.png', import.meta.url).href;
+// Preserve original placement so disabling the theme restores native editors/actions.
+const moved = new Map();
+function moveNative(el, target) {
+    if (!el || !target || el.parentElement === target) return;
+    if (!moved.has(el)) { const marker = document.createComment('sb-original-place'); el.before(marker); moved.set(el,marker); }
+    target.append(el);
+}
 const bx = (cls, html) => { const d = document.createElement('div'); d.className = 'sb-bx ' + cls; d.innerHTML = html; return d; };
 const head = (script, en, zh) => bx('sb-head', `<div class="sb-script">${script}</div><div class="sb-en">${en}</div><div class="sb-zh">${zh}</div>`);
 const label = text => bx('sb-label', `— <i>${text}</i> —`);
 const foot = text => bx('sb-foot', `— <i>${text}</i> —`);
 // 「+」那一格：标题 + 一两行现在是多少；点了给整页挂上 sb-open-<名字>，CSS 就把收起来的东西放出来
 const fold = (key, zh, en) => bx('sb-fold', `<button type="button" class="sb-fold-h" data-fold="${key}"><b>${zh}</b><i>${en}</i><span class="sb-plus">+</span></button><div class="sb-fold-s" data-sum="${key}"></div>`);
-// 一排小字按钮：[ 保存 ] [ 改名 ] …… 「删」永远单独在最右
+// 一排小字按钮：[ 保存 ] [ 改名 ] …… 删除单独放在卡片左上角
 const btns = list => list.map(([key, text, cls = '']) => `<button type="button" class="sb-b ${cls}" data-do="${key}">［ ${text} ］</button>`).join('');
 // 「换一张」这类按钮：里面藏一个透明的下拉框，选项照抄酒馆那个；选了就改酒馆那个、发 change（酒馆的 jQuery 照样收得到）
 const pick = (key, text, cls = 'sb-b sb-solid') => `<label class="${cls} sb-pick">［ ${text} ］<select data-pick="${key}" aria-label="${text}"></select></label>`;
@@ -47,10 +54,14 @@ const PAGES = {
             $('#respective-presets-block', root)?.prepend(bx('sb-cardlabel', '<i>Tonight\'s Recipe</i>'));
             $('#respective-presets-block', root)?.after(fold('params', '调 酒 台', 'Behind the Bar'));
             $('#completion_prompt_manager', root)?.parentElement?.before(bx('sb-sec', '<b>原 料</b><i>— Ingredients —</i><small data-sum="ingr"></small>'));
+            $('#respective-presets-block', root)?.prepend(bx('sb-status sb-recipe-status', '<b></b><em></em>'));
             cfg.after(foot('last order at midnight'));
         },
         sync(root) {
             const api = val('main_api');
+            const id = {openai:'settings_preset_openai',kobold:'settings_preset',novel:'settings_preset_novel',textgenerationwebui:'settings_preset_textgenerationwebui'}[api];
+            const active = (id && document.getElementById(id)) || [...root.querySelectorAll('#respective-presets-block select[data-preset-manager-for]')].find(el=>el.getClientRects().length);
+            const status = $('.sb-recipe-status',root); if (status) { const valid = !!active?.value; status.classList.toggle('ok',valid); $('em',status).textContent = valid ? '有效' : '未选择'; }
             const parts = api === 'openai'
                 ? [['温度', val('temp_openai_counter') || val('temp_openai')], ['回复', val('openai_max_tokens')], ['上下文', val('openai_max_context')], ['流式', checked('stream_toggle') ? '开' : '关'], ['推理', optText('openai_reasoning_effort')]]
                 : [['回复', val('amount_gen')], ['上下文', val('max_context')], ['流式', checked('streaming_textgenerationwebui') || checked('streaming_kobold') || checked('streaming_novel') ? '开' : '关']];
@@ -128,6 +139,11 @@ const PAGES = {
             holder.append(bx('sb-legend', '<span><b class="c"></b>每桌附赠：每次都放</span><span><b class="n"></b>点到才上：提到点单词才放</span><span><b class="o"></b>售罄</span>'), foot('点一道就能改'));
         },
         sync(root) {
+            const card = $('.sb-tonight',root), popup = $('#world_popup',root), select = $('#world_editor_select',root);
+            if (card && popup && card.parentElement !== popup) popup.prepend(card);
+            if (card && select && !card.contains(select)) { const row = select.parentElement; row.classList.add('sb-native-actions'); moveNative(row,card); }
+            if (card && !$('.sb-status',card)) card.prepend(bx('sb-status','<b></b><em></em>'));
+            const status = card && $('.sb-status',card); if (status) { status.classList.toggle('ok',!!select?.value); $('em',status).textContent = select?.value ? '有效' : '未选择'; }
             setSum(root, 'rules', [`往回翻 ${val('world_info_depth')} 条`, `上下文 ${val('world_info_budget')}%`, `递归扫描 ${checked('world_info_recursive') ? '开' : '关'}`].join(' · '), '其余几项也收在这里');
             const name = optText('world_editor_select');
             $('[data-v="book"]', root).textContent = val('world_editor_select') === '' ? '还没选' : name;
@@ -156,12 +172,17 @@ const PAGES = {
         mount(root) {
             const block = $('#persona-management-block', root); if (!block) return;
             block.before(head('Member Cards', 'WHO\'S AT THE COUNTER TONIGHT', '会 员 卡 · 今 晚 你 是 谁'),
-                bx('sb-member', `<div class="sb-mc"><img alt=""><div class="sb-mc-r"><button type="button" class="sb-mc-name" data-do="rename"></button><div class="sb-mc-no"></div><div class="sb-mc-desc"></div></div><span class="sb-mc-use">IN USE</span>
+                bx('sb-member', `<div class="sb-mc"><button type="button" class="sb-card-remove" data-do="del" aria-label="删除当前会员卡" title="删除当前会员卡">×</button><img alt=""><div class="sb-mc-r"><button type="button" class="sb-mc-name" data-do="rename"></button><div class="sb-mc-no"></div><div class="sb-mc-desc"></div></div><span class="sb-mc-use">IN USE</span>
 <div class="sb-mc-foot"><i class="sb-mc-since"></i><i class="sb-mc-t"></i></div></div>
-<div class="sb-row sb-acts">${btns([['desc', '改卡背'], ['photo', '换照片'], ['dupe', '复制'], ['lore', '绑酒单'], ['del', '删', 'sb-del']])}</div>`),
+<div class="sb-row sb-acts">${btns([['desc', '改卡背'], ['photo', '换照片'], ['dupe', '复制'], ['lore', '绑酒单']])}</div>`),
                 label('Use It For'),
                 bx('sb-use', '<button type="button" data-do="lock_persona_default">平时都用</button><button type="button" data-do="lock_persona_to_char">只对这位调酒师</button><button type="button" data-do="lock_user_name">只这一桌</button>'),
-                label('Card Holder'));
+                fold('personas','其 他 会 员 卡','Card Holder'));
+            const editor = bx('sb-back-editor','<button type="button" data-do="closeback" class="sb-back-close">收起卡背</button>'); editor.hidden = true;
+            $('.sb-member',root)?.after(editor);
+            const textarea = $('#persona_description',root), heading = textarea?.previousElementSibling;
+            if (heading?.tagName === 'H4') moveNative(heading,editor);
+            moveNative(textarea,editor);
             block.after(fold('more', '其 余 设 置', 'Fine Print'), foot('members only'));
         },
         sync(root) {
@@ -182,7 +203,8 @@ const PAGES = {
             setSum(root, 'more', `放在哪：${optText('persona_description_position') || '—'} · 切换时提醒 ${checked('persona_show_notifications') ? '开' : '关'}`, '备份、恢复、插入位置都在这里');
         },
         act(key, root) {
-            if (key === 'desc') { openFold(root, 'more', true); setTimeout(() => { const t = document.getElementById('persona_description'); t?.scrollIntoView({ block: 'center' }); t?.focus(); }, 60); }
+            if (key === 'desc') { const editor = $('.sb-back-editor',root); editor.hidden = false; document.getElementById('persona_description')?.focus({preventScroll:true}); }
+            else if (key === 'closeback') $('.sb-back-editor',root).hidden = true;
             else if (key === 'rename') click('persona_rename_button');
             else if (key.startsWith('lock_')) click(key);
             else click({ photo: 'persona_set_image_button', dupe: 'persona_duplicate_button', lore: 'persona_lore_button', del: 'persona_delete_button' }[key]);
@@ -318,6 +340,8 @@ export function unmountPages() {
     document.removeEventListener('change', onChange, true);
     document.removeEventListener('input', soon, true);
     mo?.disconnect(); mo = null; clearInterval(tick); clearTimeout(timer);
+    for (const [el, marker] of moved) { if (marker.isConnected) marker.replaceWith(el); } moved.clear();
+    $$('.sb-native-actions').forEach(el=>el.classList.remove('sb-native-actions'));
     $$('.sb-bx').forEach(el => el.remove());
     for (const root of $$('.sb-page')) {
         delete root.dataset.sbMounted;
@@ -336,14 +360,14 @@ export const RELABEL = [
     ['#respective-presets-block [data-preset-manager-restore]', '［ 还原 ］'],
     ['#import_oai_preset, #respective-presets-block [data-preset-manager-import]', '［ 导入 ］'],
     ['#export_oai_preset, #respective-presets-block [data-preset-manager-export]', '［ 导出 ］'],
-    ['#delete_oai_preset, #respective-presets-block [data-preset-manager-delete]', '［ 删 ］'],
+    ['#delete_oai_preset, #respective-presets-block [data-preset-manager-delete]', '×'],
     // 酒窖：进货单（酒馆的「连接配置」）
     ['#rm_api_block h3:has(#connection_profile_spinner), #rm_api_block .flex-container:has(> h3 [data-i18n="Connection Profile"]) > h3', '进货单', 'Supplier List'],
     ['#create_connection_profile', '［ 存成新单 ］'], ['#update_connection_profile', '［ 更新 ］'], ['#edit_connection_profile', '［ 改 ］'],
-    ['#reload_connection_profile', '［ 重载 ］'], ['#view_connection_profile', '［ 看看 ］'], ['#delete_connection_profile', '［ 删 ］'],
+    ['#reload_connection_profile', '［ 重载 ］'], ['#view_connection_profile', '［ 看看 ］'], ['#delete_connection_profile', '×'],
     // 酒单
     ['#world_import_button', '［ 导入 ］'], ['#world_popup_export', '［ 导出 ］'], ['#world_popup_name_button', '［ 改名 ］'],
-    ['#world_duplicate', '［ 复制 ］'], ['#world_popup_delete', '［ 删 ］'], ['#world_popup_new', '＋ 新加一道'], ['#world_refresh', '↻'],
+    ['#world_duplicate', '［ 复制 ］'], ['#world_popup_delete', '×'], ['#world_popup_new', '＋ 新加一道'], ['#world_refresh', '↻'],
     ['.world_entry .delete_entry_button', '删'], ['.world_entry .duplicate_entry_button', '复制'], ['.world_entry .move_entry_button', '挪走'],
     // 会员卡
     ['#create_dummy_persona', '＋ 办新卡'],
@@ -351,7 +375,7 @@ export const RELABEL = [
     ['#rm_button_create', '＋ 招一位'], ['#character_import_button', '［ 导入 ］'], ['#external_import_button', '［ 网址导入 ］'], ['#rm_button_group_chats', '［ 建群聊 ］'],
     // 调酒师主页
     ['#favorite_button', '☆ 常点'], ['#favorite_button.fav_on', '★ 常点'], ['#world_button', '［ 他的酒单 ］'], ['#char_connections_button', '［ 会员卡 ］'],
-    ['#export_button', '［ 导出 ］'], ['#dupe_button', '［ 复制 ］'], ['#create_button_label', '［ 招进来 ］'], ['#delete_button', '［ 删 ］'],
+    ['#export_button', '［ 导出 ］'], ['#dupe_button', '［ 复制 ］'], ['#create_button_label', '［ 招进来 ］'], ['#delete_button', '×'],
     ['#description_div > .flex-container > span', '关 于 他', 'About'],
     ['#first_message_div > .flex-container > span', '开 场 白', 'First Pour'],
     ['#creators_notes_div > span.flex1', '作 者 的 话', 'Creator\'s Note'],
@@ -363,7 +387,8 @@ export function relabelCss() {
         const pick = suf => s.map(x => x + suf).join(', ');
         return `${pick('')} { font-size: 0 !important; width: auto !important; min-width: 0 !important; height: auto !important; aspect-ratio: auto !important; }
 ${pick(' > :not(.sb-bx):not(input):not(select)')} { display: none !important; }
-${pick('::before')} { content: ${JSON.stringify(zh)} !important; font: 400 13.5px/1.6 var(--sb-f-serif) !important; letter-spacing: .02em; display: inline !important; width: auto !important; }`
-            + (en ? `\n${pick('::after')} { content: ${JSON.stringify(en)} !important; font: italic 400 14px/1.6 var(--sb-f-italic) !important; color: var(--sb-bar-sub); margin-left: .8em; letter-spacing: 0; }` : '');
+${pick('::before')} { content: ${JSON.stringify(zh)} !important; font: 400 12px/1.6 var(--sb-f-serif) !important; letter-spacing: .02em; display: inline !important; width: auto !important; }`
+            + (en ? `\n${pick('::after')} { content: ${JSON.stringify(en)} !important; font: italic 400 12px/1.6 var(--sb-f-italic) !important; color: var(--sb-bar-sub); margin-left: .8em; letter-spacing: 0; }` : '');
     }).join('\n');
 }
+
