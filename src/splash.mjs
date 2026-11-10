@@ -72,9 +72,9 @@ export function startSplash(force = false) {
     root = document.createElement('div'); root.id = 'sb-splash'; root.setAttribute('tabindex', '-1'); root.setAttribute('role', 'dialog'); root.setAttribute('aria-modal', 'true'); root.setAttribute('aria-label', 'Small Bar');
     const date = new Date(), stamp = `${date.getFullYear()}.${String(date.getMonth()+1).padStart(2,'0')}.${String(date.getDate()).padStart(2,'0')}`;
     root.innerHTML = `<style>${styles}</style><button class="sb-splash-close" aria-label="Close">×</button><button class="sb-splash-edit" aria-label="Customize">Customize</button>
-    <div class="sb-ticket-frame"><section class="sb-ticket"><div class="sb-ticket-cover"><img data-image="cover" alt="" hidden><span>SMALL BAR</span><span>NO.0137</span></div>
-    <div class="sb-ticket-profile"><div class="sb-ticket-avatar"><img data-image="avatar" alt="Your avatar" hidden></div><p data-quote></p></div>
-    <div class="sb-ticket-body"><dl><div><dt>TABLE</dt><dd data-table></dd></div><div><dt>ORDER</dt><dd data-order></dd></div><div><dt>DATE</dt><dd>${stamp}</dd></div></dl>
+    <div class="sb-ticket-frame"><section class="sb-ticket"><div class="sb-ticket-head" role="button" tabindex="0" aria-expanded="false" aria-controls="sb-ticket-details" aria-label="Expand your tab"><div class="sb-ticket-cover"><img data-image="cover" alt="" hidden><span>SMALL BAR</span><span>NO.0137</span></div>
+    <div class="sb-ticket-profile"><div class="sb-ticket-avatar"><img data-image="avatar" alt="Your avatar" hidden></div><p data-quote></p><span class="sb-unfold-mark" aria-hidden="true">⌄</span></div></div>
+    <div class="sb-ticket-body" id="sb-ticket-details" aria-hidden="true" inert><dl><div><dt>TABLE</dt><dd data-table></dd></div><div><dt>ORDER</dt><dd data-order></dd></div><div><dt>DATE</dt><dd>${stamp}</dd></div></dl>
     <label class="sb-sign-label">SIGNED, WITH LOVE<span class="sb-sign-field"><span aria-hidden="true">×</span><input data-signature aria-label="Signature" maxlength="60" autocomplete="nickname"></span></label><div class="sb-stamp" aria-hidden="true">REGULAR<br>SINCE<br>${date.getFullYear()}</div>
     <label class="sb-remember"><input data-remember type="checkbox"> keep my tab open</label><footer><div class="sb-barcode" aria-hidden="true"><i></i>0137 ${date.getFullYear()}</div><div><button class="sb-pour">pour me one</button><button class="sb-pass">only passing by →</button></div></footer></div></section></div>
     <section class="sb-pouring" hidden><svg viewBox="0 0 48 80" aria-hidden="true"><defs><clipPath id="sb-glass-clip"><path d="M9 8H39V20C39 40 9 40 9 20Z"/></clipPath></defs><g clip-path="url(#sb-glass-clip)"><rect class="sb-wine" x="8" y="8" width="32" height="30"/></g><path d="M9 8H39V20C39 40 9 40 9 20ZM24 36V70M15 70H33" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg><div><p data-status aria-live="polite">pouring your usual</p><small data-percent></small><div class="sb-progress" role="progressbar" aria-label="Small Bar startup stages" aria-valuemin="0" aria-valuemax="100"><i></i></div><small class="sb-progress-note">preparing small bar</small></div></section>`;
@@ -82,6 +82,16 @@ export function startSplash(force = false) {
     root.querySelector('.sb-splash-close').onclick = dismiss;
     root.querySelector('.sb-pass').onclick = dismiss;
     root.querySelector('.sb-splash-edit').onclick = openSplashSettings;
+    const toggle = root.querySelector('.sb-ticket-head'), details = root.querySelector('.sb-ticket-body');
+    const toggleTicket = () => {
+        const expanded = toggle.getAttribute('aria-expanded') !== 'true';
+        root.querySelector('.sb-ticket-frame').classList.toggle('is-expanded', expanded);
+        toggle.setAttribute('aria-expanded', String(expanded));
+        toggle.setAttribute('aria-label', expanded ? 'Fold your tab' : 'Expand your tab');
+        details.inert = !expanded; details.setAttribute('aria-hidden', String(!expanded));
+    };
+    toggle.onclick = toggleTicket;
+    toggle.onkeydown = event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); toggleTicket(); } };
     root.querySelector('.sb-pour').onclick = () => {
         const s = (settings.splash ??= {}); s.remember = root.querySelector('[data-remember]').checked;
         s.signature = s.remember ? root.querySelector('[data-signature]').value.trim() : ''; persist();
@@ -93,7 +103,7 @@ export function startSplash(force = false) {
 }
 function trapFocus(e, el) {
     if (e.key !== 'Tab') return;
-    const nodes = [...el.querySelectorAll('button,input,select')].filter(n => !n.disabled && n.getClientRects().length);
+    const nodes = [...el.querySelectorAll('button,input,select,[tabindex="0"]')].filter(n => !n.disabled && !n.closest('[inert]') && n.getClientRects().length);
     if (!nodes.length) return;
     const first = nodes[0], last = nodes.at(-1);
     if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
@@ -184,4 +194,20 @@ const styles = `
 #sb-splash .sb-pour{width:180px;min-height:45px;padding:10px 16px;font-size:14px;letter-spacing:.16em;border:1px solid color-mix(in srgb,var(--sb-accent) 76%,#49303c);background:linear-gradient(180deg,color-mix(in srgb,var(--sb-accent) 86%,white),var(--sb-accent) 60%,color-mix(in srgb,var(--sb-accent) 88%,#57313e));color:#fff5f7;box-shadow:inset 0 1px 1px #ffffff70,inset 0 -1px 1px #57303a35,0 1px 2px #0002;text-shadow:0 1px 1px #0002}
 #sb-splash .sb-pass{font-size:11px;line-height:1.3;margin-top:10px;letter-spacing:.1em;color:color-mix(in srgb,var(--sb-fg) 43%,var(--sb-card))}
 #sb-splash .sb-splash-edit{opacity:.7}#sb-splash .sb-splash-close{opacity:.7}
+
+/* The upper card unfolds the receipt; inert keeps the folded controls out of keyboard focus. */
+#sb-splash .sb-ticket-frame{height:calc(min(76vw,448px)*.65625);transition:height .48s cubic-bezier(.22,.75,.25,1)}
+#sb-splash .sb-ticket-frame.is-expanded{height:calc(min(76vw,448px)*1.40848214)}
+#sb-splash .sb-ticket{height:294px;transition:height .48s cubic-bezier(.22,.75,.25,1)}
+#sb-splash .is-expanded .sb-ticket{height:631px}
+#sb-splash .sb-ticket-head{position:relative;z-index:3;cursor:pointer;-webkit-tap-highlight-color:transparent;outline:none}
+#sb-splash .sb-ticket-head:focus-visible{outline:2px solid var(--sb-accent);outline-offset:-6px;border-radius:20px}
+#sb-splash .sb-ticket-profile{z-index:3}
+#sb-splash .sb-ticket-profile:before,#sb-splash .sb-ticket-profile:after{opacity:0;transition:opacity .2s}
+#sb-splash .is-expanded .sb-ticket-profile:before,#sb-splash .is-expanded .sb-ticket-profile:after{opacity:1}
+#sb-splash .sb-ticket-body{z-index:1;opacity:0;transform:translateY(-9px);transition:opacity .25s ease,transform .4s ease}
+#sb-splash .is-expanded .sb-ticket-body{opacity:1;transform:translateY(0);transition-delay:.08s}
+#sb-splash .sb-unfold-mark{position:absolute;right:24px;bottom:14px;color:var(--sb-dim);font:18px/1 sans-serif;opacity:.55;transition:transform .3s}
+#sb-splash .is-expanded .sb-unfold-mark{transform:rotate(180deg)}
+#sb-splash .sb-barcode i{height:16px}
 `;
