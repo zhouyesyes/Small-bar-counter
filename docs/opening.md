@@ -18,7 +18,7 @@ TauriTavern（检测 __TAURITAVERN_STARTUP_STAGE__）在 APP_READY 后才加载�
 
 ## 素材和验证
 
-用户第一组原图现已同步到附件目录，已原样加入 assets/opening/cover.jpg 和 avatar.jpg 作为默认素材；用户自选图片优先，其次沿用已有全局头像，最后才用默认素材。重置可恢复默认图。
+默认素材现在是日夜两套（见 day-night-artwork.md：assets/opening/light-*.jpg、dark-*.jpg）；最早那一组 cover.jpg、avatar.jpg 代码已经不读，11/10 删掉了；用户自选图片优先，其次沿用已有全局头像，最后才用默认素材。重置可恢复默认图。
 
 `docs/preview/opening.html` 是独立浏览器预览，底部按钮模拟进度，不属于生产界面。手机尺寸检查覆盖日夜卡片、签名保存、酒液进度同步、就绪关闭、设置修改、退出、关闭启动开关和小屏滚动。使用真实入口与主模块，模拟宿主 API 测过模块路径、界面挂载、TauriTavern 延迟扩展完成事件、实际裁剪比例、IndexedDB 存图和回显。未在真实 iPhone / TauriTavern 实例安装验证。
 
