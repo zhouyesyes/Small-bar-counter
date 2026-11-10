@@ -12,6 +12,7 @@ import * as wi from '../../../../world-info.js';
 import { extractBlock, buildState, guessEra, parseBlock, stripNow } from './core.mjs';
 import { DEFAULT_PROMPT, buildInjection } from './prompt.mjs';
 import { createUI } from './ui.mjs';
+import { applyBarTheme } from './bar-theme.mjs';
 import { saveImage, imageUrl, deleteImage, listImages } from './imgstore.mjs';
 
 const NS = 'small_bar';          // 扩展设置里的位置
@@ -23,7 +24,7 @@ const ctx = () => getContext();
 function settings() {
     const c = ctx();
     const s = (c.extensionSettings[NS] ??= {});
-    s.enabled ??= true; s.cat ??= true; s.theme ??= 'auto'; s.api ??= 'main'; s.wxMemory ??= 50; s.storyPhoneN ??= 2; s.catTop ??= 46;
+    s.enabled ??= true; s.barTheme ??= false; s.cat ??= true; s.theme ??= 'auto'; s.api ??= 'main'; s.wxMemory ??= 50; s.storyPhoneN ??= 2; s.catTop ??= 46;
     s.chars ??= {}; s.me ??= {};
     return s;
 }
@@ -543,22 +544,27 @@ const host = {
 };
 const ui = createUI(host);
 let refreshTimer = 0;
-function refresh() { dirty(); clearTimeout(refreshTimer); refreshTimer = setTimeout(() => { dirty(); refreshInject(); ui.render(); }, 120); }
+function refresh() { dirty(); clearTimeout(refreshTimer); refreshTimer = setTimeout(() => { dirty(); refreshInject(); ui.render(); applyBarTheme(settings(), ctx); }, 120); }
 
-// 扩展页里的一小块设置：总开关、打开按钮（小猫关了也能从这里进）
+// 扩展页里的一小块设置：两个开关分开管（小猫抽屉、吧台美化）、打开按钮（小猫关了也能从这里进）
 function settingsPanel() {
     const box = document.getElementById('extensions_settings2') || document.getElementById('extensions_settings');
     if (!box || document.getElementById('sb-ext')) return;
     const el = document.createElement('div');
     el.id = 'sb-ext';
     el.innerHTML = `<div class="inline-drawer"><div class="inline-drawer-toggle inline-drawer-header"><b>小吧台</b><div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div></div>
-<div class="inline-drawer-content"><label class="checkbox_label"><input type="checkbox" id="sb-enabled"> 打开小吧台</label>
+<div class="inline-drawer-content"><label class="checkbox_label"><input type="checkbox" id="sb-enabled"> 小猫抽屉</label>
+<label class="checkbox_label" title="酒馆的颜色跟小吧台的配色走，顶栏换成小物件；要用别的大改美化时关掉它"><input type="checkbox" id="sb-bartheme"> 吧台美化</label>
 <div class="flex-container" style="gap:6px;margin-top:6px"><div class="menu_button" id="sb-openbtn">打开抽屉</div><div class="menu_button" id="sb-cleanbtn">扫描清理</div><div class="menu_button" id="sb-lookbtn">开场与配色</div></div>
 <small id="sb-cleanres" style="opacity:.7"></small></div></div>`;
     box.appendChild(el);
     const cb = el.querySelector('#sb-enabled');
     cb.checked = settings().enabled;
     cb.addEventListener('change', () => { settings().enabled = cb.checked; saveSettings(); if (cb.checked) { ui.reset({ keepOpen: true }); absorbAll(); claimImages(); } refresh(); });
+    // 吧台美化：和小猫抽屉互不相干，单独开关（关掉小猫抽屉也能用）
+    const bt = el.querySelector('#sb-bartheme');
+    bt.checked = !!settings().barTheme;
+    bt.addEventListener('change', () => { settings().barTheme = bt.checked; saveSettings(); applyBarTheme(settings(), ctx); });
     el.querySelector('#sb-openbtn').addEventListener('click', () => ui.open());
     el.querySelector('#sb-lookbtn').addEventListener('click', openSplashSettings);
     const res = el.querySelector('#sb-cleanres'), btn = el.querySelector('#sb-cleanbtn');
@@ -613,11 +619,13 @@ async function cleanAll() {
 }
 const ctxConfirm = async text => { const c = ctx(); return c.callGenericPopup ? !!await c.callGenericPopup(text.replace(/\n/g, '<br>'), c.POPUP_TYPE.CONFIRM) : confirm(text); };
 
-window.addEventListener('small-bar-appearance', () => ui.render());
+// 开场与配色里改了颜色 / 深浅：小吧台和整个店一起变
+window.addEventListener('small-bar-appearance', () => { ui.render(); applyBarTheme(settings(), ctx); });
 
 jQuery(() => {
     const c = ctx(), ev = c.eventSource, T = c.eventTypes || c.event_types;
     ui.mount();
+    applyBarTheme(settings(), ctx);
     setSplashProfile(me);
     progress(2 / 3);
     settingsPanel();

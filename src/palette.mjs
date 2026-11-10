@@ -19,7 +19,9 @@ export function palette(mode, colors = {}) {
 }
 export function modeFor(settings = {}) {
     if (['dark', 'light'].includes(settings.theme)) return settings.theme;
-    const c = getComputedStyle(document.body).backgroundColor.match(/[\d.]+/g);
+    // 吧台美化开着时，页面底色是我们自己盖上去的，要看酒馆原来设的那个，不然深浅就跟着自己转不回来了
+    const own = document.documentElement.classList.contains('sb-bar') && document.documentElement.style.getPropertyValue('--SmartThemeBlurTintColor').trim();
+    const c = (/^rgb/.test(own) ? own : getComputedStyle(document.body).backgroundColor).match(/[\d.]+/g);
     return c && Number(c[3] ?? 1) !== 0 ? ((+c[0] * .299 + +c[1] * .587 + +c[2] * .114) < 128 ? 'dark' : 'light') : (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
 }
 export function applyPalette(el, settings, mode = modeFor(settings)) {
