@@ -1,3 +1,5 @@
+import { applyPalette } from './palette.mjs';
+import { openSplashSettings } from './splash.mjs';
 // 小吧台的界面：小猫入口、左边滑出的抽屉、弹出来的小手机
 // 只管画和点，数据和酒馆那边都从 host 拿（见 index.js），方便以后换酒馆版本
 import { catSvg } from './cat.mjs';
@@ -198,6 +200,7 @@ export function createUI(host) {
     function render() {
         if (!root) return;
         const s = host.settings();
+        applyPalette(root, s, theme());
         const era = host.era();
         const wasOpen = root.dataset.open || '';
         const nowOpen = (v.drawer ? 'd' : '') + (v.phone ? 'p' : '');
@@ -857,7 +860,7 @@ export function createUI(host) {
   <label class="sb-srow"><span>时代</span><select data-cset="era">${[['auto', eraName.startsWith('自动') ? eraName : '自动'], ['modern', '现代'], ['minguo', '民国'], ['ancient', '古风']].map(([k, n]) => `<option value="${k}" ${(c.era || 'auto') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
   ${row('提示词', s.prompt ? '改过' : '默认', 'set-prompt')}
  </div>
- <div class="sb-sh">其他</div><div class="sb-sgrp">
+ <button data-act="splash-settings" class="sb-more">开场与配色</button><div class="sb-sh">其他</div><div class="sb-sgrp">
   <label class="sb-srow"><span>小手机怎么打开<small>抽屉里：嵌在抽屉那一格；浮窗：浮在聊天上，能拖，只有 × 关</small></span><select data-set="phoneMode">${[['drawer', '抽屉里'], ['float', '浮窗']].map(([k, n]) => `<option value="${k}" ${(s.phoneMode || 'drawer') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
   <label class="sb-srow"><span>外观</span><select data-set="theme">${[['auto', '跟酒馆'], ['light', '浅色'], ['dark', '深色']].map(([k, n]) => `<option value="${k}" ${(s.theme || 'auto') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
   ${toggle('小猫入口', 'cat', s.cat !== false)}
@@ -1483,3 +1486,7 @@ export function createUI(host) {
         isOpen: () => v.drawer || v.phone,
     };
 }
+
+document.addEventListener('click', event => {
+    if (event.target.closest('#sb-root [data-act="splash-settings"]')) openSplashSettings();
+});
