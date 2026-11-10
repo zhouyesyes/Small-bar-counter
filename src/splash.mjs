@@ -14,10 +14,10 @@ let settings = {}, save = () => {}, root, panel, ready = false, failed = false, 
 let previousFocus, unlockTimer, observer, appReadyCleanup, needsMount = false, hostDone = false, replaying = false, replayFrame = 0;
 try { const cached = JSON.parse(localStorage.getItem(KEY) || '{}'); if (cached && typeof cached === 'object') settings = cached; } catch { /* unavailable cache */ }
 const cfg = () => settings.splash || {};
-let profileGetter = () => ({});
-export function setSplashProfile(resolve) { profileGetter = resolve; paintImages(); }
-export function openingArtwork(profile = profileGetter()) {
-    return { cover: cfg().cover || defaultImages.cover, avatar: cfg().avatar || profile.avatar || defaultImages.avatar };
+// Opening artwork belongs to the opening settings, never to a chat persona.
+export function setSplashProfile() { paintImages(); }
+export function openingArtwork() {
+    return { cover: cfg().cover || defaultImages.cover, avatar: cfg().avatar || defaultImages.avatar };
 }
 function paintImages() {
     root?.querySelectorAll('[data-image]').forEach(el => {
