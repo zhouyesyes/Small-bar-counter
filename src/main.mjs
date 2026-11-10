@@ -558,7 +558,7 @@ function settingsPanel() {
     box.appendChild(el);
     const cb = el.querySelector('#sb-enabled');
     cb.checked = settings().enabled;
-    cb.addEventListener('change', () => { settings().enabled = cb.checked; saveSettings(); refresh(); });
+    cb.addEventListener('change', () => { settings().enabled = cb.checked; saveSettings(); if (cb.checked) { ui.reset({ keepOpen: true }); absorbAll(); claimImages(); } refresh(); });
     el.querySelector('#sb-openbtn').addEventListener('click', () => ui.open());
     el.querySelector('#sb-lookbtn').addEventListener('click', openSplashSettings);
     const res = el.querySelector('#sb-cleanres'), btn = el.querySelector('#sb-cleanbtn');
@@ -634,18 +634,20 @@ jQuery(() => {
     };
     if (!addWand()) { let n = 0; const t = setInterval(() => { if (addWand() || ++n > 30) clearInterval(t); }, 1000); }
     const on = (type, f) => { if (type) ev.on(type, f); };
-    on(T.CHAT_CHANGED, () => { ui.reset({ keepOpen: true }); absorbAll(); refresh(); claimImages(); setSplashProfile(me); });
-    on(T.PERSONA_CHANGED, () => { setSplashProfile(me); refresh(); });
-    on(T.PERSONA_UPDATED, () => { setSplashProfile(me); refresh(); });
+    // 关掉小吧台（扩展面板里那个勾）时什么都不做：不读楼层、不算状态、不重画（重新打开时会补读一遍）
+    const onIfEnabled = (type, f) => on(type, (...a) => { if (settings().enabled) f(...a); });
+    onIfEnabled(T.CHAT_CHANGED, () => { ui.reset({ keepOpen: true }); absorbAll(); refresh(); claimImages(); setSplashProfile(me); });
+    onIfEnabled(T.PERSONA_CHANGED, () => { setSplashProfile(me); refresh(); });
+    onIfEnabled(T.PERSONA_UPDATED, () => { setSplashProfile(me); refresh(); });
     on(T.CHAT_DELETED, name => { onChatGone(name); });
     on(T.GROUP_CHAT_DELETED, name => { onChatGone(name); });
-    on(T.MESSAGE_RECEIVED, id => { if (absorb(Number(id))) ctx().saveChat?.(); refresh(); });
-    on(T.CHARACTER_MESSAGE_RENDERED, id => { if (absorb(Number(id))) ctx().saveChat?.(); refresh(); });
-    on(T.MESSAGE_SWIPED, id => onSwiped(Number(id)));
-    on(T.MESSAGE_EDITED, id => { if (absorb(Number(id))) ctx().saveChat?.(); refresh(); });
-    on(T.MESSAGE_DELETED, () => refresh());
-    on(T.MESSAGE_UPDATED, () => refresh());
+    onIfEnabled(T.MESSAGE_RECEIVED, id => { if (absorb(Number(id))) ctx().saveChat?.(); refresh(); });
+    onIfEnabled(T.CHARACTER_MESSAGE_RENDERED, id => { if (absorb(Number(id))) ctx().saveChat?.(); refresh(); });
+    onIfEnabled(T.MESSAGE_SWIPED, id => onSwiped(Number(id)));
+    onIfEnabled(T.MESSAGE_EDITED, id => { if (absorb(Number(id))) ctx().saveChat?.(); refresh(); });
+    onIfEnabled(T.MESSAGE_DELETED, () => refresh());
+    onIfEnabled(T.MESSAGE_UPDATED, () => refresh());
     // 生成前再算一次注入（她在小手机里刚说的话要带上）
-    on(T.GENERATION_STARTED, () => { dirty(); refreshInject(); });
+    onIfEnabled(T.GENERATION_STARTED, () => { dirty(); refreshInject(); });
     absorbAll(); refresh();
 });
