@@ -420,7 +420,7 @@ export function createUI(host) {
         const ms = musicState(), names = Object.keys(ms.lists);
         return `<section class="sb-music">
  <div class="sb-cap">${t ? 'now playing' : 'music'} · ${Wd().music}</div>
- ${t ? `<div class="sb-mstate"><span class="sb-mstxt">${esc(v.mstate || (player.playing() ? '正在播放' : '点播放键开始'))}</span> <button class="sb-link" data-act="mskip">换个来源</button></div>` : ''}
+ ${t ? `<div class="sb-mstate"><button class="sb-link" data-act="mskip">换个来源</button></div>` : ''}
  <div class="sb-bigcover">${t ? coverImg(t, 'sb-bigimg') : ''}</div>
  <div class="sb-mt">${esc(t?.title || '还没放歌')}</div>
  <div class="sb-ma">${esc(t?.artist || '搜一首喜欢的歌')}</div>
