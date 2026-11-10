@@ -61,9 +61,9 @@ export function barCss(p) {
     const pageVars = Object.entries(page).map(([k, v]) => `${k}: ${v};`).join(' ');
     return `html.sb-bar { ${vars} ${pageVars} }
 ${relabelCss()}
-${I} { position: relative; color: var(--sb-bar-sub); opacity: 1; }
+${I} { position: relative; color: var(--sb-bar-accent); opacity: 1; }
 ${I}::before { content: '' !important; display: block; width: .74em; height: .74em; margin: .13em auto; background-color: currentColor; -webkit-mask: center / contain no-repeat; mask: center / contain no-repeat; }
-${I}.openIcon, ${I}:hover { color: var(--sb-bar-ink); opacity: 1; }
+${I}.openIcon, ${I}:hover { color: var(--sb-bar-accent); opacity: 1; }
 ${I}.openIcon::after { content: ''; position: absolute; left: 50%; bottom: -2px; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: var(--sb-bar-ink); }
 ${icons}`;
 }
@@ -102,4 +102,5 @@ export function applyBarTheme(settings, ctx) {
         media.addEventListener('change', media.sb);
     }
 }
+
 
