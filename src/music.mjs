@@ -134,23 +134,30 @@ async function gdUrl(t) {
     return u.replace(/^http:/, 'https:');
 }
 // 一串来源，每个带名字（k）：哪个放得出来就记在这首歌上（t.ok），下次先试它，不用再一个个等
+const SOURCE_CACHE_MS = 10 * 60 * 1000;
 export async function sourceList(t) {
     const list = [];
-    const add = async (k, get) => { try { const u = await get(); if (u && !list.some(x => x.u === u)) list.push({ k, u }); } catch { /* 这个没给就跳过 */ } };
+    const age = Date.now() - (t.okAt || 0);
+    const cached = /^https?:/.test(t.okUrl || '') && age >= 0 && age < SOURCE_CACHE_MS;
+    const add = async (k, get) => { try { const u = await get(); if (u && !list.some(x => x.u === u)) list.push({ k, u }); } catch { /* try another source */ } };
     if (t.src === 'qq') {
-        await add('qq', () => qqUrl(t));
+        if (t.ok === 'qq' && cached) {
+            list.push({ k: 'qq', u: t.okUrl });
+            list.push({ k: 'qq', get: () => qqUrl(t) });
+        } else await add('qq', () => qqUrl(t));
     } else {
-        if (t.direct) list.push({ k: 'direct', u: t.direct });
         const bases = [...new Set([t.base, ...MUSIC_APIS].filter(Boolean))];
-        // 记住的那个先拿（GD 要先问一次地址，其余是直接的链接）
-        const okIsGd = t.ok === 'gd';
-        if (okIsGd) await add('gd', () => gdUrl(t));
-        if (t.ok && t.ok.startsWith('m:')) list.push({ k: t.ok, u: apiUrl(t.ok.slice(2), { server: 'netease', type: 'url', id: t.id }) });
-        if (!okIsGd) await add('gd', () => gdUrl(t));
-        for (const b of bases) if ('m:' + b !== t.ok) list.push({ k: 'm:' + b, u: apiUrl(b, { server: 'netease', type: 'url', id: t.id }) });
+        const savedMeting = t.ok?.startsWith('m:');
+        if (savedMeting) list.push({ k: t.ok, u: apiUrl(t.ok.slice(2), { server: 'netease', type: 'url', id: t.id }) });
+        if (t.ok === 'gd' && cached) list.push({ k: 'gd', u: t.okUrl });
+        if (t.ok === 'gd' && !cached) await add('gd', () => gdUrl(t));
+        if (t.direct) list.push({ k: 'direct', u: t.direct });
+        // Never block a known working endpoint while preparing an unrelated backup.
+        if (list.length) list.push({ k: 'gd', get: () => gdUrl(t) });
+        else if (t.ok !== 'gd') await add('gd', () => gdUrl(t));
+        for (const base of bases) if ('m:' + base !== t.ok) list.push({ k: 'm:' + base, u: apiUrl(base, { server: 'netease', type: 'url', id: t.id }) });
     }
-    // 记住的那个排第一
-    const i = list.findIndex(x => x.k === t.ok);
+    const i = list.findIndex(x => x.k === t.ok && x.u);
     if (i > 0) list.unshift(...list.splice(i, 1));
     return list;
 }
@@ -299,7 +306,13 @@ export function createPlayer({ load, save, onChange, onStatus = () => {} }) {
         const t = playing || cur(); if (!t) return;
         // 先在这首歌的备用来源里一个个换（QR 也是这样，有的节点能放完整的会员歌）
         if (srcIdx + 1 < sources.length) {
-            srcIdx++; const u = sources[srcIdx].u;
+            srcIdx++; const entry = sources[srcIdx];
+            let u = entry.u;
+            if (!u && entry.get) {
+                try { u = await entry.get(); entry.u = u; } catch { return fallback(); }
+                if (playing !== t) return;
+            }
+            if (!u) return fallback();
             onStatus(`换一个来源试试（${srcIdx + 1} / ${sources.length}）…`);
             audio.src = u; audio.dataset.src = u; watch();
             try { await audio.play(); } catch { /* 出错会再进来 */ }
@@ -333,7 +346,7 @@ export function createPlayer({ load, save, onChange, onStatus = () => {} }) {
     audio.addEventListener('playing', () => {
         clearTimeout(dog);
         const t = playing, k = sources[srcIdx]?.k;
-        if (t && k && !swapped && t.ok !== k) { t.ok = k; save(); } // 记住这首用哪个来源放得出来
+        if (t && k && !swapped) { t.ok = k; t.okUrl = audio.dataset.src; t.okAt = Date.now(); save(); } // 记住这首用哪个来源放得出来
     });
     audio.addEventListener('pause', () => clearTimeout(dog));
     audio.addEventListener('error', () => { clearTimeout(dog); if (audio.src) fallback(); });
@@ -341,7 +354,7 @@ export function createPlayer({ load, save, onChange, onStatus = () => {} }) {
     audio.addEventListener('pause', () => onChange?.('state'));
     return {
         audio, play, next, prev,
-        skipSource: () => { const t = playing || cur(); if (t) delete t.ok; fallback(); }, // 她手动点「换个来源」：这首记的来源作废，换下一个
+        skipSource: () => { const t = playing || cur(); if (t) { delete t.ok; delete t.okUrl; delete t.okAt; } fallback(); }, // 她手动点「换个来源」：这首记的来源作废，换下一个
         toggle: () => (audio.paused ? play() : audio.pause()),
         seek: frac => { if (audio.duration) audio.currentTime = audio.duration * frac; },
         current: () => playing || cur(), playing: () => !audio.paused,
