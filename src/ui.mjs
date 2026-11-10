@@ -1,3 +1,4 @@
+import { bindMusicCovers } from './music-cover.mjs';
 import { applyPalette } from './palette.mjs';
 import { openSplashSettings } from './splash.mjs';
 // 小吧台的界面：小猫入口、左边滑出的抽屉、弹出来的小手机
@@ -65,7 +66,8 @@ export function createUI(host) {
         // 状态那行小字只改字，不整页重画（滑着的时候不跳）
         onStatus: text => { v.mstate = text; root?.querySelectorAll('.sb-mstxt').forEach(el => { el.textContent = text; }); },
     });
-    const coverImg = (t, cls) => { const l = coverList(t); return l.length ? `<img class="${cls}" src="${esc(l[0])}" data-alts="${esc(l.join('|'))}" loading="lazy" decoding="async" alt="" onerror="var a=(this.dataset.alts||'').split('|'),n=(+this.dataset.n||0)+1;this.dataset.n=n;if(a[n])this.src=a[n];else this.style.visibility='hidden'">` : `<span class="${cls}"></span>`; };
+    const coverTracks = new Map();
+    const coverImg = (t, cls) => { const key = `${t.src || 'netease'}:${t.id}`; coverTracks.set(key, t); const url = coverList(t)[0]; return `<img class="${cls}" ${url ? `src="${esc(url)}"` : ''} data-cover-key="${esc(key)}" decoding="async" alt="">`; };
     const fmt = s => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
     // 播放键、主页小卡片：只改这几处
     function patchMusic() {
@@ -215,6 +217,7 @@ export function createUI(host) {
         if (html === lastHtml) return; // 什么都没变：不重画，进新聊天时不来回闪
         lastHtml = html;
         root.innerHTML = html;
+        bindMusicCovers(root, coverTracks, coverList, resolveCover, () => host.saveSettings());
         root.querySelectorAll('[data-bg-picker]').forEach(input => {
             const cover = input.closest('.sb-cover,.sb-wcover,.sb-xcover');
             if (cover) { cover.dataset.bgTarget = input.dataset.upload; cover.tabIndex = 0; cover.setAttribute('role', 'button'); cover.setAttribute('aria-label', '更换背景'); }

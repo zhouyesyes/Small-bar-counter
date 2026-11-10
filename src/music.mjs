@@ -128,7 +128,7 @@ export async function qqTwin(t) {
     return list.find(x => norm(x.title) === norm(t.title) && (!t.artist || !x.artist || norm(x.artist).includes(norm(t.artist).slice(0, 4)) || norm(t.artist).includes(norm(x.artist).slice(0, 4)))) || null;
 }
 async function gdUrl(t) {
-    const d = await getJson(GD_API + '?' + new URLSearchParams({ types: 'url', source: 'netease', id: t.id, br: 320 }), 6000);
+    const d = await getJson(GD_API + '?' + new URLSearchParams({ types: 'url', source: 'netease', id: t.id, br: 320 }), 2500);
     const u = str(d?.url || d?.data?.url);
     if (!/^https?:/.test(u)) throw new Error('GD 没给地址');
     return u.replace(/^http:/, 'https:');
@@ -177,8 +177,10 @@ const gotCover = new Map();
 let coverBusy = 0; const coverWait = [];
 const coverSlot = () => (coverBusy < 3 ? (coverBusy++, Promise.resolve()) : new Promise(r => coverWait.push(r)));
 const coverDone = () => { const next = coverWait.shift(); if (next) next(); else coverBusy--; };
-export async function resolveCover(t) {
-    if (!t || (t.cover && /^https?:/.test(t.cover)) || t.src === 'qq') return false;
+export async function resolveCover(t, { refresh = false } = {}) {
+    if (!t || (!refresh && t.cover && /^https?:/.test(t.cover))) return false;
+    if (refresh) { gotCover.delete(t.picId || t.id); delete t.cover; }
+    if (t.src === 'qq') { try { await qqUrl(t); return !!t.cover; } catch { return false; } }
     const key = t.picId || t.id;
     if (gotCover.has(key)) { t.cover = gotCover.get(key); return true; }
     await coverSlot();
@@ -326,7 +328,7 @@ export function createPlayer({ load, save, onChange, onStatus = () => {} }) {
     let dog = 0;
     function watch() {
         clearTimeout(dog);
-        dog = setTimeout(() => { if (audio.paused || audio.currentTime < 0.3) { onStatus('等太久了，换一个来源…'); fallback(); } }, 12000);
+        dog = setTimeout(() => { if (audio.paused || audio.currentTime < 0.3) { onStatus('等太久了，换一个来源…'); fallback(); } }, 6000);
     }
     audio.addEventListener('playing', () => {
         clearTimeout(dog);
