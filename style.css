@@ -29,7 +29,7 @@
 #sb-root.sb-anim .sb-phone{animation:sb-up .22s ease-out}
 
 /* 抽屉 */
-#sb-root .sb-drawer{position:absolute;top:0;left:0;height:100%;width:min(330px,86vw);background:var(--sb-bg);border-right:1px solid var(--sb-line);display:flex;flex-direction:column;pointer-events:auto;touch-action:pan-y;overscroll-behavior:contain;padding-bottom:env(safe-area-inset-bottom)}
+#sb-root .sb-drawer{position:absolute;top:0;left:0;height:100%;width:var(--sb-page-width,min(330px,86vw));background:var(--sb-bg);border-right:1px solid var(--sb-line);display:flex;flex-direction:column;pointer-events:auto;touch-action:pan-y;overscroll-behavior:contain;padding-bottom:env(safe-area-inset-bottom)}
 #sb-root .sb-cover{height:128px;flex:0 0 auto;position:relative;background:#999 center/cover no-repeat;transition:height .2s}
 #sb-root .sb-logo{position:absolute;top:calc(14px + env(safe-area-inset-top));left:16px;color:#fff;font-size:11px;letter-spacing:.32em;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.3)}
 #sb-root .sb-x{position:absolute;top:calc(10px + env(safe-area-inset-top));right:12px;width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,.35);color:#fff;font-size:16px}
@@ -617,3 +617,8 @@
 #sb-root .sb-mrow2 .sb-mthumb{width:32px;height:32px;min-width:32px}
 #sb-root .sb-mrow2{grid-template-columns:32px minmax(0,1fr) auto}
 #sb-root .sb-mrow2:has(button[data-act="madd"]),#sb-root .sb-mrow2:has(button[data-act="msong-menu"]){grid-template-columns:32px minmax(0,1fr) auto auto}
+
+/* A narrow receipt with plain background and shorter dotted leaders. */
+#sb-root .sb-home-tab{width:62%;max-width:240px;padding:0;margin:12px auto 20px;background:none;border:0;border-radius:0;box-shadow:none}
+#sb-root .sb-home-tab>div{gap:8px;font-size:11px;line-height:1.5;padding:2px 0}
+#sb-root .sb-home-tab dt{gap:6px;letter-spacing:.08em}
