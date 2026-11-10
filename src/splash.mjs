@@ -18,8 +18,8 @@ function scaleTicket() {
     const shape = `M22 0H426Q448 0 448 22V${y-r}A${r} ${r} 0 0 0 448 ${y+r}V${height-22}Q448 ${height} 426 ${height}H22Q0 ${height} 0 ${height-22}V${y+r}A${r} ${r} 0 0 0 0 ${y-r}V22Q0 0 22 0Z`;
     const svg = body => `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${height}" viewBox="0 0 ${w} ${height}">${body}</svg>`)}")`;
     ticket.style.setProperty('--sb-ticket-mask', svg(`<path d="${shape}" fill="white"/>`));
-    const color = root.dataset.mode === 'light' ? '#77777780' : '#ffffff55';
-    ticket.style.setProperty('--sb-ticket-outline', svg(`<path d="${shape}" fill="none" stroke="${color.slice(0,7)}" stroke-opacity="${root.dataset.mode === 'light' ? '.5' : '.34'}" stroke-width="2"/>`));
+    const color = getComputedStyle(root).getPropertyValue('--sb-accent').trim() || '#b0b0b0';
+    ticket.style.setProperty('--sb-ticket-outline', svg(`<path d="${shape}" fill="none" stroke="${color}" stroke-opacity="1" stroke-width="2"/>`));
 
 }
 window.addEventListener('resize', scaleTicket);

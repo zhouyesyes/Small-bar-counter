@@ -13,7 +13,7 @@ export function palette(mode, colors = {}) {
     let dim = mix(bg, fg, .48);
     for (let t = .5; contrast(dim, bg) < 4.5 && t <= 1; t += .02) dim = mix(bg, fg, t);
     if (contrast(dim, bg) < 4.5) dim = fg;
-    const soft = mix(bg, fg === '#ffffff' ? '#000000' : '#ffffff', .045), line = mix(bg, fg, .17);
+    const soft = mix(bg, fg === '#ffffff' ? '#000000' : '#ffffff', .045), line = accent;
     const ink = contrast(accent, '#ffffff') > contrast(accent, '#000000') ? '#ffffff' : '#000000';
     return { bg, fg, dim, soft, line, accent, ink };
 }

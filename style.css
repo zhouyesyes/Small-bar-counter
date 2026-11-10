@@ -571,21 +571,21 @@
 #sb-root .sb-personal-edit svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 
 /* Personal receipt and music use quiet surfaces tinted by the chosen accent. */
-#sb-root .sb-home-tab{margin:22px 20px 30px;padding:16px 18px;background:color-mix(in srgb,var(--sb-accent) 9%,var(--sb-bg));border:1px solid color-mix(in srgb,var(--sb-accent) 24%,var(--sb-line));border-radius:14px}
+#sb-root .sb-home-tab{margin:22px 20px 30px;padding:16px 18px;background:color-mix(in srgb,var(--sb-accent) 9%,var(--sb-bg));border:1px solid var(--sb-accent);border-radius:14px}
 #sb-root .sb-home-tab>div{display:flex;align-items:baseline;gap:12px;padding:5px 0;font:11px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace}
 #sb-root .sb-home-tab dt{display:flex;align-items:baseline;gap:10px;flex:1;color:var(--sb-dim);letter-spacing:.12em}
 #sb-root .sb-home-tab dt:after{content:'';flex:1;border-bottom:1px dotted var(--sb-line)}
 #sb-root .sb-home-tab dd{margin:0;max-width:65%;overflow-wrap:anywhere;text-align:right;color:var(--sb-fg)}
 #sb-root .sb-landing .sb-sign{margin-bottom:0;padding:0 24px 4px}
-#sb-root .sb-music{margin:16px 14px;padding:16px 14px;border:1px solid color-mix(in srgb,var(--sb-accent) 20%,var(--sb-line));border-radius:18px;background:color-mix(in srgb,var(--sb-accent) 5%,var(--sb-bg))}
+#sb-root .sb-music{margin:16px 14px;padding:16px 14px;border:1px solid var(--sb-accent);border-radius:18px;background:color-mix(in srgb,var(--sb-accent) 5%,var(--sb-bg))}
 #sb-root .sb-music>.sb-cap{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px}
 #sb-root .sb-music>.sb-cap:before{content:'';width:6px;height:6px;border-radius:50%;background:var(--sb-accent)}
 #sb-root .sb-mctl button:not(.sb-mplay){border-radius:50%;background:color-mix(in srgb,var(--sb-accent) 12%,var(--sb-bg));min-width:32px;min-height:32px}
 #sb-root .sb-mctl button.on{background:var(--sb-accent);color:var(--sb-ink)}
-#sb-root .sb-msearch button{background:color-mix(in srgb,var(--sb-accent) 14%,var(--sb-bg));border-color:color-mix(in srgb,var(--sb-accent) 35%,var(--sb-line))}
+#sb-root .sb-msearch button{background:color-mix(in srgb,var(--sb-accent) 14%,var(--sb-bg));border-color:var(--sb-accent)}
 #sb-root .sb-plists button:not(.on){background:color-mix(in srgb,var(--sb-accent) 7%,var(--sb-bg))}
 
-#sb-root .sb-widget{background:color-mix(in srgb,var(--sb-accent) 5%,var(--sb-bg));border-color:color-mix(in srgb,var(--sb-accent) 20%,var(--sb-line))}
+#sb-root .sb-widget{background:color-mix(in srgb,var(--sb-accent) 5%,var(--sb-bg));border-color:var(--sb-accent)}
 #sb-root .sb-mstate .sb-link{margin:0}
 
 #sb-root .sb-home-tab{width:72%;max-width:280px;margin:12px auto 22px;padding:7px 12px;border-radius:9px}
