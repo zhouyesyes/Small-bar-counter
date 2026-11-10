@@ -263,7 +263,13 @@ export function parseLrc(text) {
         if (!tags.length || !words) continue;
         for (const m of tags) out.push({ t: +m[1] * 60 + +m[2], text: words });
     }
-    return out.sort((a, b) => a.t - b.t);
+    out.sort((a, b) => a.t - b.t);
+    // Ordinary LRC has only line timing. Estimate character timing for visual progress.
+    return out.map((line, index) => {
+        const duration = Math.max(.2, Math.min(8, (out[index + 1]?.t ?? line.t + 4) - line.t));
+        const chars = Array.from(line.text);
+        return {...line, estimated: true, words: chars.map((text, i) => ({text, start:line.t + duration*i/chars.length, end:line.t + duration*(i+1)/chars.length}))};
+    });
 }
 export const lineAt = (lrc, sec) => { let cur = -1; for (let i = 0; i < lrc.length; i++) { if (lrc[i].t <= sec + 0.2) cur = i; else break; } return cur; };
 

@@ -637,3 +637,20 @@
 #sb-root .sb-music .sb-mctl{margin:8px 5px 14px}
 #sb-root .sb-music .sb-mctl button:not(.sb-mplay){background:transparent}
 #sb-root .sb-music .sb-plists{border-top:1px solid var(--sb-accent);padding-top:12px}
+
+/* Edge-to-edge section rules and a compact, three-row queue. */
+#sb-root .sb-music>.sb-cap{margin:-18px -16px 0;padding:12px 16px;border-bottom:1px solid var(--sb-accent);justify-content:flex-start}
+#sb-root .sb-music .sb-plists{margin-left:-16px;margin-right:-16px;padding:12px 16px 0}
+#sb-root .sb-queue{margin:10px -16px 0;padding:8px 16px 0;border-top:1px solid var(--sb-accent);text-align:left}
+#sb-root .sb-queue-scroll{max-height:132px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--sb-accent) transparent}
+#sb-root .sb-queue-scroll .sb-mrow2{height:44px;padding:5px 0}
+#sb-root .sb-queue-scroll .sb-mrow2 b{font-size:12px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#sb-root .sb-queue-scroll .sb-mrow2 small{font-size:10px}
+#sb-root .sb-music .sb-lyr{--lyric-past:color-mix(in srgb,var(--sb-fg) 58%,var(--sb-bg));--lyric-future:color-mix(in srgb,var(--sb-fg) 35%,var(--sb-bg))}
+#sb-root .sb-music .sb-lyr .played-line,#sb-root .sb-music .sb-lyr .played-line .sb-lyric-word{color:var(--lyric-past)}
+#sb-root .sb-music .sb-lyr .upcoming-line,#sb-root .sb-music .sb-lyr .upcoming-line .sb-lyric-word{color:var(--lyric-future)}
+#sb-root .sb-music .sb-lyr .cur .sb-lyric-word{color:var(--lyric-future)}
+#sb-root .sb-music .sb-lyr .cur .sb-lyric-word.played{color:var(--lyric-past)}
+#sb-root .sb-music .sb-lyr .cur .sb-lyric-word.active{color:var(--sb-fg)}
+
+#sb-root .sb-music>.sb-mstate{margin:8px 0 10px;text-align:right}

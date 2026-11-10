@@ -22,6 +22,10 @@ export function updateLyrics(el, lyrics, current, trackKey = '', seconds = 0) {
         el.querySelector('.cur')?.classList.remove('cur');
         const line = el.querySelector(`[data-line="${current}"]`);
         line?.classList.add('cur');
+        el.querySelectorAll('[data-line]').forEach((row, index) => {
+            row.classList.toggle('played-line', index < current);
+            row.classList.toggle('upcoming-line', index > current);
+        });
         state.current = current;
     }
     const active = el.querySelector('.cur');

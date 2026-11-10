@@ -430,12 +430,13 @@ export function createUI(host) {
  ${t ? `<button class="sb-mbar" data-act="mseek"><i></i></button><div class="sb-mtime">0:00 / 0:00</div>` : ''}
  <div class="sb-mctl"><button data-act="mmode" title="${{ all: '列表循环', one: '单曲循环', shuffle: '随机' }[mode]}">${mi(mode)}</button><button data-act="mprev" aria-label="上一首">${mi('prev')}</button><button class="sb-mplay" data-act="mtoggle" aria-label="播放">${mi(player.playing() ? 'pause' : 'play')}</button><button data-act="mnext" aria-label="下一首">${mi('next')}</button><button data-act="mlist" class="${v.mlist ? 'on' : ''}" aria-label="歌单">${mi('list')}</button></div>
 
+ ${v.mlist !== false ? `<div class="sb-mres sb-queue"><div class="sb-cap sb-row" style="margin:6px 0"><span>${esc(ms.active)} · ${list.length} 首</span><span><button class="sb-link" data-act="mpl-rename">改名</button>${names.length > 1 ? ' <button class="sb-link" data-act="mpl-del">删掉这个歌单</button>' : ''}</span></div><div class="sb-queue-scroll" data-keep="music-queue">${list.map((r, i) => `<div class="sb-mrow2${t && r.id === t.id ? ' on' : ''}">${coverImg(r, 'sb-mthumb')}<span data-act="mplayat" data-i="${i}"><b>${esc(r.title)}</b><small>${esc(r.artist)}</small></span><button data-act="msong-menu" data-i="${i}" aria-label="管理这首歌">⋯</button><button data-act="mdelsong" data-i="${i}">×</button></div>`).join('') || '<div class="sb-empty sm">还没有歌</div>'}</div></div>` : ''}
  <div class="sb-plists">${names.map(n => `<button data-act="mpl" data-n="${esc(n)}" class="${n === ms.active ? 'on' : ''}">${esc(n)} <small>${ms.lists[n].length}</small></button>`).join('')}<button data-act="mpl-new" class="add">＋ 新建歌单</button></div>
  ${m?.title ? `<button class="sb-mhis" data-act="mhis">${Wd().listen}《${esc(m.title)}》${m.artist ? ' · ' + esc(m.artist) : ''} · 放这首</button>` : ''}
  <div class="sb-msearch"><input data-msearch placeholder="搜歌名、歌手，或贴网易云链接" enterkeyhint="search" value="${esc(v.mq || '')}"><button data-act="msearch">${v.msearching ? '…' : '搜'}</button></div>
  ${v.mres?.length ? `<div class="sb-mres"><div class="sb-cap sb-row" style="margin:6px 0"><span>搜「${esc(v.mq)}」· 第 ${v.mpage || 1} 页</span><button class="sb-link" data-act="mclose">收起 ×</button></div>${v.mres.map((r, i) => `<div class="sb-mrow2">${coverImg(r, 'sb-mthumb')}<span><b>${esc(r.title)}</b><small>${esc(r.artist)}${r.src === 'qq' ? ' · QQ' : ''}</small></span><button data-act="madd" data-i="${i}" data-play="1">▶</button><button data-act="madd" data-i="${i}">＋</button></div>`).join('')}
   <div class="sb-mpager"><button data-act="mpage" data-d="-1" ${(v.mpage || 1) <= 1 || v.msearching ? 'disabled' : ''}>上一页</button><span>${v.mpage || 1}</span><button data-act="mpage" data-d="1" ${v.msearching ? 'disabled' : ''}>下一页</button><button data-act="mclose">收起</button></div></div>` : ''}
- ${v.mlist ? `<div class="sb-mres"><div class="sb-cap sb-row" style="margin:6px 0"><span>${esc(ms.active)} · ${list.length} 首</span><span><button class="sb-link" data-act="mpl-rename">改名</button>${names.length > 1 ? ' <button class="sb-link" data-act="mpl-del">删掉这个歌单</button>' : ''}</span></div>${list.map((r, i) => `<div class="sb-mrow2${t && r.id === t.id ? ' on' : ''}">${coverImg(r, 'sb-mthumb')}<span data-act="mplayat" data-i="${i}"><b>${esc(r.title)}</b><small>${esc(r.artist)}</small></span><button data-act="msong-menu" data-i="${i}" aria-label="管理这首歌">⋯</button><button data-act="mdelsong" data-i="${i}">×</button></div>`).join('') || '<div class="sb-empty sm">还没有歌</div>'}</div>` : ''}
+
  ${v.songMenu != null && list[v.songMenu] ? `<div class="sb-song-menu"><span>${esc(list[v.songMenu].title)}</span><select data-msong-target aria-label="目标歌单">${names.filter(n=>n!==ms.active).map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('')}</select><button data-act="msong-copy">加入歌单</button><button data-act="msong-move">移到歌单</button><button data-act="msong-close">取消</button></div>` : ''}
 </section>`;
     }
@@ -1050,7 +1051,7 @@ export function createUI(host) {
             case 'mnext': player.next(); return;
             case 'mprev': player.prev(); return;
             case 'mmode': player.mode(); return;
-            case 'mlist': v.mlist = !v.mlist; break;
+            case 'mlist': v.mlist = v.mlist === false; break;
             case 'nowver': nowSwitch(+b.dataset.d); return;
             case 'clean-scan': {
                 v.clean = { busy: 'scan' }; render();
