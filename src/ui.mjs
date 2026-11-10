@@ -1,6 +1,6 @@
 import { updateLyrics } from './music-lyrics.mjs';
 import { bindMusicCovers } from './music-cover.mjs';
-import { applyPalette } from './palette.mjs';
+import { applyPalette, modeFor } from './palette.mjs';
 import { openSplashSettings } from './splash.mjs';
 // 小吧台的界面：小猫入口、左边滑出的抽屉、弹出来的小手机
 // 只管画和点，数据和酒馆那边都从 host 拿（见 index.js），方便以后换酒馆版本
@@ -186,16 +186,8 @@ export function createUI(host) {
         render();
     }
 
-    const theme = () => {
-        const t = host.settings().theme;
-        if (t === 'light' || t === 'dark') return t;
-        // 跟酒馆：看酒馆页面底色的深浅
-        const bg = getComputedStyle(document.body).backgroundColor || '';
-        const m = bg.match(/\d+(\.\d+)?/g);
-        if (!m) return 'light';
-        const [r, g, b] = m.map(Number);
-        return (r * 0.299 + g * 0.587 + b * 0.114) < 128 ? 'dark' : 'light';
-    };
+    // 跟酒馆：看酒馆页面底色的深浅（吧台美化开着时看酒馆原来设的颜色，见 palette.mjs）
+    const theme = () => modeFor(host.settings());
 
     function drawCat() {
         const el = root?.querySelector('.sb-cat'); if (!el) return;
