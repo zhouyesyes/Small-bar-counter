@@ -1,6 +1,5 @@
 // Native chat nodes stay in place: editing, swiping and other extensions own their contents.
 import { artwork, personalProfile } from './artwork.mjs';
-import { cropImage } from './crop.mjs';
 
 let getHost, observer, surface, queued = false, menu;
 const touched = new Map();
@@ -19,28 +18,18 @@ function popup(anchor, items) {
     menu.style.top = `${Math.max(8, Math.min(innerHeight - menu.offsetHeight - 8, r.bottom + 4))}px`;
     menu.querySelector('button')?.focus();
 }
-function outside(e) { if (!e.target.closest('.sb-chat-popup,.sb-lounge-more,.sb-chat-avatar,.sb-chat-cover')) closeMenu(); }
+function outside(e) { if (!e.target.closest('.sb-chat-popup,.sb-lounge-more')) closeMenu(); }
 function escape(e) { if (e.key === 'Escape') closeMenu(); }
 function schedule() { if (queued) return; queued = true; queueMicrotask(() => { queued = false; if (getHost) sync(); }); }
 function image(img, src) { if (src && img.getAttribute('src') !== src) img.src = src; }
-function contextKey(c) { return JSON.stringify([c.characterId, c.groupId, c.chatId]); }
-function picture(h, side, kind, reset = false) {
-    const captured = h.context(), key = contextKey(captured), cfg = h.config();
-    if (reset) { delete (cfg.chatAppearance ??= {})[side + kind]; h.saveChat(); sync(); return; }
-    const input = element('input', 'sb-chat-file'); input.type = 'file'; input.accept = 'image/*';
-    input.onchange = async () => {
-        try {
-            const file = input.files?.[0]; if (!file) return;
-            const data = await cropImage(file, { ratio: kind === 'Avatar' ? 1 : Math.max(2, surface.clientWidth / 62), round: kind === 'Avatar', outW: kind === 'Avatar' ? 240 : 1200 });
-            if (!data || !getHost || contextKey(h.context()) !== key) return;
-            const src = await h.saveImage(data);
-            if (!getHost || contextKey(h.context()) !== key) return;
-            (cfg.chatAppearance ??= {})[side + kind] = src; h.saveChat(); sync();
-        } catch (err) { globalThis.toastr?.error(err.message || '图片保存失败'); }
-        finally { input.remove(); }
+// Read the same shared sources as the card / Moments, ignoring old message-only overrides.
+export function sharedChatImages({ side, person, nativeAvatar = '', config = {}, fallbackCover = '', image = value => value }) {
+    const cover = config.cover || {};
+    const common = cover.mode === 'fixed' ? cover.fixed : cover.mode === 'pick' ? cover.images?.[0]?.src : '';
+    return {
+        avatar: person?.avatar || nativeAvatar,
+        cover: image((side === 'me' && config.coverWx) || common || fallbackCover),
     };
-    // Detached inputs work with file choosers and cannot alter chat layout.
-    input.click();
 }
 function decorateMessage(node, h, c) {
     if (node.getAttribute('is_system') === 'true' || node.querySelector('.welcomePanel')) return;
@@ -48,27 +37,23 @@ function decorateMessage(node, h, c) {
     const original = $('.mesAvatarWrapper .avatar img', node), nativeName = $('.name_text', node);
     let record = touched.get(node);
     if (!record) {
-        const cover = element('button', 'sb-chat-cover'); cover.type = 'button'; cover.setAttribute('aria-label', '更换这方的对话头图');
+        const cover = element('div', 'sb-chat-cover');
         const coverImage = element('img', ''); coverImage.alt = ''; coverImage.decoding = 'async'; cover.append(coverImage);
-        const who = element('div', 'sb-chat-who'); const avatar = element('button', 'sb-chat-avatar'); avatar.type = 'button'; avatar.setAttribute('aria-label', '设置这方的对话头像');
+        const who = element('div', 'sb-chat-who'); const avatar = element('span', 'sb-chat-avatar');
         const av = element('img', ''); av.alt = ''; avatar.append(av); const name = element('span', 'sb-chat-name'); const time = element('span', 'sb-chat-time'); who.append(avatar, name, time);
         node.prepend(cover, who); record = { cover, coverImage, who, avatar, av, name, time }; touched.set(node, record); node.classList.add('sb-reading-message');
-        cover.onclick = e => { e.stopPropagation(); popup(cover, [['更换头图', () => picture(getHost(), node.dataset.sbSide, 'Cover')], ['恢复默认头图', () => picture(getHost(), node.dataset.sbSide, 'Cover', true)]]); };
-        avatar.onclick = e => { e.stopPropagation(); const s = node.dataset.sbSide, selected = !getHost().config().chatAppearance?.[s + 'Avatar']; popup(avatar, [[(s === 'me' ? '使用朋友圈头像' : '使用角色卡头像') + (selected ? ' ✓' : ''), () => picture(getHost(), s, 'Avatar', true)], ['单独更换对话头像' + (selected ? '' : ' ✓'), () => picture(getHost(), s, 'Avatar')]]); };
     }
     node.dataset.sbSide = side;
-    const cfg = h.config(), custom = cfg.chatAppearance || {}, person = side === 'me' ? h.me() : (c.groupId ? null : h.him());
+    const person = side === 'me' ? h.me() : (c.groupId ? null : h.him());
     const art = artwork(personalProfile(h.settings()), document.documentElement.dataset.sbMode || 'light');
-    const src = custom[side + 'Avatar'] ? h.image(custom[side + 'Avatar']) : person?.avatar || original?.getAttribute('src');
-    image(record.av, src);
-    const fallbackCover = side === 'me' ? cfg.coverWx : cfg.cover?.mode === 'fixed' ? cfg.cover.fixed : cfg.cover?.images?.[0]?.src;
-    image(record.coverImage, h.image(custom[side + 'Cover'] || fallbackCover || art.cover));
+    const pictures = sharedChatImages({ side, person, nativeAvatar: original?.getAttribute('src'), config: h.config(), fallbackCover: art.cover, image: h.image });
+    image(record.av, pictures.avatar);
+    image(record.coverImage, pictures.cover);
     const key = c.characters?.[c.characterId]?.avatar;
     const name = side === 'me' ? person?.name : nameFor(h, key, person?.remark || person?.name || nativeName?.textContent || '');
     if (record.name.textContent !== name) record.name.textContent = name;
     const time = $('.timestamp', node)?.textContent || ''; if (record.time.textContent !== time) record.time.textContent = time;
-    // The selection mark reflects the saved override, not merely the last menu click.
-    record.avatar.title = custom[side + 'Avatar'] ? '独立对话头像' : side === 'me' ? '朋友圈头像' : '角色卡头像';
+    record.avatar.title = side === 'me' ? '朋友圈头像' : '角色卡头像';
 }
 function lounge(panel, h, c) {
     if (!$('.sb-lounge-head', panel)) {
@@ -163,3 +148,4 @@ export function unmountChat() {
     }
     surface = null;
 }
+
