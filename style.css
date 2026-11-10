@@ -1126,6 +1126,8 @@ html.sb-bar #chat.sb-lounge .welcomePanel > :not(.sb-lounge-root) {display:none!
 html.sb-bar .sb-lounge-root {width:100%;color:var(--sb-bar-text);font:11px/1.65 var(--sb-f-serif);}
 html.sb-bar .sb-lounge-root [hidden] {display:none!important;}
 html.sb-bar .sb-lounge-root button,html.sb-bar .sb-lounge-root input {font:inherit;color:inherit;box-shadow:none;text-shadow:none;}
+/* Native welcome rows can set their own UI font: keep all home-page copy in Songti. */
+html.sb-bar .sb-lounge-root :is(input,button,strong,p,span,.chatName,.chatMessage,.chatDate,.recentChatInfo) {font-family:var(--sb-f-serif)!important;}
 html.sb-bar .sb-lounge-root button {cursor:pointer;}
 html.sb-bar .sb-lounge-root svg {width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round;}
 html.sb-bar .sb-lounge-head {position:relative;padding:20px 26px 15px;text-align:center;}
