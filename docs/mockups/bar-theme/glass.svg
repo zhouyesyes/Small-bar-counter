@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 220" width="600" height="440">
+<defs>
+  <linearGradient id="bowl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9c7c2" stop-opacity=".25"/><stop offset="1" stop-color="#8d8a85" stop-opacity=".55"/></linearGradient>
+  <linearGradient id="liq" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b9a9a0"/><stop offset="1" stop-color="#7d6f68"/></linearGradient>
+  <linearGradient id="rib" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#efe6e3"/><stop offset=".5" stop-color="#d8c8c4"/><stop offset="1" stop-color="#b8a7a3"/></linearGradient>
+</defs>
+<g transform="rotate(-8 150 110)">
+  <!-- 杯身 -->
+  <path d="M78 52 Q150 44 222 52 Q214 104 150 108 Q86 104 78 52Z" fill="url(#bowl)" stroke="#4a4744" stroke-width="1.6"/>
+  <path d="M86 64 Q150 58 214 64 Q206 100 150 103 Q94 100 86 64Z" fill="url(#liq)" opacity=".85"/>
+  <ellipse cx="150" cy="52" rx="72" ry="7" fill="none" stroke="#4a4744" stroke-width="1.4"/>
+  <ellipse cx="150" cy="64" rx="64" ry="5" fill="#cbbdb6" opacity=".7"/>
+  <path d="M96 60 Q110 90 140 100" stroke="#fff" stroke-opacity=".55" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <!-- 樱桃 -->
+  <circle cx="184" cy="58" r="9" fill="#5a3f3c"/><circle cx="181" cy="55" r="2.5" fill="#fff" opacity=".5"/>
+  <path d="M184 49 Q190 30 204 22" stroke="#4a4744" stroke-width="1.4" fill="none"/>
+  <!-- 杯柄、底座 -->
+  <path d="M146 108 L147 176 M154 108 L153 176" stroke="#4a4744" stroke-width="1.6"/>
+  <path d="M147 176 Q118 180 112 188 Q150 196 188 188 Q182 180 153 176" fill="#dad7d2" stroke="#4a4744" stroke-width="1.6"/>
+  <!-- 蝴蝶结 -->
+  <g transform="translate(150 140)">
+    <path d="M0 0 C-30 -26 -64 -10 -52 10 C-44 22 -16 12 0 0Z" fill="url(#rib)" stroke="#9c8b87" stroke-width=".8"/>
+    <path d="M0 0 C30 -26 64 -10 52 10 C44 22 16 12 0 0Z" fill="url(#rib)" stroke="#9c8b87" stroke-width=".8"/>
+    <path d="M-2 2 C-14 22 -30 46 -40 62 L-28 60 L-24 72 C-12 50 -4 26 2 4Z" fill="url(#rib)" stroke="#9c8b87" stroke-width=".8"/>
+    <path d="M2 2 C12 24 26 40 42 54 L30 56 L30 68 C14 50 4 28 -1 4Z" fill="url(#rib)" stroke="#9c8b87" stroke-width=".8"/>
+    <ellipse cx="0" cy="1" rx="7" ry="6" fill="#d4c3bf" stroke="#9c8b87" stroke-width=".8"/>
+  </g>
+</g>
+</svg>
