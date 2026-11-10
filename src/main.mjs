@@ -587,7 +587,7 @@ async function cleanAll() {
         const seen = new Set();
         for (const t of list) {
             const k = (t.src || 'n') + ':' + t.id; if (seen.has(k)) dupes++; seen.add(k);
-            if (t.ok || t.direct || t.base || /^https?:/.test(t.lrc || '') || apiCover(t.cover)) cached++;
+            if (t.ok || t.okUrl || t.direct || t.base || /^https?:/.test(t.lrc || '') || apiCover(t.cover)) cached++;
         }
     }
     const old = s.chars && Object.keys(s.chars).length ? Object.keys(s.chars).length : 0; // 老版本按角色存的，现在不用了
@@ -605,7 +605,7 @@ async function cleanAll() {
     for (const [name, list] of Object.entries(lists)) {
         const seen = new Set();
         lists[name] = list.filter(t => { const k = (t.src || 'n') + ':' + t.id; if (seen.has(k)) return false; seen.add(k); return true; });
-        for (const t of lists[name]) { delete t.ok; delete t.direct; delete t.base; if (/^https?:/.test(t.lrc || '')) t.lrc = ''; if (apiCover(t.cover)) t.cover = ''; }
+        for (const t of lists[name]) { delete t.ok; delete t.okUrl; delete t.okAt; delete t.direct; delete t.base; if (/^https?:/.test(t.lrc || '')) t.lrc = ''; if (apiCover(t.cover)) t.cover = ''; }
     }
     if (old) s.chars = {};
     saveSettings();
