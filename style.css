@@ -622,3 +622,18 @@
 #sb-root .sb-home-tab{width:62%;max-width:240px;padding:0;margin:12px auto 20px;background:none;border:0;border-radius:0;box-shadow:none}
 #sb-root .sb-home-tab>div{gap:8px;font-size:11px;line-height:1.5;padding:2px 0}
 #sb-root .sb-home-tab dt{gap:6px;letter-spacing:.08em}
+
+/* Selected lyric-focused layout; inset only a little more than the compact card. */
+#sb-root .sb-music{margin-left:20px;margin-right:20px;background:var(--sb-bg);padding:18px 16px}
+#sb-root .sb-track-head{display:flex;align-items:center;gap:11px;text-align:left;margin:10px 0 12px}
+#sb-root .sb-track-head .sb-bigcover{width:46px!important;height:46px!important;flex:0 0 46px;margin:0}
+#sb-root .sb-track-meta{flex:1;min-width:0}
+#sb-root .sb-track-meta .sb-mt{margin:0;font-size:17px;overflow-wrap:anywhere}
+#sb-root .sb-music .sb-lyr{height:154px;padding:54px 0;text-align:left;margin:12px 0}
+#sb-root .sb-music .sb-lyr .sb-lyric-line{font-size:13px;text-align:left;line-height:23px;min-height:33px;padding:5px 0}
+#sb-root .sb-music .sb-lyr .sb-lyric-line.cur{font-size:19px;line-height:1.55;min-height:36px;padding-left:12px;position:relative}
+#sb-root .sb-music .sb-lyr .sb-lyric-line.cur:before{content:'';position:absolute;left:0;top:11px;width:3px;height:18px;border-radius:2px;background:var(--sb-accent)}
+#sb-root .sb-music .sb-lyr:has(.sb-lyric-empty){height:38px;padding:8px 0;text-align:left}
+#sb-root .sb-music .sb-mctl{margin:8px 5px 14px}
+#sb-root .sb-music .sb-mctl button:not(.sb-mplay){background:transparent}
+#sb-root .sb-music .sb-plists{border-top:1px solid var(--sb-accent);padding-top:12px}

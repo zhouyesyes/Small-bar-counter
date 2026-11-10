@@ -422,13 +422,14 @@ export function createUI(host) {
         return `<section class="sb-music">
  <div class="sb-cap">${t ? 'now playing' : 'music'} · ${Wd().music}</div>
  ${t ? `<div class="sb-mstate"><span class="sb-mstxt" role="status">${esc(v.mstate || '')}</span> <button class="sb-link" data-act="mskip">换个来源</button></div>` : ''}
- <div class="sb-bigcover">${t ? coverImg(t, 'sb-bigimg') : ''}</div>
+ <div class="sb-track-head"><div class="sb-bigcover">${t ? coverImg(t, 'sb-bigimg') : ''}</div><div class="sb-track-meta">
  <div class="sb-mt">${esc(t?.title || '还没放歌')}</div>
- <div class="sb-ma">${esc(t?.artist || '搜一首喜欢的歌')}</div>
+ <div class="sb-ma">${esc(t?.artist || '搜一首喜欢的歌')}</div></div></div>
+ <div class="sb-lyr" aria-label="滚动歌词"></div>
 
  ${t ? `<button class="sb-mbar" data-act="mseek"><i></i></button><div class="sb-mtime">0:00 / 0:00</div>` : ''}
  <div class="sb-mctl"><button data-act="mmode" title="${{ all: '列表循环', one: '单曲循环', shuffle: '随机' }[mode]}">${mi(mode)}</button><button data-act="mprev" aria-label="上一首">${mi('prev')}</button><button class="sb-mplay" data-act="mtoggle" aria-label="播放">${mi(player.playing() ? 'pause' : 'play')}</button><button data-act="mnext" aria-label="下一首">${mi('next')}</button><button data-act="mlist" class="${v.mlist ? 'on' : ''}" aria-label="歌单">${mi('list')}</button></div>
- <div class="sb-lyr" aria-label="滚动歌词"></div>
+
  <div class="sb-plists">${names.map(n => `<button data-act="mpl" data-n="${esc(n)}" class="${n === ms.active ? 'on' : ''}">${esc(n)} <small>${ms.lists[n].length}</small></button>`).join('')}<button data-act="mpl-new" class="add">＋ 新建歌单</button></div>
  ${m?.title ? `<button class="sb-mhis" data-act="mhis">${Wd().listen}《${esc(m.title)}》${m.artist ? ' · ' + esc(m.artist) : ''} · 放这首</button>` : ''}
  <div class="sb-msearch"><input data-msearch placeholder="搜歌名、歌手，或贴网易云链接" enterkeyhint="search" value="${esc(v.mq || '')}"><button data-act="msearch">${v.msearching ? '…' : '搜'}</button></div>
