@@ -2,25 +2,38 @@ import { artwork, artworkMode, personalProfile } from './artwork.mjs';
 import { applyPalette, defaults } from './palette.mjs';
 import { imageUrl, saveImage } from './imgstore.mjs';
 const KEY = 'small_bar_splash_v1';
-function scaleTicket() {
-    const frame = root?.querySelector('.sb-ticket-frame'); if (!frame) return;
-    const scale = frame.getBoundingClientRect().width / 448;
-    root.style.setProperty('--sb-ticket-scale', scale);
-    const ticket = frame.querySelector('.sb-ticket');
-    // Measure the visible sections, not a previously expanded masked card's auto height.
-    const style = getComputedStyle(ticket);
-    const height = [...ticket.children].reduce((total, section) => total + (section.hidden ? 0 : section.offsetHeight), 0)
-        + (parseFloat(style.borderTopWidth) || 0) + (parseFloat(style.borderBottomWidth) || 0);
-    ticket.style.height = `${height}px`;
-    frame.style.height = `${height * scale}px`;
-    // A single silhouette supplies both the transparent cutouts and their border.
+const ticketLayouts = new WeakMap();
+function ticketShape(height, color) {
     const y = 291, r = 12, w = 448;
     const shape = `M22 0H426Q448 0 448 22V${y-r}A${r} ${r} 0 0 0 448 ${y+r}V${height-22}Q448 ${height} 426 ${height}H22Q0 ${height} 0 ${height-22}V${y+r}A${r} ${r} 0 0 0 0 ${y-r}V22Q0 0 22 0Z`;
-    const svg = body => `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${height}" viewBox="0 0 ${w} ${height}">${body}</svg>`)}")`;
-    ticket.style.setProperty('--sb-ticket-mask', svg(`<path d="${shape}" fill="white"/>`));
-    const color = getComputedStyle(root).getPropertyValue('--sb-accent').trim() || '#b0b0b0';
-    ticket.style.setProperty('--sb-ticket-outline', svg(`<path d="${shape}" fill="none" stroke="${color}" stroke-opacity="1" stroke-width="2"/>`));
-
+    const url = body => `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${height}" viewBox="0 0 ${w} ${height}">${body}</svg>`)}`;
+    const urls = [url(`<path d="${shape}" fill="white"/>`), url(`<path d="${shape}" fill="none" stroke="${color}" stroke-width="2"/>`)];
+    const images = urls.map(src => { const image = new Image(); image.src = src; image.decode?.().catch(() => {}); return image; });
+    return {mask:`url("${urls[0]}")`, outline:`url("${urls[1]}")`, images};
+}
+function scaleTicket() {
+    const frame = root?.querySelector('.sb-ticket-frame'); if (!frame) return;
+    const ticket = frame.querySelector('.sb-ticket'), details = ticket.querySelector('.sb-ticket-body');
+    let layout = ticketLayouts.get(ticket);
+    if (!layout) {
+        const style = getComputedStyle(ticket), hidden = details.hidden;
+        const border = (parseFloat(style.borderTopWidth) || 0) + (parseFloat(style.borderBottomWidth) || 0);
+        const measure = () => [...ticket.children].reduce((total, section) => total + (section.hidden ? 0 : section.offsetHeight), border);
+        details.hidden = false; const open = measure();
+        details.hidden = true; const closed = measure(); details.hidden = hidden;
+        const color = getComputedStyle(root).getPropertyValue('--sb-accent').trim() || '#b0b0b0';
+        layout = {open, closed, openShape:ticketShape(open,color), closedShape:ticketShape(closed,color)};
+        ticketLayouts.set(ticket, layout);
+    }
+    const scale = frame.getBoundingClientRect().width / 448;
+    const height = details.hidden ? layout.closed : layout.open;
+    const shape = details.hidden ? layout.closedShape : layout.openShape;
+    root.style.setProperty('--sb-ticket-scale', scale);
+    ticket.style.height = `${height}px`; frame.style.height = `${height * scale}px`;
+    if (ticket.style.getPropertyValue('--sb-ticket-mask') !== shape.mask) {
+        ticket.style.setProperty('--sb-ticket-mask', shape.mask);
+        ticket.style.setProperty('--sb-ticket-outline', shape.outline);
+    }
 }
 window.addEventListener('resize', scaleTicket);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -64,6 +77,7 @@ function paint() {
     root.querySelector('[data-order]').textContent = cfg().order ?? 'the usual';
     root.querySelector('[data-date]').textContent = cfg().date || root.dataset.today;
     paintImages();
+    ticketLayouts.delete(root.querySelector('.sb-ticket'));
     scaleTicket();
     progress(stage);
 }
@@ -133,6 +147,8 @@ export function startSplash(force = false) {
     <label class="sb-remember"><input data-remember type="checkbox"><span data-save-label aria-live="polite">keep my tab open</span></label></div><div class="sb-ticket-actions"><footer><div class="sb-barcode" aria-hidden="true"><i></i><span>0137 ${date.getFullYear()}</span></div><div class="sb-footer-actions"><button class="sb-pour">pour me one</button><button class="sb-pass">only passing by →</button></div></footer></div></section></div>
     <section class="sb-pouring" hidden><svg viewBox="0 0 48 80" aria-hidden="true"><defs><clipPath id="sb-glass-clip"><path d="M9 8H39V20C39 40 9 40 9 20Z"/></clipPath></defs><g clip-path="url(#sb-glass-clip)"><rect class="sb-wine" x="8" y="8" width="32" height="30"/></g><path d="M9 8H39V20C39 40 9 40 9 20ZM24 36V70M15 70H33" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg><div><p data-status aria-live="polite">pouring your usual</p><small data-percent></small><div class="sb-progress" role="progressbar" aria-label="Small Bar startup stages" aria-valuemin="0" aria-valuemax="100"><i></i></div><small class="sb-progress-note">preparing small bar</small></div></section>`;
     document.documentElement.appendChild(root); paint();
+    const mounted = root;
+    document.fonts?.ready.then(() => { if (root === mounted) { ticketLayouts.delete(root.querySelector('.sb-ticket')); scaleTicket(); } });
     root.querySelector('.sb-splash-close').onclick = dismiss;
     root.querySelector('.sb-pass').onclick = dismiss;
     root.querySelector('.sb-splash-edit').onclick = openSplashSettings;
@@ -305,7 +321,7 @@ const styles = `
 #sb-splash .sb-ticket,#sb-splash .is-expanded .sb-ticket{height:auto;transition:none}
 #sb-splash .sb-ticket-body,#sb-splash .is-expanded .sb-ticket-body{height:auto;padding-bottom:0;opacity:1;transform:none;transition:none;will-change:auto}
 #sb-splash .sb-ticket-body .sb-remember{margin-bottom:0}
-#sb-splash .is-expanded .sb-ticket-body{animation:sb-receipt-reveal .14s ease-out}
+#sb-splash .is-expanded .sb-ticket-body{animation:none}
 #sb-splash .sb-ticket-actions{position:relative;z-index:1;background:var(--sb-card);padding:18px 24px 20px}
 #sb-splash .sb-ticket{-webkit-mask-image:radial-gradient(circle at 0 291px,transparent 12px,#000 13px),radial-gradient(circle at 100% 291px,transparent 12px,#000 13px);-webkit-mask-composite:source-in;mask-image:radial-gradient(circle at 0 291px,transparent 12px,#000 13px),radial-gradient(circle at 100% 291px,transparent 12px,#000 13px);mask-composite:intersect}
 @keyframes sb-receipt-reveal{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}

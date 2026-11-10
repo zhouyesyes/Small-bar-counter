@@ -1,12 +1,13 @@
 const states = new WeakMap();
+export function invalidateLyricsLayout(el) { const state = states.get(el); if (state) state.centered = false; }
 const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export function updateLyrics(el, lyrics, current, trackKey = '', seconds = 0) {
     if (!el) return;
     let state = states.get(el);
     if (!state) {
-        state = { lyrics: null, current: null, trackKey: '', holdUntil: 0 };
+        state = { lyrics: null, current: null, trackKey: '', holdUntil: 0, centered: false };
         states.set(el, state);
-        const hold = () => { state.holdUntil = Date.now() + 4000; };
+        const hold = () => { state.holdUntil = Date.now() + 4000; state.centered = false; };
         el.addEventListener('touchstart', hold, { passive: true });
         el.addEventListener('touchmove', hold, { passive: true });
         el.addEventListener('wheel', hold, { passive: true });
@@ -14,7 +15,7 @@ export function updateLyrics(el, lyrics, current, trackKey = '', seconds = 0) {
     }
     const changed = state.lyrics !== lyrics || state.trackKey !== trackKey;
     if (changed) {
-        state.lyrics = lyrics; state.trackKey = trackKey; state.current = null; state.holdUntil = 0;
+        state.lyrics = lyrics; state.trackKey = trackKey; state.current = null; state.holdUntil = 0; state.centered = false;
         el.innerHTML = lyrics.length ? lyrics.map((line, index) => `<button type="button" class="sb-lyric-line" data-act="mlyric" data-line="${index}">${line.words?.length ? line.words.map(word => `<span class="sb-lyric-word">${escape(word.text)}</span>`).join('') : escape(line.text)}</button>`).join('') : '<div class="sb-lyric-empty">暂无歌词</div>';
         el.scrollTop = 0;
     }
@@ -26,7 +27,7 @@ export function updateLyrics(el, lyrics, current, trackKey = '', seconds = 0) {
             row.classList.toggle('played-line', index < current);
             row.classList.toggle('upcoming-line', index > current);
         });
-        state.current = current;
+        state.current = current; state.centered = false;
     }
     const active = el.querySelector('.cur');
     const words = lyrics[current]?.words;
@@ -36,8 +37,9 @@ export function updateLyrics(el, lyrics, current, trackKey = '', seconds = 0) {
     });
     // Only scroll this lyric viewport; never scroll the containing chat or drawer.
     const line = el.querySelector('.cur');
-    if (line && Date.now() >= state.holdUntil) {
+    if (line && !state.centered && Date.now() >= state.holdUntil) {
         const top = Math.max(0, line.offsetTop - (el.clientHeight - line.offsetHeight) / 2);
+        state.centered = true;
         if (Math.abs(el.scrollTop - top) > 2) el.scrollTo({ top, behavior: changed ? 'auto' : 'smooth' });
     }
 }
