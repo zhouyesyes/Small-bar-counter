@@ -8,6 +8,25 @@ export function groupChatRows(rows) {
     for (const row of rows) { const key = loungeKey(row); if (!groups.has(key)) groups.set(key, []); groups.get(key).push(row); }
     return groups;
 }
+export function chatRowTimestamp(row) {
+    const date = $('.chatDate', row), title = date?.title || '';
+    // Native dates use the current locale; prefer Moment's exact native format when available.
+    const local = globalThis.moment?.(title, 'LL LT', true);
+    if (local?.isValid()) return local.valueOf();
+    const parsed = Date.parse(title); if (Number.isFinite(parsed)) return parsed;
+    const named = (row.dataset.file || '').match(/(\d{4})-(\d{2})-(\d{2})@(\d{2})h(\d{2})m(\d{2})s/);
+    if (named) { const [, y, m, d, h, min, sec] = named.map(Number); return new Date(y, m - 1, d, h, min, sec).getTime(); }
+    const chinese = title.match(/(\d{4})年(\d{1,2})月(\d{1,2})日(?:.*?(上午|下午|凌晨|早上|中午|晚上)?(\d{1,2})[:点时](\d{1,2}))?/);
+    if (chinese) {
+        const [, y, m, d, period, hour, minute] = chinese;
+        let h = Number(hour || 0); if (/下午|晚上|中午/.test(period || '') && h < 12) h += 12; if (period === '凌晨' && h === 12) h = 0;
+        return new Date(Number(y), Number(m) - 1, Number(d), h, Number(minute || 0)).getTime();
+    }
+    return Date.parse(date?.textContent || '') || 0;
+}
+export function latestChatRow(rows) {
+    return rows.reduce((latest, row) => !latest || chatRowTimestamp(row) > chatRowTimestamp(latest) ? row : latest, null);
+}
 const iconPaths = {
     settings: '<circle cx="12" cy="12" r="3"/><path d="m10 3-.5 2-2 1-2-.5-2 3 1.5 1.5v3L3.5 15l2 3 2-.5 2 1 .5 2h4l.5-2 2-1 2 .5 2-3-1.5-1.5v-3L20.5 9l-2-3-2 .5-2-1-.5-2Z"/>',
     cellar: '<path d="M10 3h4v4l3 4v10H7V11l3-4ZM7 14h10"/>',
@@ -28,7 +47,7 @@ function roleMenu(state, group, anchor) {
     state.popup(anchor, [
         [p.pins.includes(key) ? '取消置顶角色' : '置顶角色', () => {
             const pos = p.pins.indexOf(key); if (pos < 0) p.pins.push(key); else p.pins.splice(pos, 1);
-            if (state.activePin === key) state.activePin = ''; save(state);
+            save(state);
         }],
         ['改名', async () => {
             const c = state.host.context();
@@ -75,7 +94,7 @@ function makeGroup(state, key) {
     const older = el('button', 'sb-lounge-older'); older.type = 'button'; content.append(older); toggle.setAttribute('aria-controls', content.id);
     section.append(top, content); state.list.append(section);
     const group = { key, section, toggle, image, name, date, count, preview, content, older, rows: [] };
-    toggle.onclick = () => { const p = prefs(state.host); if (p.pins.includes(key)) state.activePin = state.activePin === key ? '' : key; else p.open[key] = !p.open[key]; save(state); };
+    toggle.onclick = () => { const p = prefs(state.host); p.open[key] = !p.open[key]; save(state); };
     more.onclick = e => { e.stopPropagation(); roleMenu(state, group, more); };
     older.onclick = () => { if (state.expanded.has(key)) state.expanded.delete(key); else state.expanded.add(key); render(state); };
     return group;
@@ -84,15 +103,15 @@ function updateText(node, text) { if (node.textContent !== text) node.textConten
 function updateImage(node, src) { if (src && node.getAttribute('src') !== src) node.src = src; }
 function renderPins(state) {
     const p = prefs(state.host), keys = p.pins.filter(k => state.groups.has(k) && !p.hidden[k]);
-    const signature = JSON.stringify(keys.map(k => { const g = state.groups.get(k); return [k, g.name.textContent, g.image.getAttribute('src'), state.activePin === k]; }));
+    const signature = JSON.stringify(keys.map(k => { const g = state.groups.get(k); return [k, g.name.textContent, g.image.getAttribute('src')]; }));
     if (state.pins.dataset.signature === signature) return;
     state.pins.dataset.signature = signature; state.pins.replaceChildren();
     for (const key of keys) {
         const g = state.groups.get(key), tile = el('button', 'sb-lounge-pin'); tile.type = 'button'; tile.dataset.roleKey = key;
-        tile.setAttribute('aria-pressed', String(state.activePin === key)); tile.setAttribute('aria-label', '查看 ' + g.name.textContent + ' 的聊天');
+        tile.setAttribute('aria-label', '进入 ' + g.name.textContent + ' 的最新聊天');
         const image = el('img', ''); image.alt = ''; updateImage(image, g.image.getAttribute('src'));
         tile.append(image, el('span', '', g.name.textContent));
-        tile.onclick = () => { state.activePin = state.activePin === key ? '' : key; render(state); };
+        tile.onclick = () => { latestChatRow(state.groups.get(key)?.rows || [])?.click(); };
         state.pins.append(tile);
     }
 }
@@ -106,17 +125,14 @@ function render(state) {
     for (const [key, entries] of groups) {
         let g = state.groups.get(key); if (!g) { g = makeGroup(state, key); state.groups.set(key, g); }
         g.rows = entries;
-        const latest = entries.reduce((a, b) => {
-            const stamp = r => Date.parse($('.chatDate', r)?.title || '') || 0;
-            return stamp(b) > stamp(a) ? b : a;
-        });
+        const latest = latestChatRow(entries);
         const original = $('.characterName', latest)?.textContent || '';
         updateText(g.name, labelFor(state, key, original)); updateText(g.date, $('.chatDate', latest)?.textContent || '');
         updateText(g.count, `${entries.length} 段聊天`); updateText(g.preview, $('.chatMessage', latest)?.textContent.trim() || '');
         updateImage(g.image, $('.avatar img', latest)?.getAttribute('src'));
         const matches = entries.filter(row => tokens.every(t => (original + ' ' + g.name.textContent + ' ' + row.dataset.file + ' ' + row.textContent).normalize('NFKC').toLocaleLowerCase().includes(t)));
-        const pinned = p.pins.includes(key), open = query ? true : pinned ? state.activePin === key : !!p.open[key];
-        g.section.hidden = !!p.hidden[key] || matches.length === 0 || (pinned && !query && state.activePin !== key);
+        const pinned = p.pins.includes(key), open = !!query || !!p.open[key];
+        g.section.hidden = !!p.hidden[key] || matches.length === 0;
         g.section.style.order = String(pinned ? -1 : 0); g.section.classList.toggle('is-pinned', pinned); g.section.classList.toggle('is-private', !!p.blurred[key]);
         g.toggle.setAttribute('aria-expanded', String(open)); g.content.hidden = !open;
         const limit = p.chatLimit || 3, all = state.expanded.has(key) || !!query;
@@ -146,7 +162,7 @@ function render(state) {
 export function updateLounge(panel, host, popup) {
     let state = panels.get(panel);
     if (!state) {
-        state = { panel, host, popup, groups: new Map(), rows: new Map(), expanded: new Set(), activePin: '', ids: panels.size * 10000 };
+        state = { panel, host, popup, groups: new Map(), rows: new Map(), expanded: new Set(), ids: panels.size * 10000 };
         const root = el('div', 'sb-lounge-root'); root.dataset.sbLoungeOwned = '';
         const head = el('header', 'sb-lounge-head'); head.append(el('div', 'sb-chat-script', 'The Lounge'), el('div', 'sb-lounge-en', 'PICK UP WHERE WE LEFT OFF'), el('div', 'sb-lounge-zh', '小 吧 台 · 再 坐 一 会 儿'));
         const gear = el('button', 'sb-lounge-settings'); gear.type = 'button'; gear.setAttribute('aria-label', '首页设置'); gear.append(icon('settings')); gear.onclick = e => { e.stopPropagation(); settingsMenu(state, gear); }; head.append(gear);
@@ -183,3 +199,4 @@ function restorePanel(panel) {
     state.root.remove(); panels.delete(panel);
 }
 export function unmountLounge() { for (const [panel] of panels) restorePanel(panel); }
+

@@ -1138,7 +1138,9 @@ html.sb-bar #chat .sb-lounge-search {display:block;box-sizing:border-box;width:1
 html.sb-bar .sb-lounge-pins {display:flex;gap:24px;justify-content:flex-start;overflow-x:auto;padding:4px 2px 10px;margin:5px 0 12px;scroll-snap-type:x proximity;}
 html.sb-bar .sb-lounge-root .sb-lounge-pin {display:flex;flex:0 0 72px;min-width:0;align-items:center;flex-direction:column;gap:6px;padding:0;border:0;background:none;font-size:10px;scroll-snap-align:start;}
 html.sb-bar .sb-lounge-pin img {width:48px;height:48px;border-radius:50%;object-fit:cover;border:1px solid var(--sb-bar-line);padding:2px;}
-html.sb-bar .sb-lounge-pin[aria-pressed=true] img {border:2px solid var(--sb-bar-accent);}
+/* Auto margins center one or several pins as a group; overflow still starts at the first pin. */
+html.sb-bar .sb-lounge-pin:first-child {margin-left:auto;}
+html.sb-bar .sb-lounge-pin:last-child {margin-right:auto;}
 html.sb-bar .sb-lounge-pin span {max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 html.sb-bar .sb-lounge-label {font-size:14px;letter-spacing:.12em;color:var(--sb-bar-accent);margin:8px 0 10px;}
 html.sb-bar .sb-lounge-label i {font:italic 13px var(--sb-f-italic);color:var(--sb-bar-sub);letter-spacing:0;}
@@ -1184,3 +1186,4 @@ html.sb-bar .sb-chat-popup {position:fixed;z-index:2147481000;width:210px;max-wi
 html.sb-bar .sb-chat-popup button {display:block;width:100%;padding:9px 8px;text-align:left;border:0;border-radius:7px;background:none;color:inherit;font:11px var(--sb-f-serif);cursor:pointer;}
 html.sb-bar .sb-chat-popup button:hover,html.sb-bar .sb-chat-popup button:focus-visible {background:var(--sb-bar-accent);color:var(--sb-bar-btntext);}
 html.sb-bar #chat.sb-reading .sb-reading-message .mes_buttons {opacity:1;visibility:visible;}
+

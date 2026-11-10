@@ -41,3 +41,15 @@ test('recent chats group by role identity, including same-name and group convers
     assert.deepEqual(result.get('two.png'), [other]);
     assert.deepEqual(result.get('group:42'), [group]);
 });
+
+
+test('pinned role opens the latest chat even when an older conversation is first', async () => {
+    const { latestChatRow, chatRowTimestamp } = await import('../src/bar-lounge.mjs');
+    const row = (title, file = '') => ({ dataset: { file }, querySelector: () => ({ title, textContent: '' }) });
+    const olderPinned = row('November 8, 2026 2:00 AM');
+    const latest = row('November 10, 2026 4:44 AM');
+    assert.equal(latestChatRow([olderPinned, latest]), latest);
+    assert.equal(latestChatRow([]), null);
+    assert(chatRowTimestamp(row('2026年11月10日下午3点20分')) > chatRowTimestamp(row('2026年11月10日上午11点20分')));
+    assert.equal(latestChatRow([row('', '2026-11-08@14h00m00s'), row('', '2026-11-10@04h44m00s')]).dataset.file, '2026-11-10@04h44m00s');
+});
