@@ -1,4 +1,4 @@
-import { updateLyrics } from './music-lyrics.mjs';
+import { updateLyrics, invalidateLyricsLayout } from './music-lyrics.mjs';
 import { bindMusicCovers } from './music-cover.mjs';
 import { applyPalette, modeFor } from './palette.mjs';
 import { openSplashSettings } from './splash.mjs';
@@ -45,7 +45,7 @@ const svg = k => `<svg viewBox="0 0 24 24">${ICON[k]}</svg>`;
 
 export function createUI(host) {
     const v = { drawer: false, tab: 'posts', diaryId: '', phone: false, view: 'home', plus: false, momentsN: 10, xN: 10, busy: false, flip: false, menuFor: '', edit: null };
-    let root, catBlink = 0, lastHtml = '';
+    let root, catBlink = 0, lastHtml = '', lyricView = null, lyricFrame = 0, lyricTickAt = 0;
     // 音乐：歌单存在扩展设置里（不跟聊天走）；播放器不随界面重画
     function musicState() {
         const st = host.settings();
@@ -83,10 +83,22 @@ export function createUI(host) {
         const wl = root?.querySelector('.sb-wlyr');
         if (wl) { const i = player.line(); if (wl.dataset.i !== String(i)) { wl.dataset.i = i; wl.textContent = player.lyric()[i]?.text || ''; } }
         const a = player.audio, box = root?.querySelector('.sb-music'); if (!box) return;
-        const bar = box.querySelector('[data-mseek]'); if (bar) { const ratio = Number.isFinite(a.duration) && a.duration > 0 ? Math.max(0, Math.min(1, a.currentTime / a.duration)) : 0; bar.value = Math.round(ratio * 1000); bar.style.setProperty('--sb-progress', (ratio * 100) + '%'); }
-        const t = box.querySelector('.sb-mtime'); if (t) t.textContent = `${fmt(a.currentTime)} / ${fmt(a.duration)}`;
+        const bar = box.querySelector('[data-mseek]'); if (bar) { const ratio = Number.isFinite(a.duration) && a.duration > 0 ? Math.max(0, Math.min(1, a.currentTime / a.duration)) : 0; const value = Math.round(ratio * 1000); if (Number(bar.value) !== value) bar.value = value; const fill = (ratio * 100).toFixed(2) + '%'; if (bar.style.getPropertyValue('--sb-progress') !== fill) bar.style.setProperty('--sb-progress', fill); }
+        const t = box.querySelector('.sb-mtime'); if (t) { const value = `${fmt(a.currentTime)} / ${fmt(a.duration)}`; if (t.textContent !== value) t.textContent = value; }
         const ly = player.lyric(), i = player.line(), el = box.querySelector('.sb-lyr');
         updateLyrics(el, ly, i, `${player.current()?.src || ''}:${player.current()?.id || ''}`, a.currentTime || 0);
+    }
+
+    function syncMusicAnimation() {
+        const visible = root?.isConnected && root.querySelector('.sb-music') && !document.hidden && !player.audio.paused;
+        if (visible && !lyricFrame) lyricFrame = requestAnimationFrame(animateMusic);
+        else if (!visible && lyricFrame) { cancelAnimationFrame(lyricFrame); lyricFrame = 0; }
+    }
+    function animateMusic(now) {
+        lyricFrame = 0;
+        if (!root?.querySelector('.sb-music') || document.hidden || player.audio.paused) return;
+        if (now - lyricTickAt >= 40) { lyricTickAt = now; tickMusic(); }
+        lyricFrame = requestAnimationFrame(animateMusic);
     }
 
     // ---------- 外壳 ----------
@@ -182,6 +194,8 @@ export function createUI(host) {
             }
         }, true);
         player.audio.addEventListener('timeupdate', tickMusic);
+        for (const event of ['playing','pause','ended']) player.audio.addEventListener(event, syncMusicAnimation);
+        document.addEventListener('visibilitychange', syncMusicAnimation);
         setInterval(() => { if (root.firstChild && player.current()) tickMusic(); }, 1000); // 没打开、没在放歌时不动
         setInterval(() => { if (!v.drawer && !v.phone && root.isConnected) { catBlink = 1; drawCat(); setTimeout(() => { catBlink = 0; drawCat(); }, 160); } }, 4200);
         render();
@@ -212,7 +226,10 @@ export function createUI(host) {
             + (v.phone ? (host.hasChar() ? floatHtml(era) : landingHtml(true)) : '');
         if (html === lastHtml) return; // 什么都没变：不重画，进新聊天时不来回闪
         lastHtml = html;
+        lyricView = root.querySelector('.sb-lyr') || lyricView;
         root.innerHTML = html;
+        const lyricSlot = root.querySelector('.sb-lyr');
+        if (lyricSlot && lyricView) { lyricSlot.replaceWith(lyricView); invalidateLyricsLayout(lyricView); }
         bindMusicCovers(root, coverTracks, coverList, resolveCover, () => host.saveSettings());
         root.querySelectorAll('[data-bg-picker]').forEach(input => {
             const cover = input.closest('.sb-cover,.sb-wcover,.sb-xcover');
@@ -223,6 +240,7 @@ export function createUI(host) {
         const msgs = root.querySelector('.sb-msgs'); if (msgs && v.stick) { msgs.scrollTop = msgs.scrollHeight; }
         v.stick = false;
         if (v.phone && v.view === 'set-reply') countTokens();
+        tickMusic(); syncMusicAnimation();
     }
 
     // ---------- 头图 ----------
@@ -1128,7 +1146,13 @@ export function createUI(host) {
             case 'mclose': v.mres = []; v.mpage = 1; break;
             case 'mpage': await musicSearch(v.mq, Math.max(1, (v.mpage || 1) + Number(b.dataset.d))); return;
             case 'madd': { const t = v.mres?.[Number(b.dataset.i)]; if (t) player.add(t, !!b.dataset.play); if (!b.dataset.play) host.toast('success', '加进歌单了'); return; }
-            case 'music-compact': { const m = musicState(); m.compact = !m.compact; host.saveSettings(); break; }
+            case 'music-compact': {
+                const m = musicState(); m.compact = !m.compact; host.saveSettings();
+                const box = b.closest('.sb-music'); box.classList.toggle('is-mini', m.compact);
+                box.querySelector('.sb-music-extras').hidden = m.compact;
+                b.setAttribute('aria-expanded', String(!m.compact)); box.querySelector('.sb-music-caret').textContent = m.compact ? '⌄' : '⌃';
+                invalidateLyricsLayout(box.querySelector('.sb-lyr')); tickMusic(); return;
+            }
             case 'msong-menu': {
                 const m = musicState(), index = Number(b.dataset.i); if (!m.list[index]) return;
                 v.songContext = {index, source:m.active, track:m.list[index], rect:b.getBoundingClientRect()};
