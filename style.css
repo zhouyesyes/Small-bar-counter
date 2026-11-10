@@ -553,3 +553,14 @@
 
 #sb-root .sb-landing .sb-body{overflow-y:auto;flex:1;min-height:0}#sb-root .sb-landing .sb-sign{padding:0 20px}#sb-root .sb-landing .sb-music{padding-bottom:24px}
 #sb-root .sb-landing .sb-cover{height:auto;aspect-ratio:448/200;background-position:50% 45%}
+
+/* Center music controls independently of inherited font baselines. */
+#sb-root .sb-mctl button,#sb-root .sb-wplay{display:inline-flex;align-items:center;justify-content:center;line-height:1;box-sizing:border-box}
+#sb-root .sb-mctl .sb-mplay{padding:0;flex:0 0 50px}
+#sb-root .sb-mi svg{display:block}
+
+/* Missing artwork keeps the same column as loaded covers. */
+#sb-root .sb-mrow2{display:grid;grid-template-columns:38px minmax(0,1fr) auto; text-align:left}
+#sb-root .sb-mrow2:has(button[data-act="madd"]){grid-template-columns:38px minmax(0,1fr) auto auto}
+#sb-root .sb-mrow2 .sb-mthumb{width:38px;height:38px;min-width:38px;flex:none}
+#sb-root [data-bg-target],#sb-root [data-bg-settings]{cursor:pointer}

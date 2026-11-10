@@ -1,12 +1,12 @@
 {
     "display_name": "小吧台",
-    "loading_order": -100,
+    "loading_order": -10000,
     "requires": [],
     "optional": [],
     "js": "index.js",
     "css": "style.css",
     "author": "zhouyesyes",
-    "version": "0.7.1",
+    "version": "0.7.2",
     "homePage": "https://github.com/zhouyesyes/Small-bar-counter",
     "auto_update": true
 }
