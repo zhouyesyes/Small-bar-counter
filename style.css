@@ -546,7 +546,7 @@
 #sb-root .sb-tabs button.on{color:var(--sb-accent);border-bottom-color:var(--sb-accent)}
 #sb-root input[type=checkbox],#sb-root input[type=range]{accent-color:var(--sb-accent)}
 
-#sb-root .sb-landing .sb-body{overflow-y:auto;flex:1;min-height:0}#sb-root .sb-landing .sb-sign{padding:0 20px;margin-bottom:26px}#sb-root .sb-landing .sb-music{padding-bottom:24px}
+#sb-root .sb-landing .sb-body{overflow-y:auto;flex:1;min-height:0}#sb-root .sb-landing .sb-sign{padding:0 20px;margin-bottom:26px}#sb-root .sb-landing .sb-music{padding-bottom:16px}
 #sb-root .sb-landing .sb-cover{height:auto;aspect-ratio:448/200;background-position:50% 45%}
 
 /* Center music controls independently of inherited font baselines. */
@@ -561,7 +561,7 @@
 #sb-root [data-bg-target],#sb-root [data-bg-settings]{cursor:pointer}
 
 /* Full lyric view: manual browsing temporarily suspends following playback. */
-#sb-root .sb-music .sb-lyr{position:relative;height:196px;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:70px 0;box-sizing:border-box;scrollbar-width:none;overflow-anchor:none}
+#sb-root .sb-music .sb-lyr{position:relative;height:112px;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:40px 0;box-sizing:border-box;scrollbar-width:none;overflow-anchor:none}
 #sb-root .sb-music .sb-lyr::-webkit-scrollbar{display:none}
 #sb-root .sb-music .sb-lyr .sb-lyric-line{display:block;width:100%;min-height:28px;height:auto;margin:0;padding:4px 8px;border:0;background:transparent;color:var(--sb-dim);font:inherit;line-height:20px;text-align:center;white-space:normal;overflow-wrap:anywhere;cursor:pointer}
 #sb-root .sb-music .sb-lyr .sb-lyric-line.cur{height:auto;min-height:28px;line-height:20px;font-size:14px;font-weight:600;color:var(--sb-fg)}
@@ -577,8 +577,8 @@
 #sb-root .sb-home-tab dt:after{content:'';flex:1;border-bottom:1px dotted var(--sb-line)}
 #sb-root .sb-home-tab dd{margin:0;max-width:65%;overflow-wrap:anywhere;text-align:right;color:var(--sb-fg)}
 #sb-root .sb-landing .sb-sign{margin-bottom:0;padding:0 24px 4px}
-#sb-root .sb-music{margin:20px 14px;padding:24px 16px;border:1px solid color-mix(in srgb,var(--sb-accent) 20%,var(--sb-line));border-radius:18px;background:color-mix(in srgb,var(--sb-accent) 5%,var(--sb-bg))}
-#sb-root .sb-music>.sb-cap{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:16px}
+#sb-root .sb-music{margin:16px 14px;padding:16px 14px;border:1px solid color-mix(in srgb,var(--sb-accent) 20%,var(--sb-line));border-radius:18px;background:color-mix(in srgb,var(--sb-accent) 5%,var(--sb-bg))}
+#sb-root .sb-music>.sb-cap{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px}
 #sb-root .sb-music>.sb-cap:before{content:'';width:6px;height:6px;border-radius:50%;background:var(--sb-accent)}
 #sb-root .sb-mctl button:not(.sb-mplay){border-radius:50%;background:color-mix(in srgb,var(--sb-accent) 12%,var(--sb-bg));min-width:32px;min-height:32px}
 #sb-root .sb-mctl button.on{background:var(--sb-accent);color:var(--sb-ink)}
@@ -600,3 +600,20 @@
 #sb-root .sb-song-menu{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;padding:12px;background:var(--sb-soft);border:1px solid var(--sb-line);border-radius:12px}
 #sb-root .sb-song-menu>span{width:100%;font-size:12px}
 #sb-root .sb-song-menu button{padding:5px 8px;border:1px solid var(--sb-line);border-radius:12px;font-size:12px}
+
+/* Compact player shared by the landing, character drawer and phone. */
+#sb-root .sb-bigcover{width:64px!important;height:64px!important;border-radius:8px!important}
+#sb-root .sb-music .sb-mt{font-size:15px;margin-top:7px;line-height:1.4}
+#sb-root .sb-music .sb-ma{font-size:11.5px;line-height:1.5}
+#sb-root .sb-mctl{margin:7px 2px 0}
+#sb-root .sb-mctl .sb-mplay{width:42px;height:42px;flex-basis:42px}
+#sb-root .sb-music .sb-lyr{margin-top:8px}
+#sb-root .sb-music .sb-lyr:has(.sb-lyric-empty){height:38px;padding:8px 0}
+#sb-root .sb-plists{margin-top:8px;gap:5px}
+#sb-root .sb-plists button{font-size:11px;padding:3px 8px}
+#sb-root .sb-msearch{margin-top:8px}
+#sb-root .sb-mnote{margin-top:9px;font-size:10px;line-height:1.5}
+#sb-root .sb-mrow2{padding:5px 2px}
+#sb-root .sb-mrow2 .sb-mthumb{width:32px;height:32px;min-width:32px}
+#sb-root .sb-mrow2{grid-template-columns:32px minmax(0,1fr) auto}
+#sb-root .sb-mrow2:has(button[data-act="madd"]),#sb-root .sb-mrow2:has(button[data-act="msong-menu"]){grid-template-columns:32px minmax(0,1fr) auto auto}
