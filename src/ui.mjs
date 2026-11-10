@@ -289,10 +289,10 @@ export function createUI(host) {
   <span class="sb-logo">SMALL BAR</span><button class="sb-x" data-act="close" aria-label="关上">×</button>
 
  </div>
- <label class="sb-av" style="background-image:url('${esc(him.avatar)}')" title="点一下换头像"><input type="file" accept="image/*" data-upload="him-avatar" hidden></label>
- <div class="sb-name">${esc(him.name)}</div>
+ <div class="sb-home-identity"><label class="sb-av" style="background-image:url('${esc(him.avatar)}')" title="点一下换头像"><input type="file" accept="image/*" data-upload="him-avatar" hidden></label>
+ <div class="sb-home-words"><div class="sb-name">${esc(him.name)}</div>
  ${him.handle ? `<div class="sb-handle">${esc(him.handle)}</div>` : ''}
- ${him.sign || n.sign ? `<div class="sb-sign">${esc(him.sign || n.sign)}</div>` : ''}
+ ${him.sign || n.sign ? `<div class="sb-sign">${esc(him.sign || n.sign)}</div>` : ''}</div></div>
  <div class="sb-meta">${[n.time, n.weather].filter(Boolean).map(x => `<span>${esc(x)}</span>`).join('') || '还没有状态 · 等TA下一次回复'}</div>
  ${body}</div>
  ${tabsNav}

@@ -996,3 +996,8 @@ html.sb-bar #char-management-dropdown { -webkit-appearance: none; appearance: no
 
 #sb-root .sb-player-main>.sb-cap{display:flex;align-items:center;gap:10px}
 #sb-root .sb-player-main>.sb-cap:before{content:'';width:5px;height:5px;flex:0 0 5px;border-radius:50%;background:var(--sb-accent)}
+
+/* Match only the two drawer profile headers; phone layouts retain their own UI. */
+#sb-root .sb-drawer:not(.sb-phonemode)>.sb-body>.sb-cover{height:auto;aspect-ratio:448/145}
+#sb-root .sb-drawer .sb-home-words .sb-sign{margin:2px 0 0;padding:0;text-align:left;font-size:11px;overflow-wrap:anywhere}
+#sb-root .sb-home-words .sb-handle{text-align:left;margin:2px 0 0}
