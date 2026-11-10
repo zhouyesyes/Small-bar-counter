@@ -6,7 +6,13 @@ function scaleTicket() {
     const frame = root?.querySelector('.sb-ticket-frame'); if (!frame) return;
     const scale = frame.getBoundingClientRect().width / 448;
     root.style.setProperty('--sb-ticket-scale', scale);
-    frame.style.height = `${frame.querySelector('.sb-ticket').offsetHeight * scale}px`;
+    const ticket = frame.querySelector('.sb-ticket');
+    // Measure the visible sections, not a previously expanded masked card's auto height.
+    const style = getComputedStyle(ticket);
+    const height = [...ticket.children].reduce((total, section) => total + (section.hidden ? 0 : section.offsetHeight), 0)
+        + (parseFloat(style.borderTopWidth) || 0) + (parseFloat(style.borderBottomWidth) || 0);
+    ticket.style.height = `${height}px`;
+    frame.style.height = `${height * scale}px`;
 }
 window.addEventListener('resize', scaleTicket);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
