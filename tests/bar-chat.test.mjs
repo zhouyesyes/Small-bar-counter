@@ -14,3 +14,17 @@ test('display aliases follow a stable avatar identity, never a character name or
     assert.notEqual(loungeKey({ dataset: { avatar: 'role.png' } }), loungeKey({ dataset: { avatar: 'other.png' } }));
     assert.equal(loungeKey({ dataset: { group: '12' } }), 'group:12');
 });
+
+test('conversation pictures follow shared sources and ignore legacy chat-only overrides', async () => {
+    const { sharedChatImages } = await import('../src/bar-chat.mjs');
+    const config = { cover: { mode: 'fixed', fixed: 'card-cover' }, coverWx: 'moments-cover', chatAppearance: { meAvatar: 'old-me', himAvatar: 'old-him', meCover: 'old-me-cover', himCover: 'old-him-cover' } };
+    const own = { avatar: 'moments-avatar' }, other = { avatar: 'card-avatar' };
+    const read = (side, person) => sharedChatImages({ side, person, config, image: src => `resolved:${src}` });
+    assert.deepEqual(read('me', own), { avatar: 'moments-avatar', cover: 'resolved:moments-cover' });
+    assert.deepEqual(read('him', other), { avatar: 'card-avatar', cover: 'resolved:card-cover' });
+    own.avatar = 'new-moments-avatar'; config.coverWx = 'new-moments-cover';
+    assert.deepEqual(read('me', own), { avatar: 'new-moments-avatar', cover: 'resolved:new-moments-cover' });
+    delete config.coverWx;
+    assert.equal(read('me', own).cover, 'resolved:card-cover');
+    assert.equal(sharedChatImages({ side: 'him', config, nativeAvatar: 'group-member-avatar' }).avatar, 'group-member-avatar');
+});
