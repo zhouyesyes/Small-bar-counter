@@ -179,7 +179,7 @@ export function updateLounge(panel, host, popup) {
             const label = $('span', temporary);
             state.temporary = { node: temporary, marker: document.createComment('sb-temporary-chat'), label, text: label?.textContent };
             temporary.before(state.temporary.marker); temporary.classList.add('sb-lounge-temporary');
-            if (label) label.textContent = '＋ 临时聊天';
+            if (label) label.textContent = '＋ 新开一桌 · 临时聊天';
         }
         state.restore = el('button', 'sb-lounge-restore', '显示隐藏的角色'); state.restore.type = 'button'; state.restore.onclick = () => { prefs(state.host).hidden = {}; save(state); };
         root.append(head, search, state.pins, label, state.list, state.empty, quick); if (temporary) root.append(temporary);
