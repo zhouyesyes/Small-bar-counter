@@ -3,13 +3,10 @@ import { applyPalette, defaults } from './palette.mjs';
 import { imageUrl, saveImage } from './imgstore.mjs';
 const KEY = 'small_bar_splash_v1';
 const ticketLayouts = new WeakMap();
-function ticketShape(height, color) {
-    const y = 291, r = 12, w = 448;
-    const shape = `M22 0H426Q448 0 448 22V${y-r}A${r} ${r} 0 0 0 448 ${y+r}V${height-22}Q448 ${height} 426 ${height}H22Q0 ${height} 0 ${height-22}V${y+r}A${r} ${r} 0 0 0 0 ${y-r}V22Q0 0 22 0Z`;
-    const url = body => `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${height}" viewBox="0 0 ${w} ${height}">${body}</svg>`)}`;
-    const urls = [url(`<path d="${shape}" fill="white"/>`), url(`<path d="${shape}" fill="none" stroke="${color}" stroke-width="2"/>`)];
-    const images = urls.map(src => { const image = new Image(); image.src = src; image.decode?.().catch(() => {}); return image; });
-    return {mask:`url("${urls[0]}")`, outline:`url("${urls[1]}")`, images};
+function ticketShape(height) {
+    const y = 291, r = 12;
+    const path = `M22 0H426Q448 0 448 22V${y-r}A${r} ${r} 0 0 0 448 ${y+r}V${height-22}Q448 ${height} 426 ${height}H22Q0 ${height} 0 ${height-22}V${y+r}A${r} ${r} 0 0 0 0 ${y-r}V22Q0 0 22 0Z`;
+    return {path, clip:`path("${path}")`};
 }
 function scaleTicket() {
     const frame = root?.querySelector('.sb-ticket-frame'); if (!frame) return;
@@ -18,11 +15,10 @@ function scaleTicket() {
     if (!layout) {
         const style = getComputedStyle(ticket), hidden = details.hidden;
         const border = (parseFloat(style.borderTopWidth) || 0) + (parseFloat(style.borderBottomWidth) || 0);
-        const measure = () => [...ticket.children].reduce((total, section) => total + (section.hidden ? 0 : section.offsetHeight), border);
+        const measure = () => [...ticket.children].reduce((total, section) => total + (section.hidden || section.namespaceURI === 'http://www.w3.org/2000/svg' ? 0 : section.offsetHeight), border);
         details.hidden = false; const open = measure();
         details.hidden = true; const closed = measure(); details.hidden = hidden;
-        const color = getComputedStyle(root).getPropertyValue('--sb-accent').trim() || '#b0b0b0';
-        layout = {open, closed, openShape:ticketShape(open,color), closedShape:ticketShape(closed,color)};
+        layout = {open, closed, openShape:ticketShape(open), closedShape:ticketShape(closed)};
         ticketLayouts.set(ticket, layout);
     }
     const scale = frame.getBoundingClientRect().width / 448;
@@ -30,9 +26,17 @@ function scaleTicket() {
     const shape = details.hidden ? layout.closedShape : layout.openShape;
     root.style.setProperty('--sb-ticket-scale', scale);
     ticket.style.height = `${height}px`; frame.style.height = `${height * scale}px`;
-    if (ticket.style.getPropertyValue('--sb-ticket-mask') !== shape.mask) {
-        ticket.style.setProperty('--sb-ticket-mask', shape.mask);
-        ticket.style.setProperty('--sb-ticket-outline', shape.outline);
+    // Geometry is drawn directly: no asynchronously rasterized mask image to swap.
+    let outline = ticket.querySelector('.sb-ticket-outline');
+    if (!outline) {
+        const ns = 'http://www.w3.org/2000/svg';
+        outline = document.createElementNS(ns,'svg'); outline.classList.add('sb-ticket-outline'); outline.setAttribute('aria-hidden','true');
+        outline.appendChild(document.createElementNS(ns,'path')); ticket.appendChild(outline);
+    }
+    if (outline.firstElementChild.getAttribute('d') !== shape.path) {
+        ticket.style.setProperty('--sb-ticket-clip', shape.clip);
+        outline.setAttribute('viewBox', `0 0 448 ${height}`); outline.setAttribute('width','448'); outline.setAttribute('height',String(height));
+        outline.firstElementChild.setAttribute('d',shape.path);
     }
 }
 window.addEventListener('resize', scaleTicket);
@@ -323,14 +327,15 @@ const styles = `
 #sb-splash .sb-ticket-body .sb-remember{margin-bottom:0}
 #sb-splash .is-expanded .sb-ticket-body{animation:none}
 #sb-splash .sb-ticket-actions{position:relative;z-index:1;background:var(--sb-card);padding:18px 24px 20px}
-#sb-splash .sb-ticket{-webkit-mask-image:radial-gradient(circle at 0 291px,transparent 12px,#000 13px),radial-gradient(circle at 100% 291px,transparent 12px,#000 13px);-webkit-mask-composite:source-in;mask-image:radial-gradient(circle at 0 291px,transparent 12px,#000 13px),radial-gradient(circle at 100% 291px,transparent 12px,#000 13px);mask-composite:intersect}
 @keyframes sb-receipt-reveal{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
 @media(prefers-reduced-motion:reduce){#sb-splash .sb-ticket-body{animation:none!important}}
 
 #sb-splash .sb-wine,#sb-splash .sb-progress i{transition-duration:.45s}
 
-/* No rectangular layer behind the cutouts. One silhouette keeps both states identical. */
+/* Direct path clipping and a persistent inline border avoid image-mask blank frames. */
 #sb-splash .sb-ticket-frame:before{display:none}
-#sb-splash .sb-ticket,#sb-splash .is-expanded .sb-ticket{-webkit-mask-image:var(--sb-ticket-mask);mask-image:var(--sb-ticket-mask);-webkit-mask-composite:source-over;mask-composite:add;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;border-color:transparent}
-#sb-splash .sb-ticket:after{border:0;box-shadow:none;background-image:var(--sb-ticket-outline);background-size:100% 100%;background-repeat:no-repeat;border-radius:0;z-index:5}
+#sb-splash .sb-ticket,#sb-splash .is-expanded .sb-ticket{-webkit-mask-image:none;mask-image:none;clip-path:var(--sb-ticket-clip);border-color:transparent}
+#sb-splash .sb-ticket:after{display:none}
+#sb-splash .sb-ticket-outline{position:absolute;left:-1px;top:-1px;display:block;z-index:5;pointer-events:none;overflow:visible}
+#sb-splash .sb-ticket-outline path{fill:none;stroke:var(--sb-accent);stroke-width:2}
 `;
