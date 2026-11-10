@@ -87,13 +87,9 @@
 
 /* 音乐 */
 #sb-root .sb-music{position:relative;overflow:hidden;padding:24px 20px 26px;border-top:1px solid var(--sb-line);text-align:center;isolation:isolate}
-/* 封面后面一层放大、模糊的影子，往下淡出去 */
-#sb-root .sb-music::before{content:"";position:absolute;inset:-40px -40px 30%;z-index:-1;background:radial-gradient(70% 60% at 50% 35%,rgba(150,150,150,.55),transparent 75%);opacity:1}
-#sb-root.sb-dark .sb-music::before{background:radial-gradient(60% 55% at 50% 38%,#4a4a4a,transparent 70%),radial-gradient(40% 40% at 30% 20%,#2c2c2c,transparent 70%);opacity:.8}
 #sb-root .sb-cap{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--sb-dim);margin-bottom:10px}
 #sb-root .sb-cap.sb-row{display:flex;justify-content:space-between;margin:20px 0 6px}
-#sb-root .sb-bigcover{width:112px;height:112px;margin:4px auto 0;border-radius:12px;background:linear-gradient(135deg,#d6d6d6,#6a6a6a 60%,#2e2e2e);box-shadow:0 14px 34px rgba(0,0,0,.22)}
-#sb-root.sb-dark .sb-bigcover{background:linear-gradient(135deg,#6a6a6a,#2a2a2a 60%,#111)}
+#sb-root .sb-bigcover{width:112px;height:112px;margin:4px auto 0;border-radius:12px;background:var(--sb-soft);box-shadow:0 2px 6px rgba(0,0,0,.06)}
 #sb-root .sb-mt{font-size:17px;font-weight:700;margin-top:14px}
 #sb-root .sb-ma{font-size:12.5px;color:var(--sb-dim)}
 #sb-root .sb-lyr{margin-top:12px;font-size:15px;font-weight:600}
@@ -328,12 +324,12 @@
 #sb-root .sb-music .sb-lyr{min-height:66px;margin-top:10px;font-size:12.5px;font-weight:400;color:var(--sb-dim);line-height:1.8}
 #sb-root .sb-music .sb-lyr .cur{color:var(--sb-fg);font-size:14.5px;font-weight:600}
 #sb-root .sb-mbar{display:block;width:100%;height:14px;padding:6px 0!important;margin-top:8px}
-#sb-root .sb-mbar i{display:block;height:2px;width:0;background:var(--sb-fg);border-radius:1px;box-shadow:inset 0 0 0 0 var(--sb-line);position:relative}
+#sb-root .sb-mbar i{display:block;height:2px;width:0;background:var(--sb-accent);border-radius:1px;box-shadow:inset 0 0 0 0 var(--sb-line);position:relative}
 #sb-root .sb-mbar{background:linear-gradient(var(--sb-line),var(--sb-line)) center/100% 2px no-repeat!important}
 #sb-root .sb-mtime{font-size:10.5px;color:var(--sb-dim);text-align:right}
 #sb-root .sb-mctl{display:flex;justify-content:space-between;align-items:center;margin:10px 6px 0}
-#sb-root .sb-mctl button{font-size:17px;color:var(--sb-fg);padding:4px 8px}#sb-root .sb-mctl button.on{opacity:.5}
-#sb-root .sb-mplay{width:50px;height:50px;border-radius:50%;background:var(--sb-fg)!important;color:var(--sb-bg)!important;font-size:16px!important}
+#sb-root .sb-mctl button{font-size:17px;color:var(--sb-fg);padding:4px 8px}#sb-root .sb-mctl button.on{background:var(--sb-accent);color:var(--sb-ink);border-radius:12px}
+#sb-root .sb-mplay{width:50px;height:50px;border-radius:50%;background:var(--sb-accent)!important;color:var(--sb-ink)!important;font-size:16px!important}
 #sb-root .sb-mhis{display:block;width:100%;margin-top:12px;font-size:11.5px;color:var(--sb-dim);border:1px dashed var(--sb-line);border-radius:12px;padding:5px 8px}
 #sb-root .sb-msearch{display:flex;gap:6px;margin-top:12px}
 #sb-root .sb-msearch input{flex:1;min-width:0;border-radius:16px;padding:6px 12px;font-size:12.5px}
@@ -348,7 +344,6 @@
 /* 滑起来顺一点：滚动区域单独一层，别的东西不跟着重画 */
 #sb-root .sb-body,#sb-root .sb-list,#sb-root .sb-msgs,#sb-root .sb-wxfeed,#sb-root .sb-xpage,#sb-root .sb-slist{transform:translateZ(0);overflow-anchor:none}
 #sb-root .sb-post,#sb-root .sb-mrow2{contain:layout paint}
-#sb-root .sb-bigcover{box-shadow:0 10px 24px rgba(0,0,0,.18)}
 #sb-root .sb-drawer .sb-cover{transition:none}
 
 /* 封面小一点；搜索结果、歌单前面带小封面 */
@@ -366,7 +361,7 @@
 #sb-root .sb-plists{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:12px}
 #sb-root .sb-plists::-webkit-scrollbar{display:none}
 #sb-root .sb-plists button{flex:0 0 auto;font-size:12px;border:1px solid var(--sb-line);border-radius:14px;padding:3px 10px;color:var(--sb-dim)}
-#sb-root .sb-plists button.on{color:var(--sb-bg);background:var(--sb-fg);border-color:var(--sb-fg)}
+#sb-root .sb-plists button.on{color:var(--sb-ink);background:var(--sb-accent);border-color:var(--sb-accent)}
 #sb-root .sb-plists button small{display:inline;font-size:10px;opacity:.7}
 #sb-root .sb-plists .add{border-style:dashed}
 #sb-root .sb-mres .sb-link{margin:0 0 0 8px;font-size:11px}
@@ -381,7 +376,7 @@
 #sb-root .sb-widget .sb-wcov{background-size:cover;background-position:center;cursor:pointer}
 #sb-root .sb-wrow>span:nth-child(2){flex:1;min-width:0;cursor:pointer}
 #sb-root .sb-wrow small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#sb-root .sb-wplay{width:34px;height:34px;flex:0 0 auto;border-radius:50%;background:var(--sb-fg)!important;color:var(--sb-bg)!important;display:flex;align-items:center;justify-content:center}
+#sb-root .sb-wplay{width:34px;height:34px;flex:0 0 auto;border-radius:50%;background:var(--sb-accent)!important;color:var(--sb-ink)!important;display:flex;align-items:center;justify-content:center}
 #sb-root .sb-wplay .sb-mi{width:16px;height:16px}
 #sb-root .sb-wplay .sb-mi svg path[d^="M8 5l"]{fill:currentColor}
 /* TA的 X 资料还空着 */
@@ -551,7 +546,7 @@
 #sb-root .sb-tabs button.on{color:var(--sb-accent);border-bottom-color:var(--sb-accent)}
 #sb-root input[type=checkbox],#sb-root input[type=range]{accent-color:var(--sb-accent)}
 
-#sb-root .sb-landing .sb-body{overflow-y:auto;flex:1;min-height:0}#sb-root .sb-landing .sb-sign{padding:0 20px}#sb-root .sb-landing .sb-music{padding-bottom:24px}
+#sb-root .sb-landing .sb-body{overflow-y:auto;flex:1;min-height:0}#sb-root .sb-landing .sb-sign{padding:0 20px;margin-bottom:26px}#sb-root .sb-landing .sb-music{padding-bottom:24px}
 #sb-root .sb-landing .sb-cover{height:auto;aspect-ratio:448/200;background-position:50% 45%}
 
 /* Center music controls independently of inherited font baselines. */
@@ -574,3 +569,21 @@
 
 #sb-root .sb-personal-edit{position:absolute;right:12px;bottom:12px;width:28px;height:28px;padding:5px;display:flex;align-items:center;justify-content:center;border:1px solid #ffffff45;border-radius:50%;background:#0005;color:white;cursor:pointer;z-index:2}
 #sb-root .sb-personal-edit svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+
+/* Personal receipt and music use quiet surfaces tinted by the chosen accent. */
+#sb-root .sb-home-tab{margin:22px 20px 30px;padding:16px 18px;background:color-mix(in srgb,var(--sb-accent) 9%,var(--sb-bg));border:1px solid color-mix(in srgb,var(--sb-accent) 24%,var(--sb-line));border-radius:14px}
+#sb-root .sb-home-tab>div{display:flex;align-items:baseline;gap:12px;padding:5px 0;font:11px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace}
+#sb-root .sb-home-tab dt{display:flex;align-items:baseline;gap:10px;flex:1;color:var(--sb-dim);letter-spacing:.12em}
+#sb-root .sb-home-tab dt:after{content:'';flex:1;border-bottom:1px dotted var(--sb-line)}
+#sb-root .sb-home-tab dd{margin:0;max-width:65%;overflow-wrap:anywhere;text-align:right;color:var(--sb-fg)}
+#sb-root .sb-landing .sb-sign{margin-bottom:0;padding:0 24px 4px}
+#sb-root .sb-music{margin:20px 14px;padding:24px 16px;border:1px solid color-mix(in srgb,var(--sb-accent) 20%,var(--sb-line));border-radius:18px;background:color-mix(in srgb,var(--sb-accent) 5%,var(--sb-bg))}
+#sb-root .sb-music>.sb-cap{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:16px}
+#sb-root .sb-music>.sb-cap:before{content:'';width:6px;height:6px;border-radius:50%;background:var(--sb-accent)}
+#sb-root .sb-mctl button:not(.sb-mplay){border-radius:50%;background:color-mix(in srgb,var(--sb-accent) 12%,var(--sb-bg));min-width:32px;min-height:32px}
+#sb-root .sb-mctl button.on{background:var(--sb-accent);color:var(--sb-ink)}
+#sb-root .sb-msearch button{background:color-mix(in srgb,var(--sb-accent) 14%,var(--sb-bg));border-color:color-mix(in srgb,var(--sb-accent) 35%,var(--sb-line))}
+#sb-root .sb-plists button:not(.on){background:color-mix(in srgb,var(--sb-accent) 7%,var(--sb-bg))}
+
+#sb-root .sb-widget{background:color-mix(in srgb,var(--sb-accent) 5%,var(--sb-bg));border-color:color-mix(in srgb,var(--sb-accent) 20%,var(--sb-line))}
+#sb-root .sb-mstate .sb-link{margin:0}
