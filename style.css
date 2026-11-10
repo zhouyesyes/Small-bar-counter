@@ -679,3 +679,292 @@
 #sb-root .sb-song-pop p{margin:8px;font-size:11px;color:var(--sb-dim)}
 
 #sb-root .sb-music.is-mini .sb-lyr:has(.sb-lyric-empty){display:none}
+
+/* ================= 吧台美化（docs/bar-theme.md）=================
+   只在扩展面板里勾了「吧台美化」时生效（<html> 上有 sb-bar）。颜色变量在 src/bar-theme.mjs 里算好挂在 <html> 上，
+   按钮换字的那部分也在那边生成（RELABEL）。这里是各页的排版：墨白、小字、不用毛玻璃和阴影 */
+html.sb-bar {
+    --sb-f-script: 'Pinyon Script', 'Snell Roundhand', 'Apple Chancery', cursive;
+    --sb-f-italic: 'Cormorant Garamond', 'Baskerville', 'Times New Roman', 'Noto Serif SC', 'Songti SC', serif;
+    --sb-f-serif: 'Noto Serif SC', 'Songti SC', 'STSong', 'Source Han Serif SC', 'Noto Serif CJK SC', serif;
+}
+html.sb-bar .sb-page { font-family: var(--sb-f-serif); font-size: 14px; color: var(--sb-bar-text); }
+html.sb-bar .drawer-content:has(.sb-page), html.sb-bar .sb-page.drawer-content { box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+html.sb-bar .sb-page .menu_button { background: transparent; border: 1px solid var(--sb-bar-line); border-radius: 0; color: var(--sb-bar-text); box-shadow: none; filter: none; }
+html.sb-bar .sb-page .text_pole, html.sb-bar .sb-page select, html.sb-bar .sb-page textarea, html.sb-bar .sb-page input[type="search"] {
+    background: transparent; border: 0; border-bottom: 1px solid var(--sb-bar-line); border-radius: 0; color: var(--sb-bar-ink); font-family: var(--sb-f-serif); box-shadow: none;
+}
+html.sb-bar .sb-page textarea { border: 1px solid var(--sb-bar-line); }
+html.sb-bar .sb-page .standoutHeader { background: transparent; border: 0; box-shadow: none; }
+html.sb-bar .sb-page hr { border: 0; border-top: 1px solid var(--sb-bar-line); }
+html.sb-bar .sb-page .drag-grabber, html.sb-bar .sb-page .note-link-span, html.sb-bar .sb-page .notes-link { display: none !important; }
+
+/* 我们加的小零件 */
+html.sb-bar .sb-head { text-align: center; padding: 22px 0 14px; width: 100%; }
+html.sb-bar .sb-script { font: 400 46px/1.15 var(--sb-f-script); color: var(--sb-bar-ink); }
+html.sb-bar .sb-en { font: 400 11.5px/1.6 var(--sb-f-italic); letter-spacing: .38em; color: var(--sb-bar-sub); margin-top: 8px; }
+html.sb-bar .sb-zh { font-size: 12px; letter-spacing: .55em; color: var(--sb-bar-sub); margin-top: 2px; }
+html.sb-bar .sb-label { text-align: center; color: var(--sb-bar-sub); margin: 22px 0 12px; width: 100%; }
+html.sb-bar .sb-label i, html.sb-bar .sb-foot i { font: italic 17px var(--sb-f-italic); letter-spacing: .22em; margin: 0 .6em; }
+html.sb-bar .sb-foot { text-align: center; color: var(--sb-bar-sub); margin: 26px 0 18px; width: 100%; }
+html.sb-bar .sb-foot i { font-size: 15px; letter-spacing: .12em; }
+html.sb-bar .sb-hint { text-align: center; font-size: 12px; color: var(--sb-bar-sub); margin-top: 16px; }
+html.sb-bar .sb-cardlabel { font: italic 15px/1.4 var(--sb-f-italic); color: var(--sb-bar-sub); display: block; }
+html.sb-bar .sb-card { position: relative; background: var(--sb-bar-paper); padding: 18px 18px 20px; margin: 6px 0 4px; width: 100%; box-sizing: border-box; }
+html.sb-bar .sb-big { font: 600 22px/1.35 var(--sb-f-serif); color: var(--sb-bar-ink); margin-top: 4px; word-break: break-word; }
+html.sb-bar .sb-card small { display: block; color: var(--sb-bar-sub); font-size: 12.5px; margin-top: 2px; }
+html.sb-bar .sb-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 14px; }
+html.sb-bar .sb-b { background: none; border: 0; padding: 4px 0; color: var(--sb-bar-sub); font: 13.5px/1.6 var(--sb-f-serif); cursor: pointer; white-space: nowrap; }
+html.sb-bar .sb-b.sb-box { border: 1px solid var(--sb-bar-ink); color: var(--sb-bar-ink); padding: 5px 10px; }
+html.sb-bar .sb-b.sb-solid { background: var(--sb-bar-btn); color: var(--sb-bar-btntext); padding: 6px 12px; border: 1px solid var(--sb-bar-btn); }
+html.sb-bar .sb-del { margin-left: auto; }
+html.sb-bar .sb-pick { position: relative; overflow: hidden; display: inline-flex; }
+html.sb-bar .sb-pick[hidden] { display: none; }
+html.sb-bar .sb-pick select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 16px; border: 0; }
+html.sb-bar .sb-fold { width: 100%; border-top: 1px solid var(--sb-bar-ink); border-bottom: 1px solid var(--sb-bar-line); padding: 14px 0 12px; margin: 16px 0 6px; }
+html.sb-bar .sb-fold-h { display: flex; align-items: baseline; gap: 14px; width: 100%; background: none; border: 0; padding: 0; color: var(--sb-bar-ink); cursor: pointer; text-align: left; font-family: var(--sb-f-serif); }
+html.sb-bar .sb-fold-h b { font-size: 17px; font-weight: 500; letter-spacing: .12em; }
+html.sb-bar .sb-fold-h i { font: italic 14.5px var(--sb-f-italic); color: var(--sb-bar-sub); }
+html.sb-bar .sb-plus { margin-left: auto; color: var(--sb-bar-sub); font-size: 18px; font-style: normal; }
+html.sb-bar .sb-fold-s { margin-top: 6px; }
+html.sb-bar .sb-fold-s, html.sb-bar .sb-fold-s span { display: block; font-size: 13px; line-height: 1.75; color: var(--sb-bar-sub); }
+html.sb-bar .sb-title { display: flex; align-items: baseline; gap: 12px; margin: 6px 0 8px; width: 100%; }
+html.sb-bar .sb-title b { font-size: 16px; font-weight: 500; letter-spacing: .12em; color: var(--sb-bar-ink); }
+html.sb-bar .sb-title i { font: italic 14.5px var(--sb-f-italic); color: var(--sb-bar-sub); }
+
+/* ---------- 配方本（预设） ---------- */
+html.sb-bar #left-nav-panel #clickSlidersTips, html.sb-bar #left-nav-panel .topRightInset { display: none !important; }
+html.sb-bar .sb-cover { text-align: center; width: 100%; }
+html.sb-bar .sb-cover img { width: 210px; max-width: 64%; display: block; margin: 10px auto -18px; }
+html.sb-bar[data-sb-mode="dark"] .sb-cover img { filter: invert(.88) hue-rotate(180deg) brightness(1.05); }
+/* Tonight's Recipe：酒馆的预设那一块整个当成一张卡；下拉框就是名字，点名字就能换 */
+html.sb-bar #respective-presets-block { background: var(--sb-bar-paper); padding: 16px 18px 14px; margin: 18px 0 4px; box-sizing: border-box; }
+html.sb-bar #respective-presets-block > div:not(.sb-bx), html.sb-bar #openai_api-presets > div { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+html.sb-bar #respective-presets-block > div[style*="display: none"], html.sb-bar #respective-presets-block > div[style*="display:none"] { display: none !important; }
+html.sb-bar #respective-presets-block .standoutHeader, html.sb-bar #respective-presets-block .standoutHeader > .flex-container,
+html.sb-bar #respective-presets-block .flex-container.flexNoGap, html.sb-bar #respective-presets-block .flex-container.flexNoGap > .flex-container { display: contents; }
+html.sb-bar #respective-presets-block .standoutHeader > strong { display: none; }
+html.sb-bar #respective-presets-block select { order: 1; flex: 1 1 100%; font: 600 20px/1.4 var(--sb-f-serif); border: 0; padding: 2px 0 6px; margin: 0; -webkit-appearance: none; appearance: none; background: none; }
+html.sb-bar #respective-presets-block .menu_button { order: 3 !important; border: 0; padding: 2px 0; margin: 0; color: var(--sb-bar-sub); }
+html.sb-bar #respective-presets-block [data-preset-manager-update], html.sb-bar #respective-presets-block #update_oai_preset,
+html.sb-bar #respective-presets-block [data-preset-manager-rename], html.sb-bar #respective-presets-block [data-preset-manager-new], html.sb-bar #respective-presets-block #new_oai_preset { order: 2 !important; }
+html.sb-bar #respective-presets-block [data-preset-manager-delete], html.sb-bar #respective-presets-block #delete_oai_preset { order: 5 !important; margin-left: auto !important; }
+html.sb-bar #respective-presets-block label[for="bind_preset_to_connection"] { order: 4 !important; }
+/* 调酒台：参数平时收起来，只露一行 */
+html.sb-bar #left-nav-panel:not(.sb-open-params) #common-gen-settings-block,
+html.sb-bar #left-nav-panel:not(.sb-open-params) #respective-ranges-and-temps,
+html.sb-bar #left-nav-panel:not(.sb-open-params) #advanced-ai-config-block > :not(#openai_settings),
+html.sb-bar #left-nav-panel:not(.sb-open-params) #openai_settings > :not(.sb-bx):not(:has(#completion_prompt_manager)) { display: none !important; }
+html.sb-bar .sb-sec { text-align: center; margin: 26px 0 14px; width: 100%; }
+html.sb-bar .sb-sec b { display: block; font-size: 18px; font-weight: 600; letter-spacing: .4em; color: var(--sb-bar-ink); }
+html.sb-bar .sb-sec i { display: block; font: italic 15px var(--sb-f-italic); letter-spacing: .25em; color: var(--sb-bar-sub); margin: 2px 0; }
+html.sb-bar .sb-sec small { font-size: 12.5px; color: var(--sb-bar-sub); }
+/* 原料：名字 …… 加 / 不加  token，按酒馆原来的顺序平铺 */
+html.sb-bar .completion_prompt_manager_header { display: none !important; }
+html.sb-bar #completion_prompt_manager, html.sb-bar #completion_prompt_manager .range-block { width: 100%; align-items: stretch; }
+html.sb-bar #completion_prompt_manager #completion_prompt_manager_list { background: transparent; border: 0; padding: 0; width: 100%; box-sizing: border-box; }
+html.sb-bar #completion_prompt_manager #completion_prompt_manager_list .completion_prompt_manager_list_head { display: none; }
+html.sb-bar #completion_prompt_manager #completion_prompt_manager_list li.completion_prompt_manager_prompt {
+    display: flex !important; align-items: baseline; gap: 8px; padding: 9px 0; border: 0 !important; background: none; font-size: 14px; color: var(--sb-bar-ink);
+}
+html.sb-bar #completion_prompt_manager #completion_prompt_manager_list .drag-handle { color: var(--sb-bar-dot); font-size: 11px; cursor: grab; }
+html.sb-bar #completion_prompt_manager #completion_prompt_manager_list .completion_prompt_manager_prompt_name { flex: 1; min-width: 0; display: flex; align-items: baseline; overflow: hidden; }
+html.sb-bar #completion_prompt_manager #completion_prompt_manager_list .completion_prompt_manager_prompt_name > .fa-solid,
+html.sb-bar #completion_prompt_manager #completion_prompt_manager_list .completion_prompt_manager_prompt_name > .fa-xs { display: none; }
+html.sb-bar #completion_prompt_manager #completion_prompt_manager_list .completion_prompt_manager_prompt_name > a,
+html.sb-bar #completion_prompt_manager #completion_prompt_manager_list .completion_prompt_manager_prompt_name > span[title] { color: inherit; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto; }
+html.sb-bar #completion_prompt_manager #completion_prompt_manager_list .completion_prompt_manager_prompt_name::after { content: ''; flex: 1 1 24px; min-width: 24px; border-bottom: 1px dotted var(--sb-bar-dot); margin: 0 2px .35em 8px; }
+html.sb-bar #completion_prompt_manager #completion_prompt_manager_list .prompt_manager_prompt_controls { display: flex; gap: 8px; align-items: baseline; }
+html.sb-bar #completion_prompt_manager #completion_prompt_manager_list .prompt-manager-edit-action { color: var(--sb-bar-dot); font-size: 10px; }
+html.sb-bar #completion_prompt_manager #completion_prompt_manager_list .prompt-manager-detach-action { display: none !important; }
+html.sb-bar #completion_prompt_manager #completion_prompt_manager_list .prompt-manager-toggle-action { font-size: 0; cursor: pointer; min-width: 2.6em; text-align: right; white-space: nowrap; }
+html.sb-bar #completion_prompt_manager #completion_prompt_manager_list .prompt-manager-toggle-action::before { font: 400 13px/1.6 var(--sb-f-serif) !important; }
+html.sb-bar #completion_prompt_manager #completion_prompt_manager_list .prompt-manager-toggle-action.fa-toggle-on::before { content: '加' !important; color: var(--sb-bar-ink); }
+html.sb-bar #completion_prompt_manager #completion_prompt_manager_list .prompt-manager-toggle-action.fa-toggle-off::before { content: '不加' !important; color: var(--sb-bar-off); }
+html.sb-bar #completion_prompt_manager #completion_prompt_manager_list .prompt_manager_prompt_tokens { min-width: 3.2em; text-align: right; font: 13px var(--sb-f-italic); color: var(--sb-bar-sub); }
+html.sb-bar #completion_prompt_manager #completion_prompt_manager_list li.completion_prompt_manager_prompt_disabled .completion_prompt_manager_prompt_name > a,
+html.sb-bar #completion_prompt_manager #completion_prompt_manager_list li.completion_prompt_manager_prompt_disabled .completion_prompt_manager_prompt_name > span[title] { color: var(--sb-bar-off); text-decoration: line-through; }
+html.sb-bar .completion_prompt_manager_footer { margin-top: 12px; }
+
+/* ---------- 酒窖（API） ---------- */
+html.sb-bar #rm_api_block .sb-status { position: absolute; top: 18px; right: 18px; display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--sb-bar-ink); }
+html.sb-bar #rm_api_block .sb-status b { width: 10px; height: 10px; border-radius: 50%; background: #b5534a; }
+html.sb-bar #rm_api_block .sb-status.ok b { background: #5f8a63; }
+html.sb-bar #rm_api_block .sb-pour .sb-big { font: 500 26px/1.3 var(--sb-f-italic), var(--sb-f-serif); padding-right: 64px; }
+/* 进货单那一块（酒馆的连接配置） */
+html.sb-bar #rm_api_block > .wide100p:has(#connection_profiles) > .flex-container:first-child { justify-content: space-between; }
+html.sb-bar #rm_api_block #connection_profiles { font-size: 15px; }
+html.sb-bar #rm_api_block > .wide100p:has(#connection_profiles) > .flex-container:nth-child(2) { flex-wrap: wrap; gap: 6px 12px; align-items: center; }
+html.sb-bar #rm_api_block > .wide100p:has(#connection_profiles) .menu_button { border: 0; padding: 2px 0; margin: 0; color: var(--sb-bar-sub); }
+html.sb-bar #connection_profiles { flex: 1 1 100%; }
+html.sb-bar #view_connection_profile, html.sb-bar #reload_connection_profile { display: none !important; }
+html.sb-bar #delete_connection_profile { margin-left: auto !important; }
+/* 进货细节：其余全部收起来 */
+html.sb-bar #rm_api_block:not(.sb-open-detail) > :not(.sb-bx):not(.wide100p:has(#connection_profiles)) { display: none !important; }
+html.sb-bar #rm_api_block > .sb-hint, html.sb-bar #rm_api_block > .sb-foot { order: 99; }
+
+/* ---------- 酒单（世界书） ---------- */
+html.sb-bar #WorldInfo > .flex-container:has(> h3), html.sb-bar #WorldInfo h3:has([data-i18n="Worlds/Lorebooks"]) { display: none; }
+html.sb-bar #WIMultiSelector .range-block-title { display: none; }
+html.sb-bar #wiTopBlock { flex-direction: column; }
+html.sb-bar #wiTopBlock .select2-container .select2-selection { background: transparent; border: 0; }
+html.sb-bar #wiTopBlock .select2-selection__choice { background: transparent !important; border: 1px solid var(--sb-bar-ink) !important; border-radius: 0 !important; color: var(--sb-bar-ink) !important; padding: 3px 8px !important; }
+html.sb-bar #WorldInfo:not(.sb-open-rules) #wiTopBlock > .range-block:has(#wiActivationSettings) { display: none; }
+html.sb-bar #WorldInfo.sb-open-rules #wiTopBlock > .range-block:has(#wiActivationSettings) .inline-drawer-header,
+html.sb-bar #WorldInfo.sb-open-rules #wiTopBlock > .range-block:has(#wiActivationSettings) .range-block-title { display: none; }
+html.sb-bar #WorldInfo.sb-open-rules #wiTopBlock > .range-block:has(#wiActivationSettings) .inline-drawer-content { display: block !important; }
+/* 酒馆那一排「选哪本」：选和新建挪到 Tonight's Menu 卡上了，剩下导入 / 导出 / 改名 / 复制 / 删 */
+html.sb-bar #world_popup > hr { display: none; }
+html.sb-bar #world_popup > div:has(> #world_editor_select) { font-size: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: 10px 0 6px; }
+html.sb-bar #world_create_button, html.sb-bar #world_editor_select { display: none !important; }
+html.sb-bar #world_popup > div:has(> #world_editor_select) .menu_button { border: 0; padding: 2px 0; margin: 0; color: var(--sb-bar-sub); }
+html.sb-bar #world_popup_delete { margin-left: auto !important; background: none !important; }
+html.sb-bar #world_popup > div:has(#world_popup_new) { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 12px 0 4px; }
+html.sb-bar #OpenAllWIEntries, html.sb-bar #CloseAllWIEntries, html.sb-bar #world_backfill_memos, html.sb-bar #world_apply_current_sorting { display: none !important; }
+html.sb-bar #world_info_search { flex: 1 1 40%; }
+html.sb-bar #world_popup_new { order: 9; background: var(--sb-bar-btn) !important; border-color: var(--sb-bar-btn) !important; padding: 6px 12px !important; }
+html.sb-bar #world_popup_new::before { color: var(--sb-bar-btntext); }
+html.sb-bar #world_refresh { border: 0 !important; color: var(--sb-bar-sub); }
+html.sb-bar #world_refresh::before { font-size: 16px !important; }
+/* 每一道：状态点 + 名字 + 虚线；深度、顺序这些缩成底下一行小字；点开才是酒馆原来的整套 */
+html.sb-bar #world_popup_entries_list .world_entry { border-bottom: 1px solid var(--sb-bar-line); padding: 6px 0 8px; }
+html.sb-bar #world_popup_entries_list .world_entry_form { background: none; border: 0; box-shadow: none; padding: 0; }
+html.sb-bar #world_popup_entries_list .inline-drawer-header { align-items: center; }
+html.sb-bar #world_popup_entries_list .world_entry:not(:has(.inline-drawer-icon.up)) .WIEnteryHeaderControls,
+html.sb-bar #world_popup_entries_list .world_entry:not(:has(.inline-drawer-icon.up)) select[name="entryStateSelector"],
+html.sb-bar #world_popup_entries_list .world_entry:not(:has(.inline-drawer-icon.up)) .move_entry_button,
+html.sb-bar #world_popup_entries_list .world_entry:not(:has(.inline-drawer-icon.up)) .duplicate_entry_button { display: none !important; }
+html.sb-bar #world_popup_entries_list .world_entry:has(.inline-drawer-icon.up) .sb-wi-meta { display: none; }
+html.sb-bar #world_popup_entries_list .drag-handle { color: var(--sb-bar-dot); font-size: 11px; }
+html.sb-bar #world_popup_entries_list .inline-drawer-icon { font-size: 0; color: var(--sb-bar-sub); width: 14px; }
+html.sb-bar #world_popup_entries_list .inline-drawer-icon::before { content: '›' !important; font: 18px/1 var(--sb-f-italic) !important; display: inline-block; transition: transform .15s; }
+html.sb-bar #world_popup_entries_list .inline-drawer-icon.up::before { transform: rotate(90deg); }
+html.sb-bar #world_popup_entries_list textarea[name="comment"] { border: 0; padding: 2px 0; font-size: 14.5px; color: var(--sb-bar-ink); resize: none; background: none; min-height: 0; }
+html.sb-bar #world_popup_entries_list .WIEntryTitleAndStatus > .flex-container { position: relative; }
+html.sb-bar #world_popup_entries_list .world_entry:not(:has(.inline-drawer-icon.up)) .WIEntryTitleAndStatus > .flex-container::after { content: ''; flex: 1 1 20px; min-width: 20px; border-bottom: 1px dotted var(--sb-bar-dot); margin: 0 4px .55em 6px; }
+html.sb-bar #world_popup_entries_list .world_entry[data-sb-state="off"] textarea[name="comment"] { color: var(--sb-bar-off); text-decoration: line-through; }
+/* 开关换成状态点 + 字：蓝 每桌附赠、绿 点到才上、灰 售罄（点它就是酒馆原来的开关） */
+html.sb-bar #world_popup_entries_list .killSwitch { order: 5; font-size: 0 !important; display: flex !important; align-items: center; gap: 6px; white-space: nowrap; cursor: pointer; }
+html.sb-bar #world_popup_entries_list .world_entry_thin_controls { display: flex; }
+html.sb-bar #world_popup_entries_list .killSwitch::before { content: '' !important; width: 9px; height: 9px; border-radius: 50%; background: #8a8a8a; display: inline-block; }
+html.sb-bar #world_popup_entries_list .killSwitch::after { font: 13px/1.6 var(--sb-f-serif); color: var(--sb-bar-off); content: '售罄'; }
+html.sb-bar #world_popup_entries_list .world_entry[data-sb-state="constant"] .killSwitch::before { background: #5b7fae; }
+html.sb-bar #world_popup_entries_list .world_entry[data-sb-state="constant"] .killSwitch::after { content: '每桌附赠'; color: var(--sb-bar-ink); }
+html.sb-bar #world_popup_entries_list .world_entry[data-sb-state="normal"] .killSwitch::before { background: #5f8a63; }
+html.sb-bar #world_popup_entries_list .world_entry[data-sb-state="normal"] .killSwitch::after { content: '点到才上'; color: var(--sb-bar-ink); }
+html.sb-bar #world_popup_entries_list .world_entry[data-sb-state="vectorized"] .killSwitch::before { background: #9a7bb0; }
+html.sb-bar #world_popup_entries_list .world_entry[data-sb-state="vectorized"] .killSwitch::after { content: '按意思上'; color: var(--sb-bar-ink); }
+html.sb-bar #world_popup_entries_list .delete_entry_button, html.sb-bar #world_popup_entries_list .duplicate_entry_button, html.sb-bar #world_popup_entries_list .move_entry_button { border: 0 !important; padding: 0 0 0 8px !important; color: var(--sb-bar-dot); }
+html.sb-bar #world_popup_entries_list .delete_entry_button::before { font-size: 12px !important; }
+html.sb-bar .sb-wi-meta { font-size: 12.5px; color: var(--sb-bar-sub); padding: 0 0 0 34px; }
+html.sb-bar .sb-wi-meta:empty { display: none; }
+html.sb-bar .sb-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 16px; font-size: 12px; color: var(--sb-bar-sub); margin-top: 16px; }
+html.sb-bar .sb-legend b { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; background: #8a8a8a; }
+html.sb-bar .sb-legend b.c { background: #5b7fae; }
+html.sb-bar .sb-legend b.n { background: #5f8a63; }
+
+/* ---------- 会员卡（人设） ---------- */
+html.sb-bar #PersonaManagement > div:has(#persona-management-block) { flex-direction: column; flex-wrap: nowrap; align-items: stretch; }
+html.sb-bar #PersonaManagement:not(.sb-open-more) .flex-container:has(> .flex-container > #personas_backup) { display: none !important; }
+html.sb-bar .sb-member, html.sb-bar .sb-use { width: 100%; box-sizing: border-box; }
+html.sb-bar #persona-management-block { flex-direction: column; }
+html.sb-bar #PersonaManagement:not(.sb-open-more) .persona_management_right_column { display: none !important; }
+html.sb-bar .sb-mc { position: relative; display: grid; grid-template-columns: 96px 1fr; gap: 0 18px; background: var(--sb-bar-card); color: var(--sb-bar-cardtext); border-radius: 16px; padding: 20px 20px 14px; }
+html.sb-bar .sb-mc img { width: 96px; height: 116px; object-fit: cover; border-radius: 6px; background: rgba(255,255,255,.12); }
+html.sb-bar .sb-mc img:not([src]) { visibility: hidden; }
+html.sb-bar .sb-mc-r { min-width: 0; padding-top: 4px; }
+html.sb-bar .sb-mc-name { background: none; border: 0; padding: 0; color: #fff; font: 600 21px/1.3 var(--sb-f-serif); cursor: pointer; text-align: left; }
+html.sb-bar .sb-mc-no { font: 12.5px/1.6 ui-monospace, Menlo, monospace; letter-spacing: .18em; opacity: .65; }
+html.sb-bar .sb-mc-desc { white-space: pre-line; font-size: 13px; line-height: 1.7; margin-top: 8px; opacity: .9; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+html.sb-bar .sb-mc-use { position: absolute; top: 18px; right: 20px; font: 12px var(--sb-f-italic); letter-spacing: .2em; opacity: .8; }
+html.sb-bar .sb-mc-foot { grid-column: 1 / -1; display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,.55); margin-top: 14px; padding-top: 8px; font: italic 13px var(--sb-f-italic); letter-spacing: .12em; opacity: .7; }
+html.sb-bar .sb-acts { margin-top: 10px; }
+html.sb-bar .sb-use { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+html.sb-bar .sb-use button { background: none; border: 1px solid var(--sb-bar-line); color: var(--sb-bar-sub); padding: 9px 4px; font: 13.5px var(--sb-f-serif); cursor: pointer; }
+html.sb-bar .sb-use button.on { border-color: var(--sb-bar-ink); color: var(--sb-bar-ink); }
+/* 卡包：酒馆的人设列表，一行一张 */
+html.sb-bar .persona_management_left_column > .flex-container:first-child { align-items: center; gap: 10px; }
+html.sb-bar #create_dummy_persona { order: 9; background: var(--sb-bar-btn) !important; border: 0 !important; padding: 6px 12px !important; }
+html.sb-bar #create_dummy_persona::before { color: var(--sb-bar-btntext); }
+html.sb-bar #user_avatar_block .avatar-container { display: flex; align-items: center; gap: 14px; padding: 12px 0; border: 0; border-bottom: 1px solid var(--sb-bar-line); border-radius: 0; background: none; box-shadow: none; content-visibility: auto; contain-intrinsic-size: auto 72px; }
+html.sb-bar #user_avatar_block .avatar-container.selected { outline: 0; box-shadow: none; }
+html.sb-bar #user_avatar_block .avatar img { width: 46px; height: 46px; border-radius: 50%; object-fit: cover; box-shadow: none; }
+html.sb-bar #user_avatar_block .ch_name { color: var(--sb-bar-ink); font-size: 15px; }
+html.sb-bar #user_avatar_block .avatar-container.selected .ch_name::after { content: '● 在用'; font-size: 12px; color: #5f8a63; margin-left: 8px; }
+html.sb-bar #user_avatar_block .ch_description { color: var(--sb-bar-sub); font-size: 13px; }
+
+/* ---------- 调酒师名单 / 主页（右边抽屉） ---------- */
+html.sb-bar #right-nav-panel:has(.sb-page) #CharListButtonAndHotSwaps, html.sb-bar #right-nav-panel:has(.sb-page) #rm_PinAndTabs { display: none !important; }
+html.sb-bar .sb-favrow { display: flex; justify-content: center; gap: 22px; overflow-x: auto; padding-bottom: 6px; }
+html.sb-bar .sb-favrow button { display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: 0; padding: 0; cursor: pointer; color: var(--sb-bar-ink); font-family: var(--sb-f-serif); }
+html.sb-bar .sb-favrow img { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 1px solid var(--sb-bar-line); }
+html.sb-bar .sb-favrow b { font-weight: 500; font-size: 14px; }
+html.sb-bar .sb-favrow small { font-size: 12px; color: var(--sb-bar-sub); }
+html.sb-bar #charListFixedTop { display: flex; flex-direction: column; }
+html.sb-bar #form_character_search_form { order: -1; margin-bottom: 8px; }
+html.sb-bar #rm_button_bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+html.sb-bar #rm_buttons_container:empty { display: none; }
+html.sb-bar #rm_button_search { display: none !important; }
+html.sb-bar #form_character_search_form { display: block !important; }
+html.sb-bar #rm_button_create { order: 3; background: var(--sb-bar-btn) !important; border: 0 !important; padding: 6px 12px !important; height: auto !important; align-self: center; flex: none; }
+html.sb-bar #rm_button_create::before { color: var(--sb-bar-btntext); }
+html.sb-bar #character_import_button, html.sb-bar #external_import_button, html.sb-bar #rm_button_group_chats { order: 4; border: 0 !important; padding: 2px 0 !important; color: var(--sb-bar-sub); }
+html.sb-bar #character_sort_order { flex: 1 1 40%; order: 2; margin: 0; }
+html.sb-bar .rm_tag_filter .tag { background: transparent; border: 0; color: var(--sb-bar-sub); }
+html.sb-bar .rm_tag_filter .tag.selected { color: var(--sb-bar-ink); border-bottom: 1px solid var(--sb-bar-ink); }
+html.sb-bar #rm_print_characters_block .entity_block { align-items: center !important;
+    display: flex; align-items: center; gap: 14px; padding: 12px 0; margin: 0; border: 0; border-bottom: 1px solid var(--sb-bar-line); border-radius: 0; background: none; box-shadow: none;
+    content-visibility: auto; contain-intrinsic-size: auto 80px;
+}
+html.sb-bar #rm_print_characters_block .entity_block .avatar { border: 0 !important; outline: 0 !important; box-shadow: none !important; border-radius: 6px; }
+html.sb-bar #rm_print_characters_block .character_select_container { flex: 1; min-width: 0; width: auto; }
+html.sb-bar #rm_print_characters_block .entity_block .avatar img { width: 54px; height: 54px; border-radius: 6px; object-fit: cover; box-shadow: none; border: 0; }
+html.sb-bar #rm_print_characters_block .ch_name { color: var(--sb-bar-ink); font-size: 16px; font-weight: 500; }
+html.sb-bar #rm_print_characters_block .is_fav .ch_name::after { content: '★ 常点'; font-size: 11.5px; font-weight: 400; border: 1px solid var(--sb-bar-ink); padding: 0 5px; margin-left: 8px; vertical-align: 2px; }
+html.sb-bar #rm_print_characters_block .ch_fav_icon { display: none !important; }
+html.sb-bar #rm_print_characters_block .ch_additional_info { font: 12px var(--sb-f-italic); color: var(--sb-bar-sub); }
+html.sb-bar #rm_print_characters_block .ch_description { font-style: italic; color: var(--sb-bar-sub); font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.sb-bar #rm_print_characters_block .character_select::after { content: '找他 →'; margin-left: auto; white-space: nowrap; color: var(--sb-bar-sub); font-size: 13.5px; padding-left: 8px; }
+html.sb-bar #rm_print_characters_block .group_select::after { content: '入座 →'; margin-left: auto; white-space: nowrap; color: var(--sb-bar-sub); font-size: 13.5px; padding-left: 8px; }
+html.sb-bar #rm_print_characters_block .tags_inline .tag { background: none; border: 0; color: var(--sb-bar-sub); font-size: 12px; padding: 0 4px 0 0; }
+html.sb-bar #rm_print_characters_block .tags_inline .tag::before { content: '#'; }
+/* 主页 */
+html.sb-bar .sb-back button { background: none; border: 0; padding: 6px 0; color: var(--sb-bar-sub); font: 14px var(--sb-f-serif); cursor: pointer; }
+html.sb-bar #rm_button_back, html.sb-bar #advanced_div, html.sb-bar #character_open_media_overrides, html.sb-bar #rm_ch_create_block .extension_token_counter:not(#name_div *) { display: none !important; }
+html.sb-bar #avatar-and-name-block { display: grid; grid-template-columns: 104px 1fr; gap: 6px 18px; align-items: center; margin: 8px 0 4px; }
+html.sb-bar #avatar-and-name-block > #name_div { grid-column: 2; grid-row: 1; }
+html.sb-bar #avatar-and-name-block > .flex-container { display: contents; }
+html.sb-bar #avatar_div { display: contents; }
+html.sb-bar #avatar_div_div { grid-column: 1; grid-row: 1; width: 104px; height: 104px; border-radius: 50%; overflow: hidden; }
+html.sb-bar #avatar_load_preview { width: 104px; height: 104px; object-fit: cover; border-radius: 50%; }
+html.sb-bar #avatar_controls { grid-column: 1 / -1; display: flex !important; flex-direction: row !important; flex-wrap: wrap; align-items: center; justify-content: flex-start !important; gap: 6px 14px; width: 100%; }
+html.sb-bar #avatar_controls > * { display: contents; }
+html.sb-bar #avatar_controls .chat_lorebook_button { display: none !important; }
+html.sb-bar #avatar_controls .form_create_bottom_buttons_block { display: contents; }
+html.sb-bar #avatar_controls .menu_button { border: 0 !important; padding: 2px 0 !important; margin: 0 !important; color: var(--sb-bar-sub); background: none !important; }
+html.sb-bar #favorite_button.fav_on::before { color: var(--sb-bar-ink); }
+html.sb-bar #avatar_controls #delete_button { order: 9; margin-left: auto !important; }
+html.sb-bar #char-management-dropdown { order: 8; width: auto; max-width: 9em; font-size: 13.5px; color: var(--sb-bar-sub); border: 0; }
+html.sb-bar #avatar-and-name-block > #tags_div, html.sb-bar #tags_div { grid-column: 1 / -1; }
+html.sb-bar #tagList .tag { background: none; border: 1px solid var(--sb-bar-line); border-radius: 0; color: var(--sb-bar-ink); }
+html.sb-bar #character_name_pole { font: 600 24px/1.3 var(--sb-f-serif); border: 0; padding: 0; color: var(--sb-bar-ink); background: none; }
+html.sb-bar #name_div > .extension_token_counter { display: none; }
+html.sb-bar .sb-meta { font: 12px/1.6 ui-monospace, Menlo, monospace; letter-spacing: .14em; color: var(--sb-bar-sub); margin-top: 4px; }
+html.sb-bar #description_div, html.sb-bar #first_message_div { display: flex; align-items: baseline; justify-content: space-between; border-bottom: 1px solid var(--sb-bar-ink); padding-bottom: 6px; margin: 22px 0 10px; }
+html.sb-bar #description_div > .flex-container > span::before, html.sb-bar #first_message_div > .flex-container > span::before, html.sb-bar #creators_notes_div > span.flex1::before { font-size: 17px !important; color: var(--sb-bar-ink); letter-spacing: .12em; }
+html.sb-bar #description_div .editor_maximize, html.sb-bar #first_message_div .editor_maximize { color: var(--sb-bar-dot); font-size: 12px; }
+html.sb-bar #descriptionWrapper, html.sb-bar #firstMessageWrapper { flex: none; }
+html.sb-bar #description_textarea, html.sb-bar #firstmessage_textarea { height: auto !important; min-height: 7em; max-height: 45vh; field-sizing: content; flex: none; border: 0; padding: 4px 0; font-size: 14px; line-height: 1.8; color: var(--sb-bar-text); }
+html.sb-bar #rm_ch_create_block .open_alternate_greetings { border: 0 !important; background: none !important; color: var(--sb-bar-sub); }
+html.sb-bar #form_create > #spoiler_free_desc { order: 5; border-top: 1px solid var(--sb-bar-ink); padding-top: 12px; margin-top: 18px; }
+html.sb-bar #form_create > .sb-adv { order: 6; margin-top: 0; border-top: 1px solid var(--sb-bar-line); }
+html.sb-bar #form_create > .sb-foot { order: 7; }
+html.sb-bar #creators_notes_div .menu_button { border: 0; color: var(--sb-bar-dot); }
+html.sb-bar #user_avatar_block { display: flex; flex-direction: column; }
+html.sb-bar #user_avatar_block .avatar_upload { order: 99; width: auto; height: auto; border: 0; border-radius: 0; background: none; box-shadow: none; font-size: 0; padding: 12px 0; text-align: center; color: var(--sb-bar-sub); cursor: pointer; }
+html.sb-bar #user_avatar_block .avatar_upload::before { content: '［ ＋ 拿一张照片办卡 ］'; font: 13.5px var(--sb-f-serif); }
+html.sb-bar .sb-acts { gap: 6px 8px; }
+html.sb-bar #spoiler_free_desc .inline-drawer-icon { font-size: 0; background: none; color: var(--sb-bar-sub); }
+html.sb-bar #spoiler_free_desc .inline-drawer-icon::before { content: '+' !important; font: 18px/1 var(--sb-f-serif) !important; }
+html.sb-bar #spoiler_free_desc .inline-drawer-icon.up::before { content: '−' !important; }
+html.sb-bar #char-management-dropdown { -webkit-appearance: none; appearance: none; background: none; padding: 2px 0; }

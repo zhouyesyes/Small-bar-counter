@@ -544,7 +544,7 @@ const host = {
 };
 const ui = createUI(host);
 let refreshTimer = 0;
-function refresh() { dirty(); clearTimeout(refreshTimer); refreshTimer = setTimeout(() => { dirty(); refreshInject(); ui.render(); applyBarTheme(settings()); }, 120); }
+function refresh() { dirty(); clearTimeout(refreshTimer); refreshTimer = setTimeout(() => { dirty(); refreshInject(); ui.render(); applyBarTheme(settings(), ctx); }, 120); }
 
 // 扩展页里的一小块设置：两个开关分开管（小猫抽屉、吧台美化）、打开按钮（小猫关了也能从这里进）
 function settingsPanel() {
@@ -564,7 +564,7 @@ function settingsPanel() {
     // 吧台美化：和小猫抽屉互不相干，单独开关（关掉小猫抽屉也能用）
     const bt = el.querySelector('#sb-bartheme');
     bt.checked = !!settings().barTheme;
-    bt.addEventListener('change', () => { settings().barTheme = bt.checked; saveSettings(); applyBarTheme(settings()); });
+    bt.addEventListener('change', () => { settings().barTheme = bt.checked; saveSettings(); applyBarTheme(settings(), ctx); });
     el.querySelector('#sb-openbtn').addEventListener('click', () => ui.open());
     el.querySelector('#sb-lookbtn').addEventListener('click', openSplashSettings);
     const res = el.querySelector('#sb-cleanres'), btn = el.querySelector('#sb-cleanbtn');
@@ -620,12 +620,12 @@ async function cleanAll() {
 const ctxConfirm = async text => { const c = ctx(); return c.callGenericPopup ? !!await c.callGenericPopup(text.replace(/\n/g, '<br>'), c.POPUP_TYPE.CONFIRM) : confirm(text); };
 
 // 开场与配色里改了颜色 / 深浅：小吧台和整个店一起变
-window.addEventListener('small-bar-appearance', () => { ui.render(); applyBarTheme(settings()); });
+window.addEventListener('small-bar-appearance', () => { ui.render(); applyBarTheme(settings(), ctx); });
 
 jQuery(() => {
     const c = ctx(), ev = c.eventSource, T = c.eventTypes || c.event_types;
     ui.mount();
-    applyBarTheme(settings());
+    applyBarTheme(settings(), ctx);
     setSplashProfile(me);
     progress(2 / 3);
     settingsPanel();

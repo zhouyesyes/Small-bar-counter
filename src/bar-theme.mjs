@@ -1,6 +1,7 @@
 // 吧台美化（docs/bar-theme.md 第 1 批）：总开关、酒馆颜色跟小吧台调色走、顶栏九个按钮换成细线小物件
 // 只在 <html> 上挂一个 sb-bar 的类、加一段 <style>；关掉就把这两样拿掉，酒馆原样回来，不动酒馆自己的东西
 import { palette, mix, modeFor } from './palette.mjs';
+import { mountPages, unmountPages, relabelCss } from './bar-pages.mjs';
 
 // 顶栏九个，位置和酒馆原来的一一对应（样子图 docs/mockups/bar-theme/topbar.html 她选的 A）
 export const ICONS = [
@@ -49,7 +50,17 @@ export function barCss(p) {
     const vars = Object.entries(hostColors(p)).map(([k, v]) => `${k}: ${v} !important;`).join(' ');
     const icons = ICONS.map(([sel, , body]) => `html.sb-bar ${sel} .drawer-icon::before { -webkit-mask-image: ${svgUrl(body)}; mask-image: ${svgUrl(body)}; }`).join('\n');
     const I = 'html.sb-bar #top-settings-holder .drawer-icon';
-    return `html.sb-bar { ${vars} --sb-bar-ink: ${p.fg}; --sb-bar-sub: ${p.dim}; }
+    const light = p.fg === '#000000';
+    // 各页用的几个颜色（和样子图 palette.css 一样，都从那两个颜色算）
+    const page = {
+        '--sb-bar-ink': p.fg, '--sb-bar-sub': p.dim, '--sb-bar-bg': p.bg, '--sb-bar-text': mix(p.bg, p.fg, .76),
+        '--sb-bar-paper': mix(p.bg, light ? '#ffffff' : '#000000', light ? .5 : .16), '--sb-bar-line': mix(p.bg, p.fg, .14),
+        '--sb-bar-dot': mix(p.bg, p.fg, .28), '--sb-bar-off': mix(p.bg, p.fg, .4), '--sb-bar-btn': p.accent, '--sb-bar-btntext': p.ink,
+        '--sb-bar-card': light ? '#404040' : '#2a2a2a', '--sb-bar-cardtext': '#f2f2f2',
+    };
+    const pageVars = Object.entries(page).map(([k, v]) => `${k}: ${v};`).join(' ');
+    return `html.sb-bar { ${vars} ${pageVars} }
+${relabelCss()}
 ${I} { position: relative; color: var(--sb-bar-sub); opacity: 1; }
 ${I}::before { content: '' !important; display: block; width: .74em; height: .74em; margin: .13em auto; background-color: currentColor; -webkit-mask: center / contain no-repeat; mask: center / contain no-repeat; }
 ${I}.openIcon, ${I}:hover { color: var(--sb-bar-ink); opacity: 1; }
@@ -59,17 +70,26 @@ ${icons}`;
 
 let observer = null, media = null, last = '';
 // 开着就挂上 / 更新，关着就拿掉；调色、换深浅、酒馆改了自己的颜色，都再调一次
-export function applyBarTheme(settings) {
+let getCtx = () => null;
+export function applyBarTheme(settings, ctx) {
+    if (ctx) getCtx = ctx;
     const html = document.documentElement;
     let style = document.getElementById('sb-bar-theme');
     if (!settings.barTheme) {
-        html.classList.remove('sb-bar'); style?.remove(); last = '';
+        html.classList.remove('sb-bar'); style?.remove(); last = ''; unmountPages(); document.getElementById('sb-bar-fonts')?.remove(); delete html.dataset.sbMode;
         observer?.disconnect(); observer = null; media?.removeEventListener('change', media.sb); media = null;
         return;
     }
     // 先挂类再看深浅：modeFor 看到 sb-bar 就去读酒馆原来的底色
     html.classList.add('sb-bar');
+    // 花体英文标题、斜体英文小字、中文宋体；加载不了时 CSS 里有退路（iPhone 自带的 Snell Roundhand、宋体）
+    if (!document.getElementById('sb-bar-fonts')) {
+        const link = Object.assign(document.createElement('link'), { id: 'sb-bar-fonts', rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+SC:wght@400;600&display=swap' });
+        document.head.appendChild(link);
+    }
+    mountPages(getCtx);
     const mode = modeFor(settings);
+    html.dataset.sbMode = mode;
     const css = barCss(palette(mode, settings.splash?.colors?.[mode]));
     if (!style) { style = document.createElement('style'); style.id = 'sb-bar-theme'; document.head.appendChild(style); }
     if (css !== last) { style.textContent = css; last = css; }
