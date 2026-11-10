@@ -215,6 +215,10 @@ export function createUI(host) {
         if (html === lastHtml) return; // 什么都没变：不重画，进新聊天时不来回闪
         lastHtml = html;
         root.innerHTML = html;
+        root.querySelectorAll('[data-bg-picker]').forEach(input => {
+            const cover = input.closest('.sb-cover,.sb-wcover,.sb-xcover');
+            if (cover) { cover.dataset.bgTarget = input.dataset.upload; cover.tabIndex = 0; cover.setAttribute('role', 'button'); cover.setAttribute('aria-label', '更换背景'); }
+        });
         drawCat();
         for (const [k, top] of keepScroll) { const el = root.querySelector(`[data-keep="${k}"]`); if (el) el.scrollTop = top; }
         const msgs = root.querySelector('.sb-msgs'); if (msgs && v.stick) { msgs.scrollTop = msgs.scrollHeight; }
@@ -246,7 +250,7 @@ export function createUI(host) {
         const src = host.charCfg()[kind];
         return src ? { cls: 'sb-cover-img', style: `background-image:url('${host.img(src)}')` } : { cls: coverClass(), style: coverStyle() };
     }
-    const coverBtn = kind => `<label class="sb-coverbtn sb-side">换背景<input type="file" accept="image/*" data-upload="${kind}" hidden></label>`;
+    const coverBtn = kind => `<input type="file" accept="image/*" data-upload="${kind}" data-bg-picker hidden>`;
     function landingHtml(floating) {
         const p = host.openingProfile();
         return `${floating ? '' : '<div class="sb-shade" data-act="close"></div>'}
@@ -254,7 +258,7 @@ export function createUI(host) {
  <div class="sb-body" data-keep="landing">
  <div class="sb-cover sb-cover-img" style="background-image:url('${esc(p.cover)}')">
   <span class="sb-logo">SMALL BAR</span><button class="sb-x" data-act="${floating ? 'phone-close' : 'close'}" aria-label="关上">×</button>
-  <label class="sb-coverbtn">换背景<input type="file" accept="image/*" data-upload="opening-cover" hidden></label>
+  <input type="file" accept="image/*" data-upload="opening-cover" data-bg-picker hidden>
  </div>
  <label class="sb-av" style="background-image:url('${esc(p.avatar)}')" title="点一下换头像"><input type="file" accept="image/*" data-upload="opening-avatar" hidden></label>
  <div class="sb-name" data-act="home-name" role="button" tabindex="0">${esc(p.name)}</div><div class="sb-sign" data-act="home-sign" role="button" tabindex="0">${esc(p.sign)}</div>
@@ -281,9 +285,9 @@ export function createUI(host) {
 <div class="sb-drawer${v.mini ? ' sb-mini' : ''}" role="dialog" aria-label="小吧台">
  <div class="sb-minibar"><span class="sb-mininame">${esc(him.name)}</span><button class="sb-x" data-act="close" aria-label="关上">×</button></div>
  <div class="sb-body" data-keep="body">
- <div class="sb-cover ${coverClass()}" style="${coverStyle()}">
+ <div class="sb-cover ${coverClass()}" style="${coverStyle()}" data-bg-settings tabindex="0" role="button" aria-label="更换背景">
   <span class="sb-logo">SMALL BAR</span><button class="sb-x" data-act="close" aria-label="关上">×</button>
-  <button class="sb-coverbtn" data-act="phone-go" data-to="set-cover">背景</button>
+
  </div>
  <label class="sb-av" style="background-image:url('${esc(him.avatar)}')" title="点一下换头像"><input type="file" accept="image/*" data-upload="him-avatar" hidden></label>
  <div class="sb-name">${esc(him.name)}</div>
@@ -998,6 +1002,16 @@ export function createUI(host) {
 
     // ---------- 点 ----------
     async function onClick(e) {
+        const bg = e.target.closest('[data-bg-target],[data-bg-settings]');
+        if (bg && root.contains(bg) && !e.target.closest('button,input,label,a,[data-act]')) {
+            if (bg.hasAttribute('data-bg-settings')) {
+                if (v.drawer && host.settings().phoneMode !== 'float') { v.tab = 'phone'; v.phone = false; }
+                else { v.drawer = false; v.phone = true; }
+                v.prev = v.view; v.view = 'set-cover'; render();
+            }
+            else bg.querySelector('[data-bg-picker]').click();
+            return;
+        }
         const b = e.target.closest('[data-act]'); if (!b || !root.contains(b)) return;
         const act = b.dataset.act;
         if (!act) return;
@@ -1256,6 +1270,7 @@ export function createUI(host) {
         render();
     }
     function onKey(e) {
+        if (!e.isComposing && (e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-bg-target],[data-bg-settings]')) { e.preventDefault(); e.target.click(); return; }
         if (e.key !== 'Enter' || e.isComposing) return;
         const t = e.target;
         if (t.matches?.('[data-wx]')) { e.preventDefault(); queueMine({ type: 'text', text: t.value }); t.value = ''; }
