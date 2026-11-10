@@ -571,3 +571,6 @@
 #sb-root .sb-music .sb-lyr .sb-lyric-line{display:block;width:100%;min-height:28px;height:auto;margin:0;padding:4px 8px;border:0;background:transparent;color:var(--sb-dim);font:inherit;line-height:20px;text-align:center;white-space:normal;overflow-wrap:anywhere;cursor:pointer}
 #sb-root .sb-music .sb-lyr .sb-lyric-line.cur{height:auto;min-height:28px;line-height:20px;font-size:14px;font-weight:600;color:var(--sb-fg)}
 #sb-root .sb-music .sb-lyr .sb-lyric-empty{height:auto;white-space:normal}
+
+#sb-root .sb-personal-edit{position:absolute;right:12px;bottom:12px;width:28px;height:28px;padding:5px;display:flex;align-items:center;justify-content:center;border:1px solid #ffffff45;border-radius:50%;background:#0005;color:white;cursor:pointer;z-index:2}
+#sb-root .sb-personal-edit svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
