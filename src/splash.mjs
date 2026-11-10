@@ -13,6 +13,14 @@ function scaleTicket() {
         + (parseFloat(style.borderTopWidth) || 0) + (parseFloat(style.borderBottomWidth) || 0);
     ticket.style.height = `${height}px`;
     frame.style.height = `${height * scale}px`;
+    // A single silhouette supplies both the transparent cutouts and their border.
+    const y = 291, r = 12, w = 448;
+    const shape = `M22 0H426Q448 0 448 22V${y-r}A${r} ${r} 0 0 0 448 ${y+r}V${height-22}Q448 ${height} 426 ${height}H22Q0 ${height} 0 ${height-22}V${y+r}A${r} ${r} 0 0 0 0 ${y-r}V22Q0 0 22 0Z`;
+    const svg = body => `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${height}" viewBox="0 0 ${w} ${height}">${body}</svg>`)}")`;
+    ticket.style.setProperty('--sb-ticket-mask', svg(`<path d="${shape}" fill="white"/>`));
+    const color = root.dataset.mode === 'light' ? '#77777780' : '#ffffff55';
+    ticket.style.setProperty('--sb-ticket-outline', svg(`<path d="${shape}" fill="none" stroke="${color.slice(0,7)}" stroke-opacity="${root.dataset.mode === 'light' ? '.5' : '.34'}" stroke-width="2"/>`));
+
 }
 window.addEventListener('resize', scaleTicket);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -296,4 +304,9 @@ const styles = `
 @media(prefers-reduced-motion:reduce){#sb-splash .sb-ticket-body{animation:none!important}}
 
 #sb-splash .sb-wine,#sb-splash .sb-progress i{transition-duration:.45s}
+
+/* No rectangular layer behind the cutouts. One silhouette keeps both states identical. */
+#sb-splash .sb-ticket-frame:before{display:none}
+#sb-splash .sb-ticket,#sb-splash .is-expanded .sb-ticket{-webkit-mask-image:var(--sb-ticket-mask);mask-image:var(--sb-ticket-mask);-webkit-mask-composite:source-over;mask-composite:add;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;border-color:transparent}
+#sb-splash .sb-ticket:after{border:0;box-shadow:none;background-image:var(--sb-ticket-outline);background-size:100% 100%;background-repeat:no-repeat;border-radius:0;z-index:5}
 `;
