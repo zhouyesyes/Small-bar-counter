@@ -554,7 +554,7 @@ function settingsPanel() {
     box.appendChild(el);
     const cb = el.querySelector('#sb-enabled');
     cb.checked = settings().enabled;
-    cb.addEventListener('change', () => { settings().enabled = cb.checked; saveSettings(); refresh(); });
+    cb.addEventListener('change', () => { settings().enabled = cb.checked; saveSettings(); if (cb.checked) absorbAll(); refresh(); });
     el.querySelector('#sb-openbtn').addEventListener('click', () => ui.open());
     const res = el.querySelector('#sb-cleanres'), btn = el.querySelector('#sb-cleanbtn');
     btn.addEventListener('click', async () => {
@@ -624,7 +624,8 @@ jQuery(() => {
         return true;
     };
     if (!addWand()) { let n = 0; const t = setInterval(() => { if (addWand() || ++n > 30) clearInterval(t); }, 1000); }
-    const on = (type, f) => { if (type) ev.on(type, f); };
+    // 关掉小吧台（扩展面板里那个勾）时什么都不做：不读楼层、不算状态、不重画
+    const on = (type, f) => { if (type) ev.on(type, (...a) => { if (settings().enabled) f(...a); }); };
     on(T.CHAT_CHANGED, () => { ui.reset(); absorbAll(); refresh(); claimImages(); });
     on(T.CHAT_DELETED, name => { onChatGone(name); });
     on(T.GROUP_CHAT_DELETED, name => { onChatGone(name); });

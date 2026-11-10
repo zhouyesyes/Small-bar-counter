@@ -174,7 +174,7 @@ export function createUI(host) {
                 if (v.momentsN < total) { v.momentsN += 10; render(); }
             }
         }, true);
-        setInterval(tickMusic, 1000);
+        setInterval(() => { if (root.firstChild && player.current()) tickMusic(); }, 1000); // 没打开、没在放歌时不动
         setInterval(() => { if (!v.drawer && !v.phone && root.isConnected) { catBlink = 1; drawCat(); setTimeout(() => { catBlink = 0; drawCat(); }, 160); } }, 4200);
         render();
     }
