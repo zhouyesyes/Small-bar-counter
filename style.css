@@ -546,3 +546,7 @@
 #sb-root .sb-mcomp{margin:4px 14px 10px;padding:10px;border:1px solid var(--sb-line);border-radius:10px}
 #sb-root .sb-mcomp textarea{display:block;width:100%;resize:none;font-size:14px!important;min-height:70px}
 #sb-root .sb-mcomp input{display:block;width:100%;margin-top:6px;font-size:12.5px!important}
+
+/* The opening and the drawer share the two-color palette. */
+#sb-root .sb-tabs button.on{color:var(--sb-accent);border-bottom-color:var(--sb-accent)}
+#sb-root input[type=checkbox],#sb-root input[type=range]{accent-color:var(--sb-accent)}

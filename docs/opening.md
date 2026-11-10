@@ -1,0 +1,29 @@
+# 开场页（0.7.0 基础版）
+
+以用户 2026-11-10 确认的方案为准：直立票据卡片、英文界面、头像旁只有小字，底部署名保留。卡片页和酒杯页的底色均为纯色，酒杯为线条轮廓，杯内酒液和细进度条同步填满。日夜各两种可编辑颜色，文字颜色按对比度推导；抽屉共用配色。
+
+扩展面板 →「开场与配色」，或小手机设置 →「开场与配色」可修改：开场开关、外观模式、日夜背景色和按钮色、头像、头图、小字、TABLE、ORDER、签名。图片沿用本地 IndexedDB 和裁剪功能。现有设置不清除。“keep my tab open”表示记住签名；“only passing by”仅关闭本次开场。页面关闭按钮和 Escape 始终可用。
+
+入口先订阅宿主完成事件并加载独立开场模块，再异步加载 src/main.mjs（原 index.js 主逻辑）；宿主先完成时也会等界面挂载再退出。loading_order 调为 -100，尽量在第三方扩展中提早加载，但不改 TauriTavern App 自身的启动阶段，也不保证早于所有扩展。
+
+## 进度含义
+
+当前百分比是三个真实启动里程碑，**不是第三方扩展数量或剩余时间的比例**：主模块导入、界面挂载、宿主加载完成。用 CSS transition 平滑同步酒液和进度条，不用计时器伪造进度。
+
+TauriTavern（检测 __TAURITAVERN_STARTUP_STAGE__）在 APP_READY 后才加载第三方扩展，所以完成信号使用 EXTENSION_SETTINGS_LOADED。普通 SillyTavern 使用 APP_READY，并兼容 #preloader 实际消失。未知宿主若都不发信号，保留关闭入口，不猜测完成。生产不可使用预览页的模拟按钮。
+
+核对的上游源码：
+- https://github.com/Darkatse/TauriTavern/blob/main/src/script.js
+- https://github.com/Darkatse/TauriTavern/blob/main/src/scripts/extensions.js
+
+## 素材和验证
+
+用户第一组原图现已同步到附件目录，已原样加入 assets/opening/cover.jpg 和 avatar.jpg 作为默认素材；用户自选图片优先，其次沿用已有全局头像，最后才用默认素材。重置可恢复默认图。
+
+`docs/preview/opening.html` 是独立浏览器预览，底部按钮模拟进度，不属于生产界面。手机尺寸检查覆盖日夜卡片、签名保存、酒液进度同步、就绪关闭、设置修改、退出、关闭启动开关和小屏滚动。使用真实入口与主模块，模拟宿主 API 测过模块路径、界面挂载、TauriTavern 延迟扩展完成事件、实际裁剪比例、IndexedDB 存图和回显。未在真实 iPhone / TauriTavern 实例安装验证。
+
+仓库已有 tests/core.test.mjs 的首个解析用例失败（“无关的一行”被并入上一项）；src/core.mjs 与原仓库逐字一致，本次未修改解析逻辑。
+
+## 卡片质感调整（同一未发布版本）
+
+对照用户最新的双模式参考图，按 448×631 的卡片尺寸与屏幕 76% 的宽度缩放，修正位置、头图比例、头像大小、文字与签名间距；页面仍是纯色。取参考图底色，卡面采用双层细边、内侧高光、底边反光和分层投影，粉色按钮有轻微上下明暗及内侧高光。参考用户提供的 QuietRoom 4.0.5 自定义 CSS 的 --hp-box-shadow、--hp-hi、--hp-hi-soft 和 --hp-drop 的分层方法；没有引入或执行它的脚本，也没有安装整个主题。头像旁不恢复名字。

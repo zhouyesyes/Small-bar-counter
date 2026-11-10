@@ -1,0 +1,13 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Small Bar · Opening preview</title><style>body{margin:0;background:#302b2e;color:#fff;font:14px system-ui;padding:30px}button{padding:12px;margin:8px}#controls{position:fixed;bottom:0;left:0;z-index:40000;background:#302b2e;padding:8px;border-radius:12px;font-size:11px}#controls button{padding:6px;margin:2px}</style>
+<p>Small Bar opening preview. The controls below simulate host events; production uses real startup stages.</p>
+<div id="controls">PREVIEW ONLY <button id="light">Light</button><button id="dark">Dark</button><button id="half">50%</button><button id="done">Ready</button><button id="open">Reopen</button></div>
+<script type="module">
+import { startSplash, configureSplash, progress, splashReady, openSplashSettings } from '../../src/splash.mjs';
+const s = {theme:'dark',splash:{signature:'yesyes'}};
+window.demo = { startSplash,configureSplash,progress,splashReady,openSplashSettings,s };
+configureSplash(s,()=>{}); startSplash();
+for(const theme of ['light','dark'])document.getElementById(theme).onclick=()=>{s.theme=theme;configureSplash(s,()=>{});};
+document.getElementById('half').onclick=()=>progress(.5);
+document.getElementById('done').onclick=splashReady;
+document.getElementById('open').onclick=()=>startSplash(true);
+</script></html>
