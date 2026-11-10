@@ -1,12 +1,18 @@
+import { artwork, artworkMode } from './artwork.mjs';
 import { applyPalette, defaults } from './palette.mjs';
 import { imageUrl, saveImage } from './imgstore.mjs';
 const KEY = 'small_bar_splash_v1';
-const defaultImages = { cover: new URL('../assets/opening/cover.jpg', import.meta.url).href, avatar: new URL('../assets/opening/avatar.jpg', import.meta.url).href };
 function scaleTicket() {
     const frame = root?.querySelector('.sb-ticket-frame'); if (!frame) return;
     const scale = frame.getBoundingClientRect().width / 448;
     root.style.setProperty('--sb-ticket-scale', scale);
-    frame.style.height = `${frame.querySelector('.sb-ticket').offsetHeight * scale}px`;
+    const ticket = frame.querySelector('.sb-ticket');
+    // Measure the visible sections, not a previously expanded masked card's auto height.
+    const style = getComputedStyle(ticket);
+    const height = [...ticket.children].reduce((total, section) => total + (section.hidden ? 0 : section.offsetHeight), 0)
+        + (parseFloat(style.borderTopWidth) || 0) + (parseFloat(style.borderBottomWidth) || 0);
+    ticket.style.height = `${height}px`;
+    frame.style.height = `${height * scale}px`;
 }
 window.addEventListener('resize', scaleTicket);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -17,7 +23,7 @@ const cfg = () => settings.splash || {};
 // Opening artwork belongs to the opening settings, never to a chat persona.
 export function setSplashProfile() { paintImages(); }
 export function openingArtwork() {
-    return { cover: cfg().cover || defaultImages.cover, avatar: cfg().avatar || defaultImages.avatar };
+    return artwork(cfg(), artworkMode(settings));
 }
 function paintImages() {
     root?.querySelectorAll('[data-image]').forEach(el => {
@@ -162,7 +168,7 @@ export function openSplashSettings() {
     ${['light','dark'].map(mode => `<fieldset><legend>${mode.toUpperCase()}</legend>${['bg','accent'].map(key => `<label>${key === 'bg' ? 'Background' : 'Button'}<input type="color" data-mode="${mode}" data-color="${key}" value="${esc(s.colors[mode]?.[key] || defaults[mode][key])}"></label>`).join('')}</fieldset>`).join('')}
     <fieldset><legend>卡片文字 · CARD DETAILS</legend><p>修改后自动保存，下次打开也会保留。</p>
     ${[['quote','头像旁的小字','a quiet seat, kept for you'],['table','座位 · SEAT','by the window'],['order','酒单 · DRINK','the usual'],['date','日期 · DATE（留空用今天）',''],['signature','底部署名 · SIGNED, WITH LOVE','yesyes']].map(([key,label,value])=>`<label>${label}<input type="text" data-key="${key}" maxlength="${key === 'quote' ? 120 : 60}" value="${esc(s[key] ?? value)}"></label>`).join('')}</fieldset>
-    ${[['cover','Card photo'],['avatar','Avatar']].map(([key,label])=>`<label>${label}<input type="file" accept="image/*" data-upload="${key}"></label><button data-clear="${key}">Reset ${label.toLowerCase()}</button>`).join('')}
+    ${['light','dark'].map(mode => `<fieldset><legend>${mode === 'light' ? '日间图片' : '夜间图片'}</legend>${[['cover','横图'],['avatar','头像']].map(([key,label])=>`<label>${label}<input type="file" accept="image/*" data-upload="${key}" data-image-mode="${mode}"></label><button data-clear="${key}" data-image-mode="${mode}">恢复默认${label}</button>`).join('')}</fieldset>`).join('')}
     <p class="sb-upload-status" role="status"></p><p>照片保存在这台设备的浏览器。卡片上的 keep my tab open 会立即保存当前署名；修改署名后，再勾选即可重新保存。</p><button data-preview>Preview opening</button></div>`;
     document.documentElement.appendChild(panel); applyPalette(panel, settings);
     const close = () => { panel.remove(); panel = null; if (focus?.isConnected) focus.focus(); };
@@ -170,12 +176,12 @@ export function openSplashSettings() {
     panel.onkeydown = e => { if (e.key === 'Escape') { e.stopPropagation(); close(); return; } trapFocus(e, panel); };
     panel.querySelector('[data-close]').focus();
     panel.querySelector('[data-preview]').onclick = () => { close(); dismiss(); startSplash(true); };
-    panel.querySelectorAll('[data-clear]').forEach(b => b.onclick = () => { delete s[b.dataset.clear]; persist(); paint(); });
+    panel.querySelectorAll('[data-clear]').forEach(b => b.onclick = () => { delete (s.images ??= {})[b.dataset.imageMode]?.[b.dataset.clear]; delete s[b.dataset.clear]; persist(); paint(); });
     panel.onchange = async e => {
         const t = e.target;
         if (t.dataset.upload && t.files?.[0]) {
             const status = panel.querySelector('.sb-upload-status'); status.textContent = 'Saving photo…'; t.disabled = true;
-            try { const { cropImage } = await import('./crop.mjs'); const data = await cropImage(t.files[0], { ratio: t.dataset.upload === 'avatar' ? 1 : 2.25, round: t.dataset.upload === 'avatar' }); if (data) s[t.dataset.upload] = await saveImage(data); status.textContent = data ? 'Photo saved.' : ''; }
+            try { const { cropImage } = await import('./crop.mjs'); const data = await cropImage(t.files[0], { ratio: t.dataset.upload === 'avatar' ? 1 : 2.25, round: t.dataset.upload === 'avatar' }); if (data) { ((s.images ??= {})[t.dataset.imageMode] ??= {})[t.dataset.upload] = await saveImage(data); } status.textContent = data ? 'Photo saved.' : ''; }
             catch (err) { status.textContent = 'Could not save photo. Please try another image.'; console.warn('[Small Bar] Photo', err); }
             finally { t.disabled = false; t.value = ''; }
         } else if (t.dataset.color) (s.colors[t.dataset.mode] ??= {})[t.dataset.color] = t.value;
@@ -186,7 +192,7 @@ export function openSplashSettings() {
     };
 }
 const styles = `
-#sb-splash,#sb-splash-settings{--sb-bg:#302b2e;--sb-fg:#fff;--sb-dim:#b9b0b5;--sb-line:#51494e;--sb-soft:#342e32;--sb-accent:#c9869c;--sb-ink:#111;box-sizing:border-box;position:fixed;inset:0;z-index:32000;overflow:auto;background:var(--sb-bg);color:var(--sb-fg);font:13px/1.5 -apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;text-shadow:none;padding:72px 24px 36px;display:flex;align-items:center;justify-content:center;isolation:isolate}
+#sb-splash,#sb-splash-settings{--sb-bg:#181818;--sb-fg:#fff;--sb-dim:#b0b0b0;--sb-line:#494949;--sb-soft:#161616;--sb-accent:#b0b0b0;--sb-ink:#111;box-sizing:border-box;position:fixed;inset:0;z-index:32000;overflow:auto;background:var(--sb-bg);color:var(--sb-fg);font:13px/1.5 -apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;text-shadow:none;padding:72px 24px 36px;display:flex;align-items:center;justify-content:center;isolation:isolate}
 #sb-splash *,#sb-splash-settings *{box-sizing:border-box;text-shadow:none}#sb-splash [hidden],#sb-splash-settings [hidden]{display:none!important}
 #sb-splash button,#sb-splash-settings button{font:inherit;color:inherit;background:transparent;border:0;cursor:pointer}#sb-splash button:focus-visible,#sb-splash-settings button:focus-visible,#sb-splash input:focus-visible,#sb-splash-settings input:focus-visible{outline:2px solid var(--sb-accent);outline-offset:4px}
 #sb-splash .sb-splash-close{position:absolute;right:22px;top:max(18px,env(safe-area-inset-top));font-size:26px}#sb-splash .sb-splash-edit{position:absolute;left:22px;top:max(24px,env(safe-area-inset-top));font-size:11px;color:var(--sb-dim)}
@@ -206,16 +212,16 @@ const styles = `
 /* Reference proportions and QuietRoom-style layered edge lighting. The page itself stays solid. */
 #sb-splash{padding:72px 24px;outline:none}#sb-splash .sb-ticket-frame{width:min(76vw,448px);height:calc(min(76vw,448px)*1.40848214);min-height:0;flex:none;position:relative;margin:auto;transform:translateY(-3vh)}
 #sb-splash .sb-ticket{width:448px;height:631px;margin:0;transform:scale(var(--sb-ticket-scale,1));transform-origin:top left;border-radius:22px;border:1px solid #ffffff3b;background:var(--sb-card);overflow:hidden;box-shadow:inset 0 1px 0 #ffffff38,inset 0 0 0 2px #ffffff12,inset 0 -3px 0 #ffffff16,0 3px 0 #0003,0 32px 55px -10px #0009;isolation:isolate}
-#sb-splash[data-mode=light] .sb-ticket{border-color:#82777d66;box-shadow:inset 0 1px 0 #fff,inset 0 0 0 2px #ffffff60,inset 0 -2px 0 #ffffff80,0 2px 0 #72686f15,0 26px 48px -10px #493e4b48}
+#sb-splash[data-mode=light] .sb-ticket{border-color:#77777766;box-shadow:inset 0 1px 0 #fff,inset 0 0 0 2px #ffffff60,inset 0 -2px 0 #ffffff80,0 2px 0 #70707015,0 26px 48px -10px #40404048}
 #sb-splash .sb-ticket:after{content:'';position:absolute;inset:0;z-index:2;border-radius:inherit;border:1px solid #ffffff13;box-shadow:inset 0 0 0 1px #ffffff0c;pointer-events:none}
 #sb-splash .sb-ticket-cover{height:200px;padding:17px 24px;font-size:12px;letter-spacing:.19em;background:var(--sb-card)}
 #sb-splash .sb-ticket-cover img{object-position:50% 45%}
 #sb-splash .sb-ticket-cover:after{content:'';position:absolute;inset:0;background:linear-gradient(transparent 72%,#00000012);pointer-events:none}
-#sb-splash .sb-ticket-cover span{z-index:1;color:#f7f3f4;background:transparent;padding:0;text-shadow:0 1px 4px #0008}
+#sb-splash .sb-ticket-cover span{z-index:1;color:#f7f7f7;background:transparent;padding:0;text-shadow:0 1px 4px #0008}
 #sb-splash[data-mode=light] .sb-ticket-cover:after{background:linear-gradient(transparent 74%,#ffffff24)}
 #sb-splash .sb-ticket-profile{height:90px;min-height:90px;gap:18px;padding:0 24px 22px;align-items:center;border-bottom-color:color-mix(in srgb,var(--sb-line) 72%,transparent)}
 #sb-splash .sb-ticket-avatar{width:104px;height:104px;margin-top:-26px;border:1px solid #ffffff20;box-shadow:0 6px 12px #0003,inset 0 1px 0 #ffffff44}
-#sb-splash[data-mode=light] .sb-ticket-avatar{border-color:#776c7526;box-shadow:0 6px 14px #40323d24}
+#sb-splash[data-mode=light] .sb-ticket-avatar{border-color:#70707026;box-shadow:0 6px 14px #40404024}
 #sb-splash .sb-ticket-profile p{font:11px/1.8 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;margin:10px 0 0;color:color-mix(in srgb,var(--sb-fg) 48%,var(--sb-card))}
 #sb-splash .sb-ticket-profile:before,#sb-splash .sb-ticket-profile:after{width:24px;height:24px;bottom:-12px;left:-13px;border-color:color-mix(in srgb,var(--sb-line) 70%,transparent)}
 #sb-splash .sb-ticket-profile:after{left:auto;right:-13px}
@@ -234,7 +240,7 @@ const styles = `
 #sb-splash footer{align-items:flex-start;gap:20px}
 #sb-splash .sb-barcode{font-size:11px;letter-spacing:.22em;color:color-mix(in srgb,var(--sb-fg) 38%,var(--sb-card))}
 #sb-splash .sb-barcode i{width:142px;height:30px;opacity:.6;margin-bottom:3px}
-#sb-splash .sb-pour{width:180px;min-height:45px;padding:10px 16px;font-size:14px;letter-spacing:.16em;border:1px solid color-mix(in srgb,var(--sb-accent) 76%,#49303c);background:linear-gradient(180deg,color-mix(in srgb,var(--sb-accent) 86%,white),var(--sb-accent) 60%,color-mix(in srgb,var(--sb-accent) 88%,#57313e));color:#fff5f7;box-shadow:inset 0 1px 1px #ffffff70,inset 0 -1px 1px #57303a35,0 1px 2px #0002;text-shadow:0 1px 1px #0002}
+#sb-splash .sb-pour{width:180px;min-height:45px;padding:10px 16px;font-size:14px;letter-spacing:.16em;border:1px solid color-mix(in srgb,var(--sb-accent) 76%,#353535);background:linear-gradient(180deg,color-mix(in srgb,var(--sb-accent) 86%,white),var(--sb-accent) 60%,color-mix(in srgb,var(--sb-accent) 88%,#353535));color:var(--sb-ink);box-shadow:inset 0 1px 1px #ffffff70,inset 0 -1px 1px #00000035,0 1px 2px #0002;text-shadow:0 1px 1px #0002}
 #sb-splash .sb-pass{font-size:11px;line-height:1.3;margin-top:10px;letter-spacing:.1em;color:color-mix(in srgb,var(--sb-fg) 43%,var(--sb-card))}
 #sb-splash .sb-splash-edit{opacity:.7}#sb-splash .sb-splash-close{opacity:.7}
 
@@ -258,7 +264,7 @@ const styles = `
 #sb-splash .sb-ticket{box-shadow:inset 0 1px 0 #ffffff38,inset 0 0 0 2px #ffffff12,inset 0 -3px 0 #ffffff16}
 #sb-splash[data-mode=light] .sb-ticket{box-shadow:inset 0 1px 0 #fff,inset 0 0 0 2px #ffffff60,inset 0 -2px 0 #ffffff80}
 #sb-splash .sb-ticket-frame:before{content:'';position:absolute;inset:0;border-radius:calc(22px*var(--sb-ticket-scale,1));box-shadow:0 3px 0 #0003,0 32px 55px -10px #0009;pointer-events:none}
-#sb-splash[data-mode=light] .sb-ticket-frame:before{box-shadow:0 2px 0 #72686f15,0 26px 48px -10px #493e4b48}
+#sb-splash[data-mode=light] .sb-ticket-frame:before{box-shadow:0 2px 0 #70707015,0 26px 48px -10px #40404048}
 #sb-splash .sb-ticket-profile:before,#sb-splash .sb-ticket-profile:after{display:none}
 #sb-splash .is-expanded .sb-ticket{-webkit-mask-image:radial-gradient(circle at 0 291px,transparent 12px,#000 13px),radial-gradient(circle at 100% 291px,transparent 12px,#000 13px);-webkit-mask-composite:source-in;mask-image:radial-gradient(circle at 0 291px,transparent 12px,#000 13px),radial-gradient(circle at 100% 291px,transparent 12px,#000 13px);mask-composite:intersect}
 #sb-splash .sb-tab-title{margin:0 0 10px;font:10px/14px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.24em;color:var(--sb-dim)}

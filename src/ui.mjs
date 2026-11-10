@@ -267,7 +267,7 @@ export function createUI(host) {
  <label class="sb-av" style="background-image:url('${esc(p.avatar)}')" title="点一下换头像"><input type="file" accept="image/*" data-upload="opening-avatar" hidden></label>
  <div class="sb-name" data-act="home-name" role="button" tabindex="0">${esc(p.name)}</div><div class="sb-sign" data-act="home-sign" role="button" tabindex="0">${esc(p.sign)}</div>
  <button class="sb-more" data-act="home-settings">编辑我的主页</button>
- ${v.homeSettings ? `<div class="sb-sgrp" aria-label="个人主页设置"><div class="sb-hint">仅用于此主页，独立于聊天人设与开场卡片。</div><label class="sb-more">更换主页头像<input type="file" accept="image/*" data-upload="opening-avatar" hidden></label><label class="sb-more">更换主页背景<input type="file" accept="image/*" data-upload="opening-cover" hidden></label><button class="sb-more" data-act="home-name">修改名字</button><button class="sb-more" data-act="home-sign">修改签名</button></div>` : ''}
+ ${v.homeSettings ? `<div class="sb-sgrp" aria-label="个人主页设置"><div class="sb-hint">仅用于此主页，独立于聊天人设与开场卡片。</div>${['light','dark'].map(mode => `<div class="sb-cap">${mode === 'light' ? '日间图片' : '夜间图片'}</div><label class="sb-more">更换头像<input type="file" accept="image/*" data-upload="opening-avatar-${mode}" hidden></label><label class="sb-more">更换横图<input type="file" accept="image/*" data-upload="opening-cover-${mode}" hidden></label>`).join('')}<button class="sb-more" data-act="home-name">修改名字</button><button class="sb-more" data-act="home-sign">修改签名</button></div>` : ''}
  ${musicHtml({})}</div></div>`;
     }
     function drawerHtml(era) {
@@ -1309,7 +1309,7 @@ export function createUI(host) {
             try { src = await cropImage(file, frame); } catch (err) { host.toast('error', err?.message || '这张图读不出来'); return; }
             if (!src) return; // 点了取消
             src = await host.saveImage(src); // 只存在这台手机的浏览器里，设置里记个编号
-            if (kind === 'opening-cover' || kind === 'opening-avatar') host.setOpeningImage(kind === 'opening-cover' ? 'cover' : 'avatar', src);
+            if (/^opening-(cover|avatar)(-(light|dark))?$/.test(kind)) { const [, field, , mode] = kind.match(/^opening-(cover|avatar)(-(light|dark))?$/); host.setOpeningImage(field, src, mode); }
             if (kind === 'fixed') host.setCharCfg(c => { c.cover = { ...(c.cover || {}), mode: 'fixed', fixed: src }; });
             if (kind === 'pick') host.setCharCfg(c => { c.cover = { ...(c.cover || {}), mode: 'pick', images: [...(c.cover?.images || []), { tag: '', src }] }; });
             if (kind === 'him-avatar') host.setCharCfg(c => { c.him = { ...(c.him || {}), avatar: src }; });
