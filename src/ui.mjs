@@ -1,3 +1,4 @@
+import { updateLyrics } from './music-lyrics.mjs';
 import { bindMusicCovers } from './music-cover.mjs';
 import { applyPalette } from './palette.mjs';
 import { openSplashSettings } from './splash.mjs';
@@ -85,7 +86,7 @@ export function createUI(host) {
         const bar = box.querySelector('.sb-mbar i'); if (bar) bar.style.width = (a.duration ? a.currentTime / a.duration * 100 : 0) + '%';
         const t = box.querySelector('.sb-mtime'); if (t) t.textContent = `${fmt(a.currentTime)} / ${fmt(a.duration)}`;
         const ly = player.lyric(), i = player.line(), el = box.querySelector('.sb-lyr');
-        if (el && el.dataset.i !== String(i)) { el.dataset.i = i; el.innerHTML = [i - 1, i, i + 1].map(k => `<div class="${k === i ? 'cur' : ''}">${esc(ly[k]?.text || '')}</div>`).join(''); }
+        updateLyrics(el, ly, i, `${player.current()?.src || ''}:${player.current()?.id || ''}`);
     }
 
     // ---------- 外壳 ----------
@@ -422,9 +423,10 @@ export function createUI(host) {
  <div class="sb-bigcover">${t ? coverImg(t, 'sb-bigimg') : ''}</div>
  <div class="sb-mt">${esc(t?.title || '还没放歌')}</div>
  <div class="sb-ma">${esc(t?.artist || '搜一首喜欢的歌')}</div>
- <div class="sb-lyr" data-i=""></div>
+
  ${t ? `<button class="sb-mbar" data-act="mseek"><i></i></button><div class="sb-mtime">0:00 / 0:00</div>` : ''}
  <div class="sb-mctl"><button data-act="mmode" title="${{ all: '列表循环', one: '单曲循环', shuffle: '随机' }[mode]}">${mi(mode)}</button><button data-act="mprev" aria-label="上一首">${mi('prev')}</button><button class="sb-mplay" data-act="mtoggle" aria-label="播放">${mi(player.playing() ? 'pause' : 'play')}</button><button data-act="mnext" aria-label="下一首">${mi('next')}</button><button data-act="mlist" class="${v.mlist ? 'on' : ''}" aria-label="歌单">${mi('list')}</button></div>
+ <div class="sb-lyr" aria-label="滚动歌词"></div>
  <div class="sb-plists">${names.map(n => `<button data-act="mpl" data-n="${esc(n)}" class="${n === ms.active ? 'on' : ''}">${esc(n)} <small>${ms.lists[n].length}</small></button>`).join('')}<button data-act="mpl-new" class="add">＋ 新建歌单</button></div>
  ${m?.title ? `<button class="sb-mhis" data-act="mhis">${Wd().listen}《${esc(m.title)}》${m.artist ? ' · ' + esc(m.artist) : ''} · 放这首</button>` : ''}
  <div class="sb-msearch"><input data-msearch placeholder="搜歌名、歌手，或贴网易云链接" enterkeyhint="search" value="${esc(v.mq || '')}"><button data-act="msearch">${v.msearching ? '…' : '搜'}</button></div>
@@ -1103,6 +1105,7 @@ export function createUI(host) {
                 if (!await host.confirm(`删掉歌单「${m.active}」？里面的 ${m.list.length} 首也一起去掉`)) return;
                 delete m.lists[m.active]; m.active = Object.keys(m.lists)[0]; m.idx = 0; host.saveSettings(); break;
             }
+            case 'mlyric': { const line = player.lyric()[Number(b.dataset.line)]; if (line && Number.isFinite(player.audio.duration) && player.audio.duration > 0) { player.seek(Math.max(0, Math.min(1, line.t / player.audio.duration))); tickMusic(); } return; }
             case 'mseek': { const r = b.getBoundingClientRect(); player.seek((e.clientX - r.left) / r.width); tickMusic(); return; }
             case 'msearch': await musicSearch(root.querySelector('[data-msearch]')?.value); return;
             case 'mclose': v.mres = []; v.mpage = 1; break;
