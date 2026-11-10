@@ -13,6 +13,7 @@ import { extractBlock, buildState, guessEra, parseBlock, stripNow } from './core
 import { DEFAULT_PROMPT, buildInjection } from './prompt.mjs';
 import { createUI } from './ui.mjs';
 import { applyBarTheme } from './bar-theme.mjs';
+import { mountChat, unmountChat } from './bar-chat.mjs';
 import { saveImage, imageUrl, deleteImage, listImages } from './imgstore.mjs';
 
 const NS = 'small_bar';          // 扩展设置里的位置
@@ -226,7 +227,7 @@ function him() {
 function me() { const c = ctx(); return resolveMe(hasChar() ? c : { ...c, chatMetadata: {} }, personas.user_avatar || '', img); }
 function setMeProfile(patch) {
     const c = charCfg(); c.me = { ...(c.me || {}), ...patch };
-    saveMeta(); refreshInject(); setSplashProfile(me);
+    saveMeta(); refreshInject(); setSplashProfile(me); if (settings().barTheme) mountChat(barChatHost);
 }
 
 function charCard() {
@@ -362,7 +363,7 @@ async function testOwnApi() {
 
 // ---------- 图片 ----------
 // 她传的图只存在这台手机的浏览器里（她 11/9 说的：不要存服务器），见 src/imgstore.mjs
-const img = src => imageUrl(src, () => { ui.render(); setSplashProfile(me); });
+const img = src => imageUrl(src, () => { ui.render(); setSplashProfile(me); if (settings().barTheme) mountChat(barChatHost); });
 
 // ---------- 清理数据（她 11/9 要的） ----------
 // 图存在浏览器里，背景、头像大多跟着聊天走（存在聊天自己的数据里）：聊天删了、图换了，旧图会一直留着
@@ -518,7 +519,7 @@ const host = {
     setHomeProfile: patch => { const shared = {}; if ('name' in patch) shared.signature = patch.name; if ('sign' in patch) shared.quote = patch.sign; updatePersonalProfile(shared); },
     setOpeningImage: (kind, src, mode = artworkMode(settings())) => { owners()[src] = 'global'; updatePersonalProfile({ [kind]: src }, mode); },
     meCfg: () => charCfg().me || {}, setMeProfile,
-    charCfg, setCharCfg: f => { f(charCfg()); saveMeta(); refreshInject(); },
+    charCfg, setCharCfg: f => { f(charCfg()); saveMeta(); refreshInject(); if (settings().barTheme) mountChat(barChatHost); },
     saveImage: saveImageHere, img, dropImage: src => { if (src) delete owners()[src]; return deleteImage(src); }, refreshInject,
     scanImages, dropImages, trimChat, wipeChat, chatBytes,
     meta, saveMeta, state, unread, markRead, wechat, addWechat, patchWechat, deleteWechat, takeLastRound, restoreRound, repliesFor,
@@ -544,7 +545,15 @@ const host = {
 };
 const ui = createUI(host);
 let refreshTimer = 0;
-function refresh() { dirty(); clearTimeout(refreshTimer); refreshTimer = setTimeout(() => { dirty(); refreshInject(); ui.render(); applyBarTheme(settings(), ctx); }, 120); }
+// Pass existing profile resolvers so message avatars follow Moments / character cards.
+const barChatHost = () => ({ context: ctx, settings, config: charCfg, me, him, image: img,
+    saveChat: saveMeta, saveSettings, saveImage: saveImageHere });
+function applyAppearance() {
+    applyBarTheme(settings(), ctx);
+    if (settings().barTheme) mountChat(barChatHost); else unmountChat();
+}
+
+function refresh() { dirty(); clearTimeout(refreshTimer); refreshTimer = setTimeout(() => { dirty(); refreshInject(); ui.render(); applyAppearance(); }, 120); }
 
 // 扩展页里的一小块设置：两个开关分开管（小猫抽屉、吧台美化）、打开按钮（小猫关了也能从这里进）
 function settingsPanel() {
@@ -564,7 +573,7 @@ function settingsPanel() {
     // 吧台美化：和小猫抽屉互不相干，单独开关（关掉小猫抽屉也能用）
     const bt = el.querySelector('#sb-bartheme');
     bt.checked = !!settings().barTheme;
-    bt.addEventListener('change', () => { settings().barTheme = bt.checked; saveSettings(); applyBarTheme(settings(), ctx); });
+    bt.addEventListener('change', () => { settings().barTheme = bt.checked; saveSettings(); applyAppearance(); });
     el.querySelector('#sb-openbtn').addEventListener('click', () => ui.open());
     el.querySelector('#sb-lookbtn').addEventListener('click', openSplashSettings);
     const res = el.querySelector('#sb-cleanres'), btn = el.querySelector('#sb-cleanbtn');
@@ -620,12 +629,12 @@ async function cleanAll() {
 const ctxConfirm = async text => { const c = ctx(); return c.callGenericPopup ? !!await c.callGenericPopup(text.replace(/\n/g, '<br>'), c.POPUP_TYPE.CONFIRM) : confirm(text); };
 
 // 开场与配色里改了颜色 / 深浅：小吧台和整个店一起变
-window.addEventListener('small-bar-appearance', () => { ui.render(); applyBarTheme(settings(), ctx); });
+window.addEventListener('small-bar-appearance', () => { ui.render(); applyAppearance(); });
 
 jQuery(() => {
     const c = ctx(), ev = c.eventSource, T = c.eventTypes || c.event_types;
     ui.mount();
-    applyBarTheme(settings(), ctx);
+    applyAppearance();
     setSplashProfile(me);
     progress(2 / 3);
     settingsPanel();
@@ -659,3 +668,4 @@ jQuery(() => {
     onIfEnabled(T.GENERATION_STARTED, () => { dirty(); refreshInject(); });
     absorbAll(); refresh();
 });
+
