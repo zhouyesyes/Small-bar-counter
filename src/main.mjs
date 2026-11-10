@@ -1,10 +1,10 @@
-import { artwork, artworkMode } from './artwork.mjs';
+import { artwork, artworkMode, personalProfile } from './artwork.mjs';
 import { resolveMe } from './profile.mjs';
 // 小吧台 —— 入口：把界面接到酒馆上
 // 只从 extensions.js 拿 getContext（酒馆 1.18 起它带了要用的全部东西），不逐个 import script.js 里的名字：
 // 酒馆版本差一点、少一个名字，整个扩展就加载不出来（「酒馆你害我不浅」0.6.0 踩过）
 import { getContext } from '../../../../extensions.js';
-import { progress, openSplashSettings, setSplashProfile } from './splash.mjs';
+import { progress, openSplashSettings, setSplashProfile, updatePersonalProfile } from './splash.mjs';
 // 你现在用的人设头像在 personas.js 里；整个模块导入，按名字取，没有也不报错
 import * as personas from '../../../../personas.js';
 // 世界书：全局选中的书在 world-info.js 里；整个模块导入，按名字取
@@ -513,9 +513,9 @@ function hasChar() { const c = ctx(); return c.characterId != null && c.characte
 // ---------- 接起来 ----------
 const host = {
     settings, setSettings: f => { f(settings()); saveSettings(); refreshInject(); },
-    openingProfile: () => { const h = settings().home || {}, art = artwork(h, artworkMode(settings())); return { avatar: img(art.avatar), cover: img(art.cover), name: h.name ?? 'yesyes', sign: h.sign ?? 'a quiet seat, kept for you' }; },
-    setHomeProfile: patch => { Object.assign(settings().home ??= {}, patch); saveSettings(); },
-    setOpeningImage: (kind, src, mode = artworkMode(settings())) => { const home = (settings().home ??= {}); ((home.images ??= {})[mode] ??= {})[kind] = src; owners()[src] = 'global'; saveSettings(); },
+    openingProfile: () => { const h = personalProfile(settings()), art = artwork(h, artworkMode(settings())); return { avatar: img(art.avatar), cover: img(art.cover), name: h.signature ?? 'yesyes', sign: h.quote ?? 'a quiet seat, kept for you' }; },
+    setHomeProfile: patch => { const shared = {}; if ('name' in patch) shared.signature = patch.name; if ('sign' in patch) shared.quote = patch.sign; updatePersonalProfile(shared); },
+    setOpeningImage: (kind, src, mode = artworkMode(settings())) => { owners()[src] = 'global'; updatePersonalProfile({ [kind]: src }, mode); },
     meCfg: () => charCfg().me || {}, setMeProfile,
     charCfg, setCharCfg: f => { f(charCfg()); saveMeta(); refreshInject(); },
     saveImage: saveImageHere, img, dropImage: src => { if (src) delete owners()[src]; return deleteImage(src); }, refreshInject,

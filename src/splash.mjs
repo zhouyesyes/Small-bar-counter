@@ -1,4 +1,4 @@
-import { artwork, artworkMode } from './artwork.mjs';
+import { artwork, artworkMode, personalProfile } from './artwork.mjs';
 import { applyPalette, defaults } from './palette.mjs';
 import { imageUrl, saveImage } from './imgstore.mjs';
 const KEY = 'small_bar_splash_v1';
@@ -27,9 +27,16 @@ const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 let settings = {}, save = () => {}, root, panel, ready = false, failed = false, entered = false, stage = 0;
 let previousFocus, unlockTimer, observer, appReadyCleanup, needsMount = false, hostDone = false, replaying = false, replayFrame = 0;
 try { const cached = JSON.parse(localStorage.getItem(KEY) || '{}'); if (cached && typeof cached === 'object') settings = cached; } catch { /* unavailable cache */ }
-const cfg = () => settings.splash || {};
+const cfg = () => personalProfile(settings);
 // Opening artwork belongs to the opening settings, never to a chat persona.
 export function setSplashProfile() { paintImages(); }
+export function updatePersonalProfile(patch, mode) {
+    const profile = cfg();
+    if (mode) Object.assign((profile.images[mode] ??= {}), patch);
+    else Object.assign(profile, patch);
+    persist(); paint(); window.dispatchEvent(new Event('small-bar-appearance'));
+}
+
 export function openingArtwork() {
     return artwork(cfg(), artworkMode(settings));
 }

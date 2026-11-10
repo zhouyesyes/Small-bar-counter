@@ -263,11 +263,11 @@ export function createUI(host) {
  <div class="sb-cover sb-cover-img" style="background-image:url('${esc(p.cover)}')">
   <span class="sb-logo">SMALL BAR</span><button class="sb-x" data-act="${floating ? 'phone-close' : 'close'}" aria-label="关上">×</button>
   <input type="file" accept="image/*" data-upload="opening-cover" data-bg-picker hidden>
+  <button class="sb-personal-edit" data-act="splash-settings" aria-label="编辑个人卡片" title="编辑个人卡片"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5 4 4M4 20l4-1L20 7a2.8 2.8 0 0 0-4-4L4 15z"/></svg></button>
  </div>
  <label class="sb-av" style="background-image:url('${esc(p.avatar)}')" title="点一下换头像"><input type="file" accept="image/*" data-upload="opening-avatar" hidden></label>
  <div class="sb-name" data-act="home-name" role="button" tabindex="0">${esc(p.name)}</div><div class="sb-sign" data-act="home-sign" role="button" tabindex="0">${esc(p.sign)}</div>
- <button class="sb-more" data-act="home-settings">编辑我的主页</button>
- ${v.homeSettings ? `<div class="sb-sgrp" aria-label="个人主页设置"><div class="sb-hint">仅用于此主页，独立于聊天人设与开场卡片。</div>${['light','dark'].map(mode => `<div class="sb-cap">${mode === 'light' ? '日间图片' : '夜间图片'}</div><label class="sb-more">更换头像<input type="file" accept="image/*" data-upload="opening-avatar-${mode}" hidden></label><label class="sb-more">更换横图<input type="file" accept="image/*" data-upload="opening-cover-${mode}" hidden></label>`).join('')}<button class="sb-more" data-act="home-name">修改名字</button><button class="sb-more" data-act="home-sign">修改签名</button></div>` : ''}
+
  ${musicHtml({})}</div></div>`;
     }
     function drawerHtml(era) {
@@ -1022,7 +1022,6 @@ export function createUI(host) {
         if (!act) return;
         const meta = host.meta();
         switch (act) {
-            case 'home-settings': v.homeSettings = !v.homeSettings; break;
             case 'home-name':
             case 'home-sign': {
                 const key = act === 'home-name' ? 'name' : 'sign';
