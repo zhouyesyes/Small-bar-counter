@@ -83,7 +83,7 @@ export function createUI(host) {
         const wl = root?.querySelector('.sb-wlyr');
         if (wl) { const i = player.line(); if (wl.dataset.i !== String(i)) { wl.dataset.i = i; wl.textContent = player.lyric()[i]?.text || ''; } }
         const a = player.audio, box = root?.querySelector('.sb-music'); if (!box) return;
-        const bar = box.querySelector('.sb-mbar i'); if (bar) bar.style.width = (a.duration ? a.currentTime / a.duration * 100 : 0) + '%';
+        const bar = box.querySelector('[data-mseek]'); if (bar) { const ratio = Number.isFinite(a.duration) && a.duration > 0 ? Math.max(0, Math.min(1, a.currentTime / a.duration)) : 0; bar.value = Math.round(ratio * 1000); bar.style.setProperty('--sb-progress', (ratio * 100) + '%'); }
         const t = box.querySelector('.sb-mtime'); if (t) t.textContent = `${fmt(a.currentTime)} / ${fmt(a.duration)}`;
         const ly = player.lyric(), i = player.line(), el = box.querySelector('.sb-lyr');
         updateLyrics(el, ly, i, `${player.current()?.src || ''}:${player.current()?.id || ''}`, a.currentTime || 0);
@@ -101,6 +101,7 @@ export function createUI(host) {
         // 评论框：跟着字多自动变高；打到一半的字记着，重画也不丢
         root.addEventListener('input', e => {
             const t = e.target;
+            if (t.matches?.('[data-mseek]')) { player.seek(Number(t.value) / 1000); tickMusic(); return; }
             if (t.matches?.('[data-mtext]')) { v.mdraft = t.value; return; }
             if (t.matches?.('[data-mpics]')) { v.mpicsDraft = t.value; return; }
             if (!t.matches?.('[data-cin]')) return;
@@ -259,8 +260,8 @@ export function createUI(host) {
   <input type="file" accept="image/*" data-upload="opening-cover" data-bg-picker hidden>
   <button class="sb-personal-edit" data-act="splash-settings" aria-label="编辑个人卡片" title="编辑个人卡片"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5 4 4M4 20l4-1L20 7a2.8 2.8 0 0 0-4-4L4 15z"/></svg></button>
  </div>
- <label class="sb-av" style="background-image:url('${esc(p.avatar)}')" title="点一下换头像"><input type="file" accept="image/*" data-upload="opening-avatar" hidden></label>
- <div class="sb-name" data-act="home-name" role="button" tabindex="0">${esc(p.name)}</div><div class="sb-sign" data-act="home-sign" role="button" tabindex="0">${esc(p.sign)}</div>
+ <div class="sb-home-identity"><label class="sb-av" style="background-image:url('${esc(p.avatar)}')" title="点一下换头像"><input type="file" accept="image/*" data-upload="opening-avatar" hidden></label>
+ <div class="sb-home-words"><div class="sb-name" data-act="home-name" role="button" tabindex="0">${esc(p.name)}</div><div class="sb-sign" data-act="home-sign" role="button" tabindex="0">${esc(p.sign)}</div></div></div>
 
  <dl class="sb-home-tab" aria-label="个人单据">${[['SEAT',p.table],['DRINK',p.order],['DATE',p.date]].map(([label,value])=>`<div><dt>${label}</dt><dd>${esc(value)}</dd></div>`).join('')}</dl>
  ${musicHtml({})}</div></div>`;
@@ -288,10 +289,10 @@ export function createUI(host) {
   <span class="sb-logo">SMALL BAR</span><button class="sb-x" data-act="close" aria-label="关上">×</button>
 
  </div>
- <label class="sb-av" style="background-image:url('${esc(him.avatar)}')" title="点一下换头像"><input type="file" accept="image/*" data-upload="him-avatar" hidden></label>
- <div class="sb-name">${esc(him.name)}</div>
+ <div class="sb-home-identity"><label class="sb-av" style="background-image:url('${esc(him.avatar)}')" title="点一下换头像"><input type="file" accept="image/*" data-upload="him-avatar" hidden></label>
+ <div class="sb-home-words"><div class="sb-name">${esc(him.name)}</div>
  ${him.handle ? `<div class="sb-handle">${esc(him.handle)}</div>` : ''}
- ${him.sign || n.sign ? `<div class="sb-sign">${esc(him.sign || n.sign)}</div>` : ''}
+ ${him.sign || n.sign ? `<div class="sb-sign">${esc(him.sign || n.sign)}</div>` : ''}</div></div>
  <div class="sb-meta">${[n.time, n.weather].filter(Boolean).map(x => `<span>${esc(x)}</span>`).join('') || '还没有状态 · 等TA下一次回复'}</div>
  ${body}</div>
  ${tabsNav}
@@ -412,7 +413,7 @@ export function createUI(host) {
     function musicHtml(st) {
         const m = st.music, t = player.current(), list = host.settings().music?.list || [], mode = host.settings().music?.mode || 'all';
         const ms = musicState(), names = Object.keys(ms.lists);
-        return `<section class="sb-music${ms.compact ? ' is-mini' : ''}">
+        return `<section class="sb-music${ms.compact ? ' is-mini' : ''}"><div class="sb-player-main">
  <button class="sb-cap sb-music-toggle" data-act="music-compact" aria-expanded="${!ms.compact}" title="展开或收起音乐面板">${t ? 'now playing' : 'music'} · ${Wd().music}<span class="sb-music-caret" aria-hidden="true">${ms.compact ? '⌄' : '⌃'}</span></button>
  ${t ? `<div class="sb-mstate"><span class="sb-mstxt" role="status">${esc(v.mstate || '')}</span> <button class="sb-link" data-act="mskip">换个来源</button></div>` : ''}
  <div class="sb-track-head"><div class="sb-bigcover">${t ? coverImg(t, 'sb-bigimg') : ''}</div><div class="sb-track-meta">
@@ -420,10 +421,10 @@ export function createUI(host) {
  <div class="sb-ma">${esc(t?.artist || '搜一首喜欢的歌')}</div></div></div>
  <div class="sb-lyr" aria-label="滚动歌词"></div>
 
- ${t ? `<button class="sb-mbar" data-act="mseek"><i></i></button><div class="sb-mtime">0:00 / 0:00</div>` : ''}
+ ${t ? `<input class="sb-mbar" data-mseek type="range" min="0" max="1000" step="1" value="0" aria-label="播放进度"><div class="sb-mtime">0:00 / 0:00</div>` : ''}
  <div class="sb-mctl"><button data-act="mmode" title="${{ all: '列表循环', one: '单曲循环', shuffle: '随机' }[mode]}">${mi(mode)}</button><button data-act="mprev" aria-label="上一首">${mi('prev')}</button><button class="sb-mplay" data-act="mtoggle" aria-label="播放">${mi(player.playing() ? 'pause' : 'play')}</button><button data-act="mnext" aria-label="下一首">${mi('next')}</button><button data-act="mlist" class="${v.mlist ? 'on' : ''}" aria-label="歌单">${mi('list')}</button></div>
 
- <div class="sb-music-extras" ${ms.compact ? 'hidden' : ''}>
+ </div><div class="sb-music-extras" ${ms.compact ? 'hidden' : ''}>
  ${v.mlist !== false ? `<div class="sb-mres sb-queue"><div class="sb-cap sb-row" style="margin:6px 0"><span>${esc(ms.active)} · ${list.length} 首</span><span><button class="sb-link" data-act="mpl-rename">改名</button>${names.length > 1 ? ' <button class="sb-link" data-act="mpl-del">删掉这个歌单</button>' : ''}</span></div><div class="sb-queue-scroll" data-keep="music-queue">${list.map((r, i) => `<div class="sb-mrow2${t && r.id === t.id ? ' on' : ''}">${coverImg(r, 'sb-mthumb')}<span data-act="mplayat" data-i="${i}"><b>${esc(r.title)}</b><small>${esc(r.artist)}</small></span><button data-act="msong-menu" data-i="${i}" aria-label="管理这首歌">⋯</button><button data-act="mdelsong" data-i="${i}">×</button></div>`).join('') || '<div class="sb-empty sm">还没有歌</div>'}</div></div>` : ''}
  <div class="sb-plists">${names.map(n => `<button data-act="mpl" data-n="${esc(n)}" class="${n === ms.active ? 'on' : ''}">${esc(n)} <small>${ms.lists[n].length}</small></button>`).join('')}<button data-act="mpl-new" class="add">＋ 新建歌单</button></div>
  ${m?.title ? `<button class="sb-mhis" data-act="mhis">${Wd().listen}《${esc(m.title)}》${m.artist ? ' · ' + esc(m.artist) : ''} · 放这首</button>` : ''}
@@ -1574,3 +1575,4 @@ export function createUI(host) {
 document.addEventListener('click', event => {
     if (event.target.closest('#sb-root [data-act="splash-settings"]')) openSplashSettings();
 });
+
