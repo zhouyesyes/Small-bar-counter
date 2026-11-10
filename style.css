@@ -701,7 +701,7 @@ html.sb-bar .sb-page .drag-grabber, html.sb-bar .sb-page .note-link-span, html.s
 
 /* 我们加的小零件 */
 html.sb-bar .sb-head { text-align: center; padding: 22px 0 14px; width: 100%; }
-html.sb-bar .sb-script { font: 400 46px/1.15 var(--sb-f-script); color: var(--sb-bar-ink); }
+html.sb-bar .sb-script,html.sb-bar .sb-chat-script { font: 400 46px/1.15 var(--sb-f-script); color: var(--sb-bar-ink); }
 html.sb-bar .sb-en { font: 400 11.5px/1.6 var(--sb-f-italic); letter-spacing: .38em; color: var(--sb-bar-sub); margin-top: 8px; }
 html.sb-bar .sb-zh { font-size: 12px; letter-spacing: .55em; color: var(--sb-bar-sub); margin-top: 2px; }
 html.sb-bar .sb-label { text-align: center; color: var(--sb-bar-sub); margin: 22px 0 12px; width: 100%; }
@@ -1095,7 +1095,7 @@ html.sb-bar .sb-page h3,html.sb-bar .sb-page h4,html.sb-bar #description_div> .f
 
 /* The Lounge and C reading layout. Only the native chat surface is scoped. */
 html.sb-bar #chat.sb-reading, html.sb-bar #chat.sb-lounge {background:var(--sb-bar-bg)!important;color:var(--sb-bar-text);padding:0!important;gap:0;}
-html.sb-bar .sb-chat-script {font:38px/1.25 var(--sb-f-script);color:var(--sb-bar-accent);text-align:center;}
+html.sb-bar .sb-chat-script {color:var(--sb-bar-accent);text-align:center;}
 html.sb-bar #chat .sb-reading-head {position:static!important;flex:none;width:100%;padding:16px 10px 22px;background:none;border:0;}
 html.sb-bar #chat.sb-reading > .sb-reading-message {display:block!important;position:relative;box-sizing:border-box;width:100%!important;max-width:none!important;padding:0 10px 22px!important;margin:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;}
 html.sb-bar #chat.sb-reading > .sb-reading-message::after {content:'';display:block;width:32px;height:1px;background:var(--sb-bar-accent);margin:18px auto 0;}
