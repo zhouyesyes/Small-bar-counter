@@ -28,3 +28,16 @@ test('conversation pictures follow shared sources and ignore legacy chat-only ov
     assert.equal(read('me', own).cover, 'resolved:card-cover');
     assert.equal(sharedChatImages({ side: 'him', config, nativeAvatar: 'group-member-avatar' }).avatar, 'group-member-avatar');
 });
+
+
+test('recent chats group by role identity, including same-name and group conversations', async () => {
+    const { groupChatRows } = await import('../src/bar-lounge.mjs');
+    const row = (avatar, file, group = '') => ({ dataset: { avatar, file, group } });
+    const first = row('one.png', 'first'), second = row('one.png', 'second'), other = row('two.png', 'same-name');
+    const group = row('', 'group-chat', '42');
+    const result = groupChatRows([first, other, second, group]);
+    assert.equal(result.size, 3);
+    assert.deepEqual(result.get('one.png'), [first, second]);
+    assert.deepEqual(result.get('two.png'), [other]);
+    assert.deepEqual(result.get('group:42'), [group]);
+});

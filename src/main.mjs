@@ -547,7 +547,8 @@ const ui = createUI(host);
 let refreshTimer = 0;
 // Pass existing profile resolvers so message avatars follow Moments / character cards.
 const barChatHost = () => ({ context: ctx, settings, config: charCfg, me, him, image: img,
-    saveChat: saveMeta, saveSettings, saveImage: saveImageHere });
+    saveChat: saveMeta, saveSettings, saveImage: saveImageHere, openAppearance: openSplashSettings,
+    setTheme: theme => { settings().theme = theme; saveSettings(); window.dispatchEvent(new Event('small-bar-appearance')); } });
 function applyAppearance() {
     applyBarTheme(settings(), ctx);
     if (settings().barTheme) mountChat(barChatHost); else unmountChat();
@@ -668,4 +669,5 @@ jQuery(() => {
     onIfEnabled(T.GENERATION_STARTED, () => { dirty(); refreshInject(); });
     absorbAll(); refresh();
 });
+
 
