@@ -201,17 +201,17 @@ export function createUI(host) {
         if (!root) return;
         const s = host.settings();
         applyPalette(root, s, theme());
-        const era = host.era();
+        const era = host.hasChar() ? host.era() : 'modern';
         const wasOpen = root.dataset.open || '';
         const nowOpen = (v.drawer ? 'd' : '') + (v.phone ? 'p' : '');
         root.dataset.open = nowOpen;
         const cls = `sb-${theme()} sb-era-${era}` + (nowOpen && nowOpen !== wasOpen ? ' sb-anim' : '');
         if (root.className !== cls) { root.className = cls; lastHtml = ''; }
-        if (!s.enabled || !host.hasChar()) { root.innerHTML = ''; lastHtml = ''; return; }
+        if (!s.enabled) { root.innerHTML = ''; lastHtml = ''; return; }
         const keepScroll = [...root.querySelectorAll('[data-keep]')].map(el => [el.dataset.keep, el.scrollTop]);
         const html = (s.cat !== false && !v.drawer && !v.phone ? `<button class="sb-cat" style="top:${Number(s.catTop) || 46}%" aria-label="打开小吧台（上下拖可以挪位置）"></button>` : '')
-            + (v.drawer ? drawerHtml(era) : '')
-            + (v.phone ? floatHtml(era) : '');
+            + (v.drawer ? (host.hasChar() ? drawerHtml(era) : landingHtml(false)) : '')
+            + (v.phone ? (host.hasChar() ? floatHtml(era) : landingHtml(true)) : '');
         if (html === lastHtml) return; // 什么都没变：不重画，进新聊天时不来回闪
         lastHtml = html;
         root.innerHTML = html;
@@ -247,6 +247,20 @@ export function createUI(host) {
         return src ? { cls: 'sb-cover-img', style: `background-image:url('${host.img(src)}')` } : { cls: coverClass(), style: coverStyle() };
     }
     const coverBtn = kind => `<label class="sb-coverbtn sb-side">换背景<input type="file" accept="image/*" data-upload="${kind}" hidden></label>`;
+    function landingHtml(floating) {
+        const p = host.openingProfile();
+        return `${floating ? '' : '<div class="sb-shade" data-act="close"></div>'}
+<div class="${floating ? 'sb-phone sb-float sb-landing' : 'sb-drawer sb-landing'}" role="dialog" aria-label="小吧台主页">
+ <div class="sb-body" data-keep="landing">
+ <div class="sb-cover sb-cover-img" style="background-image:url('${esc(p.cover)}')">
+  <span class="sb-logo">SMALL BAR</span><button class="sb-x" data-act="${floating ? 'phone-close' : 'close'}" aria-label="关上">×</button>
+  <label class="sb-coverbtn">换背景<input type="file" accept="image/*" data-upload="opening-cover" hidden></label>
+ </div>
+ <label class="sb-av" style="background-image:url('${esc(p.avatar)}')" title="点一下换头像"><input type="file" accept="image/*" data-upload="opening-avatar" hidden></label>
+ <div class="sb-name">${esc(p.name)}</div><div class="sb-sign">${esc(p.sign)}</div>
+ <button class="sb-more" data-act="splash-settings">头像、背景与配色</button>
+ ${musicHtml({})}</div></div>`;
+    }
     function drawerHtml(era) {
         const st = host.state(), him = host.him(), n = st.now;
         const labels = ERA[era].tabs;
@@ -399,7 +413,7 @@ export function createUI(host) {
  ${t ? `<div class="sb-mstate"><span class="sb-mstxt">${esc(v.mstate || (player.playing() ? '正在播放' : '点播放键开始'))}</span> <button class="sb-link" data-act="mskip">换个来源</button></div>` : ''}
  <div class="sb-bigcover">${t ? coverImg(t, 'sb-bigimg') : ''}</div>
  <div class="sb-mt">${esc(t?.title || '还没放歌')}</div>
- <div class="sb-ma">${esc(t?.artist || '搜一首，或者放TA在听的')}</div>
+ <div class="sb-ma">${esc(t?.artist || '搜一首喜欢的歌')}</div>
  <div class="sb-lyr" data-i=""></div>
  ${t ? `<button class="sb-mbar" data-act="mseek"><i></i></button><div class="sb-mtime">0:00 / 0:00</div>` : ''}
  <div class="sb-mctl"><button data-act="mmode" title="${{ all: '列表循环', one: '单曲循环', shuffle: '随机' }[mode]}">${mi(mode)}</button><button data-act="mprev" aria-label="上一首">${mi('prev')}</button><button class="sb-mplay" data-act="mtoggle" aria-label="播放">${mi(player.playing() ? 'pause' : 'play')}</button><button data-act="mnext" aria-label="下一首">${mi('next')}</button><button data-act="mlist" class="${v.mlist ? 'on' : ''}" aria-label="歌单">${mi('list')}</button></div>
@@ -561,7 +575,7 @@ export function createUI(host) {
     const head = (title, right = '') => `<div class="sb-ph"><button class="sb-bk" data-act="phone-back" aria-label="返回">‹</button><div class="sb-pht">${title}</div>${right || '<button class="sb-phx" data-act="phone-close" aria-label="关上">×</button>'}</div>`;
     const app = (k, to, name, badge) => `<button class="sb-app" data-act="phone-go" data-to="${to}"><span class="sb-ai">${svg(k)}${badge ? `<b class="sb-ab">${badge}</b>` : ''}</span><span class="sb-an">${name}</span></button>`;
 
-    const Wd = () => WORDS[host.era()] || WORDS.modern;
+    const Wd = () => WORDS[host.hasChar() ? host.era() : 'modern'] || WORDS.modern;
     function homeHtml(era) {
         const st = host.state(), n = st.now;
         const clock = (n.time || '').match(/(\d{1,2}[:：]\d{2})/)?.[1]?.replace('：', ':') || '';
@@ -1264,6 +1278,7 @@ export function createUI(host) {
             try { src = await cropImage(file, frame); } catch (err) { host.toast('error', err?.message || '这张图读不出来'); return; }
             if (!src) return; // 点了取消
             src = await host.saveImage(src); // 只存在这台手机的浏览器里，设置里记个编号
+            if (kind === 'opening-cover' || kind === 'opening-avatar') host.setOpeningImage(kind === 'opening-cover' ? 'cover' : 'avatar', src);
             if (kind === 'fixed') host.setCharCfg(c => { c.cover = { ...(c.cover || {}), mode: 'fixed', fixed: src }; });
             if (kind === 'pick') host.setCharCfg(c => { c.cover = { ...(c.cover || {}), mode: 'pick', images: [...(c.cover?.images || []), { tag: '', src }] }; });
             if (kind === 'him-avatar') host.setCharCfg(c => { c.him = { ...(c.him || {}), avatar: src }; });
@@ -1486,7 +1501,7 @@ export function createUI(host) {
             else { v.drawer = true; v.tab = 'phone'; v.phone = false; }
             render();
         },
-        reset: () => { v.drawer = false; v.phone = false; v.view = 'home'; v.diaryId = ''; v.edit = null; v.menuFor = ''; v.busy = false; render(); },
+        reset: ({ keepOpen = false } = {}) => { if (!keepOpen) { v.drawer = false; v.phone = false; } v.tab = 'posts'; v.view = 'home'; v.diaryId = ''; v.edit = null; v.menuFor = ''; v.busy = false; render(); },
         isOpen: () => v.drawer || v.phone,
     };
 }

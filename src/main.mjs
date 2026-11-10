@@ -3,7 +3,7 @@ import { resolveMe } from './profile.mjs';
 // 只从 extensions.js 拿 getContext（酒馆 1.18 起它带了要用的全部东西），不逐个 import script.js 里的名字：
 // 酒馆版本差一点、少一个名字，整个扩展就加载不出来（「酒馆你害我不浅」0.6.0 踩过）
 import { getContext } from '../../../../extensions.js';
-import { progress, openSplashSettings, setSplashProfile } from './splash.mjs';
+import { progress, openSplashSettings, setSplashProfile, openingArtwork } from './splash.mjs';
 // 你现在用的人设头像在 personas.js 里；整个模块导入，按名字取，没有也不报错
 import * as personas from '../../../../personas.js';
 // 世界书：全局选中的书在 world-info.js 里；整个模块导入，按名字取
@@ -99,6 +99,7 @@ function onSwiped(id) {
 
 // 新的东西（他发来的微信、新动态）有多少没看
 function unread() {
+    if (!hasChar()) return 0;
     const m = meta(), st = state();
     const him = st.wechat.length + m.wechat.filter(x => x.from === 'him').length;
     return Math.max(0, him - (m.readWechat || 0));
@@ -220,7 +221,7 @@ function him() {
         avatar: (h.avatar && img(h.avatar)) || (ch.avatar ? (c.getThumbnailUrl?.('avatar', ch.avatar) ?? `/thumbnail?type=avatar&file=${encodeURIComponent(ch.avatar)}`) : ''),
     };
 }
-function me() { return resolveMe(ctx(), personas.user_avatar || '', img); }
+function me() { const c = ctx(); return resolveMe(hasChar() ? c : { ...c, chatMetadata: {} }, personas.user_avatar || '', img); }
 function setMeProfile(patch) {
     const c = charCfg(); c.me = { ...(c.me || {}), ...patch };
     saveMeta(); refreshInject(); setSplashProfile(me);
@@ -511,6 +512,8 @@ function hasChar() { const c = ctx(); return c.characterId != null && c.characte
 // ---------- 接起来 ----------
 const host = {
     settings, setSettings: f => { f(settings()); saveSettings(); refreshInject(); },
+    openingProfile: () => { const s = settings().splash || {}, art = openingArtwork(me()); return { avatar: img(art.avatar), cover: img(art.cover), name: s.signature ?? 'yesyes', sign: s.quote ?? 'a quiet seat, kept for you' }; },
+    setOpeningImage: (kind, src) => { (settings().splash ??= {})[kind] = src; owners()[src] = 'global'; saveSettings(); setSplashProfile(me); },
     meCfg: () => charCfg().me || {}, setMeProfile,
     charCfg, setCharCfg: f => { f(charCfg()); saveMeta(); refreshInject(); },
     saveImage: saveImageHere, img, dropImage: src => { if (src) delete owners()[src]; return deleteImage(src); }, refreshInject,
@@ -629,7 +632,7 @@ jQuery(() => {
     };
     if (!addWand()) { let n = 0; const t = setInterval(() => { if (addWand() || ++n > 30) clearInterval(t); }, 1000); }
     const on = (type, f) => { if (type) ev.on(type, f); };
-    on(T.CHAT_CHANGED, () => { ui.reset(); absorbAll(); refresh(); claimImages(); setSplashProfile(me); });
+    on(T.CHAT_CHANGED, () => { ui.reset({ keepOpen: true }); absorbAll(); refresh(); claimImages(); setSplashProfile(me); });
     on(T.PERSONA_CHANGED, () => { setSplashProfile(me); refresh(); });
     on(T.PERSONA_UPDATED, () => { setSplashProfile(me); refresh(); });
     on(T.CHAT_DELETED, name => { onChatGone(name); });

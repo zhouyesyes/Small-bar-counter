@@ -16,9 +16,12 @@ try { const cached = JSON.parse(localStorage.getItem(KEY) || '{}'); if (cached &
 const cfg = () => settings.splash || {};
 let profileGetter = () => ({});
 export function setSplashProfile(resolve) { profileGetter = resolve; paintImages(); }
+export function openingArtwork(profile = profileGetter()) {
+    return { cover: cfg().cover || defaultImages.cover, avatar: cfg().avatar || profile.avatar || defaultImages.avatar };
+}
 function paintImages() {
     root?.querySelectorAll('[data-image]').forEach(el => {
-        const src = cfg()[el.dataset.image] || (el.dataset.image === 'avatar' ? profileGetter().avatar : '') || defaultImages[el.dataset.image];
+        const src = openingArtwork()[el.dataset.image];
         if (src) image(src, el);
     });
 }

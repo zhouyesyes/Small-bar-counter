@@ -550,3 +550,6 @@
 /* The opening and the drawer share the two-color palette. */
 #sb-root .sb-tabs button.on{color:var(--sb-accent);border-bottom-color:var(--sb-accent)}
 #sb-root input[type=checkbox],#sb-root input[type=range]{accent-color:var(--sb-accent)}
+
+#sb-root .sb-landing .sb-body{overflow-y:auto;flex:1;min-height:0}#sb-root .sb-landing .sb-sign{padding:0 20px}#sb-root .sb-landing .sb-music{padding-bottom:24px}
+#sb-root .sb-landing .sb-cover{height:auto;aspect-ratio:448/200;background-position:50% 45%}
