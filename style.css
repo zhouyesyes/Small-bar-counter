@@ -1172,8 +1172,7 @@ html.sb-bar .sb-lounge-group-chats {border-top:1px solid var(--sb-bar-line);}
 html.sb-bar #chat.sb-lounge .sb-lounge-group-chats .recentChat {position:relative;display:flex;gap:0;align-items:flex-start;padding:10px 8px 10px 16px;border:0;border-bottom:1px solid var(--sb-bar-line);border-radius:0;margin:0;background:none;box-shadow:none;}
 html.sb-bar #chat.sb-lounge .sb-lounge-group-chats .recentChat > .avatar,
 html.sb-bar #chat.sb-lounge .sb-lounge-group-chats .recentChatPinned,
-html.sb-bar #chat.sb-lounge .sb-lounge-group-chats .chatActions,
-html.sb-bar #chat.sb-lounge .sb-lounge-group-chats .chatStats {display:none!important;}
+html.sb-bar #chat.sb-lounge .sb-lounge-group-chats .chatActions {display:none!important;}
 html.sb-bar #chat.sb-lounge .sb-lounge-group-chats .recentChatInfo {flex:1;min-width:0;}
 html.sb-bar #chat.sb-lounge .sb-lounge-group-chats .chatNameContainer {display:flex;align-items:baseline;gap:6px;}
 html.sb-bar #chat.sb-lounge .sb-lounge-group-chats .chatName {flex:1;min-width:0;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -1213,3 +1212,31 @@ html.sb-bar #send_form :is(.editor_maximize,.fa-expand,.fa-maximize,.fa-expand-a
 html.sb-bar #send_form :is(#mes_continue)::before {content:""!important;display:block;width:.74em;height:.74em;margin:0;background-color:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M4%2012h16m-6-6%206%206-6%206%22%2F%3E%3C%2Fsvg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M4%2012h16m-6-6%206%206-6%206%22%2F%3E%3C%2Fsvg%3E") center/contain no-repeat;}
 html.sb-bar #send_form :is(#mes_impersonate)::before {content:""!important;display:block;width:.74em;height:.74em;margin:0;background-color:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%228%22%20r%3D%224%22%2F%3E%3Cpath%20d%3D%22M4%2021v-2a8%208%200%200116%200v2%22%2F%3E%3C%2Fsvg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%228%22%20r%3D%224%22%2F%3E%3Cpath%20d%3D%22M4%2021v-2a8%208%200%200116%200v2%22%2F%3E%3C%2Fsvg%3E") center/contain no-repeat;}
 html.sb-bar #send_form :is(#mes_stop > .fa-circle-stop)::before {content:""!important;display:block;width:.74em;height:.74em;margin:0;background-color:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%229%22%2F%3E%3Crect%20x%3D%228%22%20y%3D%228%22%20width%3D%228%22%20height%3D%228%22%20rx%3D%221%22%2F%3E%3C%2Fsvg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%229%22%2F%3E%3Crect%20x%3D%228%22%20y%3D%228%22%20width%3D%228%22%20height%3D%228%22%20rx%3D%221%22%2F%3E%3C%2Fsvg%3E") center/contain no-repeat;}
+
+
+/* Role headers show identity/count only; previews and native statistics belong to each chat. */
+html.sb-bar #chat.sb-lounge .sb-lounge-role-preview {display:none!important;}
+html.sb-bar #chat.sb-lounge .sb-lounge-group-chats .chatMessageContainer {display:flex;flex-direction:column;align-items:stretch;min-width:0;}
+html.sb-bar #chat.sb-lounge .sb-lounge-group-chats .chatStats {display:flex!important;flex-direction:row;align-items:center;justify-content:flex-start;gap:10px;margin-top:4px;color:var(--sb-bar-sub);font-size:9px;line-height:1.5;}
+html.sb-bar #chat.sb-lounge .sb-lounge-group-chats .chatStats .counterBlock {display:inline-flex;align-items:center;gap:2px;}
+html.sb-bar #chat.sb-lounge .sb-lounge-group-chats .chatStats .counterBlock i {display:none;}
+html.sb-bar #chat.sb-lounge .sb-lounge-group-chats .chatStats .counterBlock::after {content:'条';}
+html.sb-bar #chat.sb-lounge .sb-lounge-group-chats .chatStats small {font-size:9px;white-space:nowrap;}
+/* The selected preset, model and lorebook share one title size. Long titles stay on one scrollable line. */
+html.sb-bar {--sb-card-title-size:17px;--sb-card-title-line:1.4;}
+html.sb-bar #respective-presets-block select {font-size:var(--sb-card-title-size);line-height:var(--sb-card-title-line);}
+html.sb-bar #rm_api_block .sb-pour .sb-big,html.sb-bar .sb-tonight .sb-big {font:400 var(--sb-card-title-size)/var(--sb-card-title-line) var(--sb-f-serif);padding-right:0;max-width:100%;white-space:nowrap;word-break:normal;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;}
+/* Horizontal character actions and long role names; all lower content remains in the outer scroll surface. */
+html.sb-bar #avatar-and-name-block > #avatar_controls {display:flex!important;flex-direction:row!important;flex-wrap:wrap;align-items:center;justify-content:flex-start;grid-column:1/-1;grid-row:2;width:100%;min-width:0;gap:5px 10px;}
+html.sb-bar #avatar_controls > .form_create_bottom_buttons_block {display:contents!important;}
+html.sb-bar #avatar_controls > label {display:inline-flex!important;flex:0 0 auto!important;width:auto!important;height:auto;max-width:100%;}
+html.sb-bar #avatar_controls .menu_button {flex:0 0 auto!important;width:auto;max-width:100%;min-width:0;}
+html.sb-bar #avatar_controls #char-management-dropdown {width:auto;max-width:12em;min-width:0;}
+html.sb-bar #rm_print_characters_block .character_name_block {min-width:0;flex-wrap:wrap;row-gap:4px;}
+html.sb-bar #rm_print_characters_block .ch_name {white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;word-break:normal;max-width:100%;height:auto;min-width:0;}
+html.sb-bar #right-nav-panel:has(.sb-page) {overflow-y:auto;-webkit-overflow-scrolling:touch;}
+html.sb-bar #right-nav-panel:has(.sb-page) > .scrollableInner {max-height:none;height:auto;overflow:visible;flex:none;}
+html.sb-bar #rm_characters_block.sb-page,html.sb-bar #rm_ch_create_block.sb-page {max-height:none;min-height:0;overflow:visible;}
+html.sb-bar #description_textarea,html.sb-bar #firstmessage_textarea {max-height:none;overflow-y:auto;field-sizing:content;}
+html.sb-bar #tags_div #tagList {display:flex;flex-direction:row;flex-wrap:wrap;gap:5px;}
+html.sb-bar #tags_div #tagList > .tag {display:inline-flex;flex:0 0 auto;max-width:100%;align-items:center;}

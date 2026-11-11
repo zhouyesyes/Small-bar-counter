@@ -97,13 +97,13 @@ function makeGroup(state, key) {
     const top = el('div', 'sb-lounge-group-top'), toggle = el('button', 'sb-lounge-role'); toggle.type = 'button';
     const image = el('img', 'sb-lounge-role-avatar'); image.alt = ''; const info = el('span', 'sb-lounge-role-info');
     const line = el('span', 'sb-lounge-role-line'), name = el('strong', 'sb-lounge-role-name'), date = el('span', 'sb-lounge-role-date');
-    const count = el('span', 'sb-lounge-role-count'), preview = el('span', 'sb-lounge-role-preview');
-    line.append(name, date); info.append(line, count, preview); toggle.append(image, info, icon('down'));
+    const count = el('span', 'sb-lounge-role-count');
+    line.append(name, date); info.append(line, count); toggle.append(image, info, icon('down'));
     const more = el('button', 'sb-lounge-more', '⋯'); more.type = 'button'; more.setAttribute('aria-label', '角色选项'); top.append(toggle, more);
     const content = el('div', 'sb-lounge-group-chats'); content.id = `sb-lounge-chats-${++state.ids}`;
     const older = el('button', 'sb-lounge-older'); older.type = 'button'; content.append(older); toggle.setAttribute('aria-controls', content.id);
     section.append(top, content); state.list.append(section);
-    const group = { key, section, toggle, image, name, date, count, preview, content, older, rows: [] };
+    const group = { key, section, toggle, image, name, date, count, content, older, rows: [] };
     toggle.onclick = () => { const p = prefs(state.host); p.open[key] = !p.open[key]; save(state); };
     more.onclick = e => { e.stopPropagation(); roleMenu(state, group, more); };
     older.onclick = () => { if (state.expanded.has(key)) state.expanded.delete(key); else state.expanded.add(key); render(state); };
@@ -138,7 +138,7 @@ function render(state) {
         const latest = latestChatRow(entries);
         const original = $('.characterName', latest)?.textContent || '';
         updateText(g.name, labelFor(state, key, original)); updateText(g.date, $('.chatDate', latest)?.textContent || '');
-        updateText(g.count, `${entries.length} 段聊天`); updateText(g.preview, $('.chatMessage', latest)?.textContent.trim() || '');
+        updateText(g.count, `${entries.length} 段聊天`);
         updateImage(g.image, $('.avatar img', latest)?.getAttribute('src'));
         const matches = entries.filter(row => tokens.every(t => (original + ' ' + g.name.textContent + ' ' + row.dataset.file + ' ' + row.textContent).normalize('NFKC').toLocaleLowerCase().includes(t)));
         const pinned = p.pins.includes(key), open = !!query || !!p.open[key];
@@ -215,5 +215,6 @@ function restorePanel(panel) {
     state.root.remove(); panels.delete(panel);
 }
 export function unmountLounge() { for (const [panel] of panels) restorePanel(panel); }
+
 
 
