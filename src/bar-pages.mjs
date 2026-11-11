@@ -255,7 +255,8 @@ const PAGES = {
             holder.append(bx('sb-legend', '<span><b class="c"></b>每桌附赠：每次都放</span><span><b class="n"></b>点到才上：提到点单词才放</span><span><b class="o"></b>售罄</span>'), foot('点一道就能改'));
             placeWorldRules(root);
         },
-        sync(root) {
+        sync(root, ctx) {
+            autoPickBook(root, ctx);
             placeWorldRules(root);
             const card = $('.sb-tonight',root), popup = $('#world_popup',root), select = $('#world_editor_select',root);
             if (card && popup && card.parentElement !== popup) popup.prepend(card);
@@ -392,6 +393,27 @@ const PAGES = {
     },
 };
 
+// 酒单页一打开就是这桌调酒师绑的那本（她 11/11 说的：原来默认什么都不显示）。
+// 只在换了角色 / 换了聊天后第一次打开时挑一次；之后她自己换成别的本，就照她选的，不再跳回来。
+// 角色没绑酒单时，退一步看这段聊天绑的那本；都没有就保持原样
+function autoPickBook(root, ctx) {
+    const select = document.getElementById('world_editor_select'); if (!select || !ctx) return;
+    const chatId = (typeof ctx.getCurrentChatId === 'function' ? ctx.getCurrentChatId() : ctx.chatId) || '';
+    const key = `${ctx.characterId ?? ''}|${ctx.groupId ?? ''}|${chatId}`;
+    if (root.dataset.sbAutoBook === key) return;
+    const char = ctx.groupId ? null : ctx.characters?.[ctx.characterId];
+    const book = char?.data?.extensions?.world || ctx.chatMetadata?.world_info || '';
+    if (!book) { root.dataset.sbAutoBook = key; return; }
+    const opt = [...select.options].find(o => o.textContent.trim() === book);
+    if (!opt) return; // 列表还没载入好：下次再试
+    root.dataset.sbAutoBook = key;
+    if (select.value === opt.value) return;
+    select.value = opt.value;
+    // 酒馆用 jQuery 听 change；有 jQuery 就只走它，免得同一本载两遍
+    if (globalThis.jQuery) globalThis.jQuery(select).trigger('change');
+    else select.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
 const num = v => { const n = Number(String(v).replace(/,/g, '')); return Number.isFinite(n) && String(v).trim() !== '' ? n.toLocaleString('en-US') : v; };
 function setSum(root, key, line1, line2) {
     const el = $(`[data-sum="${key}"]`, root); if (!el) return;
@@ -496,6 +518,7 @@ export function unmountPages() {
     }
     $$('.world_entry[data-sb-state]').forEach(e => delete e.dataset.sbState);
     $$('.sb-cur').forEach(e => e.classList.remove('sb-cur'));
+    $$('[data-sb-auto-book]').forEach(e => delete e.dataset.sbAutoBook);
     $$('[data-sb-ph]').forEach(el => { el.setAttribute('placeholder', el.dataset.sbPh); delete el.dataset.sbPh; });
 }
 
