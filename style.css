@@ -1504,3 +1504,8 @@ html.sb-bar #user_avatar_block.gridView .avatar { width: 64px; height: 64px; fle
 html.sb-bar #user_avatar_block:has(.sb-cur) .avatar-container.selected:not(.sb-cur) .ch_name::after { content: none; }
 html.sb-bar #user_avatar_block .avatar-container.sb-cur .ch_name::after { content: '● 在用'; font-size: 12px; color: #5f8a63; margin-left: 8px; }
 html.sb-bar #user_avatar_block.gridView .avatar-container.sb-cur .ch_name::after { content: ' ●'; margin-left: 2px; font-size: 10px; }
+
+/* 首页：点人进最新聊天，右边的小箭头单独展开（点的范围放大一点，手指好按） */
+html.sb-bar .sb-lounge-root .sb-lounge-expand {display:flex;align-items:center;justify-content:center;flex:none;width:34px;height:34px;margin:-8px -6px -8px 0;color:var(--sb-bar-accent);}
+html.sb-bar .sb-lounge-root .sb-lounge-expand > svg {width:14px;height:14px;transition:transform .15s;}
+html.sb-bar .sb-lounge-root .sb-lounge-role[aria-expanded=true] .sb-lounge-expand > svg {transform:rotate(180deg);}
