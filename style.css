@@ -1509,3 +1509,8 @@ html.sb-bar #user_avatar_block.gridView .avatar-container.sb-cur .ch_name::after
 html.sb-bar .sb-lounge-root .sb-lounge-expand {display:flex;align-items:center;justify-content:center;flex:none;width:34px;height:34px;margin:-8px -6px -8px 0;color:var(--sb-bar-accent);}
 html.sb-bar .sb-lounge-root .sb-lounge-expand > svg {width:14px;height:14px;transition:transform .15s;}
 html.sb-bar .sb-lounge-root .sb-lounge-role[aria-expanded=true] .sb-lounge-expand > svg {transform:rotate(180deg);}
+
+/* Homepage masthead: the glass sits closely above the intact script title. */
+html.sb-bar .sb-lounge-head:has(.sb-lounge-glass){padding:10px 0 14px!important;}
+html.sb-bar .sb-lounge-glass{display:block;width:132px;height:146px;object-fit:contain;transform:rotate(-10deg);filter:saturate(.55);margin:0 auto -10px;pointer-events:none;}
+html.sb-bar .sb-lounge-head:has(.sb-lounge-glass) .sb-lounge-settings{top:5px;}

@@ -10,7 +10,6 @@ const val = id => document.getElementById(id)?.value ?? '';
 const optText = id => { const s = document.getElementById(id); return s?.selectedOptions?.[0]?.textContent?.trim() || ''; };
 const checked = id => !!document.getElementById(id)?.checked;
 const click = id => document.getElementById(id)?.click();
-const glass = new URL('../assets/bar/glass.png', import.meta.url).href;
 // Preserve original placement so disabling the theme restores native editors/actions.
 const moved = new Map();
 const formatDetails = new Map();
@@ -159,9 +158,7 @@ const PAGES = {
         root: '#left-nav-panel',
         mount(root) {
             const cfg = $('#ai_response_configuration', root); if (!cfg) return;
-            const cover = bx('sb-cover', `<img src="${glass}" alt="">`);
-            cover.append(head('Recipe Book', 'HOUSE RECIPES · TONIGHT\'S POUR', '小 吧 台 · 配 方 本'));
-            cfg.before(cover);
+            cfg.before(head('Recipe Book', 'HOUSE RECIPES · TONIGHT\'S POUR', '小 吧 台 · 配 方 本'));
             $('#respective-presets-block', root)?.prepend(bx('sb-cardlabel', '<i>Tonight\'s Recipe</i>'));
             $('#respective-presets-block', root)?.after(fold('params', '调 酒 台', 'Behind the Bar'));
             $('#completion_prompt_manager', root)?.parentElement?.before(bx('sb-sec', '<b>原 料</b><i>— Ingredients —</i><small data-sum="ingr"></small>'));

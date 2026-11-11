@@ -1,4 +1,5 @@
 // Organize existing native chat rows by role. Never clone their click handlers or fetch chat content.
+const glass = new URL('../assets/bar/glass.png', import.meta.url).href;
 const panels = new Map();
 const $ = (s, root) => root.querySelector(s);
 const el = (tag, cls, text) => { const n = document.createElement(tag); n.className = cls; if (text != null) n.textContent = text; return n; };
@@ -301,7 +302,9 @@ export function updateLounge(panel, host, popup) {
     if (!state) {
         state = { panel, host, popup, groups: new Map(), rows: new Map(), expanded: new Set(), showAllPeople: false, ids: panels.size * 10000 };
         const root = el('div', 'sb-lounge-root'); root.dataset.sbLoungeOwned = '';
-        const head = el('header', 'sb-lounge-head'); head.append(el('div', 'sb-chat-script', 'The Lounge'), el('div', 'sb-lounge-en', 'PICK UP WHERE WE LEFT OFF'), el('div', 'sb-lounge-zh', '小 吧 台 · 再 坐 一 会 儿'));
+        const head = el('header', 'sb-lounge-head');
+        const cover = el('img', 'sb-lounge-glass'); cover.src = glass; cover.alt = ''; cover.width = 132; cover.height = 146; cover.draggable = false;
+        head.append(cover, el('div', 'sb-chat-script', 'The Lounge'), el('div', 'sb-lounge-en', 'PICK UP WHERE WE LEFT OFF'), el('div', 'sb-lounge-zh', '小 吧 台 · 再 坐 一 会 儿'));
         const gear = el('button', 'sb-lounge-settings'); gear.type = 'button'; gear.setAttribute('aria-label', '首页设置'); gear.append(icon('settings')); gear.onclick = e => { e.stopPropagation(); settingsMenu(state, gear); }; head.append(gear);
         const search = el('input', 'sb-lounge-search'); search.type = 'search'; search.placeholder = '找一位，或找一段对话…'; search.setAttribute('aria-label', '搜索聊天'); search.oninput = () => render(state); state.search = search;
         state.pins = el('div', 'sb-lounge-pins'); state.pins.setAttribute('aria-label', '置顶角色');
