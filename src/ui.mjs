@@ -920,6 +920,7 @@ export function createUI(host) {
  <div class="sb-sh">TA</div><div class="sb-sgrp">
   <label class="sb-srow"><span>时代</span><select data-cset="era">${[['auto', eraName.startsWith('自动') ? eraName : '自动'], ['modern', '现代'], ['minguo', '民国'], ['ancient', '古风']].map(([k, n]) => `<option value="${k}" ${(c.era || 'auto') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
   ${row('提示词', s.prompt ? '改过' : '默认', 'set-prompt')}
+  <label class="sb-srow"><span>回复时不自动更新状态<small>只对这张卡：正文后不再让TA写状态段，小手机回消息也不顺带更新。多角色、群像卡打开这个；手动点按钮生成照常能用</small></span><input type="checkbox" class="sb-tg" data-cset="noAutoStatus" ${c.noAutoStatus ? 'checked' : ''}></label>
  </div>
  <button data-act="splash-settings" class="sb-more">开场与配色</button><div class="sb-sh">其他</div><div class="sb-sgrp">
   <label class="sb-srow"><span>小手机怎么打开<small>抽屉里：嵌在抽屉那一格；浮窗：浮在聊天上，能拖，只有 × 关</small></span><select data-set="phoneMode">${[['drawer', '抽屉里'], ['float', '浮窗']].map(([k, n]) => `<option value="${k}" ${(s.phoneMode || 'drawer') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
@@ -1354,7 +1355,7 @@ export function createUI(host) {
         if (t.dataset.set === 'phoneMode') { if (t.value === 'float') { v.phone = true; v.drawer = false; } else { v.phone = false; v.drawer = true; v.tab = 'phone'; } }
         else if (t.dataset.ctx) host.setSettings(s => { s.ctx = { ...host.replyCtx(), [t.dataset.ctx]: t.type === 'checkbox' ? t.checked : Number(t.value) }; });
         else if (t.dataset.own) host.setSettings(s => { s.ownApi = { ...(s.ownApi || {}), [t.dataset.own]: t.value.trim() }; });
-        else if (t.dataset.cset) host.setCharCfg(c => { c[t.dataset.cset] = t.value; });
+        else if (t.dataset.cset) host.setCharCfg(c => { c[t.dataset.cset] = t.type === 'checkbox' ? t.checked : t.value; });
         else if (t.dataset.him != null) host.setCharCfg(c => { c.him = { ...(c.him || {}), [t.dataset.him]: t.value.trim() }; });
         else if (t.dataset.acc != null) { host.setXAccountField(t.dataset.acc, t.value.trim().replace(t.dataset.acc === 'handle' ? /^@/ : /^$/, '')); }
         else if (t.dataset.me != null) host.setMeProfile({ [t.dataset.me]: t.value.trim() });
@@ -1418,7 +1419,7 @@ export function createUI(host) {
             host.wechat().forEach(m => { if (m.pending) host.patchWechat(m.id, { pending: false, rejected: true }, true); });
             host.saveMeta(); host.toast('info', '消息已发出，但被对方拒收了'); render(); return;
         }
-        if (!redo && host.settings().phoneWhen === 'next') {
+        if (!redo && host.settings().phoneWhen === 'next' && !host.charCfg().noAutoStatus) { // 关了自动更新就没有「下一轮顺带回」，改成马上回
             host.wechat().forEach(m => { if (m.pending) host.patchWechat(m.id, { pending: false, waiting: true }, true); });
             host.saveMeta(); host.refreshInject();
             host.toast('info', 'TA会在下一轮正文里顺带回你');
@@ -1429,9 +1430,9 @@ export function createUI(host) {
         v.busy = true; v.stick = true; render();
         try {
             const msgs = await phoneMessages();
-            const text = await host.ask(msgs, quietOf(msgs, (host.era() === 'modern' ? '现在只写你在手机上回的消息，一行一条。' : '现在只写你回的信，一行一句。') + (host.settings().saveMode ? '' : '\n' + PHONE_STATUS)));
+            const text = await host.ask(msgs, quietOf(msgs, (host.era() === 'modern' ? '现在只写你在手机上回的消息，一行一条。' : '现在只写你回的信，一行一句。') + (host.settings().saveMode || host.charCfg().noAutoStatus ? '' : '\n' + PHONE_STATUS)));
             const cut = host.extractBlock(String(text || ''));
-            if (cut.raw && !host.settings().saveMode) host.addBlock(cut.raw); // 顺带的状态段：此刻、动态、日记都跟着更新
+            if (cut.raw && !host.settings().saveMode && !host.charCfg().noAutoStatus) host.addBlock(cut.raw); // 顺带的状态段：此刻、动态、日记都跟着更新
             const list = parsePhoneReply(cut.text);
             if (!list.length) throw new Error('TA没回出东西');
             for (const m of list) {
@@ -1488,7 +1489,7 @@ export function createUI(host) {
         const list = host.wechat().filter(x => x.type !== 'note').slice(-Math.max(1, N));
         const sys = await buildSys(
             host.era() === 'modern' ? `现在你们在手机上聊天，对方在你手机里叫「${me.name}」。` : `现在你们在书信往来，对方署名「${me.name}」。`,
-            (host.era() === 'modern' ? PHONE_RULES : LETTER_RULES) + (host.settings().saveMode ? '' : '\n' + PHONE_STATUS),
+            (host.era() === 'modern' ? PHONE_RULES : LETTER_RULES) + (host.settings().saveMode || host.charCfg().noAutoStatus ? '' : '\n' + PHONE_STATUS),
             list.slice(-6).map(m => m.text || ''));
         const msgs = [{ role: 'system', content: sys }];
         for (const m of list) {

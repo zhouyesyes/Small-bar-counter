@@ -483,6 +483,8 @@ function refreshInject() {
     const c = ctx(), s = settings();
     if (!c.setExtensionPrompt) return;
     if (!s.enabled || !hasChar()) { c.setExtensionPrompt(INJECT_KEY, '', 1, 0); return; }
+    // 这张卡关了「回复时自动更新状态」（多角色、群像卡）：正文后不再让TA写状态段
+    if (charCfg().noAutoStatus) { c.setExtensionPrompt(INJECT_KEY, '', 1, 0); return; }
     const cover = charCfg().cover;
     const tags = cover?.mode === 'pick' ? (cover.images || []).map(x => x.tag).filter(Boolean) : [];
     const N = Number(s.wxMemory ?? 50);
