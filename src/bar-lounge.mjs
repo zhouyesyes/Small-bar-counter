@@ -110,13 +110,19 @@ function makeGroup(state, key) {
     const image = el('img', 'sb-lounge-role-avatar'); image.alt = ''; const info = el('span', 'sb-lounge-role-info');
     const line = el('span', 'sb-lounge-role-line'), name = el('strong', 'sb-lounge-role-name'), date = el('span', 'sb-lounge-role-date');
     const count = el('span', 'sb-lounge-role-count');
-    line.append(name, date); info.append(line, count); toggle.append(image, info, icon('down'));
+    line.append(name, date); info.append(line, count);
+    const expand = el('span', 'sb-lounge-expand'); expand.setAttribute('aria-label', '展开其余聊天'); expand.append(icon('down'));
+    toggle.append(image, info, expand);
     const more = el('button', 'sb-lounge-more', '⋯'); more.type = 'button'; more.setAttribute('aria-label', '角色选项'); top.append(toggle, more);
     const content = el('div', 'sb-lounge-group-chats'); content.id = `sb-lounge-chats-${++state.ids}`;
     const older = el('button', 'sb-lounge-older'); older.type = 'button'; content.append(older); toggle.setAttribute('aria-controls', content.id);
     section.append(top, content); state.list.append(section);
     const group = { key, section, toggle, image, name, date, count, content, older, rows: [] };
-    toggle.onclick = () => { const p = prefs(state.host); p.open[key] = !p.open[key]; save(state); };
+    // 她 11/11 说的：点这个人就直接进他最新那段聊天；右边的小箭头才是展开其余聊天
+    toggle.onclick = e => {
+        if (e.target.closest('.sb-lounge-expand')) { const p = prefs(state.host); p.open[key] = !p.open[key]; save(state); return; }
+        latestChatRow(group.rows)?.click();
+    };
     more.onclick = e => { e.stopPropagation(); roleMenu(state, group, more); };
     older.onclick = () => { if (state.expanded.has(key)) state.expanded.delete(key); else state.expanded.add(key); render(state); };
     return group;
@@ -161,6 +167,7 @@ function render(state) {
         const ordered = [...matches].sort((a, b) => Number($('.pinChat', b)?.getAttribute('aria-pressed') === 'true') - Number($('.pinChat', a)?.getAttribute('aria-pressed') === 'true'));
         const visible = new Set(all ? ordered : ordered.slice(0, limit));
         for (const row of entries) {
+            row.classList.remove('hidden');
             row.hidden = !visible.has(row);
             row.classList.toggle('sb-lounge-chat-pinned', $('.pinChat', row)?.getAttribute('aria-pressed') === 'true');
         }
@@ -210,7 +217,8 @@ export function updateLounge(panel, host, popup) {
             if (state.showAllPeople && state.remainingPeople > 0) state.showAllPeople = false;
             else {
                 state.showAllPeople = true;
-                state.nativeMore?.click();
+                // 酒馆的按钮是开 / 关来回切的：只在它还没展开时按一次，别把旧聊天又藏回去
+                if (state.nativeMore && !state.nativeMore.classList.contains('rotated')) state.nativeMore.click();
             }
             render(state);
         };
