@@ -1340,8 +1340,8 @@ html.sb-bar #user-settings-block [name=AutoCompleteToggle]:has(.inline-drawer-ic
 html.sb-bar #user-settings-block #UI-presets-block {position:relative;margin:10px 0 4px;padding:20px 14px 12px;border:1px solid var(--sb-bar-accent);background:var(--sb-bar-paper);gap:10px;}
 html.sb-bar #user-settings-block #UI-presets-block > h4 {display:flex;flex-wrap:wrap;gap:10px;margin:0;padding:0;border:0;background:none;font-size:13px;}
 html.sb-bar #user-settings-block #UI-presets-block > h4 > span {font-size:0;}
-html.sb-bar #user-settings-block #UI-presets-block > h4 > span::after {content:'当前灯光';font:italic 13px var(--sb-f-italic);color:var(--sb-bar-sub);}
-html.sb-bar #user-settings-block #themes {flex:1;min-width:0;font-size:17px;padding:4px 0;}
+html.sb-bar #user-settings-block #UI-presets-block > h4 > span::after {content:"Current Lighting";font:italic 13px var(--sb-f-italic);color:var(--sb-bar-sub);}
+html.sb-bar #user-settings-block #themes {flex:1;min-width:0;font:400 var(--sb-card-title-size)/var(--sb-card-title-line) var(--sb-f-serif);padding:4px 0;border:0;border-radius:0;background:none;box-shadow:none;}
 html.sb-bar #user-settings-block :is(#ui_preset_import_button,#ui_preset_export_button,#ui-preset-update-button,#ui-preset-save-button) {margin:0;padding:3px 0;border:0;border-radius:0;background:none;box-shadow:none;font-size:0;}
 html.sb-bar #user-settings-block :is(#ui_preset_import_button,#ui_preset_export_button,#ui-preset-update-button,#ui-preset-save-button) > i {display:none;}
 html.sb-bar #user-settings-block :is(#ui_preset_import_button,#ui_preset_export_button,#ui-preset-update-button,#ui-preset-save-button)::before {font:12px/1.6 var(--sb-f-serif);color:var(--sb-bar-sub);white-space:nowrap;}
