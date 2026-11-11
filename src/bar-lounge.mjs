@@ -165,12 +165,14 @@ function render(state) {
     const limit = peopleLimit(p.peopleLimit);
     const cap = query || limit === 0 || state.showAllPeople ? Infinity : limit;
     candidates.forEach((group, i) => { if (i >= cap) group.section.hidden = true; });
-    state.morePeople.hidden = !!query || limit === 0 || candidates.length <= limit;
-    updateText(state.morePeople, state.showAllPeople ? '收起' : '再看 ' + Math.max(0, candidates.length - limit) + ' 人');
-    state.morePeople.setAttribute('aria-expanded', String(state.showAllPeople));
     const nativeMore = $('.showMoreChats', panel);
-    state.loadMore.hidden = !nativeMore || nativeMore.hidden || nativeMore.classList.contains('hidden') || nativeMore.closest('.recentChatsMore')?.hidden === true;
-    state.loadMore.disabled = !!nativeMore?.disabled;
+    state.nativeMore = nativeMore && !nativeMore.hidden && !nativeMore.classList.contains('hidden') && nativeMore.closest('.recentChatsMore')?.hidden !== true ? nativeMore : null;
+    state.remainingPeople = limit ? Math.max(0, candidates.length - limit) : 0;
+    const expanded = state.showAllPeople && state.remainingPeople > 0;
+    state.morePeople.hidden = !!query || (!state.remainingPeople && !state.nativeMore);
+    updateText(state.morePeople, expanded ? '收起' : state.remainingPeople ? '再看 ' + state.remainingPeople + ' 人' : '更多聊天');
+    state.morePeople.setAttribute('aria-expanded', String(expanded));
+    state.morePeople.disabled = !state.remainingPeople && !!state.nativeMore?.disabled;
     const visibleGroups = candidates.some(g => !g.section.hidden);
     state.list.hidden = !visibleGroups;
     state.empty.hidden = visibleGroups || (!query && state.pins.children.length > 0);
@@ -190,15 +192,15 @@ export function updateLounge(panel, host, popup) {
         state.list.id = 'sb-lounge-list-' + state.ids;
         state.morePeople = el('button', 'sb-lounge-more-people'); state.morePeople.type = 'button';
         state.morePeople.setAttribute('aria-controls', state.list.id);
-        state.morePeople.onclick = () => { state.showAllPeople = !state.showAllPeople; render(state); };
-        state.loadMore = el('button', 'sb-lounge-load-more', '更多聊天');
-        state.loadMore.type = 'button';
-        state.loadMore.onclick = () => {
-            state.showAllPeople = true;
-            $('.showMoreChats', panel)?.click();
+        state.morePeople.onclick = () => {
+            if (state.showAllPeople && state.remainingPeople > 0) state.showAllPeople = false;
+            else {
+                state.showAllPeople = true;
+                state.nativeMore?.click();
+            }
             render(state);
         };
-        const paging = el('div', 'sb-lounge-paging'); paging.append(state.morePeople, state.loadMore);
+        const paging = el('div', 'sb-lounge-paging'); paging.append(state.morePeople);
         const quick = el('div', 'sb-lounge-quick');
         for (const [text, name, selector] of [['酒窖', 'cellar', '#sys-settings-button'], ['调酒师', 'people', '#rightNavHolder'], ['工具', 'tools', '#extensions-settings-button']]) {
             const b = el('button', ''); b.type = 'button'; b.append(icon(name), el('span', '', text)); b.onclick = () => document.querySelector(selector + ' .drawer-icon')?.click(); quick.append(b);
