@@ -118,11 +118,8 @@ function makeGroup(state, key) {
     const older = el('button', 'sb-lounge-older'); older.type = 'button'; content.append(older); toggle.setAttribute('aria-controls', content.id);
     section.append(top, content); state.list.append(section);
     const group = { key, section, toggle, image, name, date, count, content, older, rows: [] };
-    // 她 11/11 说的：点这个人就直接进他最新那段聊天；右边的小箭头才是展开其余聊天
-    toggle.onclick = e => {
-        if (e.target.closest('.sb-lounge-expand')) { const p = prefs(state.host); p.open[key] = !p.open[key]; save(state); return; }
-        latestChatRow(group.rows)?.click();
-    };
+    // 点这个人（头像、名字、小箭头都一样）只是展开 / 收起他的聊天，不直接进；进哪段由她在下面挑（她 11/11 改回来的）
+    toggle.onclick = () => { const p = prefs(state.host); p.open[key] = !p.open[key]; save(state); };
     more.onclick = e => { e.stopPropagation(); roleMenu(state, group, more); };
     older.onclick = () => { if (state.expanded.has(key)) state.expanded.delete(key); else state.expanded.add(key); render(state); };
     return group;
@@ -136,10 +133,15 @@ function renderPins(state) {
     state.pins.dataset.signature = signature; state.pins.replaceChildren();
     for (const key of keys) {
         const g = state.groups.get(key), tile = el('button', 'sb-lounge-pin'); tile.type = 'button'; tile.dataset.roleKey = key;
-        tile.setAttribute('aria-label', '进入 ' + g.name.textContent + ' 的最新聊天');
+        tile.setAttribute('aria-label', '展开 ' + g.name.textContent + ' 的聊天');
         const image = el('img', ''); image.alt = ''; updateImage(image, g.image.getAttribute('src'));
         tile.append(image, el('span', '', g.name.textContent));
-        tile.onclick = () => { latestChatRow(state.groups.get(key)?.rows || [])?.click(); };
+        // 上面置顶的大头像也一样：不直接进聊天，展开下面这个人、滚过去让她挑
+        tile.onclick = () => {
+            const p = prefs(state.host), g2 = state.groups.get(key); if (!g2) return;
+            p.open[key] = true; save(state);
+            g2.section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
         state.pins.append(tile);
     }
 }
