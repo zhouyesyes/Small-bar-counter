@@ -68,7 +68,7 @@ function settingsMenu(state, anchor) {
     state.popup(anchor, [
         ...[['light', '日间'], ['dark', '夜间'], ['auto', '跟随酒馆']].map(([mode, label]) => [label + (h.settings().theme === mode ? ' ✓' : ''), () => h.setTheme?.(mode)]),
         ['头像、背景与配色', () => h.openAppearance?.()],
-        ['首页显示 ' + (peopleLimit(p.peopleLimit) ? peopleLimit(p.peopleLimit) + ' 人' : '全部角色') + ' · 设置', async () => {
+        ['首页显示 ' + (peopleLimit(p.peopleLimit) ? peopleLimit(p.peopleLimit) + ' 人' : '全部角色'), async () => {
             const c = h.context(), text = '首页先显示多少人？同一角色的多段聊天只算一人；输入 0 显示全部（最多 200 人）。';
             const result = c.callGenericPopup ? await c.callGenericPopup(text, c.POPUP_TYPE?.INPUT ?? 2, String(peopleLimit(p.peopleLimit))) : window.prompt(text, String(peopleLimit(p.peopleLimit)));
             if (result == null || result === false) return;
@@ -76,7 +76,21 @@ function settingsMenu(state, anchor) {
             if (!String(result).trim() || !Number.isInteger(count) || count < 0 || count > 200) { globalThis.toastr?.warning('请输入 0 到 200 的整数'); return; }
             p.peopleLimit = count; state.showAllPeople = false; save(state);
         }],
+        // 酒馆首页只拿最近这么多段聊天（所有人加起来，默认 15），更早的人首页和搜索都找不到。
+        // 原来首页标题旁的小齿轮被盖住了，这里点了就是点它，打开酒馆自己的设置（她 11/11 要的）
+        ['往回翻 ' + recentChatsMax(h) + ' 段聊天', () => {
+            const native = $('.recentChatsSettings', state.panel) || document.querySelector('.welcomePanel .recentChatsSettings');
+            if (native) native.click(); else globalThis.toastr?.info('这一版酒馆没有这个设置');
+        }],
     ]);
+}
+// 酒馆存在 accountStorage 的 recentChatsSettings 里：{ maxDisplayed, collapsedDisplayed }
+function recentChatsMax(h) {
+    try {
+        const raw = h.context()?.accountStorage?.getItem?.('recentChatsSettings');
+        const n = parseInt(raw ? JSON.parse(raw).maxDisplayed : '', 10);
+        return n > 0 ? n : 15;
+    } catch { return 15; }
 }
 function rememberRow(state, row) {
     if (state.rows.has(row)) return;
