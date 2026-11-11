@@ -1,4 +1,4 @@
-// 吧台美化第 2 批：八页（配方本、酒窖、酒单、会员卡、调酒师名单、调酒师主页、工具箱、灯光），样子见 docs/bar-theme.md
+// 吧台美化第 2 批：十页（配方本、酒窖、酒单、会员卡、调酒师名单、调酒师主页、工具箱、灯光、窗景、格式），样子见 docs/bar-theme.md
 // 做法：酒馆原来的按钮、输入框、列表都留着照常用，只换样子和字（CSS 在 style.css「吧台美化」那段）。
 // 这里只加：每页顶上的标题、几张小卡片（点上面的按钮就是点酒馆原来那个）、「+」收起展开，和让列表不卡的一点东西。
 // 加上去的东西都带 sb-bx 类，关掉时一次拿干净；酒馆自己的元素只改了几个占位字，关掉时还原。
@@ -12,6 +12,7 @@ const click = id => document.getElementById(id)?.click();
 const glass = new URL('../assets/bar/glass.png', import.meta.url).href;
 // Preserve original placement so disabling the theme restores native editors/actions.
 const moved = new Map();
+const formatDetails = new Map();
 const lightingSearch = new Map();
 function moveNative(el, target) {
     if (!el || !target || el.parentElement === target) return;
@@ -57,6 +58,47 @@ function placeWorldRules(root) {
 // ---------- 每一页 ----------
 // mount：第一次挂上标题、卡片（已经挂过就跳过）；sync：把卡片里的字换成现在的值；act：点了我们的按钮做什么
 const PAGES = {
+    format: {
+        root: '#AdvancedFormatting',
+        mount(root) {
+            root.prepend(head('The Script', 'WORDS IN ORDER · BEFORE THE POUR', '格 式 · 把 话 写 好'));
+            // Native sequence subpanels also start closed, and recover on disable.
+            for (const detail of root.querySelectorAll('details')) { formatDetails.set(detail, detail.open); detail.open = false; }
+            const wrap = (nodes, zh, en) => {
+                nodes = nodes.filter(Boolean); if (!nodes.length) return;
+                const group = document.createElement('details'); group.className = 'sb-bx sb-format-group';
+                const summary = document.createElement('summary');
+                summary.innerHTML = '<b>' + zh + '</b><i>' + en + '</i><span class="sb-plus">+</span>';
+                const body = document.createElement('div'); body.className = 'sb-format-content';
+                group.append(summary, body); nodes[0].before(group);
+                for (const node of nodes) moveNative(node, body);
+            };
+            wrap([$('#ContextSettings', root)], '上 下 文 模 板', 'Context');
+            wrap([$('#InstructSettingsColumn', root)], '指 令 模 板', 'Instruct');
+            const system = $('#SystemPromptColumn', root);
+            wrap([system?.querySelector(':scope > h4'), $('#SystemPromptBlock', root)], '系 统 提 示', 'System Prompt');
+            for (const [key, zh, en] of [
+                ['Context Formatting', '上 下 文 规 则', 'Context Rules'],
+                ['Custom Stopping Strings', '停 止 字 符', 'Stop Strings'],
+                ['Reasoning', '推 理', 'Reasoning'],
+                ['Miscellaneous', '其 余 设 置', 'Fine Print'],
+            ]) {
+                const label = root.querySelector('[data-i18n="' + key + '"]');
+                const heading = label?.closest('h4');
+                if (heading) wrap([heading.parentElement], zh, en);
+            }
+            wrap([$('#InstructSequencesColumn', root)], '指 令 序 列', 'Sequences');
+            wrap([root.querySelector('[name="tokenizerSettingsBlock"]')], '分 词 与 填 充', 'Tokenizer');
+        },
+    },
+
+    window: {
+        root: '#Backgrounds',
+        mount(root) {
+            root.prepend(head('The Window', 'A CHANGE OF SCENE · BY THE WINDOW', '窗 景 · 今 天 看 见 什 么'));
+        },
+    },
+
     lighting: {
         root: '#user-settings-block',
         mount(root) {
@@ -261,20 +303,32 @@ const PAGES = {
             moveNative(textarea,editor);
             block.after(fold('more', '其 余 设 置', 'Fine Print'), foot('members only'));
         },
-        sync(root) {
-            const sel = $('#user_avatar_block .avatar-container.selected', root);
-            const img = $('img', sel || document.createElement('i'))?.getAttribute('src') || '';
+        sync(root, ctx) {
             const mc = $('.sb-mc', root); if (!mc) return;
+            // 会员卡跟着「现在真正在用的人设」走（她 11/11 说的：别的插件换了人设，酒馆这页不刷新，卡上一直是上一张）。
+            // 拿得到酒馆的 user_avatar 就以它为准；拿不到再看列表里标着 selected 的那张
+            const cur = currentPersona();
+            const pu = ctx?.powerUserSettings || {};
+            const idOf = x => x.getAttribute('data-avatar-id') || $('.avatar', x)?.getAttribute('imgfile') || '';
+            const rows = $$('#user_avatar_block .avatar-container', root);
+            const sel = cur ? rows.find(x => idOf(x) === cur) || null : $('#user_avatar_block .avatar-container.selected', root);
+            const file = cur || (sel ? idOf(sel) : '');
+            for (const x of rows) x.classList.toggle('sb-cur', !!cur && x === sel);
+            const img = (file && ctx?.getThumbnailUrl ? ctx.getThumbnailUrl('persona', file) : '') || $('img', sel || document.createElement('i'))?.getAttribute('src') || '';
             const im = $('img', mc); if (im.getAttribute('src') !== img) { if (img) im.setAttribute('src', img); else im.removeAttribute('src'); }
-            $('.sb-mc-name', mc).textContent = $('#your_name')?.textContent.trim() || '还没办卡';
-            const file = sel?.getAttribute('imgfile') || $('.avatar', sel || document.createElement('i'))?.getAttribute('imgfile') || '';
-            const all = $$('#user_avatar_block .avatar-container', root);
-            $('.sb-mc-no', mc).textContent = sel ? 'NO. ' + String(all.indexOf(sel) + 1).padStart(4, '0') : '';
-            $('.sb-mc-desc', mc).textContent = val('persona_description').split('\n').map(s => s.trim()).filter(Boolean).slice(0, 2).join('\n');
+            const name = (file && pu.personas?.[file]) || ctx?.name1 || $('#your_name')?.textContent.trim() || '';
+            $('.sb-mc-name', mc).textContent = name || '还没办卡';
+            const keys = Object.keys(pu.personas || {});
+            const no = file && keys.includes(file) ? keys.indexOf(file) + 1 : (sel ? rows.indexOf(sel) + 1 : 0);
+            $('.sb-mc-no', mc).textContent = no ? 'NO. ' + String(no).padStart(4, '0') : '';
+            const desc = file && pu.persona_descriptions?.[file] ? String(pu.persona_descriptions[file].description || '') : val('persona_description');
+            $('.sb-mc-desc', mc).textContent = desc.split('\n').map(s => s.trim()).filter(Boolean).slice(0, 2).join('\n');
             const ms = file.match(/^(1\d{12})/); // 酒馆存人设头像时文件名前面是时间戳
             $('.sb-mc-since', mc).textContent = ms ? 'member since ' + new Date(+ms[1]).getFullYear() : 'member';
+            // token 数是酒馆这页算的：只有这页显示的就是卡上这位时才写，免得把上一位的数字贴过来
             const t = $('#persona_description_token_count')?.textContent.trim();
-            $('.sb-mc-t', mc).textContent = t ? `${t} t` : '';
+            const same = !name || ($('#your_name')?.textContent.trim() || '') === name;
+            $('.sb-mc-t', mc).textContent = t && same ? `${t} t` : '';
             for (const b of $$('.sb-use button', root)) b.classList.toggle('on', !!document.getElementById(b.dataset.do)?.classList.contains('locked'));
             setSum(root, 'more', `放在哪：${optText('persona_description_position') || '—'} · 切换时提醒 ${checked('persona_show_notifications') ? '开' : '关'}`, '备份、恢复、插入位置都在这里');
         },
@@ -402,6 +456,11 @@ function onChange(e) {
     soon();
 }
 
+// 酒馆的 user_avatar（现在在用的人设头像文件名）在 personas.js 里，main.mjs 把取它的办法递进来
+let personaOf = () => '';
+const currentPersona = () => { try { return personaOf() || ''; } catch { return ''; } };
+export function setPersonaSource(fn) { if (typeof fn === 'function') personaOf = fn; }
+
 export function mountPages(getContext) {
     getCtx = getContext || getCtx;
     if (on) { soon(); return; }
@@ -426,6 +485,8 @@ export function unmountPages() {
     mo?.disconnect(); mo = null; clearInterval(tick); clearTimeout(timer);
     for (const [group, open] of lightingSearch) group.open = open;
     lightingSearch.clear();
+    for (const [detail, open] of formatDetails) detail.open = open;
+    formatDetails.clear();
     for (const [el, marker] of moved) { if (marker.isConnected) marker.replaceWith(el); } moved.clear();
     $$('.sb-native-actions').forEach(el=>el.classList.remove('sb-native-actions'));
     $$('.sb-bx').forEach(el => el.remove());
@@ -434,6 +495,7 @@ export function unmountPages() {
         root.classList.remove(...[...root.classList].filter(c => c.startsWith('sb-page') || c.startsWith('sb-open-')));
     }
     $$('.world_entry[data-sb-state]').forEach(e => delete e.dataset.sbState);
+    $$('.sb-cur').forEach(e => e.classList.remove('sb-cur'));
     $$('[data-sb-ph]').forEach(el => { el.setAttribute('placeholder', el.dataset.sbPh); delete el.dataset.sbPh; });
 }
 
