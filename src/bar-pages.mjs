@@ -1,4 +1,4 @@
-// 吧台美化第 2 批：九页（配方本、酒窖、酒单、会员卡、调酒师名单、调酒师主页、工具箱、灯光、窗景），样子见 docs/bar-theme.md
+// 吧台美化第 2 批：十页（配方本、酒窖、酒单、会员卡、调酒师名单、调酒师主页、工具箱、灯光、窗景、格式），样子见 docs/bar-theme.md
 // 做法：酒馆原来的按钮、输入框、列表都留着照常用，只换样子和字（CSS 在 style.css「吧台美化」那段）。
 // 这里只加：每页顶上的标题、几张小卡片（点上面的按钮就是点酒馆原来那个）、「+」收起展开，和让列表不卡的一点东西。
 // 加上去的东西都带 sb-bx 类，关掉时一次拿干净；酒馆自己的元素只改了几个占位字，关掉时还原。
@@ -12,6 +12,7 @@ const click = id => document.getElementById(id)?.click();
 const glass = new URL('../assets/bar/glass.png', import.meta.url).href;
 // Preserve original placement so disabling the theme restores native editors/actions.
 const moved = new Map();
+const formatDetails = new Map();
 const lightingSearch = new Map();
 function moveNative(el, target) {
     if (!el || !target || el.parentElement === target) return;
@@ -57,6 +58,40 @@ function placeWorldRules(root) {
 // ---------- 每一页 ----------
 // mount：第一次挂上标题、卡片（已经挂过就跳过）；sync：把卡片里的字换成现在的值；act：点了我们的按钮做什么
 const PAGES = {
+    format: {
+        root: '#AdvancedFormatting',
+        mount(root) {
+            root.prepend(head('The Script', 'WORDS IN ORDER · BEFORE THE POUR', '格 式 · 把 话 写 好'));
+            // Native sequence subpanels also start closed, and recover on disable.
+            for (const detail of root.querySelectorAll('details')) { formatDetails.set(detail, detail.open); detail.open = false; }
+            const wrap = (nodes, zh, en) => {
+                nodes = nodes.filter(Boolean); if (!nodes.length) return;
+                const group = document.createElement('details'); group.className = 'sb-bx sb-format-group';
+                const summary = document.createElement('summary');
+                summary.innerHTML = '<b>' + zh + '</b><i>' + en + '</i><span class="sb-plus">+</span>';
+                const body = document.createElement('div'); body.className = 'sb-format-content';
+                group.append(summary, body); nodes[0].before(group);
+                for (const node of nodes) moveNative(node, body);
+            };
+            wrap([$('#ContextSettings', root)], '上 下 文 模 板', 'Context');
+            wrap([$('#InstructSettingsColumn', root)], '指 令 模 板', 'Instruct');
+            const system = $('#SystemPromptColumn', root);
+            wrap([system?.querySelector(':scope > h4'), $('#SystemPromptBlock', root)], '系 统 提 示', 'System Prompt');
+            for (const [key, zh, en] of [
+                ['Context Formatting', '上 下 文 规 则', 'Context Rules'],
+                ['Custom Stopping Strings', '停 止 字 符', 'Stop Strings'],
+                ['Reasoning', '推 理', 'Reasoning'],
+                ['Miscellaneous', '其 余 设 置', 'Fine Print'],
+            ]) {
+                const label = root.querySelector('[data-i18n="' + key + '"]');
+                const heading = label?.closest('h4');
+                if (heading) wrap([heading.parentElement], zh, en);
+            }
+            wrap([$('#InstructSequencesColumn', root)], '指 令 序 列', 'Sequences');
+            wrap([root.querySelector('[name="tokenizerSettingsBlock"]')], '分 词 与 填 充', 'Tokenizer');
+        },
+    },
+
     window: {
         root: '#Backgrounds',
         mount(root) {
@@ -433,6 +468,8 @@ export function unmountPages() {
     mo?.disconnect(); mo = null; clearInterval(tick); clearTimeout(timer);
     for (const [group, open] of lightingSearch) group.open = open;
     lightingSearch.clear();
+    for (const [detail, open] of formatDetails) detail.open = open;
+    formatDetails.clear();
     for (const [el, marker] of moved) { if (marker.isConnected) marker.replaceWith(el); } moved.clear();
     $$('.sb-native-actions').forEach(el=>el.classList.remove('sb-native-actions'));
     $$('.sb-bx').forEach(el => el.remove());

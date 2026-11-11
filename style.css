@@ -1428,3 +1428,61 @@ html.sb-bar #Backgrounds #bg-scroll-top {width:28px;height:28px;right:18px;botto
 
 html.sb-bar #Backgrounds.bg-selection-mode #bg_menu_content .bg_example.folder-group-selected {border-color:var(--sb-bar-accent);outline:1px solid var(--sb-bar-accent);}
 html.sb-bar #Backgrounds.bg-selection-mode #bg_menu_content .bg_example.folder-group-selected::before {content:'✓';right:5px;left:auto;top:5px;width:18px;height:18px;border-radius:50%;background:var(--sb-bar-accent);color:var(--sb-bar-btntext);font:12px/18px var(--sb-f-serif);text-align:center;filter:none;}
+
+/* Native thumbnail menus: readable action labels, no clipped horizontal icon strip. */
+html.sb-bar #Backgrounds .bg_example:is(.mobile-menu-open,:hover,:focus-within) {overflow:visible;z-index:8;}
+html.sb-bar #Backgrounds :is(.jg-menu,.bg_folder_tile_menu) {flex-direction:column;align-items:stretch;gap:0;top:4px;right:4px;padding:5px;width:min(146px,calc(100% - 8px));border:1px solid var(--sb-bar-accent);border-radius:7px;background:var(--sb-bar-paper);box-shadow:0 3px 10px #0001;}
+html.sb-bar #Backgrounds :is(.jg-menu,.bg_folder_tile_menu) .jg-button {width:100%;height:auto;min-height:28px;padding:5px 7px;justify-content:flex-start;border-radius:3px;color:var(--sb-bar-text);font-size:0;}
+html.sb-bar #Backgrounds :is(.jg-menu,.bg_folder_tile_menu) .jg-button::before {display:none;}
+html.sb-bar #Backgrounds :is(.jg-menu,.bg_folder_tile_menu) .jg-button::after {content:attr(title);font:11px/1.6 var(--sb-f-serif);white-space:normal;}
+html.sb-bar #Backgrounds .jg-button[data-action=lock]::after {content:'［ 锁定到聊天 ］';}
+html.sb-bar #Backgrounds .jg-button[data-action=unlock]::after {content:'［ 取消锁定 ］';}
+html.sb-bar #Backgrounds .jg-button[data-action=copy]::after {content:'［ 设为全局 ］';}
+html.sb-bar #Backgrounds .jg-button[data-action=edit]::after {content:'［ 重命名 ］';}
+html.sb-bar #Backgrounds .jg-button[data-action=delete]::after {content:'［ 删除 ］';}
+html.sb-bar #Backgrounds .jg-button[data-action=folder]::after {content:'［ 加入文件夹 ］';}
+html.sb-bar #Backgrounds .jg-button[data-action=set-cover]::after {content:'［ 设为封面 ］';}
+html.sb-bar #Backgrounds :is(.jg-menu,.bg_folder_tile_menu) .jg-button:hover {background:var(--sb-bar-card);color:var(--sb-bar-accent);}
+html.sb-bar #Backgrounds .mobile-only-menu-toggle {width:24px;height:24px;top:5px;right:5px;font-size:13px;}
+/* Advanced formatting: shared ruled groups, with all original fields retained. */
+html.sb-bar #AdvancedFormatting.sb-page-format {padding:12px 16px 20px;background:var(--sb-bar-bg);font:12px/1.65 var(--sb-f-serif);}
+html.sb-bar #AdvancedFormatting > .flex-container:has(> h3) {justify-content:flex-end;margin:4px 0 10px;}
+html.sb-bar #AdvancedFormatting > .flex-container > h3 {display:none;}
+html.sb-bar #AdvancedFormatting > .spaceEvenly {flex-direction:column;gap:0;}
+html.sb-bar #AdvancedFormatting :is(#ContextSettings,#InstructSettingsColumn,#SystemPromptColumn,#InstructSequencesColumn) {width:100%;min-width:0;max-width:100%;flex:none;}
+html.sb-bar #AdvancedFormatting #advanced-formatting-cc-notice {font-size:10px;line-height:1.65;padding:7px 9px;border:0;border-left:2px solid var(--sb-bar-accent);border-radius:0;background:var(--sb-bar-card);color:var(--sb-bar-sub);}
+html.sb-bar #AdvancedFormatting .sb-format-group {position:relative;width:100%;margin:16px 0 6px;padding:14px 0 12px;border:0;border-top:1px solid var(--sb-bar-accent);border-bottom:1px solid var(--sb-bar-line);background:none;}
+html.sb-bar #AdvancedFormatting .sb-format-group > summary {display:flex;align-items:baseline;gap:14px;list-style:none;padding:0;cursor:pointer;}
+html.sb-bar #AdvancedFormatting .sb-format-group > summary::-webkit-details-marker {display:none;}
+html.sb-bar #AdvancedFormatting .sb-format-group > summary::marker {content:'';}
+html.sb-bar #AdvancedFormatting .sb-format-group > summary b {font:500 17px/1.6 var(--sb-f-serif);letter-spacing:.12em;color:var(--sb-bar-accent);}
+html.sb-bar #AdvancedFormatting .sb-format-group > summary i {font:italic 13px var(--sb-f-italic);color:var(--sb-bar-sub);}
+html.sb-bar #AdvancedFormatting .sb-format-group[open] > summary > .sb-plus {font-size:0;}
+html.sb-bar #AdvancedFormatting .sb-format-group[open] > summary > .sb-plus::after {content:'−';font:18px var(--sb-f-serif);}
+html.sb-bar #AdvancedFormatting .sb-format-content {min-width:0;padding-top:14px;}
+html.sb-bar #AdvancedFormatting h4 {margin:8px 0;padding:0;border:0;background:none;box-shadow:none;font:500 13px/1.6 var(--sb-f-serif);color:var(--sb-bar-accent);}
+html.sb-bar #AdvancedFormatting .title_restorable {flex-wrap:wrap;gap:7px;}
+html.sb-bar #AdvancedFormatting :is(select,input,textarea) {font:12px/1.6 var(--sb-f-serif);}
+html.sb-bar #AdvancedFormatting select[data-preset-manager-for] {font:400 var(--sb-card-title-size)/var(--sb-card-title-line) var(--sb-f-serif);border:0;}
+html.sb-bar #AdvancedFormatting textarea {min-height:48px;padding:7px 8px;border:1px solid var(--sb-bar-line);border-radius:4px;background:var(--sb-bar-paper);}
+html.sb-bar #AdvancedFormatting :is(#context_story_string,#sysprompt_content,#sysprompt_post_history) {min-height:88px;}
+html.sb-bar #AdvancedFormatting .checkbox_label {gap:7px;padding:3px 0;font-size:12px;}
+html.sb-bar #AdvancedFormatting input[type=checkbox] {accent-color:var(--sb-bar-accent);}
+html.sb-bar #AdvancedFormatting :is(#af_master_import,#af_master_export,[data-preset-manager-update],[data-preset-manager-rename],[data-preset-manager-new],[data-preset-manager-import],[data-preset-manager-export],[data-preset-manager-restore],[data-preset-manager-delete]) {margin:0;padding:3px 0;border:0;border-radius:0;background:none;box-shadow:none;font-size:0;}
+html.sb-bar #AdvancedFormatting :is(#af_master_import,#af_master_export) > :is(i,span) {display:none;}
+html.sb-bar #AdvancedFormatting :is(#af_master_import,#af_master_export,[data-preset-manager-update],[data-preset-manager-rename],[data-preset-manager-new],[data-preset-manager-import],[data-preset-manager-export],[data-preset-manager-restore],[data-preset-manager-delete])::before {font:11px/1.6 var(--sb-f-serif);color:var(--sb-bar-sub);white-space:nowrap;}
+html.sb-bar #AdvancedFormatting #af_master_import::before {content:'［ 全局导入 ］';}
+html.sb-bar #AdvancedFormatting #af_master_export::before {content:'［ 全局导出 ］';}
+html.sb-bar #AdvancedFormatting [data-preset-manager-update]::before {content:'［ 保存 ］';}
+html.sb-bar #AdvancedFormatting [data-preset-manager-rename]::before {content:'［ 改名 ］';}
+html.sb-bar #AdvancedFormatting [data-preset-manager-new]::before {content:'［ 另存 ］';}
+html.sb-bar #AdvancedFormatting [data-preset-manager-import]::before {content:'［ 导入 ］';}
+html.sb-bar #AdvancedFormatting [data-preset-manager-export]::before {content:'［ 导出 ］';}
+html.sb-bar #AdvancedFormatting [data-preset-manager-restore]::before {content:'［ 恢复 ］';}
+html.sb-bar #AdvancedFormatting [data-preset-manager-delete]::before {content:'×';font-size:18px;}
+html.sb-bar #AdvancedFormatting .sb-format-content details:not(.sb-format-group) {margin:10px 0;padding:7px 0;border:0;border-top:1px solid var(--sb-bar-line);}
+html.sb-bar #AdvancedFormatting .sb-format-content details:not(.sb-format-group) > summary {font-size:12px;color:var(--sb-bar-text);cursor:pointer;}
+
+html.sb-bar #Backgrounds .bg_folder_tile:is(.mobile-menu-open,:hover,:focus-within) {overflow:visible;z-index:8;}
+html.sb-bar #Backgrounds .jg-button[data-action=rename-folder]::after {content:'［ 文件夹改名 ］';}
+html.sb-bar #Backgrounds .jg-button[data-action=delete-folder]::after {content:'［ 删除文件夹 ］';}
