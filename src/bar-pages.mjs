@@ -239,12 +239,15 @@ const PAGES = {
         mount(root) {
             const form = $('#form_create', root); if (!form) return;
             form.prepend(bx('sb-back', '<button type="button" data-do="back">‹ 调酒师名单</button>'));
+            // Make the native controls an actual grid item instead of relying on nested display:contents.
+            moveNative($('#avatar_controls', root), $('#avatar-and-name-block', root));
             $('#name_div', root)?.append(bx('sb-meta', ''));
             $('#firstMessageWrapper', root)?.after(bx('sb-fold sb-adv', '<button type="button" class="sb-fold-h" data-do="adv"><b>更 多 设 定</b><i>Behind the Bar</i><span class="sb-plus">+</span></button><div class="sb-fold-s">性格摘要 · 场景 · 对话示例 · 深度提示</div>'));
             form.append(foot('on shift tonight'));
             placeholder('tagInput', '+ 标签');
         },
         sync(root, ctx) {
+            moveNative($('#avatar_controls', root), $('#avatar-and-name-block', root));
             const m = $('.sb-meta', root); if (!m) return;
             const c = ctx?.characters?.[ctx?.characterId];
             const editing = !!$('#rm_button_back', root) && getComputedStyle(root).display !== 'none' && c;
@@ -391,4 +394,5 @@ ${pick('::before')} { content: ${JSON.stringify(zh)} !important; font: 400 12px/
             + (en ? `\n${pick('::after')} { content: ${JSON.stringify(en)} !important; font: italic 400 12px/1.6 var(--sb-f-italic) !important; color: var(--sb-bar-sub); margin-left: .8em; letter-spacing: 0; }` : '');
     }).join('\n');
 }
+
 

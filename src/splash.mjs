@@ -70,6 +70,13 @@ function dismiss() {
     root?.remove(); root = null;
     if (!panel?.isConnected && previousFocus?.isConnected) previousFocus.focus();
 }
+function enterPouring() {
+    if (!root || entered) return;
+    entered = true;
+    root.querySelector('.sb-ticket-frame').hidden = true;
+    root.querySelector('.sb-pouring').hidden = false;
+    if (ready) replayReadyPour(); else if (failed) splashFailed();
+}
 function paint() {
     if (!root) return;
     applyPalette(root, settings);
@@ -154,7 +161,7 @@ export function startSplash(force = false) {
     const mounted = root;
     document.fonts?.ready.then(() => { if (root === mounted) { ticketLayouts.delete(root.querySelector('.sb-ticket')); scaleTicket(); } });
     root.querySelector('.sb-splash-close').onclick = dismiss;
-    root.querySelector('.sb-pass').onclick = dismiss;
+    root.querySelector('.sb-pass').onclick = enterPouring;
     root.querySelector('.sb-splash-edit').onclick = openSplashSettings;
     const toggle = root.querySelector('.sb-ticket-head'), details = root.querySelector('.sb-ticket-body');
     const toggleTicket = () => {
@@ -178,8 +185,7 @@ export function startSplash(force = false) {
         const s = (settings.splash ??= {}); s.remember = root.querySelector('[data-remember]').checked;
         if (s.remember) s.signature = signature.value.trim();
         persist();
-        entered = true; root.querySelector('.sb-ticket-frame').hidden = true; root.querySelector('.sb-pouring').hidden = false;
-        if (ready) replayReadyPour(); else if (failed) splashFailed();
+        enterPouring();
     };
     root.onkeydown = e => { if (e.key === 'Escape') dismiss(); trapFocus(e, root); };
     root.focus({ preventScroll: true });
