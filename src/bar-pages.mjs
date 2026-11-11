@@ -1,3 +1,4 @@
+import { installTypography } from './typography.mjs';
 // 吧台美化第 2 批：十页（配方本、酒窖、酒单、会员卡、调酒师名单、调酒师主页、工具箱、灯光、窗景、格式），样子见 docs/bar-theme.md
 // 做法：酒馆原来的按钮、输入框、列表都留着照常用，只换样子和字（CSS 在 style.css「吧台美化」那段）。
 // 这里只加：每页顶上的标题、几张小卡片（点上面的按钮就是点酒馆原来那个）、「+」收起展开，和让列表不卡的一点东西。
@@ -452,6 +453,9 @@ function syncAll() {
         const root = rootOf(name); if (!root) continue;
         root.classList.add('sb-page', 'sb-page-' + name);
         if (!root.dataset.sbMounted) { root.dataset.sbMounted = '1'; try { PAGES[name].mount(root); } catch (e) { console.warn('[Small Bar] bar page', name, e); } }
+        // Owned page titles share one top-level anchor, even when native toolbars nest differently.
+        const title = $('.sb-bx.sb-head', root);
+        if (title && (title.parentElement !== root || root.firstElementChild !== title)) root.prepend(title);
         // 抽屉关着就不算（省电）；调酒师名单 / 主页看右边那个抽屉开没开
         const drawer = root.closest('.drawer-content') || root;
         if (drawer.classList.contains('closedDrawer') && !drawer.classList.contains('openDrawer')) continue;
@@ -484,6 +488,7 @@ const currentPersona = () => { try { return personaOf() || ''; } catch { return 
 export function setPersonaSource(fn) { if (typeof fn === 'function') personaOf = fn; }
 
 export function mountPages(getContext) {
+    installTypography();
     getCtx = getContext || getCtx;
     if (on) { soon(); return; }
     on = true;

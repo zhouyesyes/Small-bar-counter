@@ -1,3 +1,4 @@
+import { installTypography } from './typography.mjs';
 // HSV keeps hue/saturation available even when brightness is temporarily zero.
 export function normalizeHex(value) {
     const text = String(value || '').trim().replace(/^#/, '');
@@ -22,6 +23,7 @@ export function hsvToHex({ h, s, v }) {
 let activeClose;
 const swatches = ['#f2f2f2','#efa6c8','#df765c','#369b91','#27525e','#b4c4af','#bbaaca','#181818','#ffffff','#26313e'];
 export function openColorPicker({ value, title = '颜色', anchor, onConfirm }) {
+    installTypography();
     activeClose?.();
     let hsv = hexToHsv(value) || hexToHsv('#808080'), closed = false, pointer = null;
     const overlay = document.createElement('div'); overlay.id = 'sb-color-picker';

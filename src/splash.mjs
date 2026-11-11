@@ -1,3 +1,4 @@
+import { installTypography } from './typography.mjs';
 import { artwork, artworkMode, personalProfile } from './artwork.mjs';
 import { applyPalette, defaults } from './palette.mjs';
 import { openColorPicker } from './color-picker.mjs';
@@ -12,20 +13,20 @@ function ticketShape(height) {
 function scaleTicket() {
     const frame = root?.querySelector('.sb-ticket-frame'); if (!frame) return;
     const ticket = frame.querySelector('.sb-ticket'), details = ticket.querySelector('.sb-ticket-body');
+    const scale = frame.getBoundingClientRect().width / 448;
+    root.style.setProperty('--sb-ticket-scale', scale);
     let layout = ticketLayouts.get(ticket);
-    if (!layout) {
+    if (!layout || layout.scale !== scale) {
         const style = getComputedStyle(ticket), hidden = details.hidden;
         const border = (parseFloat(style.borderTopWidth) || 0) + (parseFloat(style.borderBottomWidth) || 0);
         const measure = () => [...ticket.children].reduce((total, section) => total + (section.hidden || section.namespaceURI === 'http://www.w3.org/2000/svg' ? 0 : section.offsetHeight), border);
         details.hidden = false; const open = measure();
         details.hidden = true; const closed = measure(); details.hidden = hidden;
-        layout = {open, closed, openShape:ticketShape(open), closedShape:ticketShape(closed)};
+        layout = {scale, open, closed, openShape:ticketShape(open), closedShape:ticketShape(closed)};
         ticketLayouts.set(ticket, layout);
     }
-    const scale = frame.getBoundingClientRect().width / 448;
     const height = details.hidden ? layout.closed : layout.open;
     const shape = details.hidden ? layout.closedShape : layout.openShape;
-    root.style.setProperty('--sb-ticket-scale', scale);
     ticket.style.height = `${height}px`; frame.style.height = `${height * scale}px`;
     // Geometry is drawn directly: no asynchronously rasterized mask image to swap.
     let outline = ticket.querySelector('.sb-ticket-outline');
@@ -145,6 +146,7 @@ export function configureSplash(s, onSave, context) {
     if (preloader) { observer = new MutationObserver(check); observer.observe(document.documentElement, { subtree: true, attributes: true, childList: true }); check(); }
 }
 export function startSplash(force = false) {
+    installTypography();
     if (root || (!force && (cfg().enabled === false || settings.enabled === false))) return;
     if (force) { ready = true; stage = 1; }
     entered = false; previousFocus = document.activeElement;
@@ -200,6 +202,7 @@ function trapFocus(e, el) {
     else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
 }
 export function openSplashSettings() {
+    installTypography();
     if (panel) return;
     const s = (settings.splash ??= {}); s.colors ??= {};
     panel = document.createElement('div'); panel.id = 'sb-splash-settings'; panel.setAttribute('role','dialog'); panel.setAttribute('aria-modal','true'); panel.setAttribute('aria-label','Small Bar appearance');
