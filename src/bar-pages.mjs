@@ -1,4 +1,4 @@
-// 吧台美化第 2 批：六页（配方本、酒窖、酒单、会员卡、调酒师名单、调酒师主页），样子见 docs/bar-theme.md
+// 吧台美化第 2 批：七页（配方本、酒窖、酒单、会员卡、调酒师名单、调酒师主页、工具箱），样子见 docs/bar-theme.md
 // 做法：酒馆原来的按钮、输入框、列表都留着照常用，只换样子和字（CSS 在 style.css「吧台美化」那段）。
 // 这里只加：每页顶上的标题、几张小卡片（点上面的按钮就是点酒馆原来那个）、「+」收起展开，和让列表不卡的一点东西。
 // 加上去的东西都带 sb-bx 类，关掉时一次拿干净；酒馆自己的元素只改了几个占位字，关掉时还原。
@@ -56,6 +56,14 @@ function placeWorldRules(root) {
 // ---------- 每一页 ----------
 // mount：第一次挂上标题、卡片（已经挂过就跳过）；sync：把卡片里的字换成现在的值；act：点了我们的按钮做什么
 const PAGES = {
+    tools: {
+        root: '#rm_extensions_block',
+        mount(root) {
+            const block = $('.extensions_block', root) || root;
+            block.prepend(head('The Toolbox', 'BAR TOOLS · WITHIN REACH', '工 具 箱 · 顺 手 就 好'));
+        },
+    },
+
     recipe: {
         root: '#left-nav-panel',
         mount(root) {

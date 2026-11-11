@@ -1277,3 +1277,27 @@ html.sb-bar #chat.sb-lounge .sb-lounge-load-more:disabled {opacity:.5;cursor:wai
 
 /* The native top bar's dark drop shadow is visible over the Lounge. */
 html.sb-bar #top-bar {box-shadow:none;}
+
+/* A slightly narrower member card, with the existing layout and artwork. */
+html.sb-bar #PersonaManagement .sb-member {width:calc(100% - 24px);margin-left:auto;margin-right:auto;}
+/* Native extension settings stay in place: theme their shell without rebuilding plugin controls. */
+html.sb-bar #rm_extensions_block.sb-page-tools {padding:12px 16px 20px;background:var(--sb-bar-bg);font:12px/1.65 var(--sb-f-serif);}
+html.sb-bar #rm_extensions_block .extensions_block {gap:12px;min-width:0;}
+html.sb-bar #rm_extensions_block .extensions_block > .sb-head {margin-bottom:4px;}
+html.sb-bar #rm_extensions_block .extensions_block > .alignitemscenter:has(> #extensions_details) {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:100%;min-width:0;margin-bottom:6px;}
+html.sb-bar #rm_extensions_block .extensions_block > .alignitemscenter:has(> #extensions_details) > h3 {display:none;}
+html.sb-bar #rm_extensions_block label[for=extensions_notify_updates] {grid-column:1/-1;grid-row:2;justify-content:center;gap:6px;color:var(--sb-bar-sub);font-size:10px;padding:3px;}
+html.sb-bar #rm_extensions_block :is(#extensions_details,#third_party_extension_button) {display:flex;justify-content:center;align-items:center;gap:6px;min-width:0;width:100%;margin:0;padding:7px 5px;border:1px solid var(--sb-bar-accent);border-radius:7px;background:transparent;color:var(--sb-bar-accent);font:11px/1.6 var(--sb-f-serif);}
+html.sb-bar #rm_extensions_block :is(#extensions_settings,#extensions_settings2) {width:100%;max-width:100%;min-width:0;flex:1 1 100%;}
+html.sb-bar #rm_extensions_block .extension_container {min-width:0;}
+html.sb-bar #rm_extensions_block .extension_container .inline-drawer {margin:0 0 10px;border:1px solid var(--sb-bar-accent);border-radius:10px;background:var(--sb-bar-paper);overflow:visible;}
+html.sb-bar #rm_extensions_block .extension_container .inline-drawer-header {display:flex;align-items:center;gap:8px;min-height:40px;padding:9px 12px;border:0;border-radius:9px;background:var(--sb-bar-card);color:var(--sb-bar-ink);box-shadow:none;filter:none;transition:none;font:12px/1.6 var(--sb-f-serif);}
+html.sb-bar #rm_extensions_block .extension_container .inline-drawer-header :is(b,strong) {font-weight:500;}
+html.sb-bar #rm_extensions_block .extension_container .inline-drawer-icon {flex:0 0 18px;width:18px;height:20px;margin-left:auto;background:none;color:var(--sb-bar-accent);font-size:0;box-shadow:none;}
+html.sb-bar #rm_extensions_block .extension_container .inline-drawer-icon::before {content:'⌄';display:block;font:18px/20px var(--sb-f-serif);}
+html.sb-bar #rm_extensions_block .extension_container .inline-drawer-icon.up::before {transform:rotate(180deg);}
+html.sb-bar #rm_extensions_block .extension_container .inline-drawer-content {margin:0;padding:12px;border:0;border-radius:0 0 9px 9px;background:transparent;box-shadow:none;font-size:12px;min-width:0;}
+html.sb-bar #rm_extensions_block :is(input,select,textarea,button):not(.fa):not(.fa-solid):not(.fa-regular) {font-family:var(--sb-f-serif);}
+html.sb-bar #rm_extensions_block input[type=checkbox] {accent-color:var(--sb-bar-accent);}
+html.sb-bar #rm_extensions_block .inline-drawer-content :is(.text_pole,select,textarea) {font-size:12px;}
+html.sb-bar #rm_extensions_block .inline-drawer-content .menu_button {font-size:11px;border-color:var(--sb-bar-accent);border-radius:5px;}
