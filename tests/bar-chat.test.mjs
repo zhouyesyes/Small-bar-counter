@@ -55,11 +55,3 @@ test('pinned role opens the latest chat even when an older conversation is first
 });
 
 
-test('home display limit counts people, accepts all, and ignores invalid stored values', async () => {
-    const { peopleLimit } = await import('../src/bar-lounge.mjs');
-    assert.equal(peopleLimit(undefined), 10);
-    assert.equal(peopleLimit(1), 1);
-    assert.equal(peopleLimit(0), 0);
-    assert.equal(peopleLimit('5'), 5);
-    for (const invalid of [-1, 1.5, 'bad', 201, '']) assert.equal(peopleLimit(invalid), 10);
-});

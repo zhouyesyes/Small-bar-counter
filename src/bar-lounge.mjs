@@ -35,13 +35,9 @@ const iconPaths = {
     down: '<path d="m8 10 4 4 4-4"/>',
 };
 function icon(name) { const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.setAttribute('viewBox', '0 0 24 24'); svg.setAttribute('aria-hidden', 'true'); svg.innerHTML = iconPaths[name]; return svg; }
-export function peopleLimit(value) {
-    const count = Number(value);
-    return value != null && value !== '' && Number.isInteger(count) && count >= 0 && count <= 200 ? count : 10;
-}
 function prefs(h) {
     const p = (h.settings().lounge ??= {});
-    for (const key of ['aliases', 'blurred', 'hidden', 'open']) p[key] ??= {};
+    for (const key of ['aliases', 'blurred', 'open']) p[key] ??= {};
     p.pins ??= []; return p;
 }
 function labelFor(state, key, name) { return prefs(state.host).aliases[key] || name; }
@@ -61,23 +57,13 @@ function roleMenu(state, group, anchor) {
             p.aliases[key] = String(result).trim(); save(state);
         }],
         [p.blurred[key] ? '显示预览' : '模糊预览', () => { p.blurred[key] = !p.blurred[key]; save(state); }],
-        ['隐藏角色', () => { p.hidden[key] = true; save(state); }],
     ]);
 }
 function settingsMenu(state, anchor) {
-    const h = state.host, p = prefs(h);
+    const h = state.host;
     state.popup(anchor, [
         ...[['light', '日间'], ['dark', '夜间'], ['auto', '跟随酒馆']].map(([mode, label]) => [label + (h.settings().theme === mode ? ' ✓' : ''), () => h.setTheme?.(mode)]),
         ['头像、背景与配色', () => h.openAppearance?.()],
-        ['首页显示 ' + (peopleLimit(p.peopleLimit) ? peopleLimit(p.peopleLimit) + ' 人' : '全部角色') + ' · 设置', async () => {
-            const c = h.context(), text = '首页先显示多少人？同一角色的多段聊天只算一人；输入 0 显示全部（最多 200 人）。';
-            const result = c.callGenericPopup ? await c.callGenericPopup(text, c.POPUP_TYPE?.INPUT ?? 2, String(peopleLimit(p.peopleLimit))) : window.prompt(text, String(peopleLimit(p.peopleLimit)));
-            if (result == null || result === false) return;
-            const count = Number(String(result).trim());
-            if (!String(result).trim() || !Number.isInteger(count) || count < 0 || count > 200) { globalThis.toastr?.warning('请输入 0 到 200 的整数'); return; }
-            p.peopleLimit = count; state.extraPeople = 0; save(state);
-        }],
-        ['显示隐藏的角色', () => { p.hidden = {}; save(state); }],
     ]);
 }
 function rememberRow(state, row) {
@@ -112,7 +98,7 @@ function makeGroup(state, key) {
 function updateText(node, text) { if (node.textContent !== text) node.textContent = text; }
 function updateImage(node, src) { if (src && node.getAttribute('src') !== src) node.src = src; }
 function renderPins(state) {
-    const p = prefs(state.host), keys = p.pins.filter(k => state.groups.has(k) && !p.hidden[k]);
+    const p = prefs(state.host), keys = p.pins.filter(k => state.groups.has(k));
     const signature = JSON.stringify(keys.map(k => { const g = state.groups.get(k); return [k, g.name.textContent, g.image.getAttribute('src')]; }));
     if (state.pins.dataset.signature === signature) return;
     state.pins.dataset.signature = signature; state.pins.replaceChildren();
@@ -142,7 +128,7 @@ function render(state) {
         updateImage(g.image, $('.avatar img', latest)?.getAttribute('src'));
         const matches = entries.filter(row => tokens.every(t => (original + ' ' + g.name.textContent + ' ' + row.dataset.file + ' ' + row.textContent).normalize('NFKC').toLocaleLowerCase().includes(t)));
         const pinned = p.pins.includes(key), open = !!query || !!p.open[key];
-        g.section.hidden = !!p.hidden[key] || matches.length === 0;
+        g.section.hidden = matches.length === 0;
         g.section.style.order = String(pinned ? -1 : 0); g.section.classList.toggle('is-pinned', pinned); g.section.classList.toggle('is-private', !!p.blurred[key]);
         g.toggle.setAttribute('aria-expanded', String(open)); g.content.hidden = !open;
         const limit = p.chatLimit || 3, all = state.expanded.has(key) || !!query;
@@ -164,23 +150,18 @@ function render(state) {
     renderPins(state);
     state.pins.hidden = !!query || !state.pins.children.length;
     const candidates = [...state.groups.values()].filter(g => !g.section.hidden).sort((a, b) => Number(p.pins.includes(b.key)) - Number(p.pins.includes(a.key)));
-    const count = peopleLimit(p.peopleLimit), cap = query || count === 0 ? Infinity : count + state.extraPeople;
-    candidates.forEach((group, i) => { if (i >= cap) group.section.hidden = true; });
-    state.morePeople.hidden = candidates.length <= cap;
     const nativeMore = $('.showMoreChats', panel);
     state.loadMore.hidden = !nativeMore || nativeMore.hidden || nativeMore.classList.contains('hidden') || nativeMore.closest('.recentChatsMore')?.hidden === true;
     state.loadMore.disabled = !!nativeMore?.disabled;
-    updateText(state.morePeople, `再看 ${Math.min(count || 10, Math.max(0, candidates.length - cap))} 人`);
     const visibleGroups = candidates.some(g => !g.section.hidden);
     state.list.hidden = !visibleGroups;
     state.empty.hidden = visibleGroups || (!query && state.pins.children.length > 0);
     updateText(state.empty, query ? '没有找到这段对话。' : '暂时没有聊天记录。');
-    state.restore.hidden = !Object.values(p.hidden).some(Boolean);
 }
 export function updateLounge(panel, host, popup) {
     let state = panels.get(panel);
     if (!state) {
-        state = { panel, host, popup, groups: new Map(), rows: new Map(), expanded: new Set(), extraPeople: 0, ids: panels.size * 10000 };
+        state = { panel, host, popup, groups: new Map(), rows: new Map(), expanded: new Set(), ids: panels.size * 10000 };
         const root = el('div', 'sb-lounge-root'); root.dataset.sbLoungeOwned = '';
         const head = el('header', 'sb-lounge-head'); head.append(el('div', 'sb-chat-script', 'The Lounge'), el('div', 'sb-lounge-en', 'PICK UP WHERE WE LEFT OFF'), el('div', 'sb-lounge-zh', '小 吧 台 · 再 坐 一 会 儿'));
         const gear = el('button', 'sb-lounge-settings'); gear.type = 'button'; gear.setAttribute('aria-label', '首页设置'); gear.append(icon('settings')); gear.onclick = e => { e.stopPropagation(); settingsMenu(state, gear); }; head.append(gear);
@@ -188,8 +169,6 @@ export function updateLounge(panel, host, popup) {
         state.pins = el('div', 'sb-lounge-pins'); state.pins.setAttribute('aria-label', '置顶角色');
         const label = el('div', 'sb-lounge-label', '上次那杯  '); label.append(el('i', '', 'Last orders'));
         state.list = el('div', 'sb-lounge-groups'); state.empty = el('p', 'sb-lounge-empty');
-        state.morePeople = el('button', 'sb-lounge-more-people'); state.morePeople.type = 'button';
-        state.morePeople.onclick = () => { state.extraPeople += peopleLimit(prefs(state.host).peopleLimit) || 10; render(state); };
         state.loadMore = el('button', 'sb-lounge-load-more', '展开更早聊天');
         state.loadMore.type = 'button';
         state.loadMore.onclick = () => {
@@ -206,9 +185,8 @@ export function updateLounge(panel, host, popup) {
             state.temporary = { node: temporary, marker: document.createComment('sb-temporary-chat'), caption };
             temporary.before(state.temporary.marker); temporary.classList.add('sb-lounge-temporary'); temporary.append(caption);
         }
-        state.restore = el('button', 'sb-lounge-restore', '显示隐藏的角色'); state.restore.type = 'button'; state.restore.onclick = () => { prefs(state.host).hidden = {}; save(state); };
-        root.append(head, search, state.pins, label, state.list, state.empty, state.morePeople, state.loadMore, quick); if (temporary) root.append(temporary);
-        root.append(state.restore, el('div', 'sb-lounge-foot', 'a quiet seat, kept for you')); panel.prepend(root); state.root = root;
+        root.append(head, search, state.pins, label, state.list, state.empty, state.loadMore, quick); if (temporary) root.append(temporary);
+        root.append(el('div', 'sb-lounge-foot', 'a quiet seat, kept for you')); panel.prepend(root); state.root = root;
         panels.set(panel, state);
     }
     state.host = host; state.popup = popup; render(state);
