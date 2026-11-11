@@ -1,3 +1,4 @@
+import { installTypography } from './typography.mjs';
 // 选图以后先调一下位置：拖着挪、双指 / 滑条放大，框里的就是最后用的那块
 // 框的比例跟着用的地方走（头像圆的、头图扁的），切好的直接存，别的地方照常用 center/cover 显示，看到的就是框里那块
 // 自己画在最上面一层，跟小吧台的页面分开（不会被重画冲掉）；像手机相册的裁剪，深色底，浅色深色模式都一样
@@ -17,6 +18,7 @@ const CSS = `
 // file：选的图；ratio：宽 / 高；round：头像（圆框）；outW：存下来的宽度
 // 返回切好的图（dataURL）；点「取消」返回 null
 export function cropImage(file, { ratio = 1, round = false, outW = 900 } = {}) {
+    installTypography();
     return new Promise((resolve, reject) => {
         const img = new Image();
         img.onerror = () => reject(new Error('这张图读不出来'));

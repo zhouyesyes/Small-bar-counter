@@ -1,3 +1,4 @@
+import { installTypography } from './typography.mjs';
 import { updateLyrics, invalidateLyricsLayout } from './music-lyrics.mjs';
 import { bindMusicCovers } from './music-cover.mjs';
 import { applyPalette, modeFor } from './palette.mjs';
@@ -44,6 +45,7 @@ const ICON = {
 const svg = k => `<svg viewBox="0 0 24 24">${ICON[k]}</svg>`;
 
 export function createUI(host) {
+    installTypography();
     const v = { drawer: false, tab: 'posts', diaryId: '', phone: false, view: 'home', plus: false, momentsN: 10, xN: 10, busy: false, flip: false, menuFor: '', edit: null };
     let root, catBlink = 0, lastHtml = '', lyricView = null, lyricFrame = 0, lyricTickAt = 0;
     // 音乐：歌单存在扩展设置里（不跟聊天走）；播放器不随界面重画

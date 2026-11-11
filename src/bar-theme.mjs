@@ -1,3 +1,4 @@
+import { installTypography } from './typography.mjs';
 // 吧台美化（docs/bar-theme.md 第 1 批）：总开关、酒馆颜色跟小吧台调色走、顶栏九个按钮换成细线小物件
 // 只在 <html> 上挂一个 sb-bar 的类、加一段 <style>；关掉就把这两样拿掉，酒馆原样回来，不动酒馆自己的东西
 import { palette, mix, modeFor } from './palette.mjs';
@@ -72,6 +73,7 @@ let observer = null, media = null, last = '';
 // 开着就挂上 / 更新，关着就拿掉；调色、换深浅、酒馆改了自己的颜色，都再调一次
 let getCtx = () => null;
 export function applyBarTheme(settings, ctx) {
+    installTypography();
     if (ctx) getCtx = ctx;
     const html = document.documentElement;
     let style = document.getElementById('sb-bar-theme');
