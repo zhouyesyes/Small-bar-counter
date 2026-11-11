@@ -1,3 +1,4 @@
+import { mapleSelected, mapleDefaults, MAPLE_ICONS, mapleCss } from './maple-theme.mjs';
 import { installTypography } from './typography.mjs';
 // 吧台美化（docs/bar-theme.md 第 1 批）：总开关、酒馆颜色跟小吧台调色走、顶栏九个按钮换成细线小物件
 // 只在 <html> 上挂一个 sb-bar 的类、加一段 <style>；关掉就把这两样拿掉，酒馆原样回来，不动酒馆自己的东西
@@ -46,10 +47,11 @@ export function hostColors(p) {
     };
 }
 
-export function barCss(p) {
+export function barCss(p, variant = 'lounge') {
     // !important 是为了压过酒馆写在 <html> style 上的颜色；拿掉 sb-bar 这个类就全不算了
     const vars = Object.entries(hostColors(p)).map(([k, v]) => `${k}: ${v} !important;`).join(' ');
-    const icons = ICONS.map(([sel, , body]) => `html.sb-bar ${sel} .drawer-icon::before { -webkit-mask-image: ${svgUrl(body)}; mask-image: ${svgUrl(body)}; }`).join('\n');
+    const chosen = variant === 'maple' ? ICONS.map(([sel], i) => [sel, ...MAPLE_ICONS[i]]) : ICONS;
+    const icons = chosen.map(([sel, , body]) => `html.sb-bar ${sel} .drawer-icon::before { -webkit-mask-image: ${svgUrl(body)}; mask-image: ${svgUrl(body)}; }`).join('\n');
     const I = 'html.sb-bar #top-settings-holder .drawer-icon';
     const light = p.fg === '#000000';
     // 各页用的几个颜色（和样子图 palette.css 一样，都从那两个颜色算）
@@ -61,15 +63,16 @@ export function barCss(p) {
     };
     const pageVars = Object.entries(page).map(([k, v]) => `${k}: ${v};`).join(' ');
     return `html.sb-bar { ${vars} ${pageVars} }
-${relabelCss()}
+${relabelCss(variant)}
 ${I} { position: relative; color: var(--sb-bar-accent); opacity: 1; }
 ${I}::before { content: '' !important; display: block; width: .74em; height: .74em; margin: .13em auto; background-color: currentColor; -webkit-mask: center / contain no-repeat; mask: center / contain no-repeat; }
 ${I}.openIcon, ${I}:hover { color: var(--sb-bar-accent); opacity: 1; }
 ${I}.openIcon::after { content: ''; position: absolute; left: 50%; bottom: -2px; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: var(--sb-bar-ink); }
-${icons}`;
+${icons}
+${variant === 'maple' ? mapleCss(p) : ''}`;
 }
 
-let observer = null, media = null, last = '';
+let observer = null, media = null, last = '', lastVariant = '';
 // 开着就挂上 / 更新，关着就拿掉；调色、换深浅、酒馆改了自己的颜色，都再调一次
 let getCtx = () => null;
 export function applyBarTheme(settings, ctx) {
@@ -78,21 +81,27 @@ export function applyBarTheme(settings, ctx) {
     const html = document.documentElement;
     let style = document.getElementById('sb-bar-theme');
     if (!settings.barTheme) {
-        html.classList.remove('sb-bar'); style?.remove(); last = ''; unmountPages(); document.getElementById('sb-bar-fonts')?.remove(); delete html.dataset.sbMode;
+        html.classList.remove('sb-bar', 'sb-maple'); lastVariant = ''; style?.remove(); last = ''; unmountPages(); document.getElementById('sb-bar-fonts')?.remove(); delete html.dataset.sbMode;
         observer?.disconnect(); observer = null; media?.removeEventListener('change', media.sb); media = null;
         return;
     }
     // 先挂类再看深浅：modeFor 看到 sb-bar 就去读酒馆原来的底色
+    const variant = mapleSelected(settings) ? 'maple' : 'lounge';
+    if (lastVariant && lastVariant !== variant) unmountPages();
+    lastVariant = variant;
     html.classList.add('sb-bar');
+    html.classList.toggle('sb-maple', variant === 'maple');
     // 花体英文标题、斜体英文小字、中文宋体；加载不了时 CSS 里有退路（iPhone 自带的 Snell Roundhand、宋体）
-    if (!document.getElementById('sb-bar-fonts')) {
+    if (variant === 'maple') document.getElementById('sb-bar-fonts')?.remove();
+    if (variant !== 'maple' && !document.getElementById('sb-bar-fonts')) {
         const link = Object.assign(document.createElement('link'), { id: 'sb-bar-fonts', rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+SC:wght@400;600&display=swap' });
         document.head.appendChild(link);
     }
     mountPages(getCtx);
     const mode = modeFor(settings);
     html.dataset.sbMode = mode;
-    const css = barCss(palette(mode, settings.splash?.colors?.[mode]));
+    const colors = variant === 'maple' ? { ...mapleDefaults[mode], ...settings.splash?.colors?.[mode] } : settings.splash?.colors?.[mode];
+    const css = barCss(palette(mode, colors), variant);
     if (!style) { style = document.createElement('style'); style.id = 'sb-bar-theme'; document.head.appendChild(style); }
     if (css !== last) { style.textContent = css; last = css; }
     if (!observer) {

@@ -1,3 +1,4 @@
+import { mapleHeading, mapleCaption } from './maple-theme.mjs';
 import { installTypography } from './typography.mjs';
 // 吧台美化第 2 批：十页（配方本、酒窖、酒单、会员卡、调酒师名单、调酒师主页、工具箱、灯光、窗景、格式），样子见 docs/bar-theme.md
 // 做法：酒馆原来的按钮、输入框、列表都留着照常用，只换样子和字（CSS 在 style.css「吧台美化」那段）。
@@ -20,15 +21,16 @@ function moveNative(el, target) {
     target.append(el);
 }
 const bx = (cls, html) => { const d = document.createElement('div'); d.className = 'sb-bx ' + cls; d.innerHTML = html; return d; };
-const head = (script, en, zh) => bx('sb-head', `<div class="sb-script">${script}</div><div class="sb-en">${en}</div><div class="sb-zh">${zh}</div>`);
+const head = (script, en, zh) => { [script, en, zh] = mapleHeading(script, en, zh, document.documentElement.classList.contains('sb-maple')); return bx('sb-head', `<div class="sb-script">${script}</div><div class="sb-en">${en}</div><div class="sb-zh">${zh}</div>`); };
 const label = text => bx('sb-label', `— <i>${text}</i> —`);
 const foot = text => bx('sb-foot', `— <i>${text}</i> —`);
 // 「+」那一格：标题 + 一两行现在是多少；点了给整页挂上 sb-open-<名字>，CSS 就把收起来的东西放出来
 const fold = (key, zh, en) => bx('sb-fold', `<button type="button" class="sb-fold-h" data-fold="${key}"><b>${zh}</b><i>${en}</i><span class="sb-plus">+</span></button><div class="sb-fold-s" data-sum="${key}"></div>`);
 // 一排小字按钮：[ 保存 ] [ 改名 ] …… 删除单独放在卡片左上角
-const btns = list => list.map(([key, text, cls = '']) => `<button type="button" class="sb-b ${cls}" data-do="${key}">［ ${text} ］</button>`).join('');
+const themedText = text => document.documentElement.classList.contains('sb-maple') ? mapleCaption(text) : text;
+const btns = list => list.map(([key, text, cls = '']) => `<button type="button" class="sb-b ${cls}" data-do="${key}">［ ${themedText(text)} ］</button>`).join('');
 // 「换一张」这类按钮：里面藏一个透明的下拉框，选项照抄酒馆那个；选了就改酒馆那个、发 change（酒馆的 jQuery 照样收得到）
-const pick = (key, text, cls = 'sb-b sb-solid') => `<label class="${cls} sb-pick">［ ${text} ］<select data-pick="${key}" aria-label="${text}"></select></label>`;
+const pick = (key, text, cls = 'sb-b sb-solid') => `<label class="${cls} sb-pick">［ ${themedText(text)} ］<select data-pick="${key}" aria-label="${themedText(text)}"></select></label>`;
 function mirror(ours, theirs) {
     if (!ours || !theirs) return;
     const sig = theirs.value + '|' + theirs.options.length + '|' + (theirs.options[theirs.options.length - 1]?.value || '');
@@ -250,7 +252,7 @@ const PAGES = {
             $('#wiTopBlock', root)?.after(rules,
                 bx('sb-card sb-tonight', `<i class="sb-cardlabel">Tonight's Menu</i><div class="sb-big" data-v="book"></div><small data-v="count"></small>
 <div class="sb-row">${pick('book', '换一份')}${btns([['newbook', '新建一份', 'sb-box']])}</div>`));
-            holder.append(bx('sb-legend', '<span><b class="c"></b>每桌附赠：每次都放</span><span><b class="n"></b>点到才上：提到点单词才放</span><span><b class="o"></b>售罄</span>'), foot('点一道就能改'));
+            holder.append(bx('sb-legend', document.documentElement.classList.contains('sb-maple') ? '<span><b class="c"></b>常驻：每次都放</span><span><b class="n"></b>触发：命中关键词时放入</span><span><b class="o"></b>停用</span>' : '<span><b class="c"></b>每桌附赠：每次都放</span><span><b class="n"></b>点到才上：提到点单词才放</span><span><b class="o"></b>售罄</span>'), foot('点一道就能改'));
             placeWorldRules(root);
         },
         sync(root, ctx) {
@@ -265,7 +267,7 @@ const PAGES = {
             const name = optText('world_editor_select');
             $('[data-v="book"]', root).textContent = val('world_editor_select') === '' ? '还没选' : name;
             const all = $$('#world_popup_entries_list .world_entry', root);
-            $('[data-v="count"]', root).textContent = all.length ? `这一页 ${all.length} 道 · 开着 ${all.filter(e => !$('.disabledWIEntry', e) && !e.classList.contains('disabledWIEntry')).length} 道` : '';
+            $('[data-v="count"]', root).textContent = all.length ? `这一页 ${all.length} ${document.documentElement.classList.contains('sb-maple') ? '条' : '道'} · 开着 ${all.filter(e => !$('.disabledWIEntry', e) && !e.classList.contains('disabledWIEntry')).length} ${document.documentElement.classList.contains('sb-maple') ? '条' : '道'}` : '';
             mirror($('[data-pick="book"]', root), document.getElementById('world_editor_select'));
             // 每一道：状态点、底下一行小字（深度 / 顺序 / 概率 / 点单词）
             for (const e of all) {
@@ -277,7 +279,7 @@ const PAGES = {
                 const v = n => $(`[name="${n}"]`, e)?.value ?? '';
                 const keys = [...($('select.keyprimaryselect', e)?.selectedOptions || [])].map(o => o.textContent).filter(Boolean).slice(0, 4).join('、') || v('key').split(',').slice(0, 4).join('、');
                 const bits = [v('depth') !== '' && `深度 ${v('depth')}`, v('order') !== '' && `顺序 ${v('order')}`, v('probability') !== '' && v('probability') !== '100' && `${v('probability')}%`, state === 'normal' && keys && `点单词 ${keys}`].filter(Boolean);
-                const text = bits.join(' · ');
+                const text = bits.join(' · ').replace(document.documentElement.classList.contains('sb-maple') ? /点单词/g : /$^/g, '触发词');
                 if (meta.textContent !== text) meta.textContent = text;
             }
         },
@@ -453,6 +455,11 @@ function syncAll() {
         // Owned page titles share one top-level anchor, even when native toolbars nest differently.
         const title = $('.sb-bx.sb-head', root);
         if (title && (title.parentElement !== root || root.firstElementChild !== title)) root.prepend(title);
+        if (document.documentElement.classList.contains('sb-maple')) {
+            for (const el of root.querySelectorAll('.sb-fold-h b,.sb-title b,.sb-sec b,.sb-cardlabel,.sb-lighting-label b')) {
+                const caption = mapleCaption(el.textContent); if (caption !== el.textContent) el.textContent = caption;
+            }
+        }
         // 抽屉关着就不算（省电）；调酒师名单 / 主页看右边那个抽屉开没开
         const drawer = root.closest('.drawer-content') || root;
         if (drawer.classList.contains('closedDrawer') && !drawer.classList.contains('openDrawer')) continue;
@@ -554,8 +561,12 @@ export const RELABEL = [
     ['#creators_notes_div > span.flex1', '作 者 的 话', 'Creator\'s Note'],
     ['#rm_ch_create_block .open_alternate_greetings', '［ ＋ 再写一个 ］'],
 ];
-export function relabelCss() {
+export function relabelCss(variant = 'lounge') {
     return RELABEL.map(([sel, zh, en]) => {
+        if (variant === 'maple') {
+            const labels = { '进货单':'连接配置', '［ 存成新单 ］':'［ 保存配置 ］', '＋ 新加一道':'＋ 新增条目', '＋ 办新卡':'＋ 新建人设', '＋ 招一位':'＋ 新建角色', '☆ 常点':'☆ 收藏', '★ 常点':'★ 收藏', '［ 他的酒单 ］':'［ 世界书 ］', '［ 会员卡 ］':'［ 人设 ］', '［ 招进来 ］':'［ 创建角色 ］' };
+            zh = labels[zh] || zh; en = '';
+        }
         const s = sel.split(',').map(x => 'html.sb-bar ' + x.trim());
         const pick = suf => s.map(x => x + suf).join(', ');
         const bracket = (zh.startsWith('［') && zh.endsWith('］')) || (zh.startsWith('[') && zh.endsWith(']'));

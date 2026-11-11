@@ -62,7 +62,9 @@ function sync() {
     surface.classList.toggle('sb-reading', chat); surface.classList.toggle('sb-lounge', !chat);
     if (chat) {
         unmountLounge();
-        let head = $('.sb-reading-head', surface); if (!head) { head = element('header', 'sb-reading-head'); head.append(element('div', 'sb-chat-script', 'After Hours')); surface.prepend(head); }
+        let head = $('.sb-reading-head', surface); if (!head) { head = element('header', 'sb-reading-head'); head.append(element('div', 'sb-chat-script')); surface.prepend(head); }
+        const title = document.documentElement.classList.contains('sb-maple') ? '叶间续章' : 'After Hours';
+        if (head.firstChild.textContent !== title) head.firstChild.textContent = title;
         // The heading is part of the scroll surface, never fixed or sticky.
         for (const node of surface.querySelectorAll(':scope > .mes')) decorateMessage(node, h, c);
     } else {
