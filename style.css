@@ -809,10 +809,6 @@ html.sb-bar #WIMultiSelector .range-block-title { display: none; }
 html.sb-bar #wiTopBlock { flex-direction: column; }
 html.sb-bar #wiTopBlock .select2-container .select2-selection { background: transparent; border: 0; }
 html.sb-bar #wiTopBlock .select2-selection__choice { background: transparent !important; border: 1px solid var(--sb-bar-ink) !important; border-radius: 0 !important; color: var(--sb-bar-ink) !important; padding: 3px 8px !important; }
-html.sb-bar #WorldInfo:not(.sb-open-rules) #wiTopBlock > .range-block:has(#wiActivationSettings) { display: none; }
-html.sb-bar #WorldInfo.sb-open-rules #wiTopBlock > .range-block:has(#wiActivationSettings) .inline-drawer-header,
-html.sb-bar #WorldInfo.sb-open-rules #wiTopBlock > .range-block:has(#wiActivationSettings) .range-block-title { display: none; }
-html.sb-bar #WorldInfo.sb-open-rules #wiTopBlock > .range-block:has(#wiActivationSettings) .inline-drawer-content { display: block !important; }
 /* 酒馆那一排「选哪本」：选和新建挪到 Tonight's Menu 卡上了，剩下导入 / 导出 / 改名 / 复制 / 删 */
 html.sb-bar #world_popup > hr { display: none; }
 html.sb-bar #world_popup > div:has(> #world_editor_select) { font-size: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: 10px 0 6px; }
@@ -1240,3 +1236,31 @@ html.sb-bar #rm_characters_block.sb-page,html.sb-bar #rm_ch_create_block.sb-page
 html.sb-bar #description_textarea,html.sb-bar #firstmessage_textarea {max-height:none;overflow-y:auto;field-sizing:content;}
 html.sb-bar #tags_div #tagList {display:flex;flex-direction:row;flex-wrap:wrap;gap:5px;}
 html.sb-bar #tags_div #tagList > .tag {display:inline-flex;flex:0 0 auto;max-width:100%;align-items:center;}
+
+
+/* World-book rules expand in place below the trigger, using the native settings controls. */
+html.sb-bar #WorldInfo .sb-world-rules {width:100%;min-width:0;}
+html.sb-bar #WorldInfo .sb-world-rules [data-fold="rules"] {min-height:32px;}
+html.sb-bar #WorldInfo .sb-world-rules-panel {margin:12px 0 4px;padding:12px;border:1px solid var(--sb-bar-accent);border-radius:10px;background:var(--sb-bar-paper);color:var(--sb-bar-text);}
+html.sb-bar #WorldInfo .sb-world-rules-panel[hidden] {display:none!important;}
+html.sb-bar #WorldInfo .sb-world-rules-panel > .range-block {display:block;width:100%;min-width:0;margin:0;padding:0;}
+html.sb-bar #WorldInfo .sb-world-rules-panel > .range-block > .range-block-title,
+html.sb-bar #WorldInfo .sb-world-rules-panel .inline-drawer-header {display:none!important;}
+html.sb-bar #WorldInfo .sb-world-rules-panel .inline-drawer-content {display:block!important;margin:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;}
+html.sb-bar #WorldInfo .sb-world-rules-panel #wiActivationSettings {display:flex;flex-direction:column;gap:16px;width:100%;min-width:0;}
+html.sb-bar #WorldInfo .sb-world-rules-panel #wiSliders {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;width:100%;min-width:0;flex:none;}
+html.sb-bar #WorldInfo .sb-world-rules-panel #wiSliders::before {content:'扫描与预算';grid-column:1/-1;font:500 12px/1.6 var(--sb-f-serif);letter-spacing:.12em;color:var(--sb-bar-accent);}
+html.sb-bar #WorldInfo .sb-world-rules-panel #wiSliders > div {display:grid;grid-template-columns:minmax(0,1fr) 54px;align-items:center;gap:6px;min-width:0;width:auto;flex:none;padding:9px;border:1px solid var(--sb-bar-line);border-radius:7px;background:var(--sb-bar-bg);}
+html.sb-bar #WorldInfo .sb-world-rules-panel #wiSliders > div > small {grid-column:1/-1;width:100%;text-align:left;color:var(--sb-bar-sub);font:11px/1.5 var(--sb-f-serif);}
+html.sb-bar #WorldInfo .sb-world-rules-panel #wiSliders > div > small .fa-solid {font-size:10px;}
+html.sb-bar #WorldInfo .sb-world-rules-panel input[type=range] {width:100%;min-width:0;margin:0;accent-color:var(--sb-bar-accent);}
+html.sb-bar #WorldInfo .sb-world-rules-panel input[type=number] {width:54px;min-width:0;max-width:100%;padding:4px 2px;margin:0;border:0;border-bottom:1px solid var(--sb-bar-line);border-radius:0;background:transparent;color:var(--sb-bar-ink);font:12px/1.4 var(--sb-f-serif);text-align:center;}
+html.sb-bar #WorldInfo .sb-world-rules-panel #wiSliders > div:has(select) {grid-column:1/-1;}
+html.sb-bar #WorldInfo .sb-world-rules-panel select {grid-column:1/-1;min-width:0;width:100%;margin:0;padding:5px 7px;border:1px solid var(--sb-bar-line);border-radius:5px;background:var(--sb-bar-bg);color:var(--sb-bar-text);font:12px/1.5 var(--sb-f-serif);}
+html.sb-bar #WorldInfo .sb-world-rules-panel #wiCheckboxes {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;width:100%;min-width:0;flex:none;}
+html.sb-bar #WorldInfo .sb-world-rules-panel #wiCheckboxes::before {content:'匹配方式';grid-column:1/-1;font:500 12px/1.6 var(--sb-f-serif);letter-spacing:.12em;color:var(--sb-bar-accent);}
+html.sb-bar #WorldInfo .sb-world-rules-panel #wiCheckboxes > label {display:flex;flex-direction:row;align-items:center;gap:7px;min-width:0;padding:8px;border:1px solid var(--sb-bar-line);border-radius:7px;background:var(--sb-bar-bg);cursor:pointer;}
+html.sb-bar #WorldInfo .sb-world-rules-panel #wiCheckboxes > label:has(input:checked) {border-color:var(--sb-bar-accent);background:var(--sb-bar-card);}
+html.sb-bar #WorldInfo .sb-world-rules-panel #wiCheckboxes small {white-space:normal;font:11px/1.5 var(--sb-f-serif);}
+html.sb-bar #WorldInfo .sb-world-rules-panel input[type=checkbox] {width:14px;height:14px;min-width:14px;margin:0;accent-color:var(--sb-bar-accent);}
+html.sb-bar #WorldInfo .sb-world-rules-panel input:disabled {opacity:.45;}

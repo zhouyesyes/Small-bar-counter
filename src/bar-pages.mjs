@@ -41,6 +41,18 @@ function pass(ours, theirs) {
     globalThis.jQuery?.(theirs).trigger('change');
 }
 
+// Keep the original controls and handlers, but place the rules below their own trigger.
+function placeWorldRules(root) {
+    const panel = $('.sb-world-rules-panel', root);
+    const controls = $('#wiActivationSettings', root)?.closest('.range-block');
+    if (!panel) return;
+    if (controls) moveNative(controls, panel);
+    const open = root.classList.contains('sb-open-rules');
+    panel.hidden = !open; panel.inert = !open;
+    const trigger = $('[data-fold="rules"]', root);
+    trigger?.setAttribute('aria-expanded', String(open));
+}
+
 // ---------- 每一页 ----------
 // mount：第一次挂上标题、卡片（已经挂过就跳过）；sync：把卡片里的字换成现在的值；act：点了我们的按钮做什么
 const PAGES = {
@@ -133,12 +145,20 @@ const PAGES = {
         mount(root) {
             const holder = $('#wi-holder', root); if (!holder) return;
             holder.prepend(head('The Menu', 'HOUSE MENU · BY ORDER', '酒 单 · 点 到 哪 样 上 哪 样'), bx('sb-title', '<b>常 备</b><i>Always Served</i>'));
-            $('#wiTopBlock', root)?.after(fold('rules', '取 用 规 则', 'House Rules'),
+            const rules = fold('rules', '取 用 规 则', 'House Rules');
+            rules.classList.add('sb-world-rules');
+            const panel = bx('sb-world-rules-panel', ''); panel.id = 'sb-world-rules-panel'; panel.hidden = true; panel.inert = true;
+            rules.append(panel);
+            const trigger = $('[data-fold="rules"]', rules);
+            trigger.setAttribute('aria-expanded', 'false'); trigger.setAttribute('aria-controls', panel.id);
+            $('#wiTopBlock', root)?.after(rules,
                 bx('sb-card sb-tonight', `<i class="sb-cardlabel">Tonight's Menu</i><div class="sb-big" data-v="book"></div><small data-v="count"></small>
 <div class="sb-row">${pick('book', '换一份')}${btns([['newbook', '新建一份', 'sb-box']])}</div>`));
             holder.append(bx('sb-legend', '<span><b class="c"></b>每桌附赠：每次都放</span><span><b class="n"></b>点到才上：提到点单词才放</span><span><b class="o"></b>售罄</span>'), foot('点一道就能改'));
+            placeWorldRules(root);
         },
         sync(root) {
+            placeWorldRules(root);
             const card = $('.sb-tonight',root), popup = $('#world_popup',root), select = $('#world_editor_select',root);
             if (card && popup && card.parentElement !== popup) popup.prepend(card);
             if (card && select && !card.contains(select)) { const row = select.parentElement; row.classList.add('sb-native-actions'); moveNative(row,card); }
@@ -272,6 +292,11 @@ function openFold(root, key, force) {
     const on = force ?? !root.classList.contains('sb-open-' + key);
     root.classList.toggle('sb-open-' + key, on);
     $$(`[data-fold="${key}"] .sb-plus`, root).forEach(p => { p.textContent = on ? '−' : '+'; });
+    if (key === 'rules') {
+        const panel = $('.sb-world-rules-panel', root);
+        if (!on && panel?.contains(document.activeElement)) $('[data-fold="rules"]', root)?.focus();
+        placeWorldRules(root);
+    }
 }
 // 改了酒馆输入框的占位字：记下原来的，关掉时还原
 function placeholder(id, text) {
@@ -394,5 +419,6 @@ ${pick('::before')} { content: ${JSON.stringify(zh)} !important; font: 400 12px/
             + (en ? `\n${pick('::after')} { content: ${JSON.stringify(en)} !important; font: italic 400 12px/1.6 var(--sb-f-italic) !important; color: var(--sb-bar-sub); margin-left: .8em; letter-spacing: 0; }` : '');
     }).join('\n');
 }
+
 
 
