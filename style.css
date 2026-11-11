@@ -1379,3 +1379,52 @@ html.sb-bar #rm_extensions_block details:has(.inline-drawer) > summary::before {
 html.sb-bar #rm_extensions_block details:has(.inline-drawer) > summary::after {content:'+';margin-left:auto;color:var(--sb-bar-sub);font:18px/1 var(--sb-f-serif);}
 html.sb-bar #rm_extensions_block details[open]:has(.inline-drawer) > summary::after {content:'−';}
 html.sb-bar #rm_extensions_block details:has(.inline-drawer) > summary > :is(.inline-drawer-icon,.fa-chevron-right,.fa-chevron-down,.fa-caret-right,[aria-hidden=true]) {display:none;}
+
+/* Window view: original background controls and native thumbnail sizing remain intact. */
+html.sb-bar #Backgrounds.sb-page-window {padding:12px 16px 16px;gap:0;background:var(--sb-bar-bg);font:12px/1.6 var(--sb-f-serif);min-height:0;}
+html.sb-bar #Backgrounds > .sb-head {flex-shrink:0;}
+html.sb-bar #Backgrounds #bg-header-fixed {padding:0 0 12px;margin:0;border:0;background:none;}
+html.sb-bar #Backgrounds .bg-header-row-1 {flex-wrap:wrap;gap:7px 10px;align-items:center;}
+html.sb-bar #Backgrounds .bg-header-row-1 > :is(h3,.expander) {display:none;}
+html.sb-bar #Backgrounds #background_fitting {flex:1;min-width:70px;max-width:110px;width:auto;padding:4px 0;font:12px/1.6 var(--sb-f-serif);}
+html.sb-bar #Backgrounds :is(#auto_background,#bg_add_folder_button,#add_background_button_top,#bg_selection_mode_button,#bg_thumb_zoom_out,#bg_thumb_zoom_in) {display:inline-flex;align-items:center;justify-content:center;gap:3px;margin:0;padding:4px 0;min-height:26px;border:0;border-radius:0;background:none;box-shadow:none;filter:none;font-size:0;color:var(--sb-bar-sub);}
+html.sb-bar #Backgrounds :is(#auto_background,#bg_add_folder_button,#add_background_button_top,#bg_selection_mode_button,#bg_thumb_zoom_out,#bg_thumb_zoom_in) > :is(i,span:not(#bg_group_select_count)) {display:none;}
+html.sb-bar #Backgrounds :is(#auto_background,#bg_add_folder_button,#add_background_button_top,#bg_selection_mode_button,#bg_thumb_zoom_out,#bg_thumb_zoom_in)::before {font:11px/1.6 var(--sb-f-serif);white-space:nowrap;}
+html.sb-bar #Backgrounds #auto_background::before {content:'［ 自动 ］';}
+html.sb-bar #Backgrounds #bg_add_folder_button::before {content:'［ 新建 ］';}
+html.sb-bar #Backgrounds #add_background_button_top::before {content:'［ 上传 ］';}
+html.sb-bar #Backgrounds #bg_selection_mode_button::before {content:'［ 多选 ］';}
+html.sb-bar #Backgrounds #bg_thumb_zoom_out::before {content:'−';font-size:17px;padding:0 4px;}
+html.sb-bar #Backgrounds #bg_thumb_zoom_in::before {content:'+';font-size:17px;padding:0 4px;}
+html.sb-bar #Backgrounds #bg_group_select_count {font:10px/1.6 var(--sb-f-serif);color:var(--sb-bar-accent);}
+html.sb-bar #Backgrounds #bg_selection_mode_button.active {color:var(--sb-bar-accent);border-bottom:1px solid var(--sb-bar-accent);}
+html.sb-bar #Backgrounds .bg-header-row-2 {margin-top:9px;gap:12px;}
+html.sb-bar #Backgrounds #bg-filter {flex:1;width:100%;min-width:0;padding:6px 0;font:11px/1.6 var(--sb-f-serif);}
+html.sb-bar #Backgrounds #bg-sort {padding:4px 0;font:11px/1.6 var(--sb-f-serif);max-width:64px;}
+html.sb-bar #Backgrounds #bg_tabs {padding:0;gap:0;min-height:0;background:none;border:0;box-shadow:none;font:12px/1.6 var(--sb-f-serif);}
+html.sb-bar #Backgrounds #bg_tabs .bg_tabs_list {display:flex;align-items:center;gap:12px;flex-shrink:0;margin:0;padding:7px 0;border:0;border-top:1px solid var(--sb-bar-accent);border-bottom:1px solid var(--sb-bar-line);border-radius:0;background:none;}
+html.sb-bar #Backgrounds #bg_tabs .bg_tab_button {min-width:0;flex:none;margin:0;padding:0 4px;border:0;border-radius:0;background:none;opacity:1;font-size:12px;font-weight:400;}
+html.sb-bar #Backgrounds #bg_tabs .bg_tab_button a {display:block;padding:4px 0;color:var(--sb-bar-sub);font:12px/1.6 var(--sb-f-serif);}
+html.sb-bar #Backgrounds #bg_tabs .bg_tab_button.ui-tabs-active {background:none;border-bottom:1px solid var(--sb-bar-accent);}
+html.sb-bar #Backgrounds #bg_tabs .bg_tab_button.ui-tabs-active a {color:var(--sb-bar-accent);}
+html.sb-bar #Backgrounds #bg_tabs .heading-controls {position:static;transform:none;margin-left:auto;gap:9px;}
+html.sb-bar #Backgrounds #bg_tabs .bg_tab_panel {padding:12px 1px 4px;min-height:0;overscroll-behavior:contain;}
+html.sb-bar #Backgrounds :is(#bg_menu_content,#bg_custom_content,#bg_folder_grid) {gap:10px;}
+html.sb-bar #Backgrounds .bg_example {box-shadow:none;border:1px solid var(--sb-bar-line);outline:0;outline-offset:0;border-radius:5px;background:var(--sb-bar-paper);}
+html.sb-bar #Backgrounds .bg_example .thumbnail-clipper {inset:0 0 22px;overflow:visible;border-radius:4px 4px 0 0;}
+html.sb-bar #Backgrounds .bg_example .BGSampleTitle {bottom:0;height:22px;padding:3px 5px;border-radius:0;background:var(--sb-bar-paper);color:var(--sb-bar-text);font:10px/1.6 var(--sb-f-serif);opacity:1;text-shadow:none;}
+html.sb-bar #Backgrounds .bg_example .thumbnail-clipper > .BGSampleTitle {bottom:-22px;}
+html.sb-bar #Backgrounds .bg_example:is(.selected-background,.locked-background,.folder-group-selected) {border-color:var(--sb-bar-accent);outline:1px solid var(--sb-bar-accent);outline-offset:0;}
+html.sb-bar #Backgrounds .bg_example.selected-background::before {content:'✓';left:5px;top:5px;width:18px;height:18px;padding:0;border-radius:50%;background:var(--sb-bar-accent);color:var(--sb-bar-btntext);font:12px/18px var(--sb-f-serif);text-align:center;filter:none;}
+html.sb-bar #Backgrounds .bg_example.locked-background::after {color:var(--sb-bar-accent);background:var(--sb-bar-paper);border-radius:3px;padding:2px;filter:none;}
+html.sb-bar #Backgrounds :is(.jg-menu,.bg_folder_tile_menu,.mobile-only-menu-toggle) {border:1px solid var(--sb-bar-line);background:var(--sb-bar-paper);color:var(--sb-bar-accent);border-radius:5px;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;}
+html.sb-bar #Backgrounds :is(.jg-menu,.bg_folder_tile_menu) .jg-button {color:var(--sb-bar-accent);}
+html.sb-bar #Backgrounds .bg_folder_tile {border:1px solid var(--sb-bar-line);outline:0;box-shadow:none;border-radius:5px;background:var(--sb-bar-paper);}
+html.sb-bar #Backgrounds .bg_folder_tile_cover {bottom:26px;}
+html.sb-bar #Backgrounds .bg_folder_tile_overlay {height:26px;padding:4px 6px;border-radius:0;background:var(--sb-bar-paper);color:var(--sb-bar-text);font:11px/1.6 var(--sb-f-serif);}
+html.sb-bar #Backgrounds .bg_folder_breadcrumb {padding:6px 0;margin-bottom:8px;font-size:11px;}
+html.sb-bar #Backgrounds .bg_folder_breadcrumb .menu_button {font-size:11px;border:0;background:none;padding:3px 0;color:var(--sb-bar-sub);}
+html.sb-bar #Backgrounds #bg-scroll-top {width:28px;height:28px;right:18px;bottom:14px;border:1px solid var(--sb-bar-line);background:var(--sb-bar-paper);color:var(--sb-bar-accent);font-size:12px;box-shadow:none;}
+
+html.sb-bar #Backgrounds.bg-selection-mode #bg_menu_content .bg_example.folder-group-selected {border-color:var(--sb-bar-accent);outline:1px solid var(--sb-bar-accent);}
+html.sb-bar #Backgrounds.bg-selection-mode #bg_menu_content .bg_example.folder-group-selected::before {content:'✓';right:5px;left:auto;top:5px;width:18px;height:18px;border-radius:50%;background:var(--sb-bar-accent);color:var(--sb-bar-btntext);font:12px/18px var(--sb-f-serif);text-align:center;filter:none;}
