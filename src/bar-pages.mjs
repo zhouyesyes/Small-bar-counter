@@ -1,4 +1,4 @@
-// 吧台美化第 2 批：六页（配方本、酒窖、酒单、会员卡、调酒师名单、调酒师主页），样子见 docs/bar-theme.md
+// 吧台美化第 2 批：八页（配方本、酒窖、酒单、会员卡、调酒师名单、调酒师主页、工具箱、灯光），样子见 docs/bar-theme.md
 // 做法：酒馆原来的按钮、输入框、列表都留着照常用，只换样子和字（CSS 在 style.css「吧台美化」那段）。
 // 这里只加：每页顶上的标题、几张小卡片（点上面的按钮就是点酒馆原来那个）、「+」收起展开，和让列表不卡的一点东西。
 // 加上去的东西都带 sb-bx 类，关掉时一次拿干净；酒馆自己的元素只改了几个占位字，关掉时还原。
@@ -12,6 +12,7 @@ const click = id => document.getElementById(id)?.click();
 const glass = new URL('../assets/bar/glass.png', import.meta.url).href;
 // Preserve original placement so disabling the theme restores native editors/actions.
 const moved = new Map();
+const lightingSearch = new Map();
 function moveNative(el, target) {
     if (!el || !target || el.parentElement === target) return;
     if (!moved.has(el)) { const marker = document.createComment('sb-original-place'); el.before(marker); moved.set(el,marker); }
@@ -41,9 +42,76 @@ function pass(ours, theirs) {
     globalThis.jQuery?.(theirs).trigger('change');
 }
 
+// Keep the original controls and handlers, but place the rules below their own trigger.
+function placeWorldRules(root) {
+    const panel = $('.sb-world-rules-panel', root);
+    const controls = $('#wiActivationSettings', root)?.closest('.range-block');
+    if (!panel) return;
+    if (controls) moveNative(controls, panel);
+    const open = root.classList.contains('sb-open-rules');
+    panel.hidden = !open; panel.inert = !open;
+    const trigger = $('[data-fold="rules"]', root);
+    trigger?.setAttribute('aria-expanded', String(open));
+}
+
 // ---------- 每一页 ----------
 // mount：第一次挂上标题、卡片（已经挂过就跳过）；sync：把卡片里的字换成现在的值；act：点了我们的按钮做什么
 const PAGES = {
+    lighting: {
+        root: '#user-settings-block',
+        mount(root) {
+            root.prepend(head('The Lighting', 'SET THE MOOD · MAKE IT YOURS', '灯 光 · 调 成 喜 欢 的 样 子'));
+            const groups = [
+                ['themeElements', '灯 光 搭 配', 'Light & Shade'],
+                ['CharacterHandlingToggles', '角 色 习 惯', 'Character Care'],
+                ['MiscellaneousToggles', '店 内 杂 项', 'House Details'],
+                ['ChatMessageHandlingToggles', '对 话 习 惯', 'Conversation'],
+                ['AutoCompleteToggle', '输 入 提 示', 'Auto Complete'],
+                ['STscriptToggles', '吧 台 脚 本', 'Scripts'],
+            ];
+            for (const [name, zh, en] of groups) {
+                const block = root.querySelector('[name="' + name + '"]');
+                if (!block) continue;
+                const label = bx('sb-lighting-label', '<b>' + zh + '</b><i>' + en + '</i><span class="sb-plus">+</span>');
+                const native = block.closest('details');
+                if (block.classList.contains('inline-drawer')) {
+                    const header = block.querySelector('.inline-drawer-header');
+                    if (header) header.append(label);
+                } else if (native && root.contains(native)) {
+                    const summary = [...native.children].find(n => n.tagName === 'SUMMARY');
+                    if (summary && !summary.querySelector('.sb-lighting-label')) summary.append(label);
+                } else {
+                    const group = document.createElement('details'); group.className = 'sb-bx sb-lighting-group';
+                    const summary = document.createElement('summary'); summary.append(label);
+                    group.append(summary); block.before(group); moveNative(block, group);
+                }
+            }
+        },
+        sync(root) {
+            const query = ($('#settingsSearch', root)?.value || '').trim().normalize('NFKC').toLocaleLowerCase();
+            const groups = root.querySelectorAll('.sb-lighting-group, details:has(> summary > .sb-lighting-label)');
+            if (query) {
+                const words = query.split(/\s+/);
+                for (const group of groups) {
+                    if (!lightingSearch.has(group)) lightingSearch.set(group, group.open);
+                    const text = group.textContent.normalize('NFKC').toLocaleLowerCase();
+                    if (words.every(word => text.includes(word))) group.open = true;
+                }
+            } else {
+                for (const [group, open] of lightingSearch) group.open = open;
+                lightingSearch.clear();
+            }
+        },
+    },
+
+    tools: {
+        root: '#rm_extensions_block',
+        mount(root) {
+            const block = $('.extensions_block', root) || root;
+            block.prepend(head('The Toolbox', 'BAR TOOLS · WITHIN REACH', '工 具 箱 · 顺 手 就 好'));
+        },
+    },
+
     recipe: {
         root: '#left-nav-panel',
         mount(root) {
@@ -133,12 +201,20 @@ const PAGES = {
         mount(root) {
             const holder = $('#wi-holder', root); if (!holder) return;
             holder.prepend(head('The Menu', 'HOUSE MENU · BY ORDER', '酒 单 · 点 到 哪 样 上 哪 样'), bx('sb-title', '<b>常 备</b><i>Always Served</i>'));
-            $('#wiTopBlock', root)?.after(fold('rules', '取 用 规 则', 'House Rules'),
+            const rules = fold('rules', '取 用 规 则', 'House Rules');
+            rules.classList.add('sb-world-rules');
+            const panel = bx('sb-world-rules-panel', ''); panel.id = 'sb-world-rules-panel'; panel.hidden = true; panel.inert = true;
+            rules.append(panel);
+            const trigger = $('[data-fold="rules"]', rules);
+            trigger.setAttribute('aria-expanded', 'false'); trigger.setAttribute('aria-controls', panel.id);
+            $('#wiTopBlock', root)?.after(rules,
                 bx('sb-card sb-tonight', `<i class="sb-cardlabel">Tonight's Menu</i><div class="sb-big" data-v="book"></div><small data-v="count"></small>
 <div class="sb-row">${pick('book', '换一份')}${btns([['newbook', '新建一份', 'sb-box']])}</div>`));
             holder.append(bx('sb-legend', '<span><b class="c"></b>每桌附赠：每次都放</span><span><b class="n"></b>点到才上：提到点单词才放</span><span><b class="o"></b>售罄</span>'), foot('点一道就能改'));
+            placeWorldRules(root);
         },
         sync(root) {
+            placeWorldRules(root);
             const card = $('.sb-tonight',root), popup = $('#world_popup',root), select = $('#world_editor_select',root);
             if (card && popup && card.parentElement !== popup) popup.prepend(card);
             if (card && select && !card.contains(select)) { const row = select.parentElement; row.classList.add('sb-native-actions'); moveNative(row,card); }
@@ -272,6 +348,11 @@ function openFold(root, key, force) {
     const on = force ?? !root.classList.contains('sb-open-' + key);
     root.classList.toggle('sb-open-' + key, on);
     $$(`[data-fold="${key}"] .sb-plus`, root).forEach(p => { p.textContent = on ? '−' : '+'; });
+    if (key === 'rules') {
+        const panel = $('.sb-world-rules-panel', root);
+        if (!on && panel?.contains(document.activeElement)) $('[data-fold="rules"]', root)?.focus();
+        placeWorldRules(root);
+    }
 }
 // 改了酒馆输入框的占位字：记下原来的，关掉时还原
 function placeholder(id, text) {
@@ -343,6 +424,8 @@ export function unmountPages() {
     document.removeEventListener('change', onChange, true);
     document.removeEventListener('input', soon, true);
     mo?.disconnect(); mo = null; clearInterval(tick); clearTimeout(timer);
+    for (const [group, open] of lightingSearch) group.open = open;
+    lightingSearch.clear();
     for (const [el, marker] of moved) { if (marker.isConnected) marker.replaceWith(el); } moved.clear();
     $$('.sb-native-actions').forEach(el=>el.classList.remove('sb-native-actions'));
     $$('.sb-bx').forEach(el => el.remove());
@@ -394,5 +477,6 @@ ${pick('::before')} { content: ${JSON.stringify(zh)} !important; font: 400 12px/
             + (en ? `\n${pick('::after')} { content: ${JSON.stringify(en)} !important; font: italic 400 12px/1.6 var(--sb-f-italic) !important; color: var(--sb-bar-sub); margin-left: .8em; letter-spacing: 0; }` : '');
     }).join('\n');
 }
+
 
 
