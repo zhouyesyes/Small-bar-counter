@@ -1305,3 +1305,66 @@ html.sb-bar #rm_extensions_block :is(input,select,textarea,button):not(.fa):not(
 html.sb-bar #rm_extensions_block input[type=checkbox] {accent-color:var(--sb-bar-accent);}
 html.sb-bar #rm_extensions_block .inline-drawer-content :is(.text_pole,select,textarea) {font-size:12px;}
 html.sb-bar #rm_extensions_block .inline-drawer-content .menu_button {font-size:11px;border-color:var(--sb-bar-accent);border-radius:5px;}
+
+/* Lighting shares the member-page text actions and ruled section headings. */
+html.sb-bar #user-settings-block.sb-page-lighting {padding:12px 16px 20px;background:var(--sb-bar-bg);font:12px/1.65 var(--sb-f-serif);}
+html.sb-bar #user-settings-block [name=userSettingsRowOne] {gap:8px;align-items:center;}
+html.sb-bar #user-settings-block [name=userSettingsRowOne] > .flex-container:first-child {display:none;}
+html.sb-bar #user-settings-block #UI-language-block {flex:1;min-width:0;font-size:11px;}
+html.sb-bar #user-settings-block #ui_language_select {width:auto;min-width:70px;padding:4px 0;font-size:11px;}
+html.sb-bar #user-settings-block #version_display {max-width:48%;color:var(--sb-bar-sub);font-size:9px;overflow-wrap:anywhere;}
+html.sb-bar #user-settings-block [name=UserSettingsRowTwo] {gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0 14px;}
+html.sb-bar #user-settings-block #account_controls {flex:1 1 100%;width:100%;flex-wrap:wrap;font-size:11px;}
+html.sb-bar #user-settings-block #settingsSearch {flex:1 1 100%;width:100%;resize:none;min-width:0;min-height:29px;padding:5px 0;border:0;border-bottom:1px solid var(--sb-bar-line);background:none;font:11px/1.6 var(--sb-f-serif);}
+html.sb-bar #user-settings-block-content {display:flex;flex-direction:column;gap:0;}
+html.sb-bar #user-settings-block-content > div {width:100%;max-width:100%;min-width:0;flex:none;}
+html.sb-bar #user-settings-block [name=MiscellaneousToggles] {display:block;}
+html.sb-bar #user-settings-block :is(.sb-lighting-group,details:has(> summary > .sb-lighting-label),[name=AutoCompleteToggle]:has(.sb-lighting-label)) {width:100%;margin:16px 0 6px;padding:14px 0 12px;border:0;border-top:1px solid var(--sb-bar-accent);border-bottom:1px solid var(--sb-bar-line);border-radius:0;background:none;box-shadow:none;}
+html.sb-bar #user-settings-block :is(.sb-lighting-group,details:has(> summary > .sb-lighting-label)) > summary {display:block;list-style:none;margin:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none;font-size:0;cursor:pointer;}
+html.sb-bar #user-settings-block summary:has(> .sb-lighting-label)::-webkit-details-marker {display:none;}
+html.sb-bar #user-settings-block summary:has(> .sb-lighting-label)::marker {content:'';}
+html.sb-bar #user-settings-block summary:has(> .sb-lighting-label)::before,
+html.sb-bar #user-settings-block summary:has(> .sb-lighting-label)::after {display:none;}
+html.sb-bar #user-settings-block summary:has(> .sb-lighting-label) > :not(.sb-lighting-label) {display:none;}
+html.sb-bar #user-settings-block .sb-lighting-label {display:flex;align-items:baseline;gap:14px;width:100%;font-family:var(--sb-f-serif);text-align:left;}
+html.sb-bar #user-settings-block .sb-lighting-label b {font-size:17px;line-height:1.6;font-weight:500;letter-spacing:.12em;color:var(--sb-bar-accent);}
+html.sb-bar #user-settings-block .sb-lighting-label i {font:italic 13px var(--sb-f-italic);color:var(--sb-bar-sub);}
+html.sb-bar #user-settings-block details[open] > summary > .sb-lighting-label .sb-plus {font-size:0;}
+html.sb-bar #user-settings-block details[open] > summary > .sb-lighting-label .sb-plus::after {content:'−';font:18px var(--sb-f-serif);}
+html.sb-bar #user-settings-block :is(.sb-lighting-group,details:has(>summary>.sb-lighting-label)) > :not(summary) {margin-top:12px;}
+html.sb-bar #user-settings-block :is([name=CharacterHandlingToggles],[name=MiscellaneousToggles],[name=ChatMessageHandlingToggles],[name=STscriptToggles]) > h4 {display:none;}
+html.sb-bar #user-settings-block [name=AutoCompleteToggle]:has(.sb-lighting-label) > .inline-drawer-header {margin:0;padding:0;border:0;border-radius:0;background:none;box-shadow:none;filter:none;font-size:0;}
+html.sb-bar #user-settings-block [name=AutoCompleteToggle]:has(.sb-lighting-label) > .inline-drawer-header > :not(.sb-lighting-label) {display:none;}
+html.sb-bar #user-settings-block [name=AutoCompleteToggle]:has(.inline-drawer-icon.up) .sb-lighting-label .sb-plus {font-size:0;}
+html.sb-bar #user-settings-block [name=AutoCompleteToggle]:has(.inline-drawer-icon.up) .sb-lighting-label .sb-plus::after {content:'−';font:18px var(--sb-f-serif);}
+html.sb-bar #user-settings-block #UI-presets-block {position:relative;margin:10px 0 4px;padding:20px 14px 12px;border:1px solid var(--sb-bar-accent);background:var(--sb-bar-paper);gap:10px;}
+html.sb-bar #user-settings-block #UI-presets-block > h4 {display:flex;flex-wrap:wrap;gap:10px;margin:0;padding:0;border:0;background:none;font-size:13px;}
+html.sb-bar #user-settings-block #UI-presets-block > h4 > span {font-size:0;}
+html.sb-bar #user-settings-block #UI-presets-block > h4 > span::after {content:'当前灯光';font:italic 13px var(--sb-f-italic);color:var(--sb-bar-sub);}
+html.sb-bar #user-settings-block #themes {flex:1;min-width:0;font-size:17px;padding:4px 0;}
+html.sb-bar #user-settings-block :is(#ui_preset_import_button,#ui_preset_export_button,#ui-preset-update-button,#ui-preset-save-button) {margin:0;padding:3px 0;border:0;border-radius:0;background:none;box-shadow:none;font-size:0;}
+html.sb-bar #user-settings-block :is(#ui_preset_import_button,#ui_preset_export_button,#ui-preset-update-button,#ui-preset-save-button) > i {display:none;}
+html.sb-bar #user-settings-block :is(#ui_preset_import_button,#ui_preset_export_button,#ui-preset-update-button,#ui-preset-save-button)::before {font:12px/1.6 var(--sb-f-serif);color:var(--sb-bar-sub);white-space:nowrap;}
+html.sb-bar #user-settings-block #ui_preset_import_button::before {content:'［ 导入 ］';}
+html.sb-bar #user-settings-block #ui_preset_export_button::before {content:'［ 导出 ］';}
+html.sb-bar #user-settings-block #ui-preset-update-button::before {content:'［ 保存 ］';}
+html.sb-bar #user-settings-block #ui-preset-save-button::before {content:'［ 另存 ］';}
+html.sb-bar #user-settings-block #ui-preset-delete-button {position:absolute;left:4px;top:2px;margin:0;padding:0 4px;border:0;background:none;}
+html.sb-bar #user-settings-block #ui-preset-delete-button > i {display:none;}
+html.sb-bar #user-settings-block #ui-preset-delete-button::before {content:'×';font:20px/1 var(--sb-f-serif);color:var(--sb-bar-sub);}
+html.sb-bar #user-settings-block .inline-drawer-content {border:0;background:none;box-shadow:none;font-size:12px;}
+html.sb-bar #user-settings-block :is(input,select,textarea,button):not(.fa):not(.fa-solid) {font-family:var(--sb-f-serif);}
+html.sb-bar #user-settings-block .checkbox_label {font-size:12px;gap:7px;padding:3px 0;}
+html.sb-bar #user-settings-block input[type=checkbox] {accent-color:var(--sb-bar-accent);}
+
+html.sb-bar #user-settings-block #account_controls .menu_button {padding:4px 0;border:0;background:none;border-radius:0;box-shadow:none;font-size:11px;}
+html.sb-bar #user-settings-block #account_controls .menu_button::before {content:'［ ';}
+html.sb-bar #user-settings-block #account_controls .menu_button::after {content:' ］';}
+html.sb-bar #user-settings-block #account_controls .menu_button > i {display:none;}
+html.sb-bar #user-settings-block .neo-range-slider {height:22px!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;filter:none!important;}
+html.sb-bar #user-settings-block .neo-range-slider::-webkit-slider-runnable-track {height:2px;border:0;border-radius:2px;background:var(--sb-bar-accent);}
+html.sb-bar #user-settings-block .neo-range-slider::-webkit-slider-thumb {appearance:none;-webkit-appearance:none;width:10px;height:10px;margin-top:-4px;border:1px solid var(--sb-bar-accent);border-radius:50%;background:var(--sb-bar-paper);box-shadow:none;}
+html.sb-bar #user-settings-block .neo-range-slider::-moz-range-track {height:2px;border:0;background:var(--sb-bar-accent);}
+html.sb-bar #user-settings-block .neo-range-slider::-moz-range-thumb {width:8px;height:8px;border:1px solid var(--sb-bar-accent);border-radius:50%;background:var(--sb-bar-paper);}
+html.sb-bar #user-settings-block .neo-range-input {color:var(--sb-bar-ink);font-size:12px;}
+html.sb-bar #user-settings-block #customCSS {font-family:ui-monospace,monospace;}
