@@ -33,11 +33,11 @@ export function mapleCss(p) {
 @font-face{font-family:SBWenKai;src:${image('wenkai.woff')} format('woff');font-display:swap}
 ${S}{--sb-type-body:SBWenKai,'Songti SC',serif;--sb-type-ui:SBWenKai,'Songti SC',serif;--sb-type-action:SBWenKai,'Songti SC',serif;--sb-type-script:SBWenKai,'Songti SC',serif;--sb-type-italic:SBWenKai,'Songti SC',serif;--sb-f-serif:SBWenKai,serif;--sb-f-script:SBWenKai,serif;--sb-maple-pane:${mix(p.bg,p.fg,.035)};--sb-maple-bar-ink:${p.ink};--sb-maple-bar-field:${mix(p.accent,p.ink,.12)}}
 ${S} :is(.sb-page,.sb-lounge-root){font-family:var(--sb-type-body)!important}
-${S} :is(.sb-head,.sb-reading-head){position:relative;isolation:isolate;background-image:${image('leaves.webp')};background-repeat:no-repeat;background-position:center top;background-size:100% auto;padding:110px 8px 18px!important;min-height:174px}
+${S} :is(.sb-head,.sb-reading-head){position:relative;isolation:isolate;background-image:linear-gradient(to right,${p.bg},${p.bg}00 8%,${p.bg}00 92%,${p.bg}),linear-gradient(to bottom,${p.bg}00 45%,${p.bg} 100%),${image('home.webp')};background-repeat:no-repeat;background-position:center top;background-size:100% 100%,100% 100%,100% auto;background-attachment:scroll;position:relative!important;padding:145px 8px 20px!important;min-height:226px}
 ${S} :is(.sb-script,.sb-chat-script){font-family:var(--sb-type-body)!important;font-size:34px!important;line-height:1.15!important;letter-spacing:2px!important;font-weight:400!important;color:var(--sb-bar-text)!important}
 ${S} :is(.sb-en,.sb-lounge-en){display:none!important}
 ${S} :is(.sb-zh,.sb-lounge-zh){font:13px/1.6 var(--sb-type-body)!important;letter-spacing:1px!important;color:var(--sb-bar-sub)}
-${S} #chat.sb-lounge{background-color:var(--sb-bar-bg)!important;background-image:linear-gradient(${p.bg}26,${p.bg}40),${image('home.webp')}!important;background-size:100% 100%!important;background-position:center top!important;background-attachment:local!important}
+${S} #chat.sb-lounge{background-color:var(--sb-bar-bg)!important;background-image:linear-gradient(${p.bg}26,${p.bg}40),${image('home.webp')}!important;background-size:100% 100%,100% 100vh!important;background-repeat:no-repeat!important;background-position:center top!important;background-attachment:local!important}
 ${S} #chat.sb-lounge .welcomePanel{padding:0 20px 35px!important}
 ${S} .sb-lounge-head{padding:145px 8px 20px!important;min-height:226px;background:none}
 ${S} .sb-lounge-glass{display:none!important}
@@ -51,7 +51,7 @@ ${S} .sb-lounge-root .sb-lounge-temporary{font-size:12px}${S} .sb-lounge-foot{fo
 ${S} .sb-page{background:var(--sb-bar-bg)!important}${S} .sb-page :is(.sb-title,.sb-fold,.sb-format-group,.sb-lighting-group){border-color:var(--sb-bar-line)}
 ${S} :is(.sb-label,.sb-foot){display:none}${S} :is(.sb-title i,.sb-fold-h i,.sb-sec>i,.sb-lighting-label i){display:none}
 ${S} .sb-page :is(.sb-solid,.sb-b){font-family:var(--sb-type-ui)!important}${S} .sb-page :is(input,textarea,select){font-family:var(--sb-type-ui)!important}
-${S} #chat .sb-reading-head{background-image:${image('leaves.webp')};background-size:100% auto;background-repeat:no-repeat;background-position:center top;position:static!important;padding-top:98px!important;min-height:160px}
+${S} #chat .sb-reading-head{background-image:linear-gradient(to right,${p.bg},${p.bg}00 8%,${p.bg}00 92%,${p.bg}),linear-gradient(to bottom,${p.bg}00 45%,${p.bg} 100%),${image('home.webp')};background-size:100% 100%,100% 100%,100% auto;background-repeat:no-repeat;background-position:center top;background-attachment:scroll;position:static!important;padding-top:145px!important;min-height:226px}
 ${S} :is(#top-settings-holder,#send_form){position:relative;isolation:isolate;background-color:var(--sb-bar-accent)!important;background-image:linear-gradient(#ffffff08,#00000008)!important;color:var(--sb-maple-bar-ink)!important;border-color:color-mix(in srgb,var(--sb-maple-bar-ink) 20%,transparent)!important}
 ${S} :is(#top-settings-holder,#send_form)::after{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;border-radius:inherit;background:var(--sb-maple-bar-ink);opacity:.24;-webkit-mask:${image('pattern.webp')} center bottom/100% auto no-repeat;mask:${image('pattern.webp')} center bottom/100% auto no-repeat}
 ${S} #top-settings-holder .drawer-icon{background:none!important;border:0!important}
