@@ -988,7 +988,7 @@ html.sb-bar #char-management-dropdown { -webkit-appearance: none; appearance: no
 #sb-root .sb-mbar::-moz-range-track{height:4px;border:1px solid var(--sb-line);border-radius:6px;background:var(--sb-soft)}
 #sb-root .sb-mbar::-moz-range-progress{height:6px;border-radius:6px;background:var(--sb-accent)}
 #sb-root .sb-mbar::-moz-range-thumb{width:13px;height:13px;border:0;border-radius:50%;background:var(--sb-accent)}
-#sb-root .sb-mbar:focus-visible{outline:2px solid var(--sb-accent);outline-offset:3px}
+#sb-root .sb-music input.sb-mbar:focus-visible{outline:2px solid var(--sb-accent);outline-offset:3px}
 
 #sb-root .sb-player-main>.sb-cap{display:flex;align-items:center;gap:10px}
 #sb-root .sb-player-main>.sb-cap:before{content:'';width:5px;height:5px;flex:0 0 5px;border-radius:50%;background:var(--sb-accent)}
