@@ -1486,3 +1486,21 @@ html.sb-bar #AdvancedFormatting .sb-format-content details:not(.sb-format-group)
 html.sb-bar #Backgrounds .bg_folder_tile:is(.mobile-menu-open,:hover,:focus-within) {overflow:visible;z-index:8;}
 html.sb-bar #Backgrounds .jg-button[data-action=rename-folder]::after {content:'［ 文件夹改名 ］';}
 html.sb-bar #Backgrounds .jg-button[data-action=delete-folder]::after {content:'［ 删除文件夹 ］';}
+
+/* 会员卡页的卡包切成网格（酒馆的 ⊞ 按钮）时：一行三张，和调酒师名单的网格一样（她 11/11 说单列错乱了） */
+html.sb-bar #user_avatar_block.gridView { flex-direction: row; flex-wrap: wrap; justify-content: flex-start; align-content: flex-start; gap: 0; }
+html.sb-bar #user_avatar_block.gridView .avatar-container { width: 33.333%; max-width: none; flex-direction: column; align-items: center; gap: 6px; padding: 14px 6px 12px; box-sizing: border-box; border-bottom: 1px solid var(--sb-bar-line); contain-intrinsic-size: auto 132px; }
+html.sb-bar #user_avatar_block.gridView .avatar { margin: 0 auto; }
+html.sb-bar #user_avatar_block.gridView .avatar img { width: 64px; height: 64px; }
+html.sb-bar #user_avatar_block.gridView .character_select_container { width: 100%; max-width: none; justify-content: center; }
+html.sb-bar #user_avatar_block.gridView .character_name_block { width: 100%; flex-direction: column; align-items: center; gap: 2px; }
+html.sb-bar #user_avatar_block.gridView .ch_name { width: 100%; max-width: none; text-align: center; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.sb-bar #user_avatar_block.gridView .avatar-container.selected .ch_name::after { content: ' ●'; margin-left: 2px; font-size: 10px; }
+html.sb-bar #user_avatar_block.gridView .ch_description, html.sb-bar #user_avatar_block.gridView .avatar_container_states { display: none !important; }
+html.sb-bar #user_avatar_block.gridView .avatar_upload { width: 100%; }
+html.sb-bar #user_avatar_block.gridView .avatar-container { flex: 0 0 33.333%; margin: 0; min-width: 0; }
+html.sb-bar #user_avatar_block.gridView .avatar { width: 64px; height: 64px; flex: none; }
+/* 「在用」那个点跟着真正在用的人设（sb-cur，bar-pages.mjs 里标），酒馆列表没刷新时也不会点错 */
+html.sb-bar #user_avatar_block:has(.sb-cur) .avatar-container.selected:not(.sb-cur) .ch_name::after { content: none; }
+html.sb-bar #user_avatar_block .avatar-container.sb-cur .ch_name::after { content: '● 在用'; font-size: 12px; color: #5f8a63; margin-left: 8px; }
+html.sb-bar #user_avatar_block.gridView .avatar-container.sb-cur .ch_name::after { content: ' ●'; margin-left: 2px; font-size: 10px; }

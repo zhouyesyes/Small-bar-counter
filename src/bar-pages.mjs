@@ -303,20 +303,32 @@ const PAGES = {
             moveNative(textarea,editor);
             block.after(fold('more', '其 余 设 置', 'Fine Print'), foot('members only'));
         },
-        sync(root) {
-            const sel = $('#user_avatar_block .avatar-container.selected', root);
-            const img = $('img', sel || document.createElement('i'))?.getAttribute('src') || '';
+        sync(root, ctx) {
             const mc = $('.sb-mc', root); if (!mc) return;
+            // 会员卡跟着「现在真正在用的人设」走（她 11/11 说的：别的插件换了人设，酒馆这页不刷新，卡上一直是上一张）。
+            // 拿得到酒馆的 user_avatar 就以它为准；拿不到再看列表里标着 selected 的那张
+            const cur = currentPersona();
+            const pu = ctx?.powerUserSettings || {};
+            const idOf = x => x.getAttribute('data-avatar-id') || $('.avatar', x)?.getAttribute('imgfile') || '';
+            const rows = $$('#user_avatar_block .avatar-container', root);
+            const sel = cur ? rows.find(x => idOf(x) === cur) || null : $('#user_avatar_block .avatar-container.selected', root);
+            const file = cur || (sel ? idOf(sel) : '');
+            for (const x of rows) x.classList.toggle('sb-cur', !!cur && x === sel);
+            const img = (file && ctx?.getThumbnailUrl ? ctx.getThumbnailUrl('persona', file) : '') || $('img', sel || document.createElement('i'))?.getAttribute('src') || '';
             const im = $('img', mc); if (im.getAttribute('src') !== img) { if (img) im.setAttribute('src', img); else im.removeAttribute('src'); }
-            $('.sb-mc-name', mc).textContent = $('#your_name')?.textContent.trim() || '还没办卡';
-            const file = sel?.getAttribute('imgfile') || $('.avatar', sel || document.createElement('i'))?.getAttribute('imgfile') || '';
-            const all = $$('#user_avatar_block .avatar-container', root);
-            $('.sb-mc-no', mc).textContent = sel ? 'NO. ' + String(all.indexOf(sel) + 1).padStart(4, '0') : '';
-            $('.sb-mc-desc', mc).textContent = val('persona_description').split('\n').map(s => s.trim()).filter(Boolean).slice(0, 2).join('\n');
+            const name = (file && pu.personas?.[file]) || ctx?.name1 || $('#your_name')?.textContent.trim() || '';
+            $('.sb-mc-name', mc).textContent = name || '还没办卡';
+            const keys = Object.keys(pu.personas || {});
+            const no = file && keys.includes(file) ? keys.indexOf(file) + 1 : (sel ? rows.indexOf(sel) + 1 : 0);
+            $('.sb-mc-no', mc).textContent = no ? 'NO. ' + String(no).padStart(4, '0') : '';
+            const desc = file && pu.persona_descriptions?.[file] ? String(pu.persona_descriptions[file].description || '') : val('persona_description');
+            $('.sb-mc-desc', mc).textContent = desc.split('\n').map(s => s.trim()).filter(Boolean).slice(0, 2).join('\n');
             const ms = file.match(/^(1\d{12})/); // 酒馆存人设头像时文件名前面是时间戳
             $('.sb-mc-since', mc).textContent = ms ? 'member since ' + new Date(+ms[1]).getFullYear() : 'member';
+            // token 数是酒馆这页算的：只有这页显示的就是卡上这位时才写，免得把上一位的数字贴过来
             const t = $('#persona_description_token_count')?.textContent.trim();
-            $('.sb-mc-t', mc).textContent = t ? `${t} t` : '';
+            const same = !name || ($('#your_name')?.textContent.trim() || '') === name;
+            $('.sb-mc-t', mc).textContent = t && same ? `${t} t` : '';
             for (const b of $$('.sb-use button', root)) b.classList.toggle('on', !!document.getElementById(b.dataset.do)?.classList.contains('locked'));
             setSum(root, 'more', `放在哪：${optText('persona_description_position') || '—'} · 切换时提醒 ${checked('persona_show_notifications') ? '开' : '关'}`, '备份、恢复、插入位置都在这里');
         },
@@ -444,6 +456,11 @@ function onChange(e) {
     soon();
 }
 
+// 酒馆的 user_avatar（现在在用的人设头像文件名）在 personas.js 里，main.mjs 把取它的办法递进来
+let personaOf = () => '';
+const currentPersona = () => { try { return personaOf() || ''; } catch { return ''; } };
+export function setPersonaSource(fn) { if (typeof fn === 'function') personaOf = fn; }
+
 export function mountPages(getContext) {
     getCtx = getContext || getCtx;
     if (on) { soon(); return; }
@@ -478,6 +495,7 @@ export function unmountPages() {
         root.classList.remove(...[...root.classList].filter(c => c.startsWith('sb-page') || c.startsWith('sb-open-')));
     }
     $$('.world_entry[data-sb-state]').forEach(e => delete e.dataset.sbState);
+    $$('.sb-cur').forEach(e => e.classList.remove('sb-cur'));
     $$('[data-sb-ph]').forEach(el => { el.setAttribute('placeholder', el.dataset.sbPh); delete el.dataset.sbPh; });
 }
 

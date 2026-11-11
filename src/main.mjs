@@ -13,6 +13,8 @@ import { extractBlock, buildState, guessEra, parseBlock, stripNow } from './core
 import { DEFAULT_PROMPT, buildInjection } from './prompt.mjs';
 import { createUI } from './ui.mjs';
 import { applyBarTheme } from './bar-theme.mjs';
+import { setPersonaSource } from './bar-pages.mjs';
+setPersonaSource(() => personas.user_avatar);
 import { mountChat, unmountChat } from './bar-chat.mjs';
 import { saveImage, imageUrl, deleteImage, listImages } from './imgstore.mjs';
 
