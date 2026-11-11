@@ -1,7 +1,8 @@
 // Shared text hierarchy for every bar surface, including independently mounted dialogs.
 export const fonts = {
     body: "'Noto Serif SC','Songti SC','STSong','Source Han Serif SC','Noto Serif CJK SC',serif",
-    ui: "'Noto Sans SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif",
+    ui: "'Noto Serif SC','Songti SC','STSong','Source Han Serif SC','Noto Serif CJK SC',serif",
+    action: "'Noto Sans SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif",
     script: "'Pinyon Script','Snell Roundhand','Apple Chancery','Noto Serif SC','Songti SC',cursive",
     italic: "'Cormorant Garamond','Baskerville','Times New Roman','Noto Serif SC','Songti SC',serif",
     mono: 'ui-monospace,SFMono-Regular,Menlo,monospace',
@@ -21,7 +22,7 @@ html.sb-bar :is(.sb-head,.sb-lounge-head){box-sizing:border-box;width:100%;margi
 html.sb-bar :is(.sb-script,.sb-chat-script){font-family:var(--sb-type-script)!important;font-size:var(--sb-type-size-page)!important;font-weight:400!important;line-height:1.15!important;letter-spacing:0!important;text-align:center;}
 html.sb-bar :is(.sb-en,.sb-lounge-en){font:400 10px/1.6 var(--sb-type-italic)!important;letter-spacing:.32em!important;margin-top:8px;}
 html.sb-bar :is(.sb-zh,.sb-lounge-zh){font:400 10.5px/1.6 var(--sb-type-body)!important;letter-spacing:.45em!important;margin-top:2px;}
-/* Blackface is reserved for navigation, section names and actions across all pages. */
+/* Ordinary interface text uses Songti; only square-bracket actions use bold sans. */
 html.sb-bar :is(.sb-fold-h b,.sb-title b,.sb-sec b,.sb-lighting-label b,.sb-format-group>summary>b),
 html.sb-bar #rm_extensions_block :is(.inline-drawer-header,details:has(.inline-drawer)>summary){font-family:var(--sb-type-ui)!important;font-size:var(--sb-type-size-section)!important;line-height:1.6!important;font-weight:500!important;}
 html.sb-bar #rm_extensions_block .inline-drawer-header :is(b,strong){font-family:inherit!important;font-size:inherit!important;font-weight:inherit!important;}
@@ -37,7 +38,7 @@ html.sb-bar .sb-page :is(input,select,textarea):not([data-preset-manager-for]):n
 #sb-root :is(input,select,textarea),#sb-splash-settings :is(input,select,textarea){font-size:var(--sb-type-size-control)!important;line-height:1.6;}
 html.sb-bar .sb-page :is(.sb-b,.sb-use button,.sb-pick){font-family:var(--sb-type-ui)!important;font-size:var(--sb-type-size-control)!important;}
 html.sb-bar .sb-page select[data-preset-manager-for],html.sb-bar #respective-presets-block select,html.sb-bar #user-settings-block #themes{font-family:var(--sb-type-body)!important;font-size:var(--sb-type-size-record)!important;line-height:1.4!important;font-weight:400!important;}
-html.sb-bar .sb-page :is([data-preset-manager-update],[data-preset-manager-rename],[data-preset-manager-new],[data-preset-manager-import],[data-preset-manager-export],[data-preset-manager-restore],#af_master_import,#af_master_export,#extensions_details,#third_party_extension_button,#auto_background,#bg_add_folder_button,#add_background_button_top,#bg_selection_mode_button)::before{font-family:var(--sb-type-ui)!important;font-size:var(--sb-type-size-menu)!important;}
+html.sb-bar .sb-page :is([data-preset-manager-update],[data-preset-manager-rename],[data-preset-manager-new],[data-preset-manager-import],[data-preset-manager-export],[data-preset-manager-restore],#af_master_import,#af_master_export,#extensions_details,#third_party_extension_button,#auto_background,#bg_add_folder_button,#add_background_button_top,#bg_selection_mode_button)::before{font-family:var(--sb-type-action)!important;font-weight:700!important;font-size:var(--sb-type-size-menu)!important;}
 html.sb-bar .sb-page :is(pre,code,.monospace,#customCSS,#custom_stopping_strings),#sb-root :is(pre,code){font-family:var(--sb-type-mono)!important;}
 html.sb-bar #chat.sb-reading .mes_text,html.sb-bar .sb-lounge-root{font-family:var(--sb-type-body)!important;}
 html.sb-bar .sb-lounge-root :is(input,button),html.sb-bar .sb-chat-popup button{font-family:var(--sb-type-ui)!important;}
@@ -47,7 +48,7 @@ html.sb-bar .sb-mc-name,html.sb-bar #character_name_pole,#sb-root .sb-name{font-
 html.sb-bar .sb-chat-popup button{font-size:var(--sb-type-size-menu)!important;}
 html.sb-bar #send_form textarea{font-family:var(--sb-type-ui)!important;font-size:var(--sb-type-size-control)!important;}
 html.sb-bar .sb-page :is(input,textarea)::placeholder,#sb-root :is(input,textarea)::placeholder,#sb-splash-settings input::placeholder{font-family:var(--sb-type-ui)!important;font-size:var(--sb-type-size-menu)!important;}
-/* Every kind of tab uses the same family/weight, including mini-phone apps. */
+/* Every kind of tab uses the same Songti family/weight, including mini-phone apps. */
 #sb-root :is(.sb-tabs,.sb-wxtabs,.sb-xtabs,.sb-wbnav,.sb-wbtabs2) :is(button,a,span),
 html.sb-bar #bg_tabs .bg_tab_button a{font-family:var(--sb-type-ui)!important;font-size:var(--sb-type-size-control)!important;font-weight:500!important;}
 #sb-root :is(.sb-ph,.sb-dmhead,.sb-wbhead) :is(strong,b),#sb-root :is(.sb-wbtitle,.sb-pht){font-family:var(--sb-type-ui)!important;font-size:14px!important;font-weight:500!important;}
@@ -84,6 +85,20 @@ html.sb-bar #Backgrounds .jg-button::after{font-family:var(--sb-type-ui)!importa
 #sb-color-picker header b{font-size:var(--sb-type-size-section)!important;}
 #sb-color-picker header i{font-family:var(--sb-type-italic)!important;}
 #sb-color-picker [data-hex],#sb-splash-settings .sb-color-launch code{font-family:var(--sb-type-mono)!important;}
+/* The bracket itself and its label share one bold font; symbols and unbracketed actions do not. */
+html.sb-bar .sb-page :is(button.sb-b,label.sb-pick){font-family:var(--sb-type-action)!important;font-weight:700!important;}
+html.sb-bar #rm_extensions_block :is(#extensions_details,#third_party_extension_button),
+html.sb-bar #user-settings-block #account_controls .menu_button{font-family:var(--sb-type-action)!important;font-weight:700!important;}
+html.sb-bar #rm_extensions_block :is(#extensions_details,#third_party_extension_button) :is(span),
+html.sb-bar #user-settings-block #account_controls .menu_button span{font-family:inherit!important;font-weight:inherit!important;}
+html.sb-bar #user-settings-block :is(#ui_preset_import_button,#ui_preset_export_button,#ui-preset-update-button,#ui-preset-save-button)::before{font-family:var(--sb-type-action)!important;font-weight:700!important;}
+html.sb-bar #rm_extensions_block :is(#extensions_details,#third_party_extension_button)::after,
+html.sb-bar #user-settings-block #account_controls .menu_button::before,
+html.sb-bar #user-settings-block #account_controls .menu_button::after{font-family:var(--sb-type-action)!important;font-weight:700!important;}
+html.sb-bar #Backgrounds .jg-button:is([data-action=lock],[data-action=unlock],[data-action=copy],[data-action=edit],[data-action=delete],[data-action=folder],[data-action=set-cover],[data-action=rename-folder],[data-action=delete-folder])::after{font-family:var(--sb-type-action)!important;font-weight:700!important;}
+html.sb-bar #user_avatar_block .avatar_upload::before{font-family:var(--sb-type-action)!important;font-weight:700!important;}
+#sb-color-picker footer button{font-family:var(--sb-type-action)!important;font-weight:700!important;}
+
 `;
 export function installTypography() {
     if (typeof document === 'undefined') return;

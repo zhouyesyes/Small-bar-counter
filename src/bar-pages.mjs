@@ -561,9 +561,10 @@ export function relabelCss() {
     return RELABEL.map(([sel, zh, en]) => {
         const s = sel.split(',').map(x => 'html.sb-bar ' + x.trim());
         const pick = suf => s.map(x => x + suf).join(', ');
+        const bracket = (zh.startsWith('［') && zh.endsWith('］')) || (zh.startsWith('[') && zh.endsWith(']'));
         return `${pick('')} { font-size: 0 !important; width: auto !important; min-width: 0 !important; height: auto !important; aspect-ratio: auto !important; }
 ${pick(' > :not(.sb-bx):not(input):not(select)')} { display: none !important; }
-${pick('::before')} { content: ${JSON.stringify(zh)} !important; font: 400 12px/1.6 var(--sb-f-serif) !important; letter-spacing: .02em; display: inline !important; width: auto !important; }`
+${pick('::before')} { content: ${JSON.stringify(zh)} !important; font: ${bracket ? '700' : '400'} 12px/1.6 var(${bracket ? '--sb-type-action' : '--sb-f-serif'}) !important; letter-spacing: .02em; display: inline !important; width: auto !important; }`
             + (en ? `\n${pick('::after')} { content: ${JSON.stringify(en)} !important; font: italic 400 12px/1.6 var(--sb-f-italic) !important; color: var(--sb-bar-sub); margin-left: .8em; letter-spacing: 0; }` : '');
     }).join('\n');
 }
