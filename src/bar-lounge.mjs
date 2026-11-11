@@ -169,7 +169,7 @@ export function updateLounge(panel, host, popup) {
         state.pins = el('div', 'sb-lounge-pins'); state.pins.setAttribute('aria-label', '置顶角色');
         const label = el('div', 'sb-lounge-label', '上次那杯  '); label.append(el('i', '', 'Last orders'));
         state.list = el('div', 'sb-lounge-groups'); state.empty = el('p', 'sb-lounge-empty');
-        state.loadMore = el('button', 'sb-lounge-load-more', '展开更早聊天');
+        state.loadMore = el('button', 'sb-lounge-load-more', '更 早 聊 天');
         state.loadMore.type = 'button';
         state.loadMore.onclick = () => {
             $('.showMoreChats', panel)?.click();
