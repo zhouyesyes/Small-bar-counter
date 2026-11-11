@@ -1,5 +1,6 @@
 import { artwork, artworkMode, personalProfile } from './artwork.mjs';
 import { applyPalette, defaults } from './palette.mjs';
+import { openColorPicker } from './color-picker.mjs';
 import { imageUrl, saveImage } from './imgstore.mjs';
 const KEY = 'small_bar_splash_v1';
 const ticketLayouts = new WeakMap();
@@ -207,13 +208,30 @@ export function openSplashSettings() {
     <label>Show on startup<input type="checkbox" data-key="enabled" ${s.enabled !== false ? 'checked' : ''}></label>
     <label>Mode<select data-theme>${['auto','light','dark'].map(x=>`<option ${settings.theme === x ? 'selected' : ''}>${x}</option>`).join('')}</select></label>
     <label>页面宽度<select data-key="pageWidth" aria-label="页面宽度"><option value="" ${!s.pageWidth ? 'selected' : ''}>默认</option>${[60,65,70,75,80,85,90,95,100].map(width=>`<option value="${width}" ${Number(s.pageWidth) === width ? 'selected' : ''}>${width}%</option>`).join('')}</select></label>
-    ${['light','dark'].map(mode => `<fieldset><legend>${mode.toUpperCase()}</legend>${['bg','accent'].map(key => `<label>${key === 'bg' ? 'Background' : 'Button'}<input type="color" data-mode="${mode}" data-color="${key}" value="${esc(s.colors[mode]?.[key] || defaults[mode][key])}"></label>`).join('')}</fieldset>`).join('')}
+    ${['light','dark'].map(mode => `<fieldset><legend>${mode === 'light' ? '日间配色' : '夜间配色'}</legend>${['bg','accent'].map(key => { const color = s.colors[mode]?.[key] || defaults[mode][key]; return `<div class="sb-color-setting"><span>${key === 'bg' ? '背景色' : '辅助色'}</span><button type="button" class="sb-color-launch" data-mode="${mode}" data-color="${key}" data-value="${esc(color)}" aria-label="调整${mode === 'light' ? '日间' : '夜间'}${key === 'bg' ? '背景色' : '辅助色'}"><span style="background:${esc(color)}"></span><code>${esc(color.toUpperCase())}</code></button></div>`; }).join('')}</fieldset>`).join('')}
     <fieldset><legend>卡片文字 · CARD DETAILS</legend><p>修改后自动保存，下次打开也会保留。</p>
     ${[['quote','头像旁的小字','a quiet seat, kept for you'],['table','座位 · SEAT','by the window'],['order','酒单 · DRINK','the usual'],['date','日期 · DATE（留空用今天）',''],['signature','底部署名 · SIGNED, WITH LOVE','yesyes']].map(([key,label,value])=>`<label>${label}<input type="text" data-key="${key}" maxlength="${key === 'quote' ? 120 : 60}" value="${esc(s[key] ?? value)}"></label>`).join('')}</fieldset>
     ${['light','dark'].map(mode => `<fieldset><legend>${mode === 'light' ? '日间图片' : '夜间图片'}</legend>${[['cover','横图'],['avatar','头像']].map(([key,label])=>`<label>${label}<input type="file" accept="image/*" data-upload="${key}" data-image-mode="${mode}"></label><button data-clear="${key}" data-image-mode="${mode}">恢复默认${label}</button>`).join('')}</fieldset>`).join('')}
     <p class="sb-upload-status" role="status"></p><p>照片保存在这台设备的浏览器。卡片上的 keep my tab open 会立即保存当前署名；修改署名后，再勾选即可重新保存。</p><button data-preview>Preview opening</button></div>`;
     document.documentElement.appendChild(panel); applyPalette(panel, settings);
-    const close = () => { panel.remove(); panel = null; if (focus?.isConnected) focus.focus(); };
+    let closeColorPicker;
+    const close = () => { closeColorPicker?.(); panel.remove(); panel = null; if (focus?.isConnected) focus.focus(); };
+    panel.querySelectorAll('.sb-color-launch').forEach(button => button.onclick = () => {
+        const mode = button.dataset.mode, key = button.dataset.color;
+        closeColorPicker = openColorPicker({
+            value: button.dataset.value, anchor: button,
+            title: (mode === 'light' ? '日间' : '夜间') + ' · ' + (key === 'bg' ? '背景色' : '辅助色'),
+            onConfirm(color) {
+                if (!panel?.isConnected) return;
+                (s.colors[mode] ??= {})[key] = color;
+                button.dataset.value = color;
+                button.querySelector('span').style.backgroundColor = color;
+                button.querySelector('code').textContent = color.toUpperCase();
+                persist(); paint(); applyPalette(panel, settings);
+                window.dispatchEvent(new Event('small-bar-appearance'));
+            },
+        });
+    });
     panel.querySelector('[data-close]').onclick = close;
     panel.onkeydown = e => { if (e.key === 'Escape') { e.stopPropagation(); close(); return; } trapFocus(e, panel); };
     panel.querySelector('[data-close]').focus();
@@ -226,8 +244,7 @@ export function openSplashSettings() {
             try { const { cropImage } = await import('./crop.mjs'); const data = await cropImage(t.files[0], { ratio: t.dataset.upload === 'avatar' ? 1 : 2.25, round: t.dataset.upload === 'avatar' }); if (data) { ((s.images ??= {})[t.dataset.imageMode] ??= {})[t.dataset.upload] = await saveImage(data); } status.textContent = data ? 'Photo saved.' : ''; }
             catch (err) { status.textContent = 'Could not save photo. Please try another image.'; console.warn('[Small Bar] Photo', err); }
             finally { t.disabled = false; t.value = ''; }
-        } else if (t.dataset.color) (s.colors[t.dataset.mode] ??= {})[t.dataset.color] = t.value;
-        else if (t.hasAttribute('data-theme')) settings.theme = t.value;
+        } else if (t.hasAttribute('data-theme')) settings.theme = t.value;
         else if (t.dataset.key) s[t.dataset.key] = t.type === 'checkbox' ? t.checked : t.value;
         persist(); paint(); if (panel) applyPalette(panel, settings);
         window.dispatchEvent(new Event('small-bar-appearance'));
@@ -344,4 +361,9 @@ const styles = `
 #sb-splash .sb-ticket:after{display:none}
 #sb-splash .sb-ticket-outline{position:absolute;left:-1px;top:-1px;display:block;z-index:5;pointer-events:none;overflow:visible}
 #sb-splash .sb-ticket-outline path{fill:none;stroke:var(--sb-accent);stroke-width:2}
+
+#sb-splash-settings .sb-color-setting{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:14px 0;font:12px/1.6 'Noto Serif SC','Songti SC',serif;}
+#sb-splash-settings .sb-color-launch{display:flex;align-items:center;gap:10px;min-height:32px;padding:3px 0;border:0;border-radius:0;background:none;color:var(--sb-dim);}
+#sb-splash-settings .sb-color-launch>span{display:block;width:48px;height:24px;border:1px solid var(--sb-line);border-radius:14px;}
+#sb-splash-settings .sb-color-launch code{font:11px ui-monospace,monospace;}
 `;
