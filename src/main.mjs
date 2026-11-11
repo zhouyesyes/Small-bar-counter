@@ -518,7 +518,11 @@ function hasChar() { const c = ctx(); return c.characterId != null && c.characte
 
 // ---------- 接起来 ----------
 const host = {
-    settings, setSettings: f => { f(settings()); saveSettings(); refreshInject(); },
+    settings, setSettings: f => {
+        const s = settings(), before = [s.barTheme, s.barStyle, s.theme];
+        f(s); saveSettings(); refreshInject();
+        if (before.some((value, i) => value !== [s.barTheme, s.barStyle, s.theme][i])) applyAppearance();
+    },
     openingProfile: () => { const h = personalProfile(settings()), art = artwork(h, artworkMode(settings())); return { avatar: img(art.avatar), cover: img(art.cover), name: h.signature ?? 'yesyes', sign: h.quote ?? 'a quiet seat, kept for you', table: h.table ?? 'by the window', order: h.order ?? 'the usual', date: h.date || new Intl.DateTimeFormat('sv-SE').format(new Date()).replaceAll('-', '.') }; },
     setHomeProfile: patch => { const shared = {}; if ('name' in patch) shared.signature = patch.name; if ('sign' in patch) shared.quote = patch.sign; updatePersonalProfile(shared); },
     setOpeningImage: (kind, src, mode = artworkMode(settings())) => { owners()[src] = 'global'; updatePersonalProfile({ [kind]: src }, mode); },
@@ -554,11 +558,17 @@ const barChatHost = () => ({ context: ctx, settings, config: charCfg, me, him, i
     saveChat: saveMeta, saveSettings, saveImage: saveImageHere, openAppearance: openSplashSettings,
     setTheme: theme => { settings().theme = theme; saveSettings(); window.dispatchEvent(new Event('small-bar-appearance')); } });
 let mountedBarStyle = '';
+function syncAppearanceControls() {
+    const s = settings(), toggle = document.getElementById('sb-bartheme'), select = document.getElementById('sb-barstyle');
+    if (toggle) toggle.checked = !!s.barTheme;
+    if (select) { select.value = s.barStyle || 'lounge'; select.disabled = !s.barTheme; }
+}
 function applyAppearance() {
     const nextStyle = settings().barTheme ? settings().barStyle : '';
     if (mountedBarStyle !== nextStyle) { unmountChat(); mountedBarStyle = nextStyle; }
     applyBarTheme(settings(), ctx);
     if (settings().barTheme) mountChat(barChatHost); else unmountChat();
+    syncAppearanceControls();
 }
 
 function refresh() { dirty(); clearTimeout(refreshTimer); refreshTimer = setTimeout(() => { dirty(); refreshInject(); ui.render(); applyAppearance(); }, 120); }
@@ -583,8 +593,8 @@ function settingsPanel() {
     const bt = el.querySelector('#sb-bartheme');
     bt.checked = !!settings().barTheme;
     const bs = el.querySelector('#sb-barstyle'); bs.value = settings().barStyle; bs.disabled = !bt.checked;
-    bs.addEventListener('change', () => { settings().barStyle = bs.value; saveSettings(); applyAppearance(); });
-    bt.addEventListener('change', () => { settings().barTheme = bt.checked; bs.disabled = !bt.checked; saveSettings(); applyAppearance(); });
+    bs.addEventListener('change', () => { settings().barStyle = bs.value; saveSettings(); applyAppearance(); ui.render(); });
+    bt.addEventListener('change', () => { settings().barTheme = bt.checked; bs.disabled = !bt.checked; saveSettings(); applyAppearance(); ui.render(); });
     el.querySelector('#sb-openbtn').addEventListener('click', () => ui.open());
     el.querySelector('#sb-lookbtn').addEventListener('click', openSplashSettings);
     const res = el.querySelector('#sb-cleanres'), btn = el.querySelector('#sb-cleanbtn');

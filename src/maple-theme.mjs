@@ -33,7 +33,8 @@ export function mapleCss(p) {
 @font-face{font-family:SBWenKai;src:${image('wenkai.woff')} format('woff');font-display:swap}
 ${S}{--sb-type-body:SBWenKai,'Songti SC',serif;--sb-type-ui:SBWenKai,'Songti SC',serif;--sb-type-action:SBWenKai,'Songti SC',serif;--sb-type-script:SBWenKai,'Songti SC',serif;--sb-type-italic:SBWenKai,'Songti SC',serif;--sb-f-serif:SBWenKai,serif;--sb-f-script:SBWenKai,serif;--sb-maple-pane:${mix(p.bg,p.fg,.035)};--sb-maple-bar-ink:${p.ink};--sb-maple-bar-field:${mix(p.accent,p.ink,.12)}}
 ${S} :is(.sb-page,.sb-lounge-root){font-family:var(--sb-type-body)!important}
-${S} :is(.sb-head,.sb-reading-head){position:relative;isolation:isolate;background-image:linear-gradient(to right,${p.bg},${p.bg}00 8%,${p.bg}00 92%,${p.bg}),linear-gradient(to bottom,${p.bg}00 45%,${p.bg} 100%),${image('home.webp')};background-repeat:no-repeat;background-position:center top;background-size:100% 100%,100% 100%,100% auto;background-attachment:scroll;position:relative!important;padding:145px 8px 20px!important;min-height:226px}
+${S} :is(.sb-head,.sb-reading-head){position:relative!important;background:none!important;padding:145px 8px 20px!important;min-height:226px}
+${S} :is(.sb-page.drawer-content,.drawer-content:has(.sb-page),#chat.sb-reading){background-color:var(--sb-bar-bg)!important;background-image:linear-gradient(to bottom,${p.bg}00,${p.bg} 360px),${image('home.webp')}!important;background-size:100% 100%,100% auto!important;background-repeat:no-repeat!important;background-position:center top!important;background-attachment:local!important}
 ${S} :is(.sb-script,.sb-chat-script){font-family:var(--sb-type-body)!important;font-size:34px!important;line-height:1.15!important;letter-spacing:2px!important;font-weight:400!important;color:var(--sb-bar-text)!important}
 ${S} :is(.sb-en,.sb-lounge-en){display:none!important}
 ${S} :is(.sb-zh,.sb-lounge-zh){font:13px/1.6 var(--sb-type-body)!important;letter-spacing:1px!important;color:var(--sb-bar-sub)}
@@ -48,10 +49,10 @@ ${S} .sb-lounge-root{font-size:14px}${S} .sb-lounge-role-name{font-size:17px}${S
 ${S} .sb-lounge-label{font:22px var(--sb-type-body)!important;letter-spacing:1px;color:var(--sb-bar-text);margin:22px 0 12px}
 ${S} .sb-lounge-label i{font-size:12px}${S} .sb-lounge-root .sb-lounge-quick button{background:color-mix(in srgb,var(--sb-bar-bg) 65%,transparent);color:var(--sb-bar-text);border-color:var(--sb-bar-line);font-size:13px;min-height:40px}
 ${S} .sb-lounge-root .sb-lounge-temporary{font-size:12px}${S} .sb-lounge-foot{font:12px var(--sb-type-body);letter-spacing:2px}
-${S} .sb-page{background:var(--sb-bar-bg)!important}${S} .sb-page :is(.sb-title,.sb-fold,.sb-format-group,.sb-lighting-group){border-color:var(--sb-bar-line)}
+${S} .sb-page:not(.drawer-content){background:transparent!important}${S} .sb-page :is(.sb-title,.sb-fold,.sb-format-group,.sb-lighting-group){border-color:var(--sb-bar-line)}
 ${S} :is(.sb-label,.sb-foot){display:none}${S} :is(.sb-title i,.sb-fold-h i,.sb-sec>i,.sb-lighting-label i){display:none}
 ${S} .sb-page :is(.sb-solid,.sb-b){font-family:var(--sb-type-ui)!important}${S} .sb-page :is(input,textarea,select){font-family:var(--sb-type-ui)!important}
-${S} #chat .sb-reading-head{background-image:linear-gradient(to right,${p.bg},${p.bg}00 8%,${p.bg}00 92%,${p.bg}),linear-gradient(to bottom,${p.bg}00 45%,${p.bg} 100%),${image('home.webp')};background-size:100% 100%,100% 100%,100% auto;background-repeat:no-repeat;background-position:center top;background-attachment:scroll;position:static!important;padding-top:145px!important;min-height:226px}
+${S} #chat .sb-reading-head{background:none!important;position:static!important;padding-top:145px!important;min-height:226px}
 ${S} :is(#top-settings-holder,#send_form){position:relative;isolation:isolate;background-color:var(--sb-bar-accent)!important;background-image:linear-gradient(#ffffff08,#00000008)!important;color:var(--sb-maple-bar-ink)!important;border-color:color-mix(in srgb,var(--sb-maple-bar-ink) 20%,transparent)!important}
 ${S} :is(#top-settings-holder,#send_form)::after{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;border-radius:inherit;background:var(--sb-maple-bar-ink);opacity:.24;-webkit-mask:${image('pattern.webp')} center bottom/100% auto no-repeat;mask:${image('pattern.webp')} center bottom/100% auto no-repeat}
 ${S} #top-settings-holder .drawer-icon{background:none!important;border:0!important}
