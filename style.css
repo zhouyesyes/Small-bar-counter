@@ -1264,3 +1264,14 @@ html.sb-bar #WorldInfo .sb-world-rules-panel #wiCheckboxes > label:has(input:che
 html.sb-bar #WorldInfo .sb-world-rules-panel #wiCheckboxes small {white-space:normal;font:11px/1.5 var(--sb-f-serif);}
 html.sb-bar #WorldInfo .sb-world-rules-panel input[type=checkbox] {width:14px;height:14px;min-width:14px;margin:0;accent-color:var(--sb-bar-accent);}
 html.sb-bar #WorldInfo .sb-world-rules-panel input:disabled {opacity:.45;}
+
+/* Flat rule sliders: suppress the native inset frame and brightness filter. */
+html.sb-bar #WorldInfo .sb-world-rules-panel input[type=range] {appearance:none;-webkit-appearance:none;height:22px!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;filter:none!important;transition:none;}
+html.sb-bar #WorldInfo .sb-world-rules-panel input[type=range]::-webkit-slider-runnable-track {height:2px;border:0;border-radius:2px;background:var(--sb-bar-accent);box-shadow:none;}
+html.sb-bar #WorldInfo .sb-world-rules-panel input[type=range]::-webkit-slider-thumb {appearance:none;-webkit-appearance:none;width:10px;height:10px;margin-top:-4px;border:1px solid var(--sb-bar-accent);border-radius:50%;background:var(--sb-bar-paper);box-shadow:none;}
+html.sb-bar #WorldInfo .sb-world-rules-panel input[type=range]::-moz-range-track {height:2px;border:0;border-radius:2px;background:var(--sb-bar-accent);box-shadow:none;}
+html.sb-bar #WorldInfo .sb-world-rules-panel input[type=range]::-moz-range-thumb {width:8px;height:8px;border:1px solid var(--sb-bar-accent);border-radius:50%;background:var(--sb-bar-paper);box-shadow:none;}
+html.sb-bar #WorldInfo .sb-world-rules-panel input[type=range]:hover {filter:none;}
+html.sb-bar #chat.sb-lounge .sb-lounge-root :is(.sb-lounge-load-more,.sb-lounge-more-people) {display:block;box-sizing:border-box;width:100%;margin:10px 0 0;padding:8px 12px;border:1px solid var(--sb-bar-accent);border-radius:8px;background:transparent;color:var(--sb-bar-accent);font:11px/1.6 var(--sb-f-serif);text-align:center;}
+html.sb-bar #chat.sb-lounge .sb-lounge-load-more::after {content:'⌄';margin-left:8px;}
+html.sb-bar #chat.sb-lounge .sb-lounge-load-more:disabled {opacity:.5;cursor:wait;}

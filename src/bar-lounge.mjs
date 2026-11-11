@@ -167,6 +167,9 @@ function render(state) {
     const count = peopleLimit(p.peopleLimit), cap = query || count === 0 ? Infinity : count + state.extraPeople;
     candidates.forEach((group, i) => { if (i >= cap) group.section.hidden = true; });
     state.morePeople.hidden = candidates.length <= cap;
+    const nativeMore = $('.showMoreChats', panel);
+    state.loadMore.hidden = !nativeMore || nativeMore.hidden || nativeMore.classList.contains('hidden') || nativeMore.closest('.recentChatsMore')?.hidden === true;
+    state.loadMore.disabled = !!nativeMore?.disabled;
     updateText(state.morePeople, `再看 ${Math.min(count || 10, Math.max(0, candidates.length - cap))} 人`);
     const visibleGroups = candidates.some(g => !g.section.hidden);
     state.list.hidden = !visibleGroups;
@@ -187,6 +190,12 @@ export function updateLounge(panel, host, popup) {
         state.list = el('div', 'sb-lounge-groups'); state.empty = el('p', 'sb-lounge-empty');
         state.morePeople = el('button', 'sb-lounge-more-people'); state.morePeople.type = 'button';
         state.morePeople.onclick = () => { state.extraPeople += peopleLimit(prefs(state.host).peopleLimit) || 10; render(state); };
+        state.loadMore = el('button', 'sb-lounge-load-more', '展开更早聊天');
+        state.loadMore.type = 'button';
+        state.loadMore.onclick = () => {
+            $('.showMoreChats', panel)?.click();
+            render(state);
+        };
         const quick = el('div', 'sb-lounge-quick');
         for (const [text, name, selector] of [['酒窖', 'cellar', '#sys-settings-button'], ['调酒师', 'people', '#rightNavHolder'], ['工具', 'tools', '#extensions-settings-button']]) {
             const b = el('button', ''); b.type = 'button'; b.append(icon(name), el('span', '', text)); b.onclick = () => document.querySelector(selector + ' .drawer-icon')?.click(); quick.append(b);
@@ -198,7 +207,7 @@ export function updateLounge(panel, host, popup) {
             temporary.before(state.temporary.marker); temporary.classList.add('sb-lounge-temporary'); temporary.append(caption);
         }
         state.restore = el('button', 'sb-lounge-restore', '显示隐藏的角色'); state.restore.type = 'button'; state.restore.onclick = () => { prefs(state.host).hidden = {}; save(state); };
-        root.append(head, search, state.pins, label, state.list, state.empty, state.morePeople, quick); if (temporary) root.append(temporary);
+        root.append(head, search, state.pins, label, state.list, state.empty, state.morePeople, state.loadMore, quick); if (temporary) root.append(temporary);
         root.append(state.restore, el('div', 'sb-lounge-foot', 'a quiet seat, kept for you')); panel.prepend(root); state.root = root;
         panels.set(panel, state);
     }
