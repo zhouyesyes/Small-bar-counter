@@ -143,6 +143,93 @@ function renderPins(state) {
         state.pins.append(tile);
     }
 }
+// ---------- 一个人的全部聊天（她 11/11 要的） ----------
+// 酒馆首页只给「所有人加起来最近 N 段」，排在外面的旧聊天首页看不到。这里用酒馆自己「过去的聊天」那个接口补：
+// 数段数时只要文件名（快）；展开这个人时才拿每段的预览和时间。都只在这一页里记着，首页重画（换了聊天）就重新拿
+const isRole = key => !!key && !key.startsWith('group:');
+async function fetchRoleChats(state, avatar, simple) {
+    const c = state.host.context?.() || globalThis.SillyTavern?.getContext?.();
+    const headers = c?.getRequestHeaders?.() || { 'Content-Type': 'application/json' };
+    const res = await fetch('/api/characters/chats', { method: 'POST', headers, body: JSON.stringify({ avatar_url: avatar, simple: !!simple }) });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    return data && !data.error ? Object.values(data).filter(x => x?.file_name) : [];
+}
+// 同时最多拿 3 个人，人多时首页也不会一下子发一堆请求
+function queueFetch(state, job) {
+    state.fetchQueue ??= []; state.fetching ??= 0;
+    state.fetchQueue.push(job);
+    const next = () => {
+        while (state.fetching < 3 && state.fetchQueue.length) {
+            const run = state.fetchQueue.shift(); state.fetching++;
+            run().catch(() => {}).finally(() => { state.fetching--; next(); });
+        }
+    };
+    next();
+}
+function roleInfo(state, key) { state.roleChats ??= new Map(); if (!state.roleChats.has(key)) state.roleChats.set(key, {}); return state.roleChats.get(key); }
+function ensureCount(state, key) {
+    const info = roleInfo(state, key); if (!isRole(key) || info.countAsked) return;
+    info.countAsked = true;
+    queueFetch(state, async () => {
+        try { info.count = (await fetchRoleChats(state, key, true)).length; } catch { info.count = null; }
+        if (state.panel.isConnected) render(state);
+    });
+}
+function ensureFull(state, key) {
+    const info = roleInfo(state, key); if (!isRole(key) || info.fullAsked) return;
+    info.fullAsked = true;
+    queueFetch(state, async () => {
+        try {
+            const list = await fetchRoleChats(state, key, false);
+            info.full = list.map(x => ({ ...x, chat_name: String(x.file_name).replace(/\.jsonl$/i, '') }));
+            info.count = info.full.length;
+        } catch { info.full = []; }
+        if (state.panel.isConnected) render(state);
+    });
+}
+function chatTime(v) {
+    const m = globalThis.moment?.(v); if (m?.isValid?.()) return m.valueOf();
+    const n = typeof v === 'number' ? v : Date.parse(v); return Number.isFinite(n) ? n : 0;
+}
+// 首页那份「最近聊天」里没有的旧聊天：照酒馆原来一行的样子画一行，点了就进那段
+function extraRows(state, g, key) {
+    const info = roleInfo(state, key); if (!info.full) return [];
+    const have = new Set(g.rows.map(r => r.dataset.file));
+    g.extras ??= new Map();
+    const want = info.full.filter(x => !have.has(x.chat_name)).sort((a, b) => chatTime(b.last_mes) - chatTime(a.last_mes));
+    const keep = new Set(want.map(x => x.chat_name));
+    for (const [name, row] of g.extras) if (!keep.has(name)) { row.remove(); g.extras.delete(name); }
+    return want.map(x => {
+        let row = g.extras.get(x.chat_name);
+        if (!row) {
+            row = el('div', 'recentChat sb-lounge-extra'); row.dataset.file = x.chat_name; row.dataset.avatar = key;
+            const t = chatTime(x.last_mes), d = t ? new Date(t) : null;
+            const date = d ? (globalThis.moment ? globalThis.moment(t).format('l') : d.toLocaleDateString()) : '';
+            const info = el('div', 'recentChatInfo'), top = el('div', 'chatNameContainer'), nameBox = el('div', 'chatName');
+            nameBox.append(el('strong', 'characterName', g.name.textContent), el('span', '', '–'), el('span', '', x.chat_name));
+            const when = el('small', 'chatDate', date); if (d) when.title = d.toLocaleString();
+            top.append(nameBox, when);
+            const msgBox = el('div', 'chatMessageContainer'), msg = el('div', 'chatMessage', String(x.mes ?? ''));
+            const stats = el('div', 'chatStats'); stats.append(el('small', '', x.chat_items != null ? x.chat_items + ' 条' : ''), el('small', 'fileSize', String(x.file_size ?? '')));
+            msgBox.append(msg, stats); info.append(top, msgBox); row.append(info);
+            row.dataset.search = (g.name.textContent + ' ' + x.chat_name + ' ' + (x.mes ?? '')).normalize('NFKC').toLocaleLowerCase();
+            row.onclick = () => openRoleChat(state, key, x.chat_name);
+            g.extras.set(x.chat_name, row);
+        }
+        return row;
+    });
+}
+async function openRoleChat(state, avatar, chatName) {
+    const c = state.host.context?.() || globalThis.SillyTavern?.getContext?.(); if (!c) return;
+    const id = (c.characters || []).findIndex(x => x?.avatar === avatar);
+    if (id < 0) { globalThis.toastr?.warning('没找到这位调酒师'); return; }
+    try {
+        await c.selectCharacterById(id);
+        const cur = typeof c.getCurrentChatId === 'function' ? c.getCurrentChatId() : '';
+        if (cur !== chatName) await c.openCharacterChat(chatName);
+    } catch (e) { console.warn('[Small Bar] open chat', e); globalThis.toastr?.error('没打开这段聊天'); }
+}
 function render(state) {
     const { panel, host } = state, p = prefs(host), query = state.search.value.trim().normalize('NFKC').toLocaleLowerCase();
     const tokens = query.split(/\s+/).filter(Boolean);
@@ -156,15 +243,19 @@ function render(state) {
         const latest = latestChatRow(entries);
         const original = $('.characterName', latest)?.textContent || '';
         updateText(g.name, labelFor(state, key, original)); updateText(g.date, $('.chatDate', latest)?.textContent || '');
-        updateText(g.count, `${entries.length} 段聊天`);
         updateImage(g.image, $('.avatar img', latest)?.getAttribute('src'));
         const matches = entries.filter(row => tokens.every(t => (original + ' ' + g.name.textContent + ' ' + row.dataset.file + ' ' + row.textContent).normalize('NFKC').toLocaleLowerCase().includes(t)));
         const pinned = p.pins.includes(key), open = !!query || !!p.open[key];
-        g.section.hidden = matches.length === 0;
+        // 展开了才去拿这个人全部的聊天；拿到之前先用首页已有的那几段
+        if (open && isRole(key)) ensureFull(state, key);
+        const extras = extraRows(state, g, key), extraMatches = extras.filter(row => tokens.every(t => row.dataset.search.includes(t)));
+        const total = Math.max(entries.length, roleInfo(state, key).count ?? 0);
+        updateText(g.count, `${total} 段聊天`);
+        g.section.hidden = matches.length + extraMatches.length === 0;
         g.section.style.order = String(pinned ? -1 : 0); g.section.classList.toggle('is-pinned', pinned); g.section.classList.toggle('is-private', !!p.blurred[key]);
         g.toggle.setAttribute('aria-expanded', String(open)); g.content.hidden = !open;
         const limit = p.chatLimit || 3, all = state.expanded.has(key) || !!query;
-        const ordered = [...matches].sort((a, b) => Number($('.pinChat', b)?.getAttribute('aria-pressed') === 'true') - Number($('.pinChat', a)?.getAttribute('aria-pressed') === 'true'));
+        const ordered = [...matches].sort((a, b) => Number($('.pinChat', b)?.getAttribute('aria-pressed') === 'true') - Number($('.pinChat', a)?.getAttribute('aria-pressed') === 'true')).concat(extraMatches);
         const visible = new Set(all ? ordered : ordered.slice(0, limit));
         for (const row of entries) {
             row.classList.remove('hidden');
@@ -173,9 +264,12 @@ function render(state) {
         }
         // Move only when needed: native handlers remain attached, stable rows do not flicker.
         for (let i = 0; i < ordered.length; i++) if (g.content.children[i] !== ordered[i]) g.content.insertBefore(ordered[i], g.content.children[i] || g.older);
-        for (const row of entries) if (row.parentElement !== g.content) g.content.insertBefore(row, g.older);
-        g.older.hidden = matches.length <= limit || !!query;
-        updateText(g.older, state.expanded.has(key) ? '收起旧聊天' : `展开其余 ${Math.max(0, matches.length - limit)} 段`);
+        for (const row of extras) row.hidden = !visible.has(row);
+        for (const row of [...entries, ...extras]) if (row.parentElement !== g.content) g.content.insertBefore(row, g.older);
+        // 全部聊天还没拿到时，按数出来的总段数算「其余几段」
+        const shown = query ? ordered.length : Math.max(ordered.length, total);
+        g.older.hidden = shown <= limit || !!query;
+        updateText(g.older, state.expanded.has(key) ? '收起旧聊天' : `展开其余 ${Math.max(0, shown - limit)} 段`);
         g.older.setAttribute('aria-expanded', String(state.expanded.has(key)));
     }
     for (const [key, group] of state.groups) if (!groups.has(key)) { group.section.remove(); state.groups.delete(key); }
@@ -186,6 +280,7 @@ function render(state) {
     const limit = peopleLimit(p.peopleLimit);
     const cap = query || limit === 0 || state.showAllPeople ? Infinity : limit;
     candidates.forEach((group, i) => { if (i >= cap) group.section.hidden = true; });
+    for (const group of candidates) if (!group.section.hidden) ensureCount(state, group.key);
     const nativeMore = $('.showMoreChats', panel);
     state.nativeMore = nativeMore && !nativeMore.hidden && !nativeMore.classList.contains('hidden') && nativeMore.closest('.recentChatsMore')?.hidden !== true ? nativeMore : null;
     state.remainingPeople = limit ? Math.max(0, candidates.length - limit) : 0;
@@ -247,6 +342,7 @@ function restorePanel(panel) {
         row.classList.remove('sb-lounge-chat-pinned'); $('.sb-lounge-more', row)?.remove();
     }
     if (state.temporary) { state.temporary.marker.replaceWith(state.temporary.node); state.temporary.node.classList.remove('sb-lounge-temporary'); state.temporary.caption.remove(); }
+    for (const [, g] of state.groups) for (const [, row] of g.extras || []) row.remove();
     state.root.remove(); panels.delete(panel);
 }
 export function unmountLounge() { for (const [panel] of panels) restorePanel(panel); }
