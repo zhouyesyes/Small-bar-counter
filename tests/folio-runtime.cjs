@@ -24,7 +24,7 @@ await p.evaluate(() => {
         const r = action.getBoundingClientRect();
         if (r.left < card.left || r.right > card.right || r.top < card.top || r.bottom > card.bottom) throw Error('preset action outside card');
     }
-    if (getComputedStyle(document.querySelector('.sb-folio-punctuation')).textOrientation !== 'sideways') throw Error('title brackets must rotate');
+    if (getComputedStyle(document.querySelector('.sb-folio-punctuation')).writingMode !== 'horizontal-tb') throw Error('title brackets must use horizontal glyphs');
 });
 await p.evaluate(() => {
     const tools = document.querySelector('.sb-folio-preset-tools');
@@ -66,6 +66,21 @@ if(await p.locator('#ttas_agent_embed_preset_openai').isVisible())throw Error('T
 await p.locator('#ttas_agent_embed_preset_kobold').click();
 await p.evaluate(()=>{document.querySelector('#openai_api-presets').hidden=false;document.querySelector('#kobold_api-presets').hidden=true;document.querySelector('#openai_api-presets').dispatchEvent(new Event('change',{bubbles:true}));});
 await p.waitForTimeout(250);if(await p.locator('html.sb-folio').count()!==1)throw Error('theme not active');await p.locator('#settings_preset_openai').selectOption('b');await p.waitForTimeout(200);if(!(await p.locator('#left-nav-panel .sb-folio-value').textContent()).includes('另一份'))throw Error('preset title');if(await p.evaluate(()=>calls.preset)!==1)throw Error('preset event');await p.locator('[data-native-toggle="0"]').click();if(await p.evaluate(()=>calls.toggle)!==1)throw Error('toggle event');
+// Apply one orientation policy across every page, including native text added later.
+await p.evaluate(async()=>{
+    const sample='Ab12()[]{}（）［］【】〔〕〈〉《》「」『』';
+    const probes=[...document.querySelectorAll('.sb-page')].map(root=>{
+        const button=document.createElement('button');button.textContent=sample;button.style.cssText='writing-mode:vertical-rl;position:absolute;left:-2000px;text-orientation:sideways';let clicks=0;button.onclick=()=>clicks++;root.append(button);return{button,clicked:()=>clicks};
+    });
+    const {syncFolioPages}=await import('/src/folio-theme.mjs');syncFolioPages();
+    for(const {button,clicked}of probes){
+        if(button.textContent!==sample||getComputedStyle(button).textOrientation!=='upright')throw Error('vertical Latin/digits changed or still sideways');
+        if(button.querySelectorAll('.sb-folio-punctuation').length!==22)throw Error('some vertical bracket types were missed');
+        for(const mark of button.querySelectorAll('.sb-folio-punctuation'))if(getComputedStyle(mark).writingMode!=='horizontal-tb')throw Error('vertical font bracket substitution remains');
+        button.click();if(clicked()!==1)throw Error('glyph handling replaced native button');button.remove();
+    }
+    if(document.querySelector('textarea .sb-folio-punctuation,select .sb-folio-punctuation'))throw Error('glyph handling changed native editor values');
+});
 for(const [id,file]of[['rm_api_block','api'],['WorldInfo','world'],['AdvancedFormatting','format'],['user-settings-block','appearance'],['Backgrounds','backgrounds'],['rm_extensions_block','tools'],['PersonaManagement','persona'],['rm_characters_block','characters'],['rm_ch_create_block','character']]){await p.evaluate(id=>showPage(id),id);await p.waitForTimeout(220);if(!(await p.locator('#'+id+' .sb-script').textContent()).match(/[\u4e00-\u9fff]/))throw Error('page title '+id);if(await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth))throw Error('overflow '+id);}
 // Native extension controls are focusable divs; their click target must stay inside the card.
 await p.evaluate(()=>showPage('rm_extensions_block'));await p.waitForTimeout(180);
@@ -199,10 +214,14 @@ await p.evaluate(() => {
     if (new Set(type).size !== 1 || !type[0].startsWith('10px|400|')) throw Error('connection profile action typography differs');
 
     for (const group of [model, profiles]) {
-        if (group.some(r => Math.abs(r.top - group[0].top) > 1)) throw Error('connection actions must start at the same height');
+        if (group.some(r => Math.abs(r.bottom - group[0].bottom) > 1)) throw Error('connection actions must share the bottom baseline');
         for (let i = 1; i < group.length; i++) if (Math.abs(group[i].left - group[i - 1].left - 17) > 1) throw Error('connection action spacing must match presets');
     }
-    if (Math.abs(model[0].top - profiles[0].top) > 1) throw Error('connection cards action rows misaligned');
+    if (Math.abs(model[0].bottom - profiles[0].bottom) > 1) throw Error('connection cards action rows misaligned');
+    for(const button of document.querySelectorAll('#rm_api_block .sb-pour .sb-row .sb-b,.sb-folio-profile-actions>*'))if(getComputedStyle(button).textAlign!=='end')throw Error('vertical operations must align text to bottom');
+    const connect=document.querySelector('#rm_api_block [data-do=connect]'),test=document.querySelector('#rm_api_block [data-do=test]');
+    const textRect=node=>{const range=document.createRange();range.selectNodeContents(node);return range.getBoundingClientRect();};
+    const a=textRect(connect),b=textRect(test);if(Math.abs(a.bottom-b.bottom)>2||b.top<=a.top)throw Error('short and long action captions do not grow upward from the same baseline');
 });
 await p.locator('#rm_api_block [data-fold=detail]').click();
 if (await p.locator('#custom_api_url_text').isVisible()) throw Error('connection details do not close');

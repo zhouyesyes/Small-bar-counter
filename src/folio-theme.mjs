@@ -54,6 +54,23 @@ function stamp(cardNode,label) { let n=$('.sb-folio-stamp',cardNode);if(!n){n=ow
 function lines(cardNode,summary) { let n=$('.sb-folio-lines',cardNode);if(!n){n=own('sb-folio-lines');cardNode.append(n);}const bits=(summary||'').split(' · ').filter(Boolean).slice(0,4);const html=bits.map(t=>`<span><i>${esc(t)}</i></span>`).join('');if(n.innerHTML!==html)n.innerHTML=html;n.style.setProperty('--folio-columns',String(Math.max(bits.length,1))); }
 function record(root) { let s=states.get(root);if(!s){s={};states.set(root,s);}return s; }
 function heading(root,name) {let h=$('.sb-head',root);if(!h&&name==='bartender'){h=own('sb-head','<div class="sb-script"></div><div class="sb-zh"></div>');root.prepend(h);}if(!h)return;text($('.sb-script',h),pages[name][0]);text($('.sb-zh',h),pages[name][1]);if(!$('.sb-folio-headstamp',h))h.append(own('sb-folio-headstamp','闲记'));}
+// Vertical labels use upright Latin/digits; brackets also bypass vertical font glyphs.
+function orientVerticalText(root) {
+    const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT),pending=[];
+    for(let node=walker.nextNode();node;node=walker.nextNode()){
+        if(!/[()[\]{}（）［］【】〔〕〈〉《》「」『』]/u.test(node.data))continue;
+        const parent=node.parentElement;
+        if(parent.closest('.sb-folio-punctuation,input,textarea,select,script,style,svg,[contenteditable]:not([contenteditable="false"]),[role="textbox"]'))continue;
+        if(getComputedStyle(parent).writingMode.startsWith('vertical'))pending.push(node);
+    }
+    for(const node of pending){
+        const parts=node.data.split(/([()[\]{}（）［］【】〔〕〈〉《》「」『』])/u);
+        node.replaceWith(...parts.filter(Boolean).map(part=>{
+            if(!/^[()[\]{}（）［］【】〔〕〈〉《》「」『』]$/u.test(part))return document.createTextNode(part);
+            const mark=document.createElement('span');mark.className='sb-folio-punctuation';mark.textContent=part;return mark;
+        }));
+    }
+}
 function preset(root,s) {
     const native=$('#respective-presets-block',root);if(!native)return;
     if(!s.rail){s.rail=rail(root,$('#ai_response_configuration',root)||native.parentElement);s.a=card(s.rail,'当前文笺',true);s.b=card(s.rail,'落笔有度');move(native,$('.sb-folio-native',s.a));const f=$('[data-fold="params"]',root)?.closest('.sb-fold');move(f,$('.sb-folio-native',s.b));}
@@ -215,6 +232,7 @@ export function syncFolioPages() {
     if(!active)return;
     for(const name of Object.keys(pages)){const root=$('.sb-page-'+name);if(!root)continue;heading(root,name);for(const n of $$('.sb-fold-h b,.sb-title b,.sb-sec b,.sb-lighting-label b',root)){const aliases={'进货细节':'连接细节','进货单':'连接配置','调酒台':'落笔有度','原料':'提示条目','常备':'全局常驻','其他会员卡':'其他名帖','其余设置':'其他设置','更多设定':'更多设定','灯光搭配':'装帧与配色','角色习惯':'角色习惯','店内杂项':'界面杂项','对话习惯':'对话习惯','输入提示':'输入提示','吧台脚本':'脚本'};const next=aliases[n.textContent.replace(/\s/g,'')];if(next)text(n,next);}for(const b of $$('[data-do]',root)){const names={model:'换模型',connect:'重新连接',test:'测试',newbook:'新建',desc:'改小传',photo:'换头像',dupe:'复制',lore:'系一卷',back:'‹ 故人录',closeback:'收起小传'};if(names[b.dataset.do])text(b,names[b.dataset.do]);}if(name==='bartender')attribute($('#world_button',root),'title','世间录 · 关联世界书');const footer=$('.sb-foot i',root);text(footer,'一卷收好，随时再续');const s=record(root);if(name==='recipe')preset(root,s);if(name==='cellar')cellar(root,s);if(name==='menu')world(root,s);if(name==='format')format(root,s);if(name==='tools')tools(root,s);if(name==='card')persona(root,s);if(name==='card'||name==='bartenders')collection(root);}
     const all=['#ai-config-button','#sys-settings-button','#advanced-formatting-button','#WI-SP-button','#user-settings-button','#backgrounds-button','#extensions-settings-button','#persona-management-button','#rightNavHolder'];all.forEach((sel,i)=>attribute($(sel+' .drawer-icon'),'title',iconNames[i]));
+    for(const root of $$('.sb-page'))orientVerticalText(root);
 }
 function onClick(e) {
     if(active&&e.target.closest('#Backgrounds #bg-scroll-top'))$('#Backgrounds')?.scrollTo({top:0,behavior:'smooth'});
@@ -262,6 +280,7 @@ export function configureFolio(settingsValue,adapter={}) {
 export function unmountFolioPages() {
     picker?.();picker=null;
     for(const s of states.values())s.toolObserver?.disconnect();
+    for(const mark of $$('.sb-folio-punctuation'))mark.replaceWith(...mark.childNodes);
     for(const [root,s]of states)if(s.detailsShown)root.classList.toggle('sb-open-detail',s.detailWasOpen);
     for(const n of [...moved.keys()].reverse())restore(n);
     for(const [n,t]of texts)if(n.isConnected)n.replaceChildren(...t);texts.clear();
