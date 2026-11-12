@@ -923,12 +923,10 @@ export function createUI(host) {
   <label class="sb-srow"><span>回复时不自动更新状态<small>只对这张卡：正文后不再让TA写状态段，小手机回消息也不顺带更新。多角色、群像卡打开这个；手动点按钮生成照常能用</small></span><input type="checkbox" class="sb-tg" data-cset="noAutoStatus" ${c.noAutoStatus ? 'checked' : ''}></label>
  </div>
  <div class="sb-sh">外观</div><div class="sb-sgrp">
-  ${toggle('酒馆页面美化', 'barTheme', s.barTheme, '默认风格与红叶主题都在这里切换')}
-  <label class="sb-srow"><span>美化风格</span><select data-set="barStyle" ${s.barTheme ? '' : 'disabled'}>${[['lounge', '默认 · 小吧台'], ['maple', '红叶 · 拾叶集']].map(([k, n]) => `<option value="${k}" ${(s.barStyle || 'lounge') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+  ${toggle('酒馆页面美化', 'barTheme', s.barTheme, '使用原来的默认小吧台美化')}
   <label class="sb-srow"><span>明暗模式</span><select data-set="theme">${[['auto', '跟酒馆'], ['light', '浅色'], ['dark', '深色']].map(([k, n]) => `<option value="${k}" ${(s.theme || 'auto') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
   <button data-act="splash-settings" class="sb-srow"><span>开场与配色</span><span class="sb-sv">主色 · 辅助色 ›</span></button>
- </div>
- <div class="sb-sh">其他</div><div class="sb-sgrp">
+ </div><div class="sb-sh">其他</div><div class="sb-sgrp">
   <label class="sb-srow"><span>小手机怎么打开<small>抽屉里：嵌在抽屉那一格；浮窗：浮在聊天上，能拖，只有 × 关</small></span><select data-set="phoneMode">${[['drawer', '抽屉里'], ['float', '浮窗']].map(([k, n]) => `<option value="${k}" ${(s.phoneMode || 'drawer') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
   ${toggle('小猫入口', 'cat', s.cat !== false)}
   <label class="sb-srow"><span>小猫高度<small>离屏幕顶上的百分比</small></span><input type="number" min="10" max="85" class="sb-num" data-set="catTop" value="${Number(s.catTop) || 46}"></label>

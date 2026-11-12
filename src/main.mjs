@@ -27,7 +27,7 @@ const ctx = () => getContext();
 function settings() {
     const c = ctx();
     const s = (c.extensionSettings[NS] ??= {});
-    s.enabled ??= true; s.barTheme ??= false; s.barStyle ??= 'lounge'; s.cat ??= true; s.theme ??= 'auto'; s.api ??= 'main'; s.wxMemory ??= 50; s.storyPhoneN ??= 2; s.catTop ??= 46;
+    s.enabled ??= true; s.barTheme ??= false; s.cat ??= true; s.theme ??= 'auto'; s.api ??= 'main'; s.wxMemory ??= 50; s.storyPhoneN ??= 2; s.catTop ??= 46;
     s.chars ??= {}; s.me ??= {};
     return s;
 }
@@ -519,9 +519,9 @@ function hasChar() { const c = ctx(); return c.characterId != null && c.characte
 // ---------- 接起来 ----------
 const host = {
     settings, setSettings: f => {
-        const s = settings(), before = [s.barTheme, s.barStyle, s.theme];
+        const s = settings(), before = [s.barTheme, s.theme];
         f(s); saveSettings(); refreshInject();
-        if (before.some((value, i) => value !== [s.barTheme, s.barStyle, s.theme][i])) applyAppearance();
+        if (before[0] !== s.barTheme || before[1] !== s.theme) applyAppearance();
     },
     openingProfile: () => { const h = personalProfile(settings()), art = artwork(h, artworkMode(settings())); return { avatar: img(art.avatar), cover: img(art.cover), name: h.signature ?? 'yesyes', sign: h.quote ?? 'a quiet seat, kept for you', table: h.table ?? 'by the window', order: h.order ?? 'the usual', date: h.date || new Intl.DateTimeFormat('sv-SE').format(new Date()).replaceAll('-', '.') }; },
     setHomeProfile: patch => { const shared = {}; if ('name' in patch) shared.signature = patch.name; if ('sign' in patch) shared.quote = patch.sign; updatePersonalProfile(shared); },
@@ -557,18 +557,11 @@ let refreshTimer = 0;
 const barChatHost = () => ({ context: ctx, settings, config: charCfg, me, him, image: img,
     saveChat: saveMeta, saveSettings, saveImage: saveImageHere, openAppearance: openSplashSettings,
     setTheme: theme => { settings().theme = theme; saveSettings(); window.dispatchEvent(new Event('small-bar-appearance')); } });
-let mountedBarStyle = '';
-function syncAppearanceControls() {
-    const s = settings(), toggle = document.getElementById('sb-bartheme'), select = document.getElementById('sb-barstyle');
-    if (toggle) toggle.checked = !!s.barTheme;
-    if (select) { select.value = s.barStyle || 'lounge'; select.disabled = !s.barTheme; }
-}
 function applyAppearance() {
-    const nextStyle = settings().barTheme ? settings().barStyle : '';
-    if (mountedBarStyle !== nextStyle) { unmountChat(); mountedBarStyle = nextStyle; }
     applyBarTheme(settings(), ctx);
     if (settings().barTheme) mountChat(barChatHost); else unmountChat();
-    syncAppearanceControls();
+    const toggle = document.getElementById('sb-bartheme');
+    if (toggle) toggle.checked = !!settings().barTheme;
 }
 
 function refresh() { dirty(); clearTimeout(refreshTimer); refreshTimer = setTimeout(() => { dirty(); refreshInject(); ui.render(); applyAppearance(); }, 120); }
@@ -582,7 +575,6 @@ function settingsPanel() {
     el.innerHTML = `<div class="inline-drawer"><div class="inline-drawer-toggle inline-drawer-header"><b>小吧台</b><div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div></div>
 <div class="inline-drawer-content"><label class="checkbox_label"><input type="checkbox" id="sb-enabled"> 小猫抽屉</label>
 <label class="checkbox_label" title="酒馆的颜色跟小吧台的配色走，顶栏换成小物件；要用别的大改美化时关掉它"><input type="checkbox" id="sb-bartheme"> 吧台美化</label>
-<label for="sb-barstyle">美化风格</label><select id="sb-barstyle" class="text_pole"><option value="lounge">默认 · 小吧台</option><option value="maple">红叶 · 拾叶集</option></select>
 <div class="flex-container" style="gap:6px;margin-top:6px"><div class="menu_button" id="sb-openbtn">打开抽屉</div><div class="menu_button" id="sb-cleanbtn">扫描清理</div><div class="menu_button" id="sb-lookbtn">开场与配色</div></div>
 <small id="sb-cleanres" style="opacity:.7"></small></div></div>`;
     box.appendChild(el);
@@ -592,9 +584,7 @@ function settingsPanel() {
     // 吧台美化：和小猫抽屉互不相干，单独开关（关掉小猫抽屉也能用）
     const bt = el.querySelector('#sb-bartheme');
     bt.checked = !!settings().barTheme;
-    const bs = el.querySelector('#sb-barstyle'); bs.value = settings().barStyle; bs.disabled = !bt.checked;
-    bs.addEventListener('change', () => { settings().barStyle = bs.value; saveSettings(); applyAppearance(); ui.render(); });
-    bt.addEventListener('change', () => { settings().barTheme = bt.checked; bs.disabled = !bt.checked; saveSettings(); applyAppearance(); ui.render(); });
+    bt.addEventListener('change', () => { settings().barTheme = bt.checked; saveSettings(); applyAppearance(); ui.render(); });
     el.querySelector('#sb-openbtn').addEventListener('click', () => ui.open());
     el.querySelector('#sb-lookbtn').addEventListener('click', openSplashSettings);
     const res = el.querySelector('#sb-cleanres'), btn = el.querySelector('#sb-cleanbtn');

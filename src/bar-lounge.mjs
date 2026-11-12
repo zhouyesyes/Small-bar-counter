@@ -35,8 +35,7 @@ const iconPaths = {
     tools: '<path d="M8 9h8l-1 12H9ZM9 9V7a3 3 0 0 1 6 0v2M11 3h2"/>',
     down: '<path d="m8 10 4 4 4-4"/>',
 };
-function icon(name, maple = false) { const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.setAttribute('viewBox', '0 0 24 24'); svg.setAttribute('aria-hidden', 'true'); const maplePaths = { cellar:'<path d="M12 3l7 9-7 9-7-9zM5 12h14M12 3v18"/>', people:'<path d="M12 21V4M12 9Q4 11 3 4q8-2 9 5zM12 15q1-8 9-7-1 8-9 7z"/>', tools:'<path d="M4 7h16v13H4zM4 7l2-4h12l2 4M4 11h16M10 11v3h4v-3"/>' };
-    svg.innerHTML = (maple && maplePaths[name]) || iconPaths[name]; return svg; }
+function icon(name) { const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.setAttribute('viewBox', '0 0 24 24'); svg.setAttribute('aria-hidden', 'true'); svg.innerHTML = iconPaths[name]; return svg; }
 export function peopleLimit(value) {
     const count = Number(value);
     return value != null && value !== '' && Number.isInteger(count) && count >= 0 && count <= 200 ? count : 10;
@@ -303,14 +302,13 @@ export function updateLounge(panel, host, popup) {
     if (!state) {
         state = { panel, host, popup, groups: new Map(), rows: new Map(), expanded: new Set(), showAllPeople: false, ids: panels.size * 10000 };
         const root = el('div', 'sb-lounge-root'); root.dataset.sbLoungeOwned = '';
-        const maple = host.settings().barStyle === 'maple';
         const head = el('header', 'sb-lounge-head');
         const cover = el('img', 'sb-lounge-glass'); cover.src = glass; cover.alt = ''; cover.width = 132; cover.height = 146; cover.draggable = false;
-        head.append(cover, el('div', 'sb-chat-script', maple ? '拾叶集' : 'The Lounge'), el('div', 'sb-lounge-en', 'PICK UP WHERE WE LEFT OFF'), el('div', 'sb-lounge-zh', maple ? '一树万象 · 片叶成章' : '小 吧 台 · 再 坐 一 会 儿'));
+        head.append(cover, el('div', 'sb-chat-script', 'The Lounge'), el('div', 'sb-lounge-en', 'PICK UP WHERE WE LEFT OFF'), el('div', 'sb-lounge-zh', '小 吧 台 · 再 坐 一 会 儿'));
         const gear = el('button', 'sb-lounge-settings'); gear.type = 'button'; gear.setAttribute('aria-label', '首页设置'); gear.append(icon('settings')); gear.onclick = e => { e.stopPropagation(); settingsMenu(state, gear); }; head.append(gear);
-        const search = el('input', 'sb-lounge-search'); search.type = 'search'; search.placeholder = maple ? '寻一位故人，或翻一段旧事…' : '找一位，或找一段对话…'; search.setAttribute('aria-label', '搜索聊天'); search.oninput = () => render(state); state.search = search;
+        const search = el('input', 'sb-lounge-search'); search.type = 'search'; search.placeholder = '找一位，或找一段对话…'; search.setAttribute('aria-label', '搜索聊天'); search.oninput = () => render(state); state.search = search;
         state.pins = el('div', 'sb-lounge-pins'); state.pins.setAttribute('aria-label', '置顶角色');
-        const label = el('div', 'sb-lounge-label', maple ? '未落之叶  ' : '上次那杯  '); label.append(el('i', '', maple ? '最近聊天' : 'Last orders'));
+        const label = el('div', 'sb-lounge-label', '上次那杯  '); label.append(el('i', '', 'Last orders'));
         state.list = el('div', 'sb-lounge-groups'); state.empty = el('p', 'sb-lounge-empty');
         state.list.id = 'sb-lounge-list-' + state.ids;
         state.morePeople = el('button', 'sb-lounge-more-people'); state.morePeople.type = 'button';
@@ -326,17 +324,17 @@ export function updateLounge(panel, host, popup) {
         };
         const paging = el('div', 'sb-lounge-paging'); paging.append(state.morePeople);
         const quick = el('div', 'sb-lounge-quick');
-        for (const [text, name, selector] of [[maple ? '汲泉 · API' : '酒窖', 'cellar', '#sys-settings-button'], [maple ? '众生枝 · 角色' : '调酒师', 'people', '#rightNavHolder'], [maple ? '随行匣' : '工具', 'tools', '#extensions-settings-button']]) {
-            const b = el('button', ''); b.type = 'button'; b.append(icon(name, maple), el('span', '', text)); b.onclick = () => document.querySelector(selector + ' .drawer-icon')?.click(); quick.append(b);
+        for (const [text, name, selector] of [['酒窖', 'cellar', '#sys-settings-button'], ['调酒师', 'people', '#rightNavHolder'], ['工具', 'tools', '#extensions-settings-button']]) {
+            const b = el('button', ''); b.type = 'button'; b.append(icon(name), el('span', '', text)); b.onclick = () => document.querySelector(selector + ' .drawer-icon')?.click(); quick.append(b);
         }
         const temporary = $('.openTemporaryChat', panel);
         if (temporary) {
-            const caption = el('span', 'sb-lounge-temporary-label', maple ? '＋ 新拾一叶 · 临时聊天' : '＋ 新开一桌 · 临时聊天');
+            const caption = el('span', 'sb-lounge-temporary-label', '＋ 新开一桌 · 临时聊天');
             state.temporary = { node: temporary, marker: document.createComment('sb-temporary-chat'), caption };
             temporary.before(state.temporary.marker); temporary.classList.add('sb-lounge-temporary'); temporary.append(caption);
         }
         root.append(head, search, state.pins, label, state.list, state.empty, paging, quick); if (temporary) root.append(temporary);
-        root.append(el('div', 'sb-lounge-foot', maple ? '一叶一世界 · 待君来拾' : 'a quiet seat, kept for you')); panel.prepend(root); state.root = root;
+        root.append(el('div', 'sb-lounge-foot', 'a quiet seat, kept for you')); panel.prepend(root); state.root = root;
         panels.set(panel, state);
     }
     state.host = host; state.popup = popup; render(state);
