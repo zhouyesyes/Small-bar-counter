@@ -295,9 +295,11 @@ html.sb-bar.sb-folio #completion_prompt_manager #completion_prompt_manager_list 
 
 /* Auxiliary preset controls sit beneath the current-preset caption, not its actions. */
 html.sb-bar.sb-folio #respective-presets-block .sb-folio-preset-tools{position:absolute!important;top:90px!important;right:9px;bottom:auto;left:auto;display:flex;flex-direction:column;align-items:center;gap:10px;width:20px;z-index:5}
-html.sb-bar.sb-folio #respective-presets-block .sb-folio-preset-tools>*{position:relative!important;inset:auto!important;display:flex;align-items:center;justify-content:center;flex:0 0 20px;width:20px!important;height:20px!important;min-height:20px!important;max-height:20px!important;margin:0!important;padding:0!important;writing-mode:horizontal-tb;color:var(--sb-bar-accent);cursor:pointer}
+html.sb-bar.sb-folio #respective-presets-block .sb-folio-preset-tools>*{position:relative!important;inset:auto!important;order:0!important;display:flex;align-items:center;justify-content:center;flex:0 0 20px;width:20px!important;height:20px!important;min-height:20px!important;max-height:20px!important;margin:0!important;padding:0!important;writing-mode:horizontal-tb;color:var(--sb-bar-accent);cursor:pointer}
 html.sb-bar.sb-folio #respective-presets-block .sb-folio-preset-tools .fa-atom::before{font-family:var(--fa-style-family,"Font Awesome 6 Free")!important;font-weight:900!important;font-size:13px!important;writing-mode:horizontal-tb}
 html.sb-bar.sb-folio #respective-presets-block .sb-folio-preset-tools input{display:none}
+html.sb-bar.sb-folio #respective-presets-block .sb-folio-preset-tools>[data-folio-tool-visible="false"]{display:none!important}
+html.sb-bar.sb-folio #respective-presets-block .sb-folio-preset-tools .ttas-agent-send-toggle-icon{display:block;width:14px;height:14px;flex:none;writing-mode:horizontal-tb}
 html.sb-bar.sb-folio #respective-presets-block .sb-folio-preset-tools label[for="bind_preset_to_connection"]{max-width:20px;font-size:13px}
 
 /* API operations share the preset spacing; each first character starts at one height. */

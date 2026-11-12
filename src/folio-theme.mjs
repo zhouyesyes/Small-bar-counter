@@ -23,6 +23,7 @@ export function folioIconCss(icons) {
 }
 const pages = { recipe:['文笺','预设·落笔成章'], cellar:['传讯','连接·尺素相通'], format:['章法','格式·字句有序'], menu:['世间录','世界书·山川有记'], lighting:['装帧','界面·随心成卷'], window:['借景','背景·借一窗景'], tools:['百工匣','扩展·各有所用'], card:['名帖','人设·以此为名'], bartenders:['故人录','角色·故人可寻'], bartender:['其人','人物·见字如晤'] };
 const moved = new Map(), texts = new Map(), attrs = new Map(), states = new Map();
+const presetAuxSelector='label[for="bind_preset_to_connection"],.ttas-agent-embed-button[data-ttas-embed-target="preset"],[id^="ttas_agent_embed_preset_"],.fa-atom';
 let settings = {}, host = {}, active = false, listening = false, picker;
 const $ = (s,r=document) => r.querySelector(s);
 const $$ = (s,r=document) => [...r.querySelectorAll(s)];
@@ -58,10 +59,24 @@ function preset(root,s) {
     if(!s.rail){s.rail=rail(root,$('#ai_response_configuration',root)||native.parentElement);s.a=card(s.rail,'当前文笺',true);s.b=card(s.rail,'落笔有度');move(native,$('.sb-folio-native',s.a));const f=$('[data-fold="params"]',root)?.closest('.sb-fold');move(f,$('.sb-folio-native',s.b));}
     // Keep the host's auxiliary controls and their handlers, away from save/export.
     if(!s.tools){s.tools=own('sb-folio-preset-tools');native.append(s.tools);}
-    const binding=$('label[for="bind_preset_to_connection"]',native);
-    const atom=$('.fa-atom',native);
-    const auxiliary=atom?.closest('.menu_button,button,label,[role="button"]')||atom;
-    for(const control of [auxiliary,binding])if(control&&native.contains(control))move(control,s.tools);
+    if(!s.toolObserver){
+        s.toolObserver=new MutationObserver(records=>{
+            if(records.some(record=>[...record.addedNodes].some(node=>node.nodeType===1&&(node.matches(presetAuxSelector)||node.querySelector(presetAuxSelector)))))preset(root,s);
+        });
+        s.toolObserver.observe(native,{childList:true,subtree:true});
+    }
+    const controls=new Set($$('label[for="bind_preset_to_connection"],.ttas-agent-embed-button[data-ttas-embed-target="preset"],[id^="ttas_agent_embed_preset_"]',native));
+    for(const atom of $$('.fa-atom',native))controls.add(atom.closest('.menu_button,button,label,[role="button"]')||atom);
+    s.toolSources??=new Map();
+    for(const control of controls){
+        if(!native.contains(control))continue;
+        if(!s.toolSources.has(control))s.toolSources.set(control,control.closest('#kobold_api-presets,#novel_api-presets,#openai_api-presets,#textgenerationwebui_api-presets'));
+        const source=s.toolSources.get(control);
+        let visible=true;
+        for(let node=source;node&&node!==native;node=node.parentElement)if(node.hidden||getComputedStyle(node).display==='none'){visible=false;break;}
+        attribute(control,'data-folio-tool-visible',String(visible));
+        move(control,s.tools);
+    }
     const select=[...native.querySelectorAll('select')].find(n=>n.getClientRects().length&&!n.closest('[hidden]'));
     value(s.a,select?.selectedOptions?.[0]?.textContent?.trim());stamp(s.a,select?.value?'在线':'未选');
     const summary=$('[data-sum="params"]>span',root);lines(s.b,summary?.textContent);
@@ -246,6 +261,7 @@ export function configureFolio(settingsValue,adapter={}) {
 }
 export function unmountFolioPages() {
     picker?.();picker=null;
+    for(const s of states.values())s.toolObserver?.disconnect();
     for(const [root,s]of states)if(s.detailsShown)root.classList.toggle('sb-open-detail',s.detailWasOpen);
     for(const n of [...moved.keys()].reverse())restore(n);
     for(const [n,t]of texts)if(n.isConnected)n.replaceChildren(...t);texts.clear();
