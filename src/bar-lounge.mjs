@@ -69,7 +69,6 @@ function settingsMenu(state, anchor) {
     const h = state.host, p = prefs(h);
     state.popup(anchor, [
         ...[['light', '日间'], ['dark', '夜间'], ['auto', '跟随酒馆']].map(([mode, label]) => [label + (h.settings().theme === mode ? ' ✓' : ''), () => h.setTheme?.(mode)]),
-        ['头像、背景与配色', () => h.openAppearance?.()],
         ['首页显示 ' + (peopleLimit(p.peopleLimit) ? peopleLimit(p.peopleLimit) + ' 人' : '全部角色'), async () => {
             const c = h.context(), text = '首页先显示多少人？同一角色的多段聊天只算一人；输入 0 显示全部（最多 200 人）。';
             const result = c.callGenericPopup ? await c.callGenericPopup(text, c.POPUP_TYPE?.INPUT ?? 2, String(peopleLimit(p.peopleLimit))) : window.prompt(text, String(peopleLimit(p.peopleLimit)));

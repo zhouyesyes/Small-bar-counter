@@ -5,10 +5,10 @@ html.sb-bar.sb-folio{--sb-bar-line:color-mix(in srgb,var(--sb-bar-ink) 23%,var(-
 html.sb-bar.sb-folio .sb-page{font-family:var(--sb-type-body)!important;font-size:12px!important;min-width:0;box-sizing:border-box}
 html.sb-bar.sb-folio :is(button,input,textarea,select){text-shadow:none!important;box-shadow:none}
 /* One rule for every vertical surface, including native labels and pseudo-elements. */
-html.sb-bar.sb-folio *,html.sb-bar.sb-folio *:before,html.sb-bar.sb-folio *:after,#sb-root.sb-folio-phone *,#sb-root.sb-folio-phone *:before,#sb-root.sb-folio-phone *:after{text-orientation:upright!important;font-feature-settings:"vert" 0,"vrt2" 0!important}
+html.sb-bar.sb-folio *,html.sb-bar.sb-folio *:before,html.sb-bar.sb-folio *:after,#sb-root.sb-folio-phone *,#sb-root.sb-folio-phone *:before,#sb-root.sb-folio-phone *:after{text-orientation:mixed!important;font-feature-settings:"vert" 0,"vrt2" 0!important}
 html.sb-bar.sb-folio .sb-head{position:relative;height:155px;min-height:155px;padding:22px 0!important;margin-bottom:16px!important;flex:none}
 html.sb-bar.sb-folio .sb-head:after{content:'';position:absolute;left:-16px;right:-16px;bottom:0;border-bottom:1px solid var(--sb-bar-line)}
-html.sb-bar.sb-folio .sb-head .sb-script{position:absolute;left:18px;top:22px;height:120px;width:36px;writing-mode:vertical-rl;text-orientation:upright;white-space:nowrap;font:32px/1.1 var(--sb-type-script)!important;letter-spacing:2px!important;color:var(--sb-bar-ink)!important;text-align:start!important}
+html.sb-bar.sb-folio .sb-head .sb-script{position:absolute;left:18px;top:22px;height:120px;width:36px;writing-mode:vertical-rl;text-orientation:mixed;white-space:nowrap;font:32px/1.1 var(--sb-type-script)!important;letter-spacing:2px!important;color:var(--sb-bar-ink)!important;text-align:start!important}
 html.sb-bar.sb-folio .sb-head .sb-en{display:none!important}
 html.sb-bar.sb-folio .sb-head .sb-zh{position:absolute;left:71px;top:25px;writing-mode:vertical-rl;white-space:nowrap;font:10px/1.3 var(--sb-type-body)!important;letter-spacing:.5px!important;max-height:120px;color:var(--sb-bar-sub)!important;margin:0!important}
 html.sb-bar.sb-folio .sb-folio-headstamp{position:absolute;left:100px;bottom:25px;writing-mode:vertical-rl;font:12px/1.1 var(--sb-type-script);padding:4px 2px;border:1px solid var(--sb-bar-accent);color:var(--sb-bar-accent);transform:rotate(-3deg)}
@@ -17,15 +17,15 @@ html.sb-bar.sb-folio .sb-folio-card{position:relative;flex:0 0 160px!important;w
 html.sb-bar.sb-folio .sb-folio-card.is-deep{background:color-mix(in srgb,var(--sb-bar-bg) 94%,var(--sb-bar-ink))}
 html.sb-bar.sb-folio .sb-folio-card:before{content:'';position:absolute;inset:6px;border:1px solid var(--sb-bar-line);pointer-events:none}
 html.sb-bar.sb-folio .sb-folio-card:after{content:'';position:absolute;top:5px;right:-7px;width:19px;height:33px;border-top:1px solid var(--sb-bar-accent);border-right:1px solid var(--sb-bar-accent);pointer-events:none}
-html.sb-bar.sb-folio .sb-folio-title{position:absolute;z-index:1;top:6px;bottom:6px;left:10px;width:25px;border-right:1px solid var(--sb-bar-line);writing-mode:vertical-rl;text-orientation:upright;font:20px/1.15 var(--sb-type-script);letter-spacing:2px;padding:33px 2px 0;color:var(--sb-bar-ink);pointer-events:none;box-sizing:border-box}
+html.sb-bar.sb-folio .sb-folio-title{position:absolute;z-index:1;top:6px;bottom:6px;left:10px;width:25px;border-right:1px solid var(--sb-bar-line);writing-mode:vertical-rl;text-orientation:mixed;font:20px/1.15 var(--sb-type-script);letter-spacing:2px;padding:33px 2px 0;color:var(--sb-bar-ink);pointer-events:none;box-sizing:border-box}
 html.sb-bar.sb-folio .sb-folio-native{position:absolute;inset:0;min-width:0}
-html.sb-bar.sb-folio .sb-folio-value{position:absolute;left:52px;top:33px;bottom:56px;width:25px;writing-mode:vertical-rl;text-orientation:upright;font:17px/1.4 var(--sb-type-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;letter-spacing:.5px;color:var(--sb-bar-ink)}
+html.sb-bar.sb-folio .sb-folio-value{position:absolute;left:52px;top:33px;bottom:56px;width:25px;writing-mode:vertical-rl;text-orientation:mixed;font:17px/1.4 var(--sb-type-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;letter-spacing:.5px;color:var(--sb-bar-ink)}
 html.sb-bar.sb-folio .sb-folio-stamp{position:absolute;left:12px;bottom:13px;padding:2px 1px;border:1px solid var(--sb-bar-accent);color:var(--sb-bar-accent);font:10px/1.2 var(--sb-type-body);writing-mode:vertical-rl;background:var(--sb-bar-paper);z-index:2;pointer-events:none}
 html.sb-bar.sb-folio .sb-folio-card.is-deep .sb-folio-stamp{background:color-mix(in srgb,var(--sb-bar-bg) 94%,var(--sb-bar-ink))}
 html.sb-bar.sb-folio .sb-folio-lines{position:absolute;top:6px;bottom:6px;left:42px;right:7px;display:grid;grid-template-columns:repeat(var(--folio-columns,4),minmax(0,1fr));direction:rtl;pointer-events:none}
 html.sb-bar.sb-folio .sb-folio-lines>span{border-left:1px solid var(--sb-bar-line);display:flex;justify-content:center;padding-top:32px;min-width:0}
 html.sb-bar.sb-folio .sb-folio-lines>span:last-child{border-left:0}
-html.sb-bar.sb-folio .sb-folio-lines i{font:10px/1.2 var(--sb-type-body);writing-mode:vertical-rl;text-orientation:upright;white-space:nowrap;color:var(--sb-bar-sub)}
+html.sb-bar.sb-folio .sb-folio-lines i{font:10px/1.2 var(--sb-type-body);writing-mode:vertical-rl;text-orientation:mixed;white-space:nowrap;color:var(--sb-bar-sub)}
 html.sb-bar.sb-folio .sb-folio-card .sb-fold{position:absolute;inset:0;margin:0;border:0;padding:0;background:none}
 html.sb-bar.sb-folio .sb-folio-card .sb-fold-h{position:absolute;top:6px;bottom:7px;left:10px;width:25px;padding:0;border:0;background:none;z-index:2}
 html.sb-bar.sb-folio .sb-folio-card .sb-fold-h :is(b,i){display:none!important}
@@ -36,7 +36,7 @@ html.sb-bar.sb-folio #respective-presets-block div:not(.sb-bx):not(.menu_button)
 html.sb-bar.sb-folio #respective-presets-block select{position:absolute!important;top:33px;right:10px;bottom:60px;width:25px!important;min-width:0!important;height:180px;margin:0!important;opacity:0;z-index:3}
 html.sb-bar.sb-folio #respective-presets-block:after{content:'当前预设';position:absolute;top:34px;right:12px;font:9px var(--sb-type-body);writing-mode:vertical-rl;letter-spacing:.5px;pointer-events:none;color:var(--sb-bar-sub)}
 html.sb-bar.sb-folio #respective-presets-block :is(.sb-cardlabel,.sb-recipe-status){display:none!important}
-html.sb-bar.sb-folio #respective-presets-block .menu_button{position:absolute!important;top:auto!important;bottom:8px!important;height:48px!important;max-height:48px!important;margin:0!important;padding:0!important;border:0!important;background:none!important;width:14px!important;writing-mode:vertical-rl;text-orientation:upright;text-align:end;min-height:25px;color:var(--sb-bar-accent)}
+html.sb-bar.sb-folio #respective-presets-block .menu_button{position:absolute!important;top:auto!important;bottom:8px!important;height:48px!important;max-height:48px!important;margin:0!important;padding:0!important;border:0!important;background:none!important;width:14px!important;writing-mode:vertical-rl;text-orientation:mixed;text-align:end;min-height:25px;color:var(--sb-bar-accent)}
 html.sb-bar.sb-folio #respective-presets-block .menu_button::before{font:10px/1.2 var(--sb-type-body)!important;letter-spacing:1px;writing-mode:vertical-rl;color:var(--sb-bar-accent)}
 html.sb-bar.sb-folio :is(#update_oai_preset,#respective-presets-block [data-preset-manager-update]){left:42px!important}
 html.sb-bar.sb-folio #respective-presets-block [data-preset-manager-rename]{left:59px!important}
@@ -47,7 +47,7 @@ html.sb-bar.sb-folio :is(#delete_oai_preset,#respective-presets-block [data-pres
 html.sb-bar.sb-folio #respective-presets-block label[for=bind_preset_to_connection]{position:absolute;bottom:47px;left:43px;max-width:100px;font-size:9px}
 html.sb-bar.sb-folio #completion_prompt_manager #completion_prompt_manager_list{display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;align-items:stretch;min-height:0!important;height:auto;max-height:none!important;overflow-y:hidden;gap:5px!important;overflow-x:auto;min-width:0;max-width:100%;padding:5px 0 12px!important;scrollbar-width:thin}
 html.sb-bar.sb-folio #completion_prompt_manager #completion_prompt_manager_list li.completion_prompt_manager_prompt{position:relative;display:block!important;box-sizing:border-box;flex:0 0 35px!important;width:35px!important;min-width:35px;min-height:190px;max-height:none!important;height:190px;border:1px solid var(--sb-bar-line)!important;padding:22px 3px 8px!important;margin:0!important;list-style:none}
-html.sb-bar.sb-folio #completion_prompt_manager #completion_prompt_manager_list .completion_prompt_manager_prompt_name{display:block!important;position:absolute;top:25px;bottom:47px;left:8px;right:7px;max-width:20px;overflow:hidden;writing-mode:vertical-rl;text-orientation:upright;font:12px/1.2 var(--sb-type-body)}
+html.sb-bar.sb-folio #completion_prompt_manager #completion_prompt_manager_list .completion_prompt_manager_prompt_name{display:block!important;position:absolute;top:25px;bottom:47px;left:8px;right:7px;max-width:20px;overflow:hidden;writing-mode:vertical-rl;text-orientation:mixed;font:12px/1.2 var(--sb-type-body)}
 html.sb-bar.sb-folio #completion_prompt_manager #completion_prompt_manager_list .completion_prompt_manager_prompt_name:after{display:none}
 html.sb-bar.sb-folio #completion_prompt_manager #completion_prompt_manager_list .completion_prompt_manager_prompt_name :is(a,span){font:12px/1.2 var(--sb-type-body);writing-mode:vertical-rl;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 html.sb-bar.sb-folio #completion_prompt_manager #completion_prompt_manager_list .prompt_manager_prompt_controls{position:absolute;left:8px;right:7px;bottom:21px;display:flex;justify-content:center;gap:2px;flex-wrap:wrap}
@@ -60,7 +60,7 @@ html.sb-bar.sb-folio .sb-sec{font-size:13px;text-align:left;margin:17px 0 11px}
 html.sb-bar.sb-folio .sb-sec b{font-size:14px!important;letter-spacing:0}.sb-folio .sb-sec i{display:none!important}
 html.sb-bar.sb-folio .sb-folio-card :is(.sb-pour,.sb-tonight){position:absolute;inset:0;margin:0;padding:0;border:0;background:none;width:100%;height:100%;border-radius:0}
 html.sb-bar.sb-folio .sb-folio-card :is(.sb-pour,.sb-tonight)>.sb-cardlabel{display:none}
-html.sb-bar.sb-folio .sb-folio-card .sb-big{position:absolute;top:34px;bottom:60px;left:52px;width:25px;font:17px/1.3 var(--sb-type-body);writing-mode:vertical-rl;text-orientation:upright;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0}
+html.sb-bar.sb-folio .sb-folio-card .sb-big{position:absolute;top:34px;bottom:60px;left:52px;width:25px;font:17px/1.3 var(--sb-type-body);writing-mode:vertical-rl;text-orientation:mixed;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0}
 html.sb-bar.sb-folio .sb-folio-card .sb-pour>small{position:absolute;right:12px;top:34px;bottom:70px;writing-mode:vertical-rl;font:9px/1.6 var(--sb-type-body);margin:0;overflow:hidden}
 html.sb-bar.sb-folio .sb-folio-card .sb-pour>.sb-status,html.sb-bar.sb-folio .sb-folio-card .sb-tonight>.sb-status{display:none}
 html.sb-bar.sb-folio .sb-folio-card .sb-row{position:absolute;bottom:8px;left:42px;right:11px;display:flex;justify-content:space-between;gap:8px;margin:0}
@@ -92,7 +92,7 @@ html.sb-bar.sb-folio .world_entry[data-sb-state=constant] .killSwitch:after{cont
 html.sb-bar.sb-folio .sb-legend{font-size:10px}
 html.sb-bar.sb-folio #AdvancedFormatting .sb-folio-format-card{position:relative;flex:0 0 52px!important;width:52px!important;min-width:52px;height:224px!important;border:1px solid var(--sb-bar-line)!important;outline:none;background:transparent!important;padding:0!important;margin:0!important;box-sizing:border-box}
 html.sb-bar.sb-folio #AdvancedFormatting .sb-folio-format-card>summary{position:absolute;inset:6px;width:auto;display:flex!important;flex-direction:column;align-items:center;gap:0;padding:12px 0 28px;writing-mode:horizontal-tb;box-sizing:border-box}
-html.sb-bar.sb-folio #AdvancedFormatting .sb-folio-format-card>summary>b{font:18px/1.2 var(--sb-type-script)!important;letter-spacing:2px!important;writing-mode:vertical-rl;text-orientation:upright;white-space:nowrap}
+html.sb-bar.sb-folio #AdvancedFormatting .sb-folio-format-card>summary>b{font:18px/1.2 var(--sb-type-script)!important;letter-spacing:2px!important;writing-mode:vertical-rl;text-orientation:mixed;white-space:nowrap}
 html.sb-bar.sb-folio .sb-format-group>summary>i{display:none!important}
 html.sb-bar.sb-folio #AdvancedFormatting .sb-folio-format-card .sb-plus{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);font:13px var(--sb-type-body)}
 html.sb-bar.sb-folio #AdvancedFormatting .sb-folio-format-card[open]>summary>.sb-plus{font-size:0}
@@ -117,10 +117,10 @@ html.sb-bar.sb-folio #AdvancedFormatting .sb-folio-editor label[for=context_deri
 .sb-shared-appearance>label{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0}
 .sb-shared-appearance select{max-width:60%;font:12px var(--sb-f-serif)}
 .sb-folio-appearance-title{font:17px var(--sb-type-script);margin:5px 0 12px}
-.sb-folio-colors{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:12px 0}
-.sb-folio-colors fieldset{border:1px solid var(--sb-bar-line);padding:10px;min-width:0}.sb-folio-colors legend{font-size:11px;color:var(--sb-bar-sub)}
-.sb-folio-colors button{display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%;padding:8px 0;border:0!important;background:none!important;font:11px var(--sb-f-serif);text-align:left;color:var(--sb-bar-ink)}
-.sb-folio-colors i{display:block;width:24px;height:19px;border:1px solid var(--sb-bar-line);margin-left:auto}.sb-folio-colors code{font:9px ui-monospace,monospace;color:var(--sb-bar-sub);width:100%}
+.sb-folio-colors{display:grid;grid-template-columns:1fr;gap:5px;margin:8px 0}
+.sb-folio-colors fieldset{display:flex;align-items:center;gap:12px;border:0;border-bottom:1px solid var(--sb-bar-line);padding:5px 0 8px;min-width:0}.sb-folio-colors legend{font-size:11px;color:var(--sb-bar-sub)}
+.sb-folio-colors button{display:inline-flex;align-items:center;gap:5px;flex-wrap:nowrap;width:auto;min-width:0;padding:3px 0;border:0!important;background:none!important;font:11px var(--sb-f-serif);text-align:left;color:var(--sb-bar-ink)}
+.sb-folio-colors i{display:block;flex:0 0 13px;width:13px;height:13px;border-radius:50%;border:1px solid var(--sb-bar-line);margin:0}.sb-folio-colors code{font:11px ui-monospace,monospace!important;color:var(--sb-bar-ink)!important;width:auto!important;background:none!important;padding:0!important;border:0!important;box-shadow:none!important;white-space:nowrap}
 .sb-shared-appearance>[data-folio-open]{border:0!important;background:none!important;color:var(--sb-bar-accent);padding:4px 0;font:11px var(--sb-f-serif)}
 html.sb-bar.sb-folio :is(.sb-lighting-group,.sb-format-group,#rm_extensions_block .inline-drawer){border-radius:0;border-left:1px solid var(--sb-bar-line);padding-left:13px;margin-top:18px;box-sizing:border-box}
 html.sb-bar.sb-folio .sb-lighting-label b{font:16px/1.4 var(--sb-type-script)!important;letter-spacing:1px!important}.sb-folio .sb-lighting-label i{display:none!important}
@@ -155,7 +155,7 @@ html.sb-bar.sb-folio #user_avatar_block .avatar-container:after{content:'用此�
 /* Vertical text belongs only to the horizontally scrolling list. */
 html.sb-bar.sb-folio :is(body:not(.charListGrid) #rm_print_characters_block,#user_avatar_block:not(.gridView)) :is(.character_select_container,.group_select_container){display:flex!important;flex-direction:row!important;gap:2px;height:134px;align-items:flex-start}
 html.sb-bar.sb-folio :is(body:not(.charListGrid) #rm_print_characters_block,#user_avatar_block:not(.gridView)) .character_name_block{display:contents!important}
-html.sb-bar.sb-folio :is(body:not(.charListGrid) #rm_print_characters_block,#user_avatar_block:not(.gridView)) :is(.ch_name,.ch_description,.ch_additional_info,.sb-folio-collection-flags,.tags_inline){writing-mode:vertical-rl!important;text-orientation:upright;flex:none!important;width:12px!important;max-width:12px!important;height:100%!important;max-height:100%!important;margin:0!important;line-height:12px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.sb-bar.sb-folio :is(body:not(.charListGrid) #rm_print_characters_block,#user_avatar_block:not(.gridView)) :is(.ch_name,.ch_description,.ch_additional_info,.sb-folio-collection-flags,.tags_inline){writing-mode:vertical-rl!important;text-orientation:mixed;flex:none!important;width:12px!important;max-width:12px!important;height:100%!important;max-height:100%!important;margin:0!important;line-height:12px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 html.sb-bar.sb-folio :is(body:not(.charListGrid) #rm_print_characters_block,#user_avatar_block:not(.gridView)) .ch_name{width:21px!important;max-width:21px!important;font-size:17px!important;line-height:21px!important}
 html.sb-bar.sb-folio :is(body:not(.charListGrid) #rm_print_characters_block,#user_avatar_block:not(.gridView)) .ch_additional_info{width:9px!important;max-width:9px!important;font-size:8px!important;line-height:9px!important}
 html.sb-bar.sb-folio body.charListGrid #rm_print_characters_block :is(.character_select,.group_select),html.sb-bar.sb-folio #user_avatar_block.gridView .avatar-container{width:100%!important;height:auto!important;aspect-ratio:1;padding:66px 6px 4px!important}
@@ -178,7 +178,7 @@ html.sb-bar.sb-folio #PersonaManagement .sb-member{width:100%;min-width:0;max-wi
 html.sb-bar.sb-folio #PersonaManagement .sb-mc{position:relative;display:block;height:280px;width:100%;padding:0;border:0;outline:0;border-radius:0;background:inherit;box-sizing:border-box}
 html.sb-bar.sb-folio #PersonaManagement .sb-mc>img{position:absolute;left:0;top:0;display:block;width:100%;height:96px;aspect-ratio:auto;border:0;border-radius:0;object-fit:cover}
 html.sb-bar.sb-folio #PersonaManagement .sb-mc-r{position:absolute;left:18px;top:132px;bottom:40px;max-width:24px;width:24px;padding:0;text-align:start}
-html.sb-bar.sb-folio #PersonaManagement .sb-mc-name{writing-mode:vertical-rl;text-orientation:upright;font:20px/1.2 var(--sb-type-script)!important;max-height:100%;max-width:24px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:start}
+html.sb-bar.sb-folio #PersonaManagement .sb-mc-name{writing-mode:vertical-rl;text-orientation:mixed;font:20px/1.2 var(--sb-type-script)!important;max-height:100%;max-width:24px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:start}
 html.sb-bar.sb-folio #PersonaManagement .sb-mc-foot{position:absolute;bottom:16px;right:16px;display:block;width:auto;margin:0;padding:0;border:0;font:10px/1.3 var(--sb-type-body)}
 html.sb-bar.sb-folio #PersonaManagement .sb-card-remove{left:6px;right:auto;top:6px;background:var(--sb-bar-bg)}
 html.sb-bar.sb-folio #PersonaManagement :is(.sb-mc-desc,.sb-mc-since,.sb-mc-no){display:none}
@@ -189,7 +189,7 @@ html.sb-bar.sb-folio #PersonaManagement .sb-acts button{font:400 11px/1.4 var(--
 html.sb-bar.sb-folio #PersonaManagement .sb-folio-scope-card{position:relative;width:100%;min-width:0;height:280px;margin:0;padding:0;border:0;border-left:1px solid var(--sb-bar-line);outline:0;background:inherit;box-sizing:border-box}
 html.sb-bar.sb-folio #PersonaManagement .sb-folio-persona-scope-title{position:absolute;left:10px;top:6px;bottom:6px;width:25px;padding-top:33px;border-right:1px solid var(--sb-bar-line);box-sizing:border-box;writing-mode:vertical-rl;white-space:nowrap;font:20px/1.2 var(--sb-type-script);color:var(--sb-bar-ink);letter-spacing:2px}
 html.sb-bar.sb-folio #PersonaManagement .sb-folio-scope-card .sb-use{position:absolute;inset:6px 6px 6px 42px;width:auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin:0;padding:0}
-html.sb-bar.sb-folio #PersonaManagement .sb-use button{display:flex;flex-direction:row;justify-content:flex-start;align-items:center;writing-mode:vertical-rl;text-orientation:upright;font:13px/1.4 var(--sb-type-body);padding:30px 0 0;margin:0;border:0;border-right:1px solid var(--sb-bar-line);border-radius:0;white-space:nowrap;color:var(--sb-bar-sub)}
+html.sb-bar.sb-folio #PersonaManagement .sb-use button{display:flex;flex-direction:row;justify-content:flex-start;align-items:center;writing-mode:vertical-rl;text-orientation:mixed;font:13px/1.4 var(--sb-type-body);padding:30px 0 0;margin:0;border:0;border-right:1px solid var(--sb-bar-line);border-radius:0;white-space:nowrap;color:var(--sb-bar-sub)}
 html.sb-bar.sb-folio #PersonaManagement .sb-use button:last-child{border-right:0}
 html.sb-bar.sb-folio #PersonaManagement .sb-use button.on{color:var(--sb-bar-accent);background:none}
 html.sb-bar.sb-folio #PersonaManagement:not(.sb-open-more) .sb-folio-persona-more{display:none!important}
@@ -197,8 +197,8 @@ html.sb-bar.sb-folio #PersonaManagement .sb-folio-persona-more{padding:12px 0 18
 html.sb-bar.sb-folio #PersonaManagement .sb-fold{border:1px solid var(--sb-bar-line);border-top-color:var(--sb-bar-accent);padding:14px 13px 12px;box-sizing:border-box}
 html.sb-bar.sb-folio .sb-foot{font-size:10px;margin:25px 0 18px}.sb-folio .sb-foot i{font:10px var(--sb-type-body)!important;letter-spacing:1px}
 html.sb-bar.sb-folio .sb-back button{font:11px var(--sb-type-body)}
-html.sb-bar.sb-folio #chat.sb-reading .sb-reading-head{height:114px;padding:16px 10px!important;box-sizing:border-box}
-html.sb-bar.sb-folio #chat.sb-reading .sb-chat-script{font:28px/1.15 var(--sb-type-script)!important;writing-mode:vertical-rl;height:78px;white-space:nowrap;width:33px;margin:auto;text-align:left!important}
+html.sb-bar.sb-folio #chat:is(.sb-reading,.sb-lounge) .sb-reading-head{height:114px;padding:16px 10px!important;box-sizing:border-box}
+html.sb-bar.sb-folio #chat:is(.sb-reading,.sb-lounge) .sb-chat-script{font:28px/1.15 var(--sb-type-script)!important;writing-mode:vertical-rl;height:78px;white-space:nowrap;width:33px;margin:auto;text-align:left!important}
 html.sb-bar.sb-folio #chat .sb-reading-message{padding:0 0 22px!important;border-top:1px solid var(--sb-bar-line)!important;border-bottom:1px solid var(--sb-bar-line)!important;margin-bottom:24px!important;background:var(--sb-bar-paper)!important}
 html.sb-bar.sb-folio #chat .sb-chat-cover{width:100%;margin:0;height:62px;min-height:62px}
 html.sb-bar.sb-folio #chat .sb-chat-who{position:relative;margin:0 18px;padding:10px 58px 0 0;gap:9px;width:calc(100% - 36px)!important;box-sizing:border-box;overflow:visible}
@@ -206,10 +206,10 @@ html.sb-bar.sb-folio #chat [data-sb-side=me] .sb-chat-who{padding:10px 0 0 58px}
 html.sb-bar.sb-folio #chat .sb-chat-avatar{position:absolute;top:-52px;left:0;width:42px;height:42px;min-height:42px;flex-basis:42px;margin:0;z-index:3;box-shadow:0 0 0 2px var(--sb-bar-paper);border:1px solid var(--sb-bar-line)}
 html.sb-bar.sb-folio #chat [data-sb-side=me] .sb-chat-avatar{left:auto;right:0}
 html.sb-bar.sb-folio #chat .sb-chat-name{font:13px var(--sb-type-body)}
-html.sb-bar.sb-folio #chat.sb-reading .mes_text{padding:9px 18px 0!important;box-sizing:border-box;font:15px/2.1 var(--sb-type-body)!important}
-html.sb-bar.sb-folio #chat.sb-reading .mes_text blockquote{border-left:1px solid var(--sb-bar-accent);padding-left:10px;color:var(--sb-bar-sub);font-size:13px}
-html.sb-bar.sb-folio #chat.sb-reading .mesAvatarWrapper{padding:0 18px!important;box-sizing:border-box}
-html.sb-bar.sb-folio #chat.sb-reading .ch_name{top:76px!important;right:18px!important}
+html.sb-bar.sb-folio #chat:is(.sb-reading,.sb-lounge) .mes_text{padding:9px 18px 0!important;box-sizing:border-box;font:15px/2.1 var(--sb-type-body)!important}
+html.sb-bar.sb-folio #chat:is(.sb-reading,.sb-lounge) .mes_text blockquote{border-left:1px solid var(--sb-bar-accent);padding-left:10px;color:var(--sb-bar-sub);font-size:13px}
+html.sb-bar.sb-folio #chat:is(.sb-reading,.sb-lounge) .mesAvatarWrapper{padding:0 18px!important;box-sizing:border-box}
+html.sb-bar.sb-folio #chat:is(.sb-reading,.sb-lounge) .ch_name{top:76px!important;right:18px!important}
 html.sb-bar.sb-folio #chat.sb-lounge .welcomePanel{padding:0 18px 25px!important}
 html.sb-bar.sb-folio .sb-lounge-head{height:155px;position:relative;padding:24px 0!important;border-bottom:1px solid var(--sb-bar-line);margin-bottom:16px!important}
 html.sb-bar.sb-folio .sb-lounge-head .sb-chat-script{font:32px/1.1 var(--sb-type-script)!important;writing-mode:vertical-rl;height:90px;width:36px;white-space:nowrap;margin:0 auto;text-align:left!important}
@@ -266,7 +266,7 @@ html.sb-bar.sb-folio #Backgrounds #bg_tabs .bg_tab_panel{height:auto!important;o
 #sb-root.sb-folio-phone .sb-grid{gap:10px;font-size:13px}
 #sb-root.sb-folio-phone .sb-srow{min-height:39px;font:12px var(--sb-type-body)}
 .sb-folio-card [hidden],.sb-folio-editor[hidden]{display:none!important}
-@media(max-width:380px){html.sb-bar.sb-folio .sb-folio-colors{gap:9px}.sb-folio-colors fieldset{padding:7px}html.sb-bar.sb-folio .sb-folio-card{flex-basis:156px!important;width:156px!important}}
+@media(max-width:380px){html.sb-bar.sb-folio .sb-folio-colors{gap:9px}.sb-folio-colors fieldset{gap:7px;padding:4px 0 7px}html.sb-bar.sb-folio .sb-folio-card{flex-basis:156px!important;width:156px!important}}
 html.sb-bar.sb-folio #world_popup_new:before{content:'＋ 添一笺'!important}html.sb-bar.sb-folio #create_dummy_persona:before{content:'＋ 落一名'!important}html.sb-bar.sb-folio #rm_button_create:before{content:'＋ 逢一人'!important}html.sb-bar.sb-folio #favorite_button:before{content:'☆ 常念'!important}html.sb-bar.sb-folio #favorite_button.fav_on:before{content:'★ 常念'!important}html.sb-bar.sb-folio #world_button:before{content:'世间录'!important}html.sb-bar.sb-folio #char_connections_button:before{content:'名帖'!important}html.sb-bar.sb-folio #Backgrounds .mobile-only-menu-toggle{display:flex!important;align-items:center;justify-content:center;border-radius:0!important;z-index:4}html.sb-bar.sb-folio #Backgrounds :is(.jg-menu,.bg_folder_tile_menu){border-radius:0!important;box-shadow:none!important}
 html.sb-bar.sb-folio :is(.sb-page-bartenders,.sb-page-bartender) .sb-head:after{left:0;right:0}
 html.sb-bar.sb-folio .sb-folio-lines>span{position:relative;display:block;padding:0}
@@ -290,8 +290,8 @@ html.sb-bar.sb-folio #update_connection_profile:before{content:'更新'!importan
 html.sb-bar.sb-folio #edit_connection_profile:before{content:'改名'!important}
 html.sb-bar.sb-folio #world_popup_entries_list .killSwitch:after{display:none!important}
 
-/* Force brackets to use horizontal glyphs even when their parent is vertical. */
-html.sb-bar.sb-folio .sb-folio-punctuation{display:inline-block;writing-mode:horizontal-tb!important;text-orientation:upright!important;font-feature-settings:"vert" 0,"vrt2" 0;line-height:1;vertical-align:middle}
+/* Keep bracket glyphs sideways with the continuous Latin/digit run. */
+html.sb-bar.sb-folio .sb-folio-punctuation{display:inline;writing-mode:vertical-rl!important;text-orientation:sideways!important;white-space:nowrap}
 html.sb-bar.sb-folio #respective-presets-block [data-preset-manager-restore]{left:127px!important}
 html.sb-bar.sb-folio #respective-presets-block [data-preset-manager-restore]:before{content:'还原'!important}
 html.sb-bar.sb-folio #completion_prompt_manager #completion_prompt_manager_list li.completion_prompt_manager_prompt .prompt_manager_prompt_controls :is(span,button,a){padding:0;margin:0;min-width:0;width:11px;height:11px;line-height:10px;align-items:center;justify-content:center;filter:none;opacity:1;background:none;color:var(--sb-bar-accent)}
@@ -341,7 +341,7 @@ html.sb-bar.sb-folio .sb-folio-entry-tab{flex:0 0 40px;width:40px;height:210px;p
 html.sb-bar.sb-folio .sb-folio-entry-tab>button{border:0;background:none;color:var(--sb-bar-ink);padding:0;margin:0;border-radius:0;cursor:pointer}
 html.sb-bar.sb-folio .sb-folio-entry-open{position:absolute;inset:0;width:100%;height:175px}
 html.sb-bar.sb-folio .sb-folio-entry-open>i{position:absolute;top:7px;left:0;right:0;font:9px var(--sb-type-body);text-align:center;color:var(--sb-bar-sub)}
-html.sb-bar.sb-folio .sb-folio-entry-open>span{position:absolute;top:28px;bottom:22px;left:11px;width:18px;writing-mode:vertical-rl;text-orientation:upright;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font:12px/1.4 var(--sb-type-body)}
+html.sb-bar.sb-folio .sb-folio-entry-open>span{position:absolute;top:28px;bottom:22px;left:11px;width:18px;writing-mode:vertical-rl;text-orientation:mixed;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font:12px/1.4 var(--sb-type-body)}
 html.sb-bar.sb-folio .sb-folio-entry-open>em{position:absolute;bottom:0;left:0;right:0;font:12px var(--sb-type-body);color:var(--sb-bar-sub)}
 html.sb-bar.sb-folio .sb-folio-entry-tab>.sb-folio-entry-state{position:absolute;bottom:12px;left:15px;width:9px;height:9px;border:0;border-radius:50%;background:#5f8a63}
 html.sb-bar.sb-folio .sb-folio-entry-tab[data-state=constant]>.sb-folio-entry-state{background:#5b7fae}

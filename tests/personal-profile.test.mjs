@@ -1,6 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { personalProfile, artwork } from '../src/artwork.mjs';
+import { landingArtwork } from '../src/artwork.mjs';
+
+test('welcome and landing use native assistant defaults and explicit day/night artwork',()=>{
+    const profile={images:{light:{},dark:{avatar:'night-avatar',cover:'night-cover'}}};
+    assert.deepEqual(landingArtwork(profile,'light','assistant-card'),{avatar:'assistant-card',cover:''});
+    assert.deepEqual(landingArtwork(profile,'dark','assistant-card'),{avatar:'night-avatar',cover:'night-cover'});
+    profile.images.light.cover='day-cover';
+    assert.equal(landingArtwork(profile,'light','assistant-card').cover,'day-cover');
+    assert.equal(landingArtwork(profile,'dark','assistant-card').cover,'night-cover');
+});
 
 test('landing and opening share profile; legacy home images migrate without persona input', () => {
     const settings = { home: { name: 'My name', sign: 'My quote', images: { light: { avatar: 'day-home' }, dark: { cover: 'night-home' } } }, splash: { images: { dark: { avatar: 'night-opening' } } }, me: { avatar: 'wrong-persona' } };

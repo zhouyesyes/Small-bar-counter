@@ -34,3 +34,6 @@ export function applyPalette(el, settings, mode = modeFor(settings)) {
     for (const [k, v] of Object.entries(p)) el.style.setProperty('--sb-' + k, v);
     return p;
 }
+
+// Only the companion surface overrides mode; host styling keeps settings.theme.
+export const phoneModeFor = settings => ['light','dark'].includes(settings?.phoneTheme) ? settings.phoneTheme : modeFor(settings);
