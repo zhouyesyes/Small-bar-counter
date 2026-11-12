@@ -92,6 +92,32 @@ await p.locator('#PersonaManagement [data-fold=more]').click();
 if(await p.locator('#persona_description_position').isVisible())throw Error('persona more settings do not close');
 
 
+// Both native collection toggles retain grid/list behavior and all metadata.
+await p.evaluate(()=>showPage('rm_characters_block'));await p.waitForTimeout(180);
+if(await p.locator('.sb-favs>.sb-label').isVisible())throw Error('favorite strip has leftover separator dashes');
+await p.locator('#charListGridToggle').click();
+await p.evaluate(()=>{
+    const list=document.querySelector('#rm_print_characters_block'),cards=[...list.querySelectorAll('.character_select')],r=cards.map(n=>n.getBoundingClientRect());
+    if(cards.length<6||Math.abs(r[0].top-r[1].top)>1||Math.abs(r[0].top-r[2].top)>1||r[3].top<=r[0].bottom||r[2].right>list.getBoundingClientRect().right+1)throw Error('character grid must show three cards per row');
+    for(const n of cards){for(const sel of ['.ch_name','.ch_description','.character_version','.tags_inline']){const field=n.querySelector(sel);if(!field.getClientRects().length||getComputedStyle(field).display==='none'||field.clientWidth<10)throw Error('character metadata missing '+sel);}if(getComputedStyle(n.querySelector('.ch_name')).textOverflow!=='ellipsis')throw Error('long character names need ellipsis');}
+    if(!cards[0].querySelector('.sb-folio-collection-flags').textContent.includes('常用'))throw Error('favorite badge missing');
+});
+await p.locator('#rm_print_characters_block .character_select').first().click();
+await p.locator('#charListGridToggle').click();
+await p.evaluate(()=>{const list=document.querySelector('#rm_print_characters_block'),cards=[...list.querySelectorAll('.character_select')],a=cards[0].getBoundingClientRect(),b=cards[1].getBoundingClientRect();if(b.top<a.bottom||Math.abs(a.width-list.clientWidth)>2)throw Error('character list must show one full-width item per row');});
+await p.evaluate(()=>showPage('PersonaManagement'));await p.waitForTimeout(180);
+await p.locator('#PersonaManagement [data-fold=personas]').click();
+await p.locator('#persona_grid_toggle').click();
+await p.evaluate(()=>{
+    const list=document.querySelector('#user_avatar_block'),cards=[...list.querySelectorAll('.avatar-container')],r=cards.map(n=>n.getBoundingClientRect());
+    if(cards.length<6||Math.abs(r[0].top-r[2].top)>1||r[3].top<=r[0].bottom)throw Error('persona grid must show three cards per row');
+    for(const row of cards)for(const selector of ['.ch_name','.ch_description']){const n=row.querySelector(selector);if(!n.getClientRects().length||getComputedStyle(n).display==='none')throw Error('persona grid hides metadata');}
+    if(!cards[0].querySelector('.sb-folio-collection-flags').textContent.includes('常用'))throw Error('default persona badge missing');
+});
+await p.locator('#user_avatar_block .avatar-container').first().click();
+await p.locator('#persona_grid_toggle').click();
+if(!await p.evaluate(()=>{const list=document.querySelector('#user_avatar_block'),cards=list.querySelectorAll('.avatar-container'),a=cards[0].getBoundingClientRect(),b=cards[1].getBoundingClientRect();return b.top>=a.bottom&&Math.abs(a.width-list.clientWidth)<2&&collectionClicks.character===1&&collectionClicks.persona===1}))throw Error('persona list toggle or native selection broken');
+await p.locator('#PersonaManagement [data-fold=personas]').click();
 // Backgrounds uses a single scroll area; heading and first thumbnail move together.
 await p.evaluate(()=>showPage('Backgrounds'));await p.waitForTimeout(180);
 const beforeScroll=await p.evaluate(()=>{

@@ -141,6 +141,21 @@ function persona(root,s) {
     attribute($('[data-do=lore]',root),'title','关联世界书');
     const remove=$('.sb-card-remove',root);attribute(remove,'title','删除当前名帖');attribute(remove,'aria-label','删除当前名帖');
 }
+function collection(root) {
+    const livePersona=$('#user_avatar_block .sb-cur',root);
+    for(const row of $$('#rm_print_characters_block :is(.character_select,.group_select),#user_avatar_block .avatar-container',root)){
+        const info=$('.character_select_container,.group_select_container',row);if(!info)continue;
+        let flags=$('.sb-folio-collection-flags',info);if(!flags){flags=own('sb-folio-collection-flags');const heading=$('.character_name_block',info)||$('.ch_name',info);if(heading)heading.after(flags);else info.prepend(flags);}
+        const states=[];
+        if(row.classList.contains('is_fav')||$('.ch_fav',row)?.value==='true'||row.classList.contains('default_persona'))states.push('★ 常用');
+        if(row.classList.contains('sb-cur')||(row.classList.contains('selected')&&!livePersona))states.push('在用');
+        if(row.classList.contains('locked_to_character'))states.push('系于此人');
+        if(row.classList.contains('locked_to_chat'))states.push('用于此叙');
+        const label=states.join(' · ');if(flags.textContent!==label)flags.textContent=label;flags.title=label;
+        for(const node of $$('.ch_name,.ch_description,.tags_inline',row))attribute(node,'title',$$('.tag_name',node).length?$$('.tag_name',node).map(n=>n.textContent).join(' / '):node.textContent.trim());
+    }
+    for(const node of $$('.sb-favrow small',root))text(node,'★ 常用');
+}
 function format(root, s) {
     if (s.rail) return;
     const groups = $$('.sb-format-group', root);
@@ -175,7 +190,7 @@ function tools(root,s) {if(s.rail)return;const manage=$('#extensions_details',ro
 export function syncFolioPages() {
     const appearance=$('#user-settings-block');if(appearance)syncAppearance(appearance);
     if(!active)return;
-    for(const name of Object.keys(pages)){const root=$('.sb-page-'+name);if(!root)continue;heading(root,name);for(const n of $$('.sb-fold-h b,.sb-title b,.sb-sec b,.sb-lighting-label b',root)){const aliases={'进货细节':'连接细节','进货单':'连接配置','调酒台':'落笔有度','原料':'提示条目','常备':'全局常驻','其他会员卡':'其他名帖','其余设置':'其他设置','更多设定':'更多设定','灯光搭配':'装帧与配色','角色习惯':'角色习惯','店内杂项':'界面杂项','对话习惯':'对话习惯','输入提示':'输入提示','吧台脚本':'脚本'};const next=aliases[n.textContent.replace(/\s/g,'')];if(next)text(n,next);}for(const b of $$('[data-do]',root)){const names={model:'换模型',connect:'重新连接',test:'测试',newbook:'新建',desc:'改小传',photo:'换头像',dupe:'复制',lore:'系一卷',back:'‹ 故人录',closeback:'收起小传'};if(names[b.dataset.do])text(b,names[b.dataset.do]);}const footer=$('.sb-foot i',root);text(footer,'一卷收好，随时再续');const s=record(root);if(name==='recipe')preset(root,s);if(name==='cellar')cellar(root,s);if(name==='menu')world(root,s);if(name==='format')format(root,s);if(name==='tools')tools(root,s);if(name==='card')persona(root,s);}
+    for(const name of Object.keys(pages)){const root=$('.sb-page-'+name);if(!root)continue;heading(root,name);for(const n of $$('.sb-fold-h b,.sb-title b,.sb-sec b,.sb-lighting-label b',root)){const aliases={'进货细节':'连接细节','进货单':'连接配置','调酒台':'落笔有度','原料':'提示条目','常备':'全局常驻','其他会员卡':'其他名帖','其余设置':'其他设置','更多设定':'更多设定','灯光搭配':'装帧与配色','角色习惯':'角色习惯','店内杂项':'界面杂项','对话习惯':'对话习惯','输入提示':'输入提示','吧台脚本':'脚本'};const next=aliases[n.textContent.replace(/\s/g,'')];if(next)text(n,next);}for(const b of $$('[data-do]',root)){const names={model:'换模型',connect:'重新连接',test:'测试',newbook:'新建',desc:'改小传',photo:'换头像',dupe:'复制',lore:'系一卷',back:'‹ 故人录',closeback:'收起小传'};if(names[b.dataset.do])text(b,names[b.dataset.do]);}const footer=$('.sb-foot i',root);text(footer,'一卷收好，随时再续');const s=record(root);if(name==='recipe')preset(root,s);if(name==='cellar')cellar(root,s);if(name==='menu')world(root,s);if(name==='format')format(root,s);if(name==='tools')tools(root,s);if(name==='card')persona(root,s);if(name==='card'||name==='bartenders')collection(root);}
     const all=['#ai-config-button','#sys-settings-button','#advanced-formatting-button','#WI-SP-button','#user-settings-button','#backgrounds-button','#extensions-settings-button','#persona-management-button','#rightNavHolder'];all.forEach((sel,i)=>attribute($(sel+' .drawer-icon'),'title',iconNames[i]));
 }
 function onClick(e) {

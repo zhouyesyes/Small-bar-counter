@@ -360,7 +360,7 @@ const PAGES = {
             // 收藏的调酒师（酒馆叫 Favorites）：圆头像一排，下面「★ 常点」；从酒馆的角色数据里拿，不用等列表翻到
             const list = (ctx?.characters || []).map((c, i) => ({ c, i })).filter(({ c }) => c && (c.fav === true || c.fav === 'true' || c.data?.extensions?.fav === true));
             const box = $('.sb-favs', root); if (!box) return;
-            const sig = list.map(({ c, i }) => i + c.avatar).join('|');
+            const sig = JSON.stringify(list.map(({ c, i }) => [i,c.avatar,c.name]));
             if (box.dataset.sig === sig) return;
             box.dataset.sig = sig;
             const thumb = c => ctx?.getThumbnailUrl ? ctx.getThumbnailUrl('avatar', c.avatar) : '';
