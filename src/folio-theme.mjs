@@ -31,7 +31,21 @@ function move(n,target) { if(!n||!target||n.parentElement===target)return;if(!mo
 function restore(n) { const marker=moved.get(n);if(!marker)return;if(marker.isConnected)marker.replaceWith(n);moved.delete(n); }
 function rail(root,parent=root) { const n=own('sb-folio-rail');const title=$('.sb-head',parent);if(title?.parentElement===parent)title.after(n);else parent.prepend(n);return n; }
 function card(parent,title,deep=false) { const n=own('sb-folio-card'+(deep?' is-deep':''),`<span class="sb-folio-title">${title}</span><div class="sb-folio-native"></div>`);parent.append(n);return n; }
-function value(cardNode,label) { let n=$('.sb-folio-value',cardNode);if(!n){n=own('sb-folio-value');cardNode.append(n);}text(n,label||'尚未选择');n.title=label||''; }
+function value(cardNode, label) {
+    let n = $('.sb-folio-value', cardNode);
+    if (!n) { n = own('sb-folio-value'); cardNode.append(n); }
+    const title = label || '尚未选择';
+    if (n.textContent !== title) {
+        n.replaceChildren(...Array.from(title, ch => {
+            if (!/[()[\]{}（）［］【】〔〕〈〉《》「」『』]/u.test(ch)) return document.createTextNode(ch);
+            const mark = document.createElement('span');
+            mark.className = 'sb-folio-punctuation';
+            mark.textContent = ch;
+            return mark;
+        }));
+    }
+    n.title = label || '';
+}
 function stamp(cardNode,label) { let n=$('.sb-folio-stamp',cardNode);if(!n){n=own('sb-folio-stamp');cardNode.append(n);}text(n,label); }
 function lines(cardNode,summary) { let n=$('.sb-folio-lines',cardNode);if(!n){n=own('sb-folio-lines');cardNode.append(n);}const bits=(summary||'').split(' · ').filter(Boolean).slice(0,4);const html=bits.map(t=>`<span><i>${esc(t)}</i></span>`).join('');if(n.innerHTML!==html)n.innerHTML=html;n.style.setProperty('--folio-columns',String(Math.max(bits.length,1))); }
 function record(root) { let s=states.get(root);if(!s){s={};states.set(root,s);}return s; }

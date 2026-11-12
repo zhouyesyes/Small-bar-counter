@@ -30,21 +30,21 @@ html.sb-bar.sb-folio .sb-folio-card .sb-fold-h :is(b,i){display:none!important}
 html.sb-bar.sb-folio .sb-folio-card .sb-plus{position:absolute;bottom:31px;left:7px;font:13px var(--sb-type-body);color:var(--sb-bar-accent)}
 html.sb-bar.sb-folio .sb-folio-card .sb-fold-s{display:none}
 html.sb-bar.sb-folio #respective-presets-block{position:absolute!important;inset:0;margin:0!important;padding:0!important;border:0!important;background:none!important;width:100%;height:100%;border-radius:0}
-html.sb-bar.sb-folio #respective-presets-block div:not(.sb-bx){position:static!important}
+html.sb-bar.sb-folio #respective-presets-block div:not(.sb-bx):not(.menu_button){position:static!important}
 html.sb-bar.sb-folio #respective-presets-block select{position:absolute!important;top:33px;right:10px;bottom:60px;width:25px!important;min-width:0!important;height:180px;margin:0!important;opacity:0;z-index:3}
 html.sb-bar.sb-folio #respective-presets-block:after{content:'当前预设';position:absolute;top:34px;right:12px;font:9px var(--sb-type-body);writing-mode:vertical-rl;letter-spacing:.5px;pointer-events:none;color:var(--sb-bar-sub)}
 html.sb-bar.sb-folio #respective-presets-block :is(.sb-cardlabel,.sb-recipe-status){display:none!important}
-html.sb-bar.sb-folio #respective-presets-block .menu_button{position:absolute!important;bottom:14px!important;margin:0!important;padding:0!important;border:0!important;background:none!important;width:14px!important;writing-mode:vertical-rl;min-height:25px;color:var(--sb-bar-accent)}
+html.sb-bar.sb-folio #respective-presets-block .menu_button{position:absolute!important;top:auto!important;bottom:14px!important;height:32px!important;max-height:32px!important;margin:0!important;padding:0!important;border:0!important;background:none!important;width:14px!important;writing-mode:vertical-rl;text-orientation:mixed;min-height:25px;color:var(--sb-bar-accent)}
 html.sb-bar.sb-folio #respective-presets-block .menu_button::before{font:10px/1.2 var(--sb-type-body)!important;letter-spacing:1px;writing-mode:vertical-rl;color:var(--sb-bar-accent)}
 html.sb-bar.sb-folio :is(#update_oai_preset,#respective-presets-block [data-preset-manager-update]){left:42px!important}
-html.sb-bar.sb-folio #respective-presets-block [data-preset-manager-rename]{left:63px!important}
-html.sb-bar.sb-folio :is(#new_oai_preset,#respective-presets-block [data-preset-manager-new]){left:84px!important}
-html.sb-bar.sb-folio :is(#import_oai_preset,#respective-presets-block [data-preset-manager-import]){left:105px!important}
-html.sb-bar.sb-folio :is(#export_oai_preset,#respective-presets-block [data-preset-manager-export]){left:126px!important}
+html.sb-bar.sb-folio #respective-presets-block [data-preset-manager-rename]{left:59px!important}
+html.sb-bar.sb-folio :is(#new_oai_preset,#respective-presets-block [data-preset-manager-new]){left:76px!important}
+html.sb-bar.sb-folio :is(#import_oai_preset,#respective-presets-block [data-preset-manager-import]){left:93px!important}
+html.sb-bar.sb-folio :is(#export_oai_preset,#respective-presets-block [data-preset-manager-export]){left:110px!important}
 html.sb-bar.sb-folio :is(#delete_oai_preset,#respective-presets-block [data-preset-manager-delete]){left:12px!important;top:12px!important;bottom:auto!important;writing-mode:horizontal-tb}
 html.sb-bar.sb-folio #respective-presets-block label[for=bind_preset_to_connection]{position:absolute;bottom:47px;left:43px;max-width:100px;font-size:9px}
-html.sb-bar.sb-folio #completion_prompt_manager #completion_prompt_manager_list{display:flex!important;gap:5px!important;overflow-x:auto;min-width:0;max-width:100%;padding:5px 0 12px!important;scrollbar-width:thin}
-html.sb-bar.sb-folio #completion_prompt_manager #completion_prompt_manager_list li.completion_prompt_manager_prompt{position:relative;display:block!important;box-sizing:border-box;flex:0 0 35px!important;width:35px!important;min-width:35px;height:190px;border:1px solid var(--sb-bar-line)!important;padding:22px 3px 8px!important;margin:0!important;list-style:none}
+html.sb-bar.sb-folio #completion_prompt_manager #completion_prompt_manager_list{display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;align-items:stretch;min-height:0!important;height:auto;max-height:none!important;overflow-y:hidden;gap:5px!important;overflow-x:auto;min-width:0;max-width:100%;padding:5px 0 12px!important;scrollbar-width:thin}
+html.sb-bar.sb-folio #completion_prompt_manager #completion_prompt_manager_list li.completion_prompt_manager_prompt{position:relative;display:block!important;box-sizing:border-box;flex:0 0 35px!important;width:35px!important;min-width:35px;min-height:190px;max-height:none!important;height:190px;border:1px solid var(--sb-bar-line)!important;padding:22px 3px 8px!important;margin:0!important;list-style:none}
 html.sb-bar.sb-folio #completion_prompt_manager #completion_prompt_manager_list .completion_prompt_manager_prompt_name{display:block!important;position:absolute;top:25px;bottom:47px;left:8px;right:7px;max-width:20px;overflow:hidden;writing-mode:vertical-rl;text-orientation:mixed;font:12px/1.2 var(--sb-type-body)}
 html.sb-bar.sb-folio #completion_prompt_manager #completion_prompt_manager_list .completion_prompt_manager_prompt_name:after{display:none}
 html.sb-bar.sb-folio #completion_prompt_manager #completion_prompt_manager_list .completion_prompt_manager_prompt_name :is(a,span){font:12px/1.2 var(--sb-type-body);writing-mode:vertical-rl;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -191,11 +191,11 @@ html.sb-bar.sb-folio :is(.sb-fold-h i,.sb-title i,.sb-label i,.sb-sec i){display
 html.sb-bar.sb-folio .sb-pour .sb-row .sb-pick,html.sb-bar.sb-folio .sb-tonight .sb-row .sb-pick{font-size:0!important}
 html.sb-bar.sb-folio .sb-pour .sb-row .sb-pick:before{content:'换模型';font:10px/1.2 var(--sb-type-body);writing-mode:vertical-rl}
 html.sb-bar.sb-folio .sb-tonight .sb-row .sb-pick:before{content:'换书';font:10px/1.2 var(--sb-type-body);writing-mode:vertical-rl}
-html.sb-bar.sb-folio #respective-presets-block [data-preset-manager-update]:before{content:'保存'!important}
+html.sb-bar.sb-folio #respective-presets-block :is(#update_oai_preset,[data-preset-manager-update]):before{content:'保存'!important}
 html.sb-bar.sb-folio #respective-presets-block [data-preset-manager-rename]:before{content:'改名'!important}
-html.sb-bar.sb-folio #respective-presets-block [data-preset-manager-new]:before{content:'另存'!important}
-html.sb-bar.sb-folio #respective-presets-block [data-preset-manager-import]:before{content:'导入'!important}
-html.sb-bar.sb-folio #respective-presets-block [data-preset-manager-export]:before{content:'导出'!important}
+html.sb-bar.sb-folio #respective-presets-block :is(#new_oai_preset,[data-preset-manager-new]):before{content:'另存'!important}
+html.sb-bar.sb-folio #respective-presets-block :is(#import_oai_preset,[data-preset-manager-import]):before{content:'导入'!important}
+html.sb-bar.sb-folio #respective-presets-block :is(#export_oai_preset,[data-preset-manager-export]):before{content:'导出'!important}
 html.sb-bar.sb-folio #completion_prompt_manager #completion_prompt_manager_list .prompt_manager_prompt_controls :is(button,a){padding:0;background:none;color:var(--sb-bar-accent);border:0}
 html.sb-bar.sb-folio #completion_prompt_manager #completion_prompt_manager_list .prompt_manager_prompt_controls .prompt-manager-toggle-action{border:1px solid var(--sb-bar-line)}
 html.sb-bar.sb-folio #completion_prompt_manager #completion_prompt_manager_list .prompt-manager-edit-action{font-size:9px;line-height:10px}
@@ -204,3 +204,10 @@ html.sb-bar.sb-folio #create_connection_profile:before{content:'存为新配置'
 html.sb-bar.sb-folio #update_connection_profile:before{content:'更新'!important}
 html.sb-bar.sb-folio #edit_connection_profile:before{content:'改名'!important}
 html.sb-bar.sb-folio #world_popup_entries_list .killSwitch:after{display:none!important}
+
+/* Punctuation follows the sideways Latin run in owned vertical titles. */
+html.sb-bar.sb-folio .sb-folio-punctuation{display:inline;text-orientation:sideways}
+html.sb-bar.sb-folio #respective-presets-block [data-preset-manager-restore]{left:127px!important}
+html.sb-bar.sb-folio #respective-presets-block [data-preset-manager-restore]:before{content:'还原'!important}
+html.sb-bar.sb-folio #completion_prompt_manager #completion_prompt_manager_list li.completion_prompt_manager_prompt .prompt_manager_prompt_controls :is(span,button,a){padding:0;margin:0;min-width:0;width:11px;height:11px;line-height:10px;align-items:center;justify-content:center;filter:none;opacity:1;background:none;color:var(--sb-bar-accent)}
+html.sb-bar.sb-folio #completion_prompt_manager #completion_prompt_manager_list li.completion_prompt_manager_prompt .prompt_manager_prompt_controls{flex-direction:row;justify-content:center;align-items:center;gap:2px;font-size:9px}
