@@ -117,9 +117,9 @@ html.sb-bar.sb-folio #AdvancedFormatting .sb-folio-editor label[for=context_deri
 .sb-shared-appearance>label{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0}
 .sb-shared-appearance select{max-width:60%;font:12px var(--sb-f-serif)}
 .sb-folio-appearance-title{font:17px var(--sb-type-script);margin:5px 0 12px}
-.sb-folio-colors{display:grid;grid-template-columns:1fr;gap:5px;margin:8px 0}
-.sb-folio-colors fieldset{display:flex;align-items:center;gap:12px;border:0;border-bottom:1px solid var(--sb-bar-line);padding:5px 0 8px;min-width:0}.sb-folio-colors legend{font-size:11px;color:var(--sb-bar-sub)}
-.sb-folio-colors button{display:inline-flex;align-items:center;gap:5px;flex-wrap:nowrap;width:auto;min-width:0;padding:3px 0;border:0!important;background:none!important;font:11px var(--sb-f-serif);text-align:left;color:var(--sb-bar-ink)}
+.sb-folio-colors{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:12px 0}
+.sb-folio-colors fieldset{border:1px solid var(--sb-bar-line);padding:7px 10px;min-width:0}.sb-folio-colors legend{font-size:11px;color:var(--sb-bar-sub)}
+.sb-folio-colors button{display:flex;align-items:center;gap:5px;flex-wrap:nowrap;width:100%;min-width:0;padding:7px 0;border:0!important;background:none!important;font:11px var(--sb-f-serif);text-align:left;color:var(--sb-bar-ink)}
 .sb-folio-colors i{display:block;flex:0 0 13px;width:13px;height:13px;border-radius:50%;border:1px solid var(--sb-bar-line);margin:0}.sb-folio-colors code{font:11px ui-monospace,monospace!important;color:var(--sb-bar-ink)!important;width:auto!important;background:none!important;padding:0!important;border:0!important;box-shadow:none!important;white-space:nowrap}
 .sb-shared-appearance>[data-folio-open]{border:0!important;background:none!important;color:var(--sb-bar-accent);padding:4px 0;font:11px var(--sb-f-serif)}
 html.sb-bar.sb-folio :is(.sb-lighting-group,.sb-format-group,#rm_extensions_block .inline-drawer){border-radius:0;border-left:1px solid var(--sb-bar-line);padding-left:13px;margin-top:18px;box-sizing:border-box}
@@ -266,7 +266,7 @@ html.sb-bar.sb-folio #Backgrounds #bg_tabs .bg_tab_panel{height:auto!important;o
 #sb-root.sb-folio-phone .sb-grid{gap:10px;font-size:13px}
 #sb-root.sb-folio-phone .sb-srow{min-height:39px;font:12px var(--sb-type-body)}
 .sb-folio-card [hidden],.sb-folio-editor[hidden]{display:none!important}
-@media(max-width:380px){html.sb-bar.sb-folio .sb-folio-colors{gap:9px}.sb-folio-colors fieldset{gap:7px;padding:4px 0 7px}html.sb-bar.sb-folio .sb-folio-card{flex-basis:156px!important;width:156px!important}}
+@media(max-width:380px){html.sb-bar.sb-folio .sb-folio-colors{gap:9px}.sb-folio-colors fieldset{padding:6px 8px}html.sb-bar.sb-folio .sb-folio-card{flex-basis:156px!important;width:156px!important}}
 html.sb-bar.sb-folio #world_popup_new:before{content:'＋ 添一笺'!important}html.sb-bar.sb-folio #create_dummy_persona:before{content:'＋ 落一名'!important}html.sb-bar.sb-folio #rm_button_create:before{content:'＋ 逢一人'!important}html.sb-bar.sb-folio #favorite_button:before{content:'☆ 常念'!important}html.sb-bar.sb-folio #favorite_button.fav_on:before{content:'★ 常念'!important}html.sb-bar.sb-folio #world_button:before{content:'世间录'!important}html.sb-bar.sb-folio #char_connections_button:before{content:'名帖'!important}html.sb-bar.sb-folio #Backgrounds .mobile-only-menu-toggle{display:flex!important;align-items:center;justify-content:center;border-radius:0!important;z-index:4}html.sb-bar.sb-folio #Backgrounds :is(.jg-menu,.bg_folder_tile_menu){border-radius:0!important;box-shadow:none!important}
 html.sb-bar.sb-folio :is(.sb-page-bartenders,.sb-page-bartender) .sb-head:after{left:0;right:0}
 html.sb-bar.sb-folio .sb-folio-lines>span{position:relative;display:block;padding:0}
