@@ -88,24 +88,33 @@ html.sb-bar.sb-folio .world_entry:not(:has(.inline-drawer-icon.up)) .delete_entr
 html.sb-bar.sb-folio .world_entry:has(.inline-drawer-icon.up){flex:0 0 min(600px,calc(100vw - 70px));width:min(600px,calc(100vw - 70px));min-width:0;height:auto;max-height:75vh;overflow:auto;border-radius:0!important}
 html.sb-bar.sb-folio .world_entry[data-sb-state=constant] .killSwitch:after{content:'常驻'}html.sb-bar.sb-folio .world_entry[data-sb-state=normal] .killSwitch:after{content:'关键词'}html.sb-bar.sb-folio .world_entry[data-sb-state=off] .killSwitch:after{content:'停用'}
 html.sb-bar.sb-folio .sb-legend{font-size:10px}
-html.sb-bar.sb-folio .sb-folio-format-card{position:relative;flex:0 0 128px!important;width:128px!important;height:224px!important;border:1px solid var(--sb-bar-ink)!important;outline:1px solid var(--sb-bar-line);outline-offset:4px;background:var(--sb-bar-paper)!important;padding:0!important;margin:0!important;box-sizing:border-box}
-html.sb-bar.sb-folio .sb-folio-format-card>summary{position:absolute;top:6px;bottom:6px;left:10px;width:26px;border-right:1px solid var(--sb-bar-line);padding-top:28px;display:block!important;writing-mode:vertical-rl}
-html.sb-bar.sb-folio .sb-folio-format-card>summary>b{font:18px/1.2 var(--sb-type-script)!important;letter-spacing:2px!important}
+html.sb-bar.sb-folio #AdvancedFormatting .sb-folio-format-card{position:relative;flex:0 0 52px!important;width:52px!important;min-width:52px;height:224px!important;border:1px solid var(--sb-bar-line)!important;outline:none;background:transparent!important;padding:0!important;margin:0!important;box-sizing:border-box}
+html.sb-bar.sb-folio #AdvancedFormatting .sb-folio-format-card>summary{position:absolute;inset:6px;width:auto;display:flex!important;flex-direction:column;align-items:center;gap:0;padding:12px 0 28px;writing-mode:horizontal-tb;box-sizing:border-box}
+html.sb-bar.sb-folio #AdvancedFormatting .sb-folio-format-card>summary>b{font:18px/1.2 var(--sb-type-script)!important;letter-spacing:2px!important;writing-mode:vertical-rl;text-orientation:mixed;white-space:nowrap}
 html.sb-bar.sb-folio .sb-format-group>summary>i{display:none!important}
-html.sb-bar.sb-folio .sb-folio-format-card .sb-plus{position:absolute;bottom:18px;left:4px;font:13px var(--sb-type-body)}
-html.sb-bar.sb-folio .sb-folio-format-state{position:absolute;right:16px;top:31px;writing-mode:vertical-rl;font:11px var(--sb-type-body);color:var(--sb-bar-sub)}
-html.sb-bar.sb-folio .sb-folio-tabs{display:flex;gap:10px;overflow-x:auto;margin:12px 0 17px;padding:4px 0 9px;max-width:100%;scrollbar-width:thin}
-html.sb-bar.sb-folio .sb-folio-tabs>.sb-format-group{flex:0 0 33px!important;width:33px!important;min-width:33px;height:115px;position:relative;border:1px solid var(--sb-bar-line)!important;padding:10px 7px!important;margin:0!important}
-html.sb-bar.sb-folio .sb-folio-tabs summary{writing-mode:vertical-rl;font:11px var(--sb-type-body);display:block!important;padding:0!important}
-html.sb-bar.sb-folio .sb-folio-tabs summary b{font:11px var(--sb-type-body)!important;letter-spacing:0!important}
-html.sb-bar.sb-folio .sb-folio-tabs .sb-plus{display:none}
+html.sb-bar.sb-folio #AdvancedFormatting .sb-folio-format-card .sb-plus{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);font:13px var(--sb-type-body)}
+html.sb-bar.sb-folio #AdvancedFormatting .sb-folio-format-card[open]>summary>.sb-plus{font-size:0}
+html.sb-bar.sb-folio #AdvancedFormatting .sb-folio-format-card[open]>summary>.sb-plus:after{font:13px var(--sb-type-body)}
+html.sb-bar.sb-folio .sb-folio-format-section{padding:0 0 20px;margin:0 0 18px;border-bottom:1px solid var(--sb-bar-line);min-width:0}
+html.sb-bar.sb-folio .sb-folio-format-section[hidden]{display:none!important}
+html.sb-bar.sb-folio .sb-folio-format-section>h3{margin:0;padding:8px 0;font:18px/1.4 var(--sb-type-script)!important;color:var(--sb-bar-accent)}
 html.sb-bar.sb-folio .sb-folio-editor{border-left:1px solid var(--sb-bar-line);padding:0 0 12px 13px;margin:15px 0;min-width:0;width:100%;box-sizing:border-box}
 html.sb-bar.sb-folio .sb-folio-editor[hidden]{display:none!important}
 html.sb-bar.sb-folio .sb-folio-editor textarea{writing-mode:horizontal-tb!important;width:100%!important;min-height:120px!important;font:13px/1.8 var(--sb-type-body)!important}
+html.sb-bar.sb-folio #AdvancedFormatting .sb-folio-editor :is(.text_pole,textarea,select,input[type=text],input[type=number],input:not([type])){background:var(--sb-bar-paper)!important;color:var(--sb-bar-ink)!important;border:1px solid var(--sb-bar-line)!important;box-shadow:none!important;text-shadow:none!important;border-radius:2px}
+html.sb-bar.sb-folio #AdvancedFormatting .sb-folio-editor :is(.text_pole,textarea,select,input):focus-visible{outline:1px solid color-mix(in srgb,var(--sb-bar-accent) 45%,transparent);outline-offset:1px}
+html.sb-bar.sb-folio #AdvancedFormatting .sb-folio-editor .flex1{min-width:0}
+html.sb-bar.sb-folio #AdvancedFormatting .sb-folio-editor .flex-container:has(>select[data-preset-manager-for]){flex-wrap:wrap;gap:6px}
+/* The native metadata toggle keeps its action without an empty icon frame. */
+html.sb-bar.sb-folio #AdvancedFormatting .sb-folio-editor .title_restorable:has(label[for=context_derived]){display:flex;align-items:center;justify-content:space-between}
+html.sb-bar.sb-folio #AdvancedFormatting .sb-folio-editor label[for=context_derived]{flex:0 0 auto;width:auto;margin:0;padding:0;cursor:pointer}
+html.sb-bar.sb-folio #AdvancedFormatting .sb-folio-editor label[for=context_derived] .menu_button{display:inline-block;border:0!important;background:none!important;box-shadow:none;padding:3px;margin:0;font-size:0;color:var(--sb-bar-sub)}
+html.sb-bar.sb-folio #AdvancedFormatting .sb-folio-editor label[for=context_derived] .menu_button:before{content:''!important;display:block;width:10px;height:14px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 16'%3E%3Cpath d='M7 1 1 9h4l-1 6 7-9H7z'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 16'%3E%3Cpath d='M7 1 1 9h4l-1 6 7-9H7z'/%3E%3C/svg%3E") center/contain no-repeat}
+html.sb-bar.sb-folio #AdvancedFormatting .sb-folio-editor label[for=context_derived]:has(input:checked) .menu_button{color:var(--sb-bar-accent)}
 .sb-shared-appearance{padding:13px 0 18px;border-bottom:1px solid var(--sb-bar-line);margin:8px 0 20px;min-width:0;font:12px var(--sb-f-serif)}
 .sb-shared-appearance>label{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0}
 .sb-shared-appearance select{max-width:60%;font:12px var(--sb-f-serif)}
-.sb-folio-appearance-title{font:17px CooperZhengKai,var(--sb-f-serif);margin:5px 0 12px}
+.sb-folio-appearance-title{font:17px var(--sb-type-script);margin:5px 0 12px}
 .sb-folio-colors{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:12px 0}
 .sb-folio-colors fieldset{border:1px solid var(--sb-bar-line);padding:10px;min-width:0}.sb-folio-colors legend{font-size:11px;color:var(--sb-bar-sub)}
 .sb-folio-colors button{display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%;padding:8px 0;border:0!important;background:none!important;font:11px var(--sb-f-serif);text-align:left;color:var(--sb-bar-ink)}
@@ -113,26 +122,77 @@ html.sb-bar.sb-folio .sb-folio-editor textarea{writing-mode:horizontal-tb!import
 .sb-shared-appearance>[data-folio-open]{border:0!important;background:none!important;color:var(--sb-bar-accent);padding:4px 0;font:11px var(--sb-f-serif)}
 html.sb-bar.sb-folio :is(.sb-lighting-group,.sb-format-group,#rm_extensions_block .inline-drawer){border-radius:0;border-left:1px solid var(--sb-bar-line);padding-left:13px;margin-top:18px;box-sizing:border-box}
 html.sb-bar.sb-folio .sb-lighting-label b{font:16px/1.4 var(--sb-type-script)!important;letter-spacing:1px!important}.sb-folio .sb-lighting-label i{display:none!important}
+html.sb-bar.sb-folio #user-settings-block :is(.sb-lighting-group,details:has(>summary>.sb-lighting-label),[name=AutoCompleteToggle]:has(.sb-lighting-label)){border:1px solid var(--sb-bar-line)!important;border-top-color:var(--sb-bar-accent)!important;padding:14px 13px 12px!important;box-sizing:border-box;border-radius:0}
 html.sb-bar.sb-folio .sb-folio-native :is(#extensions_details,#third_party_extension_button){position:absolute;left:53px;top:35px;height:180px;writing-mode:vertical-rl;font:15px var(--sb-type-body)!important;color:var(--sb-bar-ink);border:0;background:none;width:25px;padding:0}
 html.sb-bar.sb-folio .sb-folio-native :is(#extensions_details,#third_party_extension_button):before,html.sb-bar.sb-folio .sb-folio-native :is(#extensions_details,#third_party_extension_button):after{content:none!important}
-html.sb-bar.sb-folio #rm_print_characters_block{display:flex;align-items:flex-start;flex-wrap:nowrap;overflow-x:auto!important;max-width:100%;gap:14px;padding:8px 4px 15px!important;scrollbar-width:thin}
-html.sb-bar.sb-folio #rm_print_characters_block .character_select{position:relative;flex:0 0 135px;min-width:135px;width:135px;height:251px;display:block;border:1px solid var(--sb-bar-ink);outline:1px solid var(--sb-bar-line);outline-offset:4px;border-radius:0;padding:0;background:var(--sb-bar-paper)}
-html.sb-bar.sb-folio #rm_print_characters_block .character_select .avatar{position:absolute;left:45px;top:26px;width:51px;height:51px}
-html.sb-bar.sb-folio #rm_print_characters_block .character_select .avatar img{width:51px;height:51px;object-fit:cover;border-radius:50%}
-html.sb-bar.sb-folio #rm_print_characters_block .character_select .ch_name{position:absolute;left:12px;top:32px;bottom:43px;writing-mode:vertical-rl;font:19px/1.2 var(--sb-type-script)!important;max-width:24px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-html.sb-bar.sb-folio #rm_print_characters_block .character_select .ch_description{position:absolute;right:11px;top:32px;bottom:47px;writing-mode:vertical-rl;font:9px/1.6 var(--sb-type-body);max-width:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-html.sb-bar.sb-folio #rm_print_characters_block .character_select .ch_additional_info{display:none}
-html.sb-bar.sb-folio #rm_print_characters_block .character_select:after{content:'相见';position:absolute;right:16px;bottom:15px;writing-mode:vertical-rl;font:11px var(--sb-type-body);color:var(--sb-bar-accent);padding:0}
+html.sb-bar.sb-folio #rm_extensions_block .sb-folio-native :is(#extensions_details,#third_party_extension_button){width:25px!important;min-width:0!important;max-width:25px;height:180px;box-sizing:border-box;border:0!important;outline:none!important;box-shadow:none!important;background:none!important;-webkit-tap-highlight-color:transparent}
+html.sb-bar.sb-folio #rm_extensions_block .sb-folio-card:has(:is(#extensions_details,#third_party_extension_button):focus-visible){border-color:var(--sb-bar-accent)!important}
+/* List: narrow vertical posts in a horizontal rail. Grid: square tiles with round avatars. */
+html.sb-bar.sb-folio :is(#rm_print_characters_block,#user_avatar_block){display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;align-items:stretch;gap:0;width:100%;height:auto;max-width:100%;overflow-x:auto!important;overflow-y:hidden!important;padding:4px 0 12px!important;box-sizing:border-box;scrollbar-width:thin}
+html.sb-bar.sb-folio body.charListGrid #rm_print_characters_block,html.sb-bar.sb-folio #user_avatar_block.gridView{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px;overflow:visible!important}
+html.sb-bar.sb-folio :is(#rm_print_characters_block,#user_avatar_block) :is(.character_select,.group_select,.avatar-container){position:relative;display:block!important;flex:0 0 88px!important;min-width:0!important;width:88px!important;max-width:none!important;height:246px;margin:0!important;padding:84px 6px 25px!important;box-sizing:border-box;border:1px solid var(--sb-bar-line)!important;outline:none!important;border-radius:0;background:var(--sb-bar-paper);content-visibility:visible;contain-intrinsic-size:none;overflow:hidden}
+html.sb-bar.sb-folio :is(#rm_print_characters_block,#user_avatar_block) :is(.character_select,.group_select,.avatar-container) .avatar{position:absolute;inset:0 0 auto 0;width:100%!important;height:76px!important;margin:0!important;padding:0;border:0!important;border-radius:0!important;overflow:hidden}
+html.sb-bar.sb-folio :is(#rm_print_characters_block,#user_avatar_block) .avatar img{width:100%!important;height:100%!important;object-fit:cover;border-radius:0!important;border:0;box-shadow:none}
+html.sb-bar.sb-folio :is(#rm_print_characters_block,#user_avatar_block) :is(.character_select_container,.group_select_container){position:static!important;display:block!important;width:100%!important;min-width:0;max-width:none;flex:none!important;margin:0;padding:0}
+html.sb-bar.sb-folio :is(#rm_print_characters_block,#user_avatar_block) .character_name_block{position:static;display:flex!important;align-items:baseline;flex-direction:row!important;flex-wrap:nowrap!important;gap:4px;width:100%;min-width:0}
+html.sb-bar.sb-folio :is(#rm_print_characters_block,#user_avatar_block) .ch_name{position:static!important;inset:auto!important;display:block!important;writing-mode:horizontal-tb!important;min-width:0;max-width:100%!important;max-height:none!important;width:auto!important;height:auto!important;flex:1 1 auto;font:15px/1.5 var(--sb-type-script)!important;text-align:left!important;white-space:nowrap!important;text-wrap:nowrap;overflow:hidden!important;text-overflow:ellipsis!important;overflow-wrap:normal;word-break:normal}
+html.sb-bar.sb-folio :is(#rm_print_characters_block,#user_avatar_block) .ch_name:after{content:none!important}
+html.sb-bar.sb-folio :is(#rm_print_characters_block,#user_avatar_block) .ch_additional_info{position:static!important;inset:auto!important;max-width:30%;flex:0 1 auto;font:9px/1.4 var(--sb-type-body)!important;color:var(--sb-bar-sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.sb-bar.sb-folio :is(#rm_print_characters_block,#user_avatar_block) :is(.character_version,.ch_additional_info):not(:empty){display:block!important}
+html.sb-bar.sb-folio #rm_print_characters_block :is(.character_select,.group_select) :is(.ch_add_placeholder,.ch_avatar_url,.ch_fav_icon){display:none!important}
+html.sb-bar.sb-folio :is(#rm_print_characters_block,#user_avatar_block) .ch_description{position:static!important;inset:auto!important;writing-mode:horizontal-tb!important;max-width:100%;max-height:none;min-width:0;width:100%;height:15px;margin:3px 0 0;font:10px/1.5 var(--sb-type-body)!important;color:var(--sb-bar-sub);white-space:nowrap!important;overflow:hidden;text-overflow:ellipsis}
+html.sb-bar.sb-folio :is(#rm_print_characters_block,#user_avatar_block) .ch_description:not(:empty){display:block!important}
+html.sb-bar.sb-folio :is(#rm_print_characters_block,#user_avatar_block) .sb-folio-collection-flags{height:14px;margin:2px 0;font:9px/1.5 var(--sb-type-body);color:var(--sb-bar-accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.sb-bar.sb-folio .sb-folio-collection-flags:empty{display:none}
+html.sb-bar.sb-folio :is(#rm_print_characters_block,#user_avatar_block) .tags_inline{display:block!important;width:100%;height:15px;margin:3px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font:10px/1.5 var(--sb-type-body);color:var(--sb-bar-sub)}
+html.sb-bar.sb-folio #rm_print_characters_block .tags_inline .tag{display:inline!important;font:inherit!important;color:inherit;padding:0 4px 0 0;background:none;border:0;white-space:nowrap}
+html.sb-bar.sb-folio #rm_print_characters_block .tags_inline .tag_remove{display:none}
+html.sb-bar.sb-folio #user_avatar_block .avatar_container_states{display:none!important}
+html.sb-bar.sb-folio :is(#rm_print_characters_block,#user_avatar_block) :is(.character_select,.group_select,.avatar-container):after{content:'相见';position:absolute;right:10px;bottom:6px;margin:0;padding:0;writing-mode:horizontal-tb;font:10px/1.4 var(--sb-type-body);color:var(--sb-bar-accent)}
+html.sb-bar.sb-folio #user_avatar_block .avatar-container:after{content:'用此帖'}
+/* Vertical text belongs only to the horizontally scrolling list. */
+html.sb-bar.sb-folio :is(body:not(.charListGrid) #rm_print_characters_block,#user_avatar_block:not(.gridView)) :is(.character_select_container,.group_select_container){display:flex!important;flex-direction:row!important;gap:2px;height:134px;align-items:flex-start}
+html.sb-bar.sb-folio :is(body:not(.charListGrid) #rm_print_characters_block,#user_avatar_block:not(.gridView)) .character_name_block{display:contents!important}
+html.sb-bar.sb-folio :is(body:not(.charListGrid) #rm_print_characters_block,#user_avatar_block:not(.gridView)) :is(.ch_name,.ch_description,.ch_additional_info,.sb-folio-collection-flags,.tags_inline){writing-mode:vertical-rl!important;text-orientation:mixed;flex:none!important;width:12px!important;max-width:12px!important;height:100%!important;max-height:100%!important;margin:0!important;line-height:12px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.sb-bar.sb-folio :is(body:not(.charListGrid) #rm_print_characters_block,#user_avatar_block:not(.gridView)) .ch_name{width:21px!important;max-width:21px!important;font-size:17px!important;line-height:21px!important}
+html.sb-bar.sb-folio :is(body:not(.charListGrid) #rm_print_characters_block,#user_avatar_block:not(.gridView)) .ch_additional_info{width:9px!important;max-width:9px!important;font-size:8px!important;line-height:9px!important}
+html.sb-bar.sb-folio body.charListGrid #rm_print_characters_block :is(.character_select,.group_select),html.sb-bar.sb-folio #user_avatar_block.gridView .avatar-container{width:100%!important;height:auto!important;aspect-ratio:1;padding:66px 6px 4px!important}
+html.sb-bar.sb-folio body.charListGrid #rm_print_characters_block .avatar,html.sb-bar.sb-folio #user_avatar_block.gridView .avatar{inset:8px auto auto 50%;transform:translateX(-50%);width:52px!important;height:52px!important;border-radius:50%!important}
+html.sb-bar.sb-folio body.charListGrid #rm_print_characters_block .avatar img,html.sb-bar.sb-folio #user_avatar_block.gridView .avatar img{border-radius:50%!important}
+html.sb-bar.sb-folio body.charListGrid #rm_print_characters_block .ch_name,html.sb-bar.sb-folio #user_avatar_block.gridView .ch_name{font-size:13px!important;line-height:18px!important;text-align:center!important;flex:0 1 auto}
+html.sb-bar.sb-folio :is(body.charListGrid #rm_print_characters_block,#user_avatar_block.gridView) .character_name_block{justify-content:center}
+html.sb-bar.sb-folio :is(body.charListGrid #rm_print_characters_block,#user_avatar_block.gridView) .sb-folio-collection-flags{height:14px;line-height:14px!important;font-size:10px!important;margin:4px 0 0;text-align:center}
+html.sb-bar.sb-folio :is(body.charListGrid #rm_print_characters_block,#user_avatar_block.gridView) :is(.ch_description,.tags_inline,.ch_additional_info){display:none!important}
+html.sb-bar.sb-folio :is(body.charListGrid #rm_print_characters_block,#user_avatar_block.gridView) :is(.character_select,.group_select,.avatar-container):after{content:none}
+html.sb-bar.sb-folio :is(#rm_print_characters_block,#user_avatar_block) :is(.empty_block,.text_block,.hidden_block,.avatar_upload){grid-column:1/-1}
+html.sb-bar.sb-folio .sb-favs>.sb-label{display:none!important}
+html.sb-bar.sb-folio .sb-favrow{border:0;margin:12px 0 16px}
+html.sb-bar.sb-folio .sb-favrow button{min-width:0;max-width:80px}
+html.sb-bar.sb-folio .sb-favrow button :is(b,small){display:block;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 html.sb-bar.sb-folio .sb-favrow img{width:54px;height:54px}
-html.sb-bar.sb-folio #PersonaManagement .sb-member{width:179px;margin:16px 5px 20px;display:inline-block;vertical-align:top;max-width:100%}
-html.sb-bar.sb-folio #PersonaManagement .sb-mc{position:relative;height:282px;padding:24px 18px 50px 42px;border-radius:0;border:1px solid var(--sb-bar-ink);outline:1px solid var(--sb-bar-line);outline-offset:4px;background:color-mix(in srgb,var(--sb-bar-bg) 94%,var(--sb-bar-ink));box-sizing:border-box}
-html.sb-bar.sb-folio #PersonaManagement .sb-mc>img{position:absolute;left:46px;top:25px;width:50px;height:50px;border-radius:50%;object-fit:cover}
-html.sb-bar.sb-folio #PersonaManagement .sb-mc-r{position:absolute;left:60px;top:97px;bottom:60px;max-width:28px}
-html.sb-bar.sb-folio #PersonaManagement .sb-mc-name{writing-mode:vertical-rl;font:17px/1.3 var(--sb-type-body)!important;max-height:135px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Preserve the compact two-column layout inside one continuous post. */
+html.sb-bar.sb-folio #PersonaManagement .sb-folio-persona-post{display:grid;grid-template-columns:179fr 160fr;width:341px;max-width:calc(100% - 10px);height:282px;margin:18px 5px 24px;padding:0;border:1px solid var(--sb-bar-line);outline:1px solid var(--sb-bar-line);outline-offset:4px;background:var(--sb-bar-paper);box-sizing:border-box}
+html.sb-bar.sb-folio #PersonaManagement .sb-member{width:100%;min-width:0;max-width:none;margin:0;display:block;background:inherit}
+html.sb-bar.sb-folio #PersonaManagement .sb-mc{position:relative;display:block;height:280px;width:100%;padding:0;border:0;outline:0;border-radius:0;background:inherit;box-sizing:border-box}
+html.sb-bar.sb-folio #PersonaManagement .sb-mc>img{position:absolute;left:0;top:0;display:block;width:100%;height:96px;aspect-ratio:auto;border:0;border-radius:0;object-fit:cover}
+html.sb-bar.sb-folio #PersonaManagement .sb-mc-r{position:absolute;left:18px;top:132px;bottom:40px;max-width:24px;width:24px;padding:0;text-align:start}
+html.sb-bar.sb-folio #PersonaManagement .sb-mc-name{writing-mode:vertical-rl;text-orientation:mixed;font:20px/1.2 var(--sb-type-script)!important;max-height:100%;max-width:24px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:start}
+html.sb-bar.sb-folio #PersonaManagement .sb-mc-foot{position:absolute;bottom:16px;right:16px;display:block;width:auto;margin:0;padding:0;border:0;font:10px/1.3 var(--sb-type-body)}
+html.sb-bar.sb-folio #PersonaManagement .sb-card-remove{left:6px;right:auto;top:6px;background:var(--sb-bar-bg)}
 html.sb-bar.sb-folio #PersonaManagement :is(.sb-mc-desc,.sb-mc-since,.sb-mc-no){display:none}
 html.sb-bar.sb-folio #PersonaManagement .sb-mc-use{font-size:0;position:absolute;left:12px;bottom:14px;top:auto;right:auto;border:1px solid var(--sb-bar-accent);padding:2px;writing-mode:vertical-rl;color:var(--sb-bar-accent)}
 html.sb-bar.sb-folio #PersonaManagement .sb-mc-use:after{content:'在用';font:10px var(--sb-type-body)}
-html.sb-bar.sb-folio #PersonaManagement .sb-acts{display:flex;gap:13px;flex-wrap:wrap;margin-top:12px}.sb-folio #PersonaManagement .sb-acts button{font-size:11px;writing-mode:vertical-rl;background:none;border:0;padding:0;color:var(--sb-bar-accent)}
+html.sb-bar.sb-folio #PersonaManagement .sb-acts{position:absolute;left:54px;right:12px;top:134px;bottom:auto;height:104px;display:flex;justify-content:flex-start;align-items:flex-start;gap:6px;flex-wrap:nowrap;margin:0}
+html.sb-bar.sb-folio #PersonaManagement .sb-acts button{font:400 11px/1.4 var(--sb-type-body)!important;writing-mode:vertical-rl;text-align:start;flex:0 0 12px;width:12px;height:104px;background:none;border:0;margin:0;padding:0;color:var(--sb-bar-accent)}
+html.sb-bar.sb-folio #PersonaManagement .sb-folio-scope-card{position:relative;width:100%;min-width:0;height:280px;margin:0;padding:0;border:0;border-left:1px solid var(--sb-bar-line);outline:0;background:inherit;box-sizing:border-box}
+html.sb-bar.sb-folio #PersonaManagement .sb-folio-persona-scope-title{position:absolute;left:10px;top:6px;bottom:6px;width:25px;padding-top:33px;border-right:1px solid var(--sb-bar-line);box-sizing:border-box;writing-mode:vertical-rl;white-space:nowrap;font:20px/1.2 var(--sb-type-script);color:var(--sb-bar-ink);letter-spacing:2px}
+html.sb-bar.sb-folio #PersonaManagement .sb-folio-scope-card .sb-use{position:absolute;inset:6px 6px 6px 42px;width:auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin:0;padding:0}
+html.sb-bar.sb-folio #PersonaManagement .sb-use button{display:flex;flex-direction:row;justify-content:flex-start;align-items:center;writing-mode:vertical-rl;text-orientation:mixed;font:13px/1.4 var(--sb-type-body);padding:30px 0 0;margin:0;border:0;border-right:1px solid var(--sb-bar-line);border-radius:0;white-space:nowrap;color:var(--sb-bar-sub)}
+html.sb-bar.sb-folio #PersonaManagement .sb-use button:last-child{border-right:0}
+html.sb-bar.sb-folio #PersonaManagement .sb-use button.on{color:var(--sb-bar-accent);background:none}
+html.sb-bar.sb-folio #PersonaManagement:not(.sb-open-more) .sb-folio-persona-more{display:none!important}
+html.sb-bar.sb-folio #PersonaManagement .sb-folio-persona-more{padding:12px 0 18px;min-width:0;width:100%}
+html.sb-bar.sb-folio #PersonaManagement .sb-fold{border:1px solid var(--sb-bar-line);border-top-color:var(--sb-bar-accent);padding:14px 13px 12px;box-sizing:border-box}
 html.sb-bar.sb-folio .sb-foot{font-size:10px;margin:25px 0 18px}.sb-folio .sb-foot i{font:10px var(--sb-type-body)!important;letter-spacing:1px}
 html.sb-bar.sb-folio .sb-back button{font:11px var(--sb-type-body)}
 html.sb-bar.sb-folio #chat.sb-reading .sb-reading-head{height:114px;padding:16px 10px!important;box-sizing:border-box}
@@ -160,10 +220,31 @@ html.sb-bar.sb-folio .sb-lounge-groups{border:0;border-radius:0;background:none}
 html.sb-bar.sb-folio .sb-lounge-group{border-top:1px solid var(--sb-bar-line);border-bottom:0}
 html.sb-bar.sb-folio .sb-lounge-group:last-child{border-bottom:1px solid var(--sb-bar-line)}
 html.sb-bar.sb-folio .sb-lounge-quick button{border-radius:0;background:none;border:0;border-top:1px solid var(--sb-bar-line);border-bottom:1px solid var(--sb-bar-line);color:var(--sb-bar-accent)}
+html.sb-bar.sb-folio .sb-lounge-quick button svg{display:none}
+html.sb-bar.sb-folio .sb-lounge-quick button:before{content:'';display:block;flex:none;width:15px;height:15px;background:currentColor;-webkit-mask-position:center;mask-position:center;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
+html.sb-bar.sb-folio #rm_characters_block .rm_tag_filter{display:flex;flex-wrap:wrap;gap:7px;margin:9px 0}
+html.sb-bar.sb-folio #rm_characters_block .rm_tag_filter .tag.actionable{display:inline-flex;align-items:center;justify-content:center;min-width:29px;height:29px;margin:0;padding:3px 6px;border:1px solid var(--sb-bar-line);border-radius:0;background:none!important;box-shadow:none;color:var(--sb-bar-sub);cursor:pointer}
+html.sb-bar.sb-folio #rm_characters_block .rm_tag_filter .tag.actionable .tag_name{font-size:0!important;width:auto;line-height:1}
+html.sb-bar.sb-folio #rm_characters_block .rm_tag_filter .tag.actionable .tag_name:before{font:11px/1 var(--sb-type-body);content:var(--folio-filter-label,'签')}
+html.sb-bar.sb-folio #rm_characters_block .rm_tag_filter .filterByFavorites{--folio-filter-label:'常念'}
+html.sb-bar.sb-folio #rm_characters_block .rm_tag_filter .filterByGroups{--folio-filter-label:'同行'}
+html.sb-bar.sb-folio #rm_characters_block .rm_tag_filter :is(.filterByFolder,.filterByFolders){--folio-filter-label:'书匣'}
+html.sb-bar.sb-folio #rm_characters_block .rm_tag_filter .showTagList{--folio-filter-label:'寻签'}
+html.sb-bar.sb-folio #rm_characters_block .rm_tag_filter .manageTags{--folio-filter-label:'理签'}
+html.sb-bar.sb-folio #rm_characters_block .rm_tag_filter .clearAllFilters{--folio-filter-label:'清筛'}
+html.sb-bar.sb-folio #rm_characters_block .rm_tag_filter .tag.actionable:is(.selected,[data-filter-state=SELECTED]){color:var(--sb-bar-accent);border-color:var(--sb-bar-accent);background:color-mix(in srgb,var(--sb-bar-accent) 12%,transparent)!important}
+html.sb-bar.sb-folio #rm_characters_block .rm_tag_filter .tag.actionable:is(.excluded,[data-filter-state=EXCLUDED]){color:var(--sb-bar-accent);text-decoration:line-through;border-style:dashed}
+html.sb-bar.sb-folio #rm_characters_block .rm_tag_filter .tag.actionable:focus-visible{outline:1px solid var(--sb-bar-accent);outline-offset:2px}
 html.sb-bar.sb-folio .sb-lounge-label{font:14px var(--sb-type-body)!important;letter-spacing:0}
 html.sb-bar.sb-folio #send_form{border-radius:0!important;background:var(--sb-bar-bg)!important;border-color:var(--sb-bar-line)!important}
+html.sb-bar.sb-folio #send_textarea{align-self:center;box-sizing:border-box;min-height:calc(1.6em + 16px);height:auto;field-sizing:content;font-family:var(--sb-type-body)!important;line-height:1.6!important;padding:calc(8px - var(--progWidth,0px)) 6px 8px!important;margin:0!important}
 html.sb-bar.sb-folio #Backgrounds .bg_example{border-radius:0!important;border:1px solid var(--sb-bar-line)!important;box-shadow:none}
 html.sb-bar.sb-folio #Backgrounds .bg_example .bg_button{z-index:2}
+/* Scroll the whole background drawer, including its title and toolbar. */
+html.sb-bar.sb-folio #Backgrounds.sb-page-window.openDrawer:not([hidden]){display:block!important;overflow-y:auto!important;overflow-x:hidden}
+html.sb-bar.sb-folio #Backgrounds>.sb-head,html.sb-bar.sb-folio #Backgrounds #bg-header-fixed{position:relative;top:auto}
+html.sb-bar.sb-folio #Backgrounds #bg_tabs{display:block!important;height:auto!important;overflow:visible!important;flex:none}
+html.sb-bar.sb-folio #Backgrounds #bg_tabs .bg_tab_panel{height:auto!important;overflow:visible!important;flex:none;max-height:none}
 #sb-root.sb-folio-phone .sb-drawer,#sb-root.sb-folio-phone .sb-phone{border-radius:0!important;box-shadow:none!important;border-color:color-mix(in srgb,var(--sb-fg) 23%,var(--sb-bg))}
 #sb-root.sb-folio-phone :is(.sb-card,.sb-post,.sb-widget,.sb-now,.sb-diary,.sb-ds,.sb-sgrp){border-radius:0!important;box-shadow:none!important;background:var(--sb-card)!important;border-color:color-mix(in srgb,var(--sb-fg) 23%,var(--sb-bg))}
 #sb-root.sb-folio-phone .sb-cover .sb-logo{font:26px var(--sb-type-script);letter-spacing:0;background:color-mix(in srgb,var(--sb-bg) 85%,transparent);padding:6px 10px;color:var(--sb-fg)}
@@ -182,7 +263,7 @@ html.sb-bar.sb-folio #Backgrounds .bg_example .bg_button{z-index:2}
 #sb-root.sb-folio-phone .sb-srow{min-height:39px;font:12px var(--sb-type-body)}
 .sb-folio-card [hidden],.sb-folio-editor[hidden]{display:none!important}
 @media(max-width:380px){html.sb-bar.sb-folio .sb-folio-colors{gap:9px}.sb-folio-colors fieldset{padding:7px}html.sb-bar.sb-folio .sb-folio-card{flex-basis:156px!important;width:156px!important}}
-html.sb-bar.sb-folio #world_popup_new:before{content:'＋ 新增条目'!important}html.sb-bar.sb-folio #create_dummy_persona:before{content:'＋ 新建名帖'!important}html.sb-bar.sb-folio #rm_button_create:before{content:'＋ 新建角色'!important}html.sb-bar.sb-folio #favorite_button:before{content:'☆ 常念'!important}html.sb-bar.sb-folio #favorite_button.fav_on:before{content:'★ 常念'!important}html.sb-bar.sb-folio #world_button:before{content:'关联世界书'!important}html.sb-bar.sb-folio #char_connections_button:before{content:'名帖'!important}html.sb-bar.sb-folio #Backgrounds .mobile-only-menu-toggle{display:flex!important;align-items:center;justify-content:center;border-radius:0!important;z-index:4}html.sb-bar.sb-folio #Backgrounds :is(.jg-menu,.bg_folder_tile_menu){border-radius:0!important;box-shadow:none!important}
+html.sb-bar.sb-folio #world_popup_new:before{content:'＋ 添一笺'!important}html.sb-bar.sb-folio #create_dummy_persona:before{content:'＋ 落一名'!important}html.sb-bar.sb-folio #rm_button_create:before{content:'＋ 逢一人'!important}html.sb-bar.sb-folio #favorite_button:before{content:'☆ 常念'!important}html.sb-bar.sb-folio #favorite_button.fav_on:before{content:'★ 常念'!important}html.sb-bar.sb-folio #world_button:before{content:'世间录'!important}html.sb-bar.sb-folio #char_connections_button:before{content:'名帖'!important}html.sb-bar.sb-folio #Backgrounds .mobile-only-menu-toggle{display:flex!important;align-items:center;justify-content:center;border-radius:0!important;z-index:4}html.sb-bar.sb-folio #Backgrounds :is(.jg-menu,.bg_folder_tile_menu){border-radius:0!important;box-shadow:none!important}
 html.sb-bar.sb-folio :is(.sb-page-bartenders,.sb-page-bartender) .sb-head:after{left:0;right:0}
 html.sb-bar.sb-folio .sb-folio-lines>span{position:relative;display:block;padding:0}
 html.sb-bar.sb-folio .sb-folio-lines i{position:absolute;left:50%;top:32px;transform:translateX(-50%);height:auto}
@@ -211,3 +292,98 @@ html.sb-bar.sb-folio #respective-presets-block [data-preset-manager-restore]{lef
 html.sb-bar.sb-folio #respective-presets-block [data-preset-manager-restore]:before{content:'还原'!important}
 html.sb-bar.sb-folio #completion_prompt_manager #completion_prompt_manager_list li.completion_prompt_manager_prompt .prompt_manager_prompt_controls :is(span,button,a){padding:0;margin:0;min-width:0;width:11px;height:11px;line-height:10px;align-items:center;justify-content:center;filter:none;opacity:1;background:none;color:var(--sb-bar-accent)}
 html.sb-bar.sb-folio #completion_prompt_manager #completion_prompt_manager_list li.completion_prompt_manager_prompt .prompt_manager_prompt_controls{flex-direction:row;justify-content:center;align-items:center;gap:2px;font-size:9px}
+
+/* Auxiliary preset controls sit beneath the current-preset caption, not its actions. */
+html.sb-bar.sb-folio #respective-presets-block .sb-folio-preset-tools{position:absolute!important;top:90px!important;right:9px;bottom:auto;left:auto;display:flex;flex-direction:column;align-items:center;gap:10px;width:20px;z-index:5}
+html.sb-bar.sb-folio #respective-presets-block .sb-folio-preset-tools>*{position:relative!important;inset:auto!important;display:flex;align-items:center;justify-content:center;flex:0 0 20px;width:20px!important;height:20px!important;min-height:20px!important;max-height:20px!important;margin:0!important;padding:0!important;writing-mode:horizontal-tb;color:var(--sb-bar-accent);cursor:pointer}
+html.sb-bar.sb-folio #respective-presets-block .sb-folio-preset-tools .fa-atom::before{font-family:var(--fa-style-family,"Font Awesome 6 Free")!important;font-weight:900!important;font-size:13px!important;writing-mode:horizontal-tb}
+html.sb-bar.sb-folio #respective-presets-block .sb-folio-preset-tools input{display:none}
+html.sb-bar.sb-folio #respective-presets-block .sb-folio-preset-tools label[for="bind_preset_to_connection"]{max-width:20px;font-size:13px}
+
+/* API operations share the preset spacing; each first character starts at one height. */
+html.sb-bar.sb-folio .sb-page-cellar .sb-folio-card .sb-row{left:42px;right:9px;bottom:14px;height:48px;display:flex;flex-direction:row;flex-wrap:nowrap;align-items:flex-start;justify-content:flex-start;gap:3px}
+html.sb-bar.sb-folio .sb-page-cellar .sb-folio-card .sb-row .sb-b{display:block;position:relative;flex:0 0 14px;width:14px;height:48px;min-height:48px;margin:0;padding:0;text-align:start;white-space:nowrap;box-sizing:border-box}
+html.sb-bar.sb-folio .sb-page-cellar .sb-folio-card .sb-row .sb-b[hidden]{display:none!important}
+html.sb-bar.sb-folio .sb-page-cellar .sb-folio-profile-actions{position:absolute;left:42px;right:9px;bottom:14px;height:48px;display:flex;flex-direction:row;flex-wrap:nowrap;align-items:flex-start;gap:3px;overflow-x:auto;scrollbar-width:thin}
+html.sb-bar.sb-folio .sb-page-cellar .sb-folio-profile-actions :is(#create_connection_profile,#update_connection_profile,#edit_connection_profile,#reload_connection_profile,#view_connection_profile){position:relative!important;inset:auto!important;display:block!important;flex:0 0 14px;width:14px;height:48px;margin:0!important;padding:0;border:0;background:none;writing-mode:vertical-rl;text-align:start;font-size:0;white-space:nowrap}
+html.sb-bar.sb-folio .sb-page-cellar .sb-folio-profile-actions :is(#create_connection_profile,#update_connection_profile,#edit_connection_profile,#reload_connection_profile,#view_connection_profile):before{font:400 10px/1.2 var(--sb-type-body)!important;writing-mode:vertical-rl;color:var(--sb-bar-accent);letter-spacing:1px}
+html.sb-bar.sb-folio #create_connection_profile:before{content:'另存'!important}
+html.sb-bar.sb-folio #reload_connection_profile:before{content:'重载'!important}
+html.sb-bar.sb-folio #view_connection_profile:before{content:'查看'!important}
+
+/* Worldbook actions use one compact row of vertical captions at the card foot. */
+html.sb-bar.sb-folio .sb-page-menu .sb-tonight .sb-native-actions{display:none!important}
+html.sb-bar.sb-folio .sb-page-menu .sb-tonight .sb-row{left:42px;right:9px;bottom:14px;height:48px;display:flex;flex-direction:row;flex-wrap:nowrap;align-items:flex-start;justify-content:flex-start;gap:3px;overflow-x:auto;scrollbar-width:thin}
+html.sb-bar.sb-folio .sb-page-menu .sb-tonight .sb-row :is(.sb-b,#world_import_button,#world_popup_export,#world_popup_name_button,#world_duplicate){position:relative!important;inset:auto!important;display:block;flex:0 0 14px;width:14px!important;min-width:14px;height:48px!important;margin:0!important;padding:0!important;border:0!important;background:none!important;writing-mode:vertical-rl;text-align:start;white-space:nowrap;box-sizing:border-box}
+html.sb-bar.sb-folio .sb-page-menu .sb-tonight .sb-row :is(#world_import_button,#world_popup_export,#world_popup_name_button,#world_duplicate){font-size:0!important}
+html.sb-bar.sb-folio .sb-page-menu .sb-tonight .sb-row :is(#world_import_button,#world_popup_export,#world_popup_name_button,#world_duplicate):before{font:400 10px/1.2 var(--sb-type-body)!important;writing-mode:vertical-rl;letter-spacing:1px;color:var(--sb-bar-accent)}
+html.sb-bar.sb-folio .sb-page-menu #world_import_button:before{content:'导入'!important}
+html.sb-bar.sb-folio .sb-page-menu #world_popup_export:before{content:'导出'!important}
+html.sb-bar.sb-folio .sb-page-menu #world_popup_name_button:before{content:'改名'!important}
+html.sb-bar.sb-folio .sb-page-menu #world_duplicate:before{content:'复制'!important}
+html.sb-bar.sb-folio .sb-page-menu .sb-legend{display:none!important}
+html.sb-bar.sb-folio .sb-folio-world-legend{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 14px;margin:18px 0;font:10px/1.4 var(--sb-type-body);color:var(--sb-bar-sub)}
+html.sb-bar.sb-folio .sb-folio-world-legend>span{display:inline-flex;align-items:center;gap:5px}
+html.sb-bar.sb-folio .sb-folio-world-legend b{display:inline-block;flex:0 0 8px;width:8px;height:8px;padding:0;border:0;border-radius:50%;background:#8a8a8a}
+html.sb-bar.sb-folio .sb-folio-world-legend b.c{background:#5b7fae}
+html.sb-bar.sb-folio .sb-folio-world-legend b.n{background:#5f8a63}
+
+/* A compact index remains above full-width native editors. Entries stay in the host list. */
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list]{display:block!important;overflow:visible!important;padding:0!important;min-width:0}
+html.sb-bar.sb-folio .sb-folio-entry-rail{display:flex;gap:5px;overflow-x:auto;max-width:100%;padding:5px 0 14px;scrollbar-width:thin}
+html.sb-bar.sb-folio .sb-folio-entry-tab{flex:0 0 40px;width:40px;height:210px;position:relative;border:1px solid var(--sb-bar-line);box-sizing:border-box}
+html.sb-bar.sb-folio .sb-folio-entry-tab>button{border:0;background:none;color:var(--sb-bar-ink);padding:0;margin:0;border-radius:0;cursor:pointer}
+html.sb-bar.sb-folio .sb-folio-entry-open{position:absolute;inset:0;width:100%;height:175px}
+html.sb-bar.sb-folio .sb-folio-entry-open>i{position:absolute;top:7px;left:0;right:0;font:9px var(--sb-type-body);text-align:center;color:var(--sb-bar-sub)}
+html.sb-bar.sb-folio .sb-folio-entry-open>span{position:absolute;top:28px;bottom:22px;left:11px;width:18px;writing-mode:vertical-rl;text-orientation:mixed;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font:12px/1.4 var(--sb-type-body)}
+html.sb-bar.sb-folio .sb-folio-entry-open>em{position:absolute;bottom:0;left:0;right:0;font:12px var(--sb-type-body);color:var(--sb-bar-sub)}
+html.sb-bar.sb-folio .sb-folio-entry-tab>.sb-folio-entry-state{position:absolute;bottom:12px;left:15px;width:9px;height:9px;border:0;border-radius:50%;background:#5f8a63}
+html.sb-bar.sb-folio .sb-folio-entry-tab[data-state=constant]>.sb-folio-entry-state{background:#5b7fae}
+html.sb-bar.sb-folio .sb-folio-entry-tab[data-state=off]>.sb-folio-entry-state{background:#8a8a8a}
+html.sb-bar.sb-folio .sb-folio-entry-tab[data-state=vectorized]>.sb-folio-entry-state{background:#9a7bb0}
+html.sb-bar.sb-folio .sb-folio-entry-tab[data-state=off] .sb-folio-entry-open>span{color:var(--sb-bar-sub)}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list]>.world_entry[data-folio-entry-open=false]{display:none!important}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list]>.world_entry[data-folio-entry-open=true]{display:block!important;position:relative;width:100%!important;min-width:0;max-width:100%;height:auto!important;max-height:none;overflow:visible;box-sizing:border-box;padding:28px 12px 16px;margin:14px 0 20px;border:1px solid var(--sb-bar-line);border-radius:0;writing-mode:horizontal-tb}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list]>.world_entry:before{top:7px;left:12px;right:auto}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list] .world_entry .sb-wi-meta{display:none!important}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list] .world_entry textarea[name=comment]{writing-mode:horizontal-tb!important;width:100%!important;max-width:100%;height:auto!important;min-height:30px!important;max-height:none!important;font:16px/1.6 var(--sb-type-body);padding:2px 0;white-space:normal}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list] .world_entry .inline-drawer-header{display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap;min-width:0}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list] .world_entry .world_entry_thin_controls{flex-wrap:wrap;min-width:0;max-width:100%}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list] .world_entry .world_entry_thin_controls>.flex-container:has(.WIEntryTitleAndStatus){display:flex;flex-direction:column;align-items:stretch!important;flex:1 1 100%;gap:12px;width:100%}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list] .WIEntryTitleAndStatus{display:flex;flex-wrap:nowrap;align-items:center;gap:8px;min-width:0;width:100%}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list] .WIEnteryHeaderControls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;width:100%}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list] [name=PositionBlock]{grid-column:1/-1}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list] .WIEnteryHeaderControls>.world_entry_form_control{display:flex;flex-direction:column;align-items:stretch;min-width:0;gap:4px}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list] .world_entry :is(.flex1,.flex4,.world_entry_form_control){min-width:0;max-width:100%}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list] [name=keywordsAndLogicBlock]{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;width:100%}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list] [name=perEntryOverridesBlock]{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;width:100%;margin:14px 0}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list] .world_entry_edit>.flex-container{flex-wrap:wrap;gap:12px;width:100%}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list] .world_entry :is(.text_pole,textarea,select){background:var(--sb-bar-paper);color:var(--sb-bar-ink);border:1px solid var(--sb-bar-line);box-shadow:none;max-width:100%;box-sizing:border-box}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list] .world_entry textarea[name=content]{width:100%!important;min-height:240px!important;writing-mode:horizontal-tb;font:13px/1.85 var(--sb-type-body);padding:10px;resize:vertical}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list] .world_entry .select2-container{max-width:100%;min-width:0}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list] .world_entry .WIEntryHeaderTitleMobile{display:block!important}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list] [name=keywordsAndLogicBlock]>.world_entry_form_control{display:flex;flex-direction:column;align-items:stretch;gap:6px}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list] [name=keywordsAndLogicBlock] .keyselect{width:100%;min-height:42px}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list] [name=keywordsAndLogicBlock] .switch_input_type_icon{align-self:flex-end;border:1px solid var(--sb-bar-line);background:none;color:var(--sb-bar-sub);padding:3px 6px}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list] [name=contentAndCharFilterBlock]{display:block;width:100%}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list] [name=contentAndCharFilterBlock]>.world_entry_form_control>label{display:block;width:100%}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list] [name=contentAndCharFilterBlock] label>small>span.flex-container{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list] [name=contentAndCharFilterBlock] label>small>span.flex-container>div.flex-container{flex:1 1 100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:8px 0}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list] .world_entry_edit>.flex-container:has(input[name=group]){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list] .world_entry_edit>.flex-container:has(input[name=group])>.flex4{grid-column:1/-1}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list] .world_entry :is(input.text_pole,select.text_pole){width:100%}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list] .world_entry .delete_entry_button{position:absolute;top:7px;right:12px;left:auto!important;bottom:auto}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list] .world_entry>.world_entry_form>.inline-drawer>.inline-drawer-header>.drag-handle{position:absolute;top:8px;left:40px}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list] .world_entry .inline-drawer-header .killSwitch{position:absolute;top:8px;right:44px;bottom:auto;width:10px}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list] .world_entry>.world_entry_form>.inline-drawer>.inline-drawer-header>.world_entry_thin_controls>.inline-drawer-icon{position:absolute;top:5px;right:69px}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list] .WIEntryTitleAndStatus>.flex-container{flex:1 1 0;min-width:0}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list] .WIEntryTitleAndStatus>.flex-container:after{display:none}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list] .WIEntryTitleAndStatus>select[name=entryStateSelector]{flex:0 0 82px;width:82px!important;max-width:82px}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list] .select2-selection{background:var(--sb-bar-paper)!important;color:var(--sb-bar-ink)!important;border:1px solid var(--sb-bar-line)!important;border-radius:2px}
+html.sb-bar.sb-folio #world_popup_entries_list[data-folio-world-list] .select2-selection__choice{background:transparent!important;color:var(--sb-bar-ink)!important;border:1px solid var(--sb-bar-line)!important}
+
+#sb-root.sb-folio-phone .sb-logo{font-family:var(--sb-type-script)!important;font-weight:400!important;letter-spacing:0!important}
+html.sb-folio .sb-folio-appearance-title{font-family:CooperZhengKai,SB-Folio-Body,serif!important}
+
+html.sb-bar.sb-folio #rm_extensions_block :is(.inline-drawer,details:has(.inline-drawer)){border:1px solid var(--sb-bar-line)!important;border-top-color:var(--sb-bar-accent)!important;padding:14px 13px 12px!important;box-sizing:border-box;border-radius:0}
+html.sb-bar.sb-folio #rm_extensions_block details:has(.inline-drawer) .inline-drawer{border:0!important;padding:0!important;margin:0!important}

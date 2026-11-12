@@ -32,6 +32,13 @@ export function updateAppearanceColors(settings, mode, patch) {
     Object.assign(settings.splash.colors[mode], normalized);
     return true;
 }
+// A transient display draft; confirmation still uses the original shared save path.
+export function createAppearancePreview(settings, mode, patch) {
+    const draft = { ...settings, theme: mode, splash: { ...settings?.splash,
+        colors: { light: { ...settings?.splash?.colors?.light }, dark: { ...settings?.splash?.colors?.dark } } } };
+    updateAppearanceColors(draft, mode, patch);
+    return draft;
+}
 export function createAppearanceBridge({ getSettings, save = () => {}, notify = () => {} }) {
     if (typeof getSettings !== 'function') throw new TypeError('getSettings is required');
     return Object.freeze({

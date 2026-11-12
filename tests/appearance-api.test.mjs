@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { defaults } from '../src/palette.mjs';
-import { createAppearanceBridge, readAppearanceColors, updateAppearanceColors } from '../src/appearance-api.mjs';
+import { createAppearanceBridge, createAppearancePreview, readAppearanceColors, updateAppearanceColors } from '../src/appearance-api.mjs';
 
 test('appearance entry points share the same saved fields without touching images or the opposite mode', () => {
     const settings = { theme: 'auto', splash: { pageWidth: 80, images: { light: { cover: 'my-cover' } }, colors: { dark: { bg: '#222222' }, light: { accent: '#777777' } } } };
@@ -52,4 +52,18 @@ test('folio fills missing defaults while preserving saved palettes and profiles'
     const classic = { barStyle: 'default' };
     seedFolioColors(classic);
     assert.deepEqual(classic, { barStyle: 'default' });
+});
+
+test('live preview is detached from canonical colors and preserves mode, images, and other settings', () => {
+    const settings = { theme: 'auto', splash: { images: { dark: { cover: 'saved' } }, colors: { light: { bg: '#eeeeee', accent: '#123456' }, dark: { bg: '#111111', accent: '#abcdef' } } } };
+    const before = structuredClone(settings);
+    const draft = createAppearancePreview(settings, 'light', { bg: '#AbC' });
+    assert.equal(draft.theme, 'light');
+    assert.equal(draft.splash.colors.light.bg, '#aabbcc');
+    assert.deepEqual(settings, before);
+    draft.splash.colors.dark.bg = '#ffffff';
+    assert.deepEqual(settings, before);
+    assert.deepEqual(draft.splash.images, settings.splash.images);
+    assert.throws(() => createAppearancePreview(settings, 'light', { accent: 'invalid' }));
+    assert.deepEqual(settings, before);
 });
