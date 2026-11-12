@@ -88,7 +88,7 @@ function sync() {
         for (const node of surface.querySelectorAll(':scope > .mes')) decorateMessage(node, h, c);
     } else {
         $('.sb-reading-head', surface)?.remove(); for (const panel of surface.querySelectorAll('.welcomePanel')) updateLounge(panel, h, popup);
-        for(const node of surface.querySelectorAll(':scope > .mes'))if(node.getAttribute('is_user')!=='true'&&$('.mes_text',node))decorateMessage(node,h,c,true);
+        for(const node of surface.querySelectorAll(':scope > .mes'))if(node.getAttribute('is_user')!=='true'&&node.getAttribute('is_system')!=='true'&&$('.mes_text',node))decorateMessage(node,h,c,true);
     }
     for (const [node] of touched) if (!node.isConnected) touched.delete(node);
     syncFolioChat(surface, h.settings());

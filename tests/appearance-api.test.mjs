@@ -9,7 +9,7 @@ test('companion mode follows appearance by default and overrides only its own su
     settings.phoneTheme='auto';assert.equal(phoneModeFor(settings),'light');
     settings.theme='dark';assert.equal(phoneModeFor(settings),'dark');
 });
-import { createAppearanceBridge, createAppearancePreview, readAppearanceColors, updateAppearanceColors } from '../src/appearance-api.mjs';
+import { createAppearanceBridge, createAppearancePreview, isAppearancePreview, readAppearanceColors, updateAppearanceColors } from '../src/appearance-api.mjs';
 
 test('appearance entry points share the same saved fields without touching images or the opposite mode', () => {
     const settings = { theme: 'auto', splash: { pageWidth: 80, images: { light: { cover: 'my-cover' } }, colors: { dark: { bg: '#222222' }, light: { accent: '#777777' } } } };
@@ -66,6 +66,9 @@ test('live preview is detached from canonical colors and preserves mode, images,
     const settings = { theme: 'auto', splash: { images: { dark: { cover: 'saved' } }, colors: { light: { bg: '#eeeeee', accent: '#123456' }, dark: { bg: '#111111', accent: '#abcdef' } } } };
     const before = structuredClone(settings);
     const draft = createAppearancePreview(settings, 'light', { bg: '#AbC' });
+    assert.equal(isAppearancePreview(draft), true);
+    assert.equal(isAppearancePreview(settings), false);
+    assert.equal(isAppearancePreview(structuredClone(draft)), false);
     assert.equal(draft.theme, 'light');
     assert.equal(draft.splash.colors.light.bg, '#aabbcc');
     assert.deepEqual(settings, before);

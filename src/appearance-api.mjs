@@ -4,6 +4,8 @@ import { normalizeHex } from './color-picker.mjs';
 // Both appearance entry points use splash.colors; no second theme store.
 const modes = new Set(['light', 'dark']);
 const keys = new Set(['bg', 'accent']);
+const previews = new WeakSet();
+export const isAppearancePreview = value => previews.has(value);
 function checkMode(mode) {
     if (!modes.has(mode)) throw new TypeError('Appearance mode must be light or dark');
 }
@@ -37,6 +39,7 @@ export function createAppearancePreview(settings, mode, patch) {
     const draft = { ...settings, theme: mode, splash: { ...settings?.splash,
         colors: { light: { ...settings?.splash?.colors?.light }, dark: { ...settings?.splash?.colors?.dark } } } };
     updateAppearanceColors(draft, mode, patch);
+    previews.add(draft);
     return draft;
 }
 export function createAppearanceBridge({ getSettings, save = () => {}, notify = () => {} }) {
