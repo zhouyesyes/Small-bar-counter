@@ -192,7 +192,13 @@ const PAGES = {
         },
         // 酒馆的「连接配置」扩展是后来才塞到最上面的，每次都看一眼位置对不对：在我们的卡片下面，前面一行 Supplier
         place(root) {
-            if (document.documentElement.classList.contains('sb-folio') && root.querySelector(':scope > .sb-folio-rail')) return;
+            const folioRail = root.querySelector(':scope > .sb-folio-rail');
+            if (document.documentElement.classList.contains('sb-folio') && folioRail) {
+                // Folio can mount while this drawer is closed, before its first sync.
+                // Always provide the native connection-settings disclosure on opening.
+                if (!$('[data-fold="detail"]', root)) folioRail.after(fold('detail', '连接设置', 'Connection'));
+                return;
+            }
             const prof = $('#connection_profiles', root)?.closest('#rm_api_block > *');
             const card = $('.sb-pour', root); if (!card) return;
             let sup = $('.sb-supplier', root), fd = $(':scope > .sb-fold', root);
@@ -267,7 +273,9 @@ const PAGES = {
             const name = optText('world_editor_select');
             $('[data-v="book"]', root).textContent = val('world_editor_select') === '' ? '还没选' : name;
             const all = $$('#world_popup_entries_list .world_entry', root);
-            $('[data-v="count"]', root).textContent = all.length ? `这一页 ${all.length} 道 · 开着 ${all.filter(e => !$('.disabledWIEntry', e) && !e.classList.contains('disabledWIEntry')).length} 道` : '';
+            const folio = document.documentElement.classList.contains('sb-folio');
+            const enabled = all.filter(e => !$('.disabledWIEntry', e) && !e.classList.contains('disabledWIEntry')).length;
+            $('[data-v="count"]', root).textContent = all.length ? (folio ? `共 ${all.length} 条 · 启用 ${enabled} 条` : `这一页 ${all.length} 道 · 开着 ${enabled} 道`) : '';
             mirror($('[data-pick="book"]', root), document.getElementById('world_editor_select'));
             // 每一道：状态点、底下一行小字（深度 / 顺序 / 概率 / 点单词）
             for (const e of all) {
@@ -278,7 +286,7 @@ const PAGES = {
                 if (!meta) { meta = document.createElement('div'); meta.className = 'sb-bx sb-wi-meta'; $('.inline-drawer-header', e)?.after(meta); }
                 const v = n => $(`[name="${n}"]`, e)?.value ?? '';
                 const keys = [...($('select.keyprimaryselect', e)?.selectedOptions || [])].map(o => o.textContent).filter(Boolean).slice(0, 4).join('、') || v('key').split(',').slice(0, 4).join('、');
-                const bits = [v('depth') !== '' && `深度 ${v('depth')}`, v('order') !== '' && `顺序 ${v('order')}`, v('probability') !== '' && v('probability') !== '100' && `${v('probability')}%`, state === 'normal' && keys && `点单词 ${keys}`].filter(Boolean);
+                const bits = [v('depth') !== '' && `深度 ${v('depth')}`, v('order') !== '' && `顺序 ${v('order')}`, v('probability') !== '' && v('probability') !== '100' && `${v('probability')}%`, state === 'normal' && keys && `${folio ? '关键词' : '点单词'} ${keys}`].filter(Boolean);
                 const text = bits.join(' · ');
                 if (meta.textContent !== text) meta.textContent = text;
             }
@@ -318,7 +326,7 @@ const PAGES = {
             const img = (file && ctx?.getThumbnailUrl ? ctx.getThumbnailUrl('persona', file) : '') || $('img', sel || document.createElement('i'))?.getAttribute('src') || '';
             const im = $('img', mc); if (im.getAttribute('src') !== img) { if (img) im.setAttribute('src', img); else im.removeAttribute('src'); }
             const name = (file && pu.personas?.[file]) || ctx?.name1 || $('#your_name')?.textContent.trim() || '';
-            $('.sb-mc-name', mc).textContent = name || '还没办卡';
+            $('.sb-mc-name', mc).textContent = name || (document.documentElement.classList.contains('sb-folio') ? '未题名' : '还没办卡');
             const keys = Object.keys(pu.personas || {});
             const no = file && keys.includes(file) ? keys.indexOf(file) + 1 : (sel ? rows.indexOf(sel) + 1 : 0);
             $('.sb-mc-no', mc).textContent = no ? 'NO. ' + String(no).padStart(4, '0') : '';

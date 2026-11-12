@@ -22,11 +22,12 @@ export function hsvToHex({ h, s, v }) {
 }
 let activeClose;
 const swatches = ['#f2f2f2','#efa6c8','#df765c','#369b91','#27525e','#b4c4af','#bbaaca','#181818','#ffffff','#26313e'];
-export function openColorPicker({ value, title = '颜色', anchor, onConfirm }) {
+export function openColorPicker({ value, title = '颜色', anchor, onConfirm, onPreview, onCancel, compact = false }) {
     installTypography();
     activeClose?.();
     let hsv = hexToHsv(value) || hexToHsv('#808080'), closed = false, pointer = null;
     const overlay = document.createElement('div'); overlay.id = 'sb-color-picker';
+    overlay.classList.toggle('sb-color-compact', compact);
     overlay.innerHTML = `<style>${styles}</style><section role="dialog" aria-modal="true" aria-labelledby="sb-color-title">
 <header><div><b id="sb-color-title">色彩调配</b><i>The Palette</i><p data-subtitle></p></div><button type="button" data-cancel aria-label="取消调色">×</button></header>
 <div class="sb-color-preview"><span data-preview aria-label="颜色预览"></span><label><span class="sb-color-sr">十六进制色号</span><input data-hex aria-label="十六进制色号" maxlength="7" spellcheck="false" autocapitalize="characters" autocomplete="off"></label></div>
@@ -36,10 +37,18 @@ export function openColorPicker({ value, title = '颜色', anchor, onConfirm }) 
 <label class="sb-color-range"><span>明暗</span><input data-brightness type="range" min="0" max="100" step="1" aria-label="明暗"><output data-brightness-value></output></label>
 <p data-status role="status"></p><footer><button type="button" data-eyedropper hidden>［ 屏幕取色 ］</button><button type="button" data-confirm>［ 选好了 ］</button></footer></section>`;
     const source = anchor || document.documentElement, computed = getComputedStyle(source);
+    const pageKeys = { bg: 'bg', fg: 'ink', dim: 'sub', line: 'line', soft: 'paper', accent: 'accent', ink: 'btntext' };
     for (const key of ['bg','fg','dim','line','soft','accent','ink']) {
-        const color = computed.getPropertyValue('--sb-' + key).trim();
+        const color = computed.getPropertyValue('--sb-' + key).trim() || computed.getPropertyValue('--sb-bar-' + pageKeys[key]).trim();
         if (color) overlay.style.setProperty('--sb-' + key, color);
     }
+    for(const key of ['body','ui','script','action','italic']){
+        const font=computed.getPropertyValue('--sb-type-'+key).trim();
+        if(font)overlay.style.setProperty('--sb-type-'+key,font);
+    }
+    if(compact) overlay.querySelector('section').setAttribute('aria-modal','false');
+    // Native drawers close on document clicks outside them. The picker is a portal.
+    for(const type of ['pointerdown','pointerup','mousedown','mouseup'])overlay.addEventListener(type,e=>e.stopPropagation());
     document.documentElement.append(overlay);
     const $ = selector => overlay.querySelector(selector), wheel = $('[data-wheel]'), hexInput = $('[data-hex]');
     $('[data-subtitle]').textContent = title;
@@ -58,23 +67,25 @@ export function openColorPicker({ value, title = '颜色', anchor, onConfirm }) 
         $('[data-saturation]').style.setProperty('--range-track', `linear-gradient(to right,${hsvToHex({...hsv,s:0})},${hsvToHex({...hsv,s:1})})`);
         $('[data-brightness]').style.setProperty('--range-track', `linear-gradient(to right,#000,${hsvToHex({...hsv,v:1})})`);
         for (const button of overlay.querySelectorAll('[data-swatch]')) button.setAttribute('aria-pressed', String(button.dataset.swatch === hex));
+        onPreview?.(hex);
     }
     function fromHex() {
         const next = hexToHsv(hexInput.value, hsv.h);
         if (!next) { hexInput.setAttribute('aria-invalid','true'); status.textContent = '请输入 #RRGGBB 或 #RGB 色号'; return false; }
         hsv = next; paint(); return true;
     }
-    function close() {
+    function close(confirmed = false) {
         if (closed) return; closed = true;
         if (activeClose === close) activeClose = null;
-        overlay.remove(); if (anchor?.isConnected) anchor.focus();
+        overlay.remove(); if (confirmed !== true) onCancel?.();
+        if (anchor?.isConnected) anchor.focus({preventScroll:true});
     }
     activeClose = close;
     $('[data-cancel]').onclick = close;
-    overlay.onclick = e => { if (e.target === overlay) close(); };
+    overlay.onclick = e => { e.stopPropagation(); if (e.target === overlay) close(); };
     $('[data-confirm]').onclick = () => {
         if (hexInput.getAttribute('aria-invalid') === 'true' && !fromHex()) { hexInput.focus(); return; }
-        const hex = hsvToHex(hsv); close(); onConfirm?.(hex);
+        const hex = hsvToHex(hsv); close(true); onConfirm?.(hex);
     };
     hexInput.oninput = () => { if (normalizeHex(hexInput.value)) fromHex(); else hexInput.setAttribute('aria-invalid','true'); };
     hexInput.onchange = fromHex;
@@ -101,6 +112,7 @@ export function openColorPicker({ value, title = '颜色', anchor, onConfirm }) 
         e.preventDefault(); paint();
     };
     overlay.onkeydown = e => {
+        e.stopPropagation();
         if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); return; }
         if (e.key === 'Enter' && e.target === hexInput) { e.preventDefault(); fromHex(); return; }
         if (e.key !== 'Tab') return;
@@ -153,4 +165,22 @@ const styles = `
 #sb-color-picker footer{display:flex;justify-content:space-between;gap:16px;padding-top:12px;margin-top:12px;border-top:1px solid var(--sb-line);}
 #sb-color-picker [data-confirm]{margin-left:auto;color:var(--sb-fg);}
 #sb-color-picker :is(button,input,[tabindex]):focus-visible{outline:2px solid var(--sb-accent);outline-offset:3px;}
+#sb-color-picker.sb-color-compact{align-items:flex-end;justify-content:flex-end;padding:12px 12px max(12px,env(safe-area-inset-bottom));background:transparent;pointer-events:none;}
+#sb-color-picker.sb-color-compact section{pointer-events:auto;width:min(292px,calc(100vw - 24px));max-height:min(360px,55dvh);padding:10px 12px;border-radius:5px;display:grid;grid-template-columns:120px minmax(0,1fr);gap:8px 12px;}
+#sb-color-picker.sb-color-compact header{grid-column:1/-1;margin:0;padding-bottom:5px;}
+#sb-color-picker.sb-color-compact header b{font-size:14px!important;font-family:var(--sb-type-script)!important;}
+#sb-color-picker.sb-color-compact header i{display:none;}
+#sb-color-picker.sb-color-compact header p{margin:0;font-size:9px;}
+#sb-color-picker.sb-color-compact .sb-color-preview{grid-column:1/-1;margin:0;gap:8px;}
+#sb-color-picker.sb-color-compact [data-preview]{height:20px;border-radius:2px;}
+#sb-color-picker.sb-color-compact [data-hex]{font-size:12px;padding:3px 0;width:92px;}
+#sb-color-picker.sb-color-compact .sb-color-swatches{grid-column:1/-1;margin:0;gap:6px;}
+#sb-color-picker.sb-color-compact [data-swatch]{flex-basis:18px;width:18px;}
+#sb-color-picker.sb-color-compact .sb-color-wheel{grid-column:1;grid-row:4/6;width:120px;margin:4px 0;}
+#sb-color-picker.sb-color-compact .sb-color-range{grid-column:2;grid-template-columns:1fr 30px;gap:2px 5px;margin:3px 0;font-size:10px;}
+#sb-color-picker.sb-color-compact .sb-color-range input{grid-column:1/-1;grid-row:2;}
+#sb-color-picker.sb-color-compact [data-status]{grid-column:1/-1;margin:0;font-size:9px;}
+#sb-color-picker.sb-color-compact [data-status]:empty{display:none;}
+#sb-color-picker.sb-color-compact footer{grid-column:1/-1;margin:0;padding-top:5px;}
+
 `;

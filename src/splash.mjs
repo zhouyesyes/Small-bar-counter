@@ -1,7 +1,7 @@
 import { installTypography } from './typography.mjs';
 import { artwork, artworkMode, personalProfile } from './artwork.mjs';
 import { applyPalette, defaults } from './palette.mjs';
-import { readAppearanceColors, updateAppearanceColors } from './appearance-api.mjs';
+import { readAppearanceColors, updateAppearanceColors, createAppearancePreview } from './appearance-api.mjs';
 import { openColorPicker } from './color-picker.mjs';
 import { imageUrl, saveImage } from './imgstore.mjs';
 const KEY = 'small_bar_splash_v1';
@@ -219,6 +219,7 @@ export function openSplashSettings() {
     if (panel) return;
     const s = (settings.splash ??= {}); s.colors ??= {};
     panel = document.createElement('div'); panel.id = 'sb-splash-settings'; panel.setAttribute('role','dialog'); panel.setAttribute('aria-modal','true'); panel.setAttribute('aria-label','Small Bar appearance');
+    panel.addEventListener('click', event => event.stopPropagation());
     const focus = document.activeElement;
     panel.innerHTML = `<style>${styles}</style><div class="sb-custom"><header><b>SMALL BAR / APPEARANCE</b><button data-close aria-label="Close settings">×</button></header>
     <label>Show on startup<input type="checkbox" data-key="enabled" ${s.enabled !== false ? 'checked' : ''}></label>
@@ -231,11 +232,13 @@ export function openSplashSettings() {
     <p class="sb-upload-status" role="status"></p><p>照片保存在这台设备的浏览器。卡片上的 keep my tab open 会立即保存当前署名；修改署名后，再勾选即可重新保存。</p><button data-preview>Preview opening</button></div>`;
     document.documentElement.appendChild(panel); applyPalette(panel, settings);
     let closeColorPicker;
-    const close = () => { closeColorPicker?.(); panel.remove(); panel = null; if (focus?.isConnected) focus.focus(); };
+    const close = () => { closeColorPicker?.(); panel.remove(); panel = null; if (focus?.isConnected) focus.focus({preventScroll:true}); };
     panel.querySelectorAll('.sb-color-launch').forEach(button => button.onclick = () => {
         const mode = button.dataset.mode, key = button.dataset.color;
         closeColorPicker = openColorPicker({
-            value: button.dataset.value, anchor: button,
+            value: button.dataset.value, anchor: button, compact: true,
+            onPreview: color => window.dispatchEvent(new CustomEvent('small-bar-appearance-preview', { detail: createAppearancePreview(settings, mode, { [key]: color }) })),
+            onCancel: () => window.dispatchEvent(new CustomEvent('small-bar-appearance-preview', { detail: null })),
             title: (mode === 'light' ? '日间' : '夜间') + ' · ' + (key === 'bg' ? '背景色' : '辅助色'),
             onConfirm(color) {
                 if (!panel?.isConnected) return;
@@ -245,6 +248,7 @@ export function openSplashSettings() {
                 button.querySelector('code').textContent = color.toUpperCase();
                 persist(); paint(); applyPalette(panel, settings);
                 window.dispatchEvent(new Event('small-bar-appearance'));
+                window.dispatchEvent(new CustomEvent('small-bar-appearance-preview', { detail: null }));
             },
         });
     });
