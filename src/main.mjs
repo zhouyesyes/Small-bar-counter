@@ -522,7 +522,7 @@ function refreshInject() {
 
 function hasChar() { const c = ctx(); return c.characterId != null && c.characterId !== '' && !c.groupId && !!c.characters?.[c.characterId]; }
 let lastAssistantAvatar='';
-function assistantAvatar(){if(!activeChat(ctx()))lastAssistantAvatar=document.querySelector('#chat .mes:not([is_user=true]) .mesAvatarWrapper .avatar img')?.getAttribute('src')||lastAssistantAvatar;return lastAssistantAvatar;}
+function assistantAvatar(){if(!activeChat(ctx()))lastAssistantAvatar=document.querySelector('#chat .mes:not([is_user=true]):not([is_system=true]) .mesAvatarWrapper .avatar img')?.getAttribute('src')||lastAssistantAvatar;return lastAssistantAvatar;}
 setAssistantAvatarSource(assistantAvatar);
 
 // ---------- 接起来 ----------

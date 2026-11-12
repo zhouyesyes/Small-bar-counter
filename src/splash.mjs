@@ -79,7 +79,7 @@ function syncAppearancePanel() {
         button.querySelector('span').style.backgroundColor = color;
         button.querySelector('code').textContent = color.toUpperCase();
     }
-    for(const preview of panel.querySelectorAll('[data-image-preview]')){const art=landingArtwork(cfg(),preview.dataset.mode,assistantAvatarSource()||document.querySelector('#chat.sb-lounge .mes .mesAvatarWrapper .avatar img')?.getAttribute('src')||'');const source=art[preview.dataset.imagePreview]||'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="120" height="60"%3E%3Crect width="120" height="60" fill="%23bdbdbd"/%3E%3C/svg%3E';image(source,preview);}
+    for(const preview of panel.querySelectorAll('[data-image-preview]')){const art=landingArtwork(cfg(),preview.dataset.mode,assistantAvatarSource()||document.querySelector('#chat.sb-lounge .mes:not([is_user=true]):not([is_system=true]) .mesAvatarWrapper .avatar img')?.getAttribute('src')||'');const source=art[preview.dataset.imagePreview]||'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="120" height="60"%3E%3Crect width="120" height="60" fill="%23bdbdbd"/%3E%3C/svg%3E';image(source,preview);}
     const mode = panel.querySelector('[data-theme]');
     if (mode) mode.value = settings.theme || 'auto';
 }

@@ -1,6 +1,8 @@
 import { normalizeHex, openColorPicker } from './color-picker.mjs';
-import { createAppearancePreview } from './appearance-api.mjs';
+import { createAppearancePreview, isAppearancePreview } from './appearance-api.mjs';
 import { paths as iconPaths, names as iconNames } from './folio-icons.mjs';
+import { modeFor } from './palette.mjs';
+import { createNativeThemeControls } from './native-theme-controls.mjs';
 
 export const folioDefaults = { light: { bg: '#e9e8e3', accent: '#965650' }, dark: { bg: '#252725', accent: '#c28a7f' } };
 export const isFolio = settings => settings?.barStyle !== 'default';
@@ -33,6 +35,7 @@ const own = (cls,html='') => { const n=document.createElement('div');n.className
 const text = (n,value) => { if(!n)return;if(!texts.has(n))texts.set(n,[...n.childNodes]);if(n.textContent!==value)n.textContent=value; };
 const attribute = (n,key,value) => { if(!n)return;if(!attrs.has(n))attrs.set(n,new Map());if(!attrs.get(n).has(key))attrs.get(n).set(key,n.getAttribute(key));if(n.getAttribute(key)!==value)n.setAttribute(key,value); };
 function move(n,target) { if(!n||!target||n.parentElement===target)return;if(!moved.has(n)){const marker=document.createComment('sb-folio-native');n.before(marker);moved.set(n,marker);}target.append(n); }
+const nativeControls=createNativeThemeControls({move,attribute,text,appearance:()=>host.appearance,currentMode:()=>modeFor(settings),openColor:openAppearanceColor});
 function restore(n) { const marker=moved.get(n);if(!marker)return;if(marker.parentNode)marker.replaceWith(n);moved.delete(n); }
 function rail(root,parent=root) { const n=own('sb-folio-rail');const title=$('.sb-head',parent);if(title?.parentElement===parent)title.after(n);else parent.prepend(n);return n; }
 function card(parent,title,deep=false) { const n=own('sb-folio-card'+(deep?' is-deep':''),`<span class="sb-folio-title">${title}</span><div class="sb-folio-native"></div>`);parent.append(n);return n; }
@@ -55,7 +58,7 @@ function stamp(cardNode,label) { let n=$('.sb-folio-stamp',cardNode);if(!n){n=ow
 function lines(cardNode,summary) { let n=$('.sb-folio-lines',cardNode);if(!n){n=own('sb-folio-lines');cardNode.append(n);}const bits=(summary||'').split(' · ').filter(Boolean).slice(0,4);const html=bits.map(t=>`<span><i>${esc(t)}</i></span>`).join('');if(n.innerHTML!==html)n.innerHTML=html;n.style.setProperty('--folio-columns',String(Math.max(bits.length,1))); }
 function record(root) { let s=states.get(root);if(!s){s={};states.set(root,s);}return s; }
 function heading(root,name) {let h=$('.sb-head',root);if(!h&&name==='bartender'){h=own('sb-head','<div class="sb-script"></div><div class="sb-zh"></div>');root.prepend(h);}if(!h)return;text($('.sb-script',h),pages[name][0]);text($('.sb-zh',h),pages[name][1]);if(!$('.sb-folio-headstamp',h))h.append(own('sb-folio-headstamp','闲记'));}
-// Vertical labels use upright Latin/digits; brackets also bypass vertical font glyphs.
+// Latin runs turn sideways; brackets bypass vertical font glyph substitutions.
 function orientVerticalText(root) {
     const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT),pending=[];
     for(let node=walker.nextNode();node;node=walker.nextNode()){
@@ -226,7 +229,8 @@ function format(root, s) {
 
 function syncAppearance(root) {
     if(!host.appearance)return;let box=$('.sb-shared-appearance',root);
-    if(!box){box=own('sb-shared-appearance',`<div class="sb-folio-appearance-title">小吧台 · 共用美化</div><label>美化样式<select data-folio-setting="barStyle"><option value="folio">闲庭手记</option><option value="default">原版酒吧</option></select></label><label>明暗模式<select data-folio-setting="theme"><option value="auto">跟酒馆</option><option value="light">日间</option><option value="dark">夜间</option></select></label><div class="sb-folio-colors">${['light','dark'].map(mode=>`<fieldset><legend>${mode==='light'?'日间':'夜间'}</legend>${['bg','accent'].map(key=>`<button type="button" data-folio-color="${key}" data-mode="${mode}"><span>${key==='bg'?'主色':'辅助色'}</span><i></i><code></code></button>`).join('')}</fieldset>`).join('')}</div><button type="button" data-folio-open>开场、图片与小吧台外观 ›</button>`);const head=$('.sb-head',root);if(head)head.after(box);else root.prepend(box);}
+    if(!box){box=own('sb-shared-appearance',`<div class="sb-folio-appearance-title">小吧台 · 共用美化</div><label>美化样式<select data-folio-setting="barStyle"><option value="folio">闲庭手记</option><option value="default">原版酒吧</option></select></label><label>明暗模式<select data-folio-setting="theme"><option value="auto">跟酒馆</option><option value="light">日间</option><option value="dark">夜间</option></select></label><div class="sb-folio-colors">${['light','dark'].map(mode=>`<fieldset><legend>${mode==='light'?'日间':'夜间'}</legend>${['bg','accent'].map(key=>`<div data-folio-slot="${key}" data-mode="${mode}"><button type="button" data-folio-color="${key}" data-mode="${mode}"><span>${key==='bg'?'主色调':'辅助色'}</span><i></i><code></code></button></div>`).join('')}</fieldset>`).join('')}</div><button type="button" data-folio-open>开场、图片与小吧台外观 ›</button>`);const head=$('.sb-head',root);if(head)head.after(box);else root.prepend(box);}
+    if(!isAppearancePreview(settings))nativeControls.sync(root,box);
     for(const key of ['barStyle','theme']){const el=$(`[data-folio-setting="${key}"]`,box);el.value=settings[key]||(key==='barStyle'?'folio':'auto');}
     $$('[data-folio-color]',box).forEach(b=>{const c=host.appearance.get(b.dataset.mode)[b.dataset.folioColor];b.dataset.value=c;$('i',b).style.backgroundColor=c;text($('code',b),c.toUpperCase());});
 }
@@ -250,14 +254,17 @@ function onClick(e) {
     }
     const color=e.target.closest('[data-folio-color]');
     if(color&&host.appearance){
-        picker?.();const base=settings,mode=color.dataset.mode,key=color.dataset.folioColor;
-        const preview=draft=>window.dispatchEvent(new CustomEvent('small-bar-appearance-preview',{detail:draft}));
-        picker=openColorPicker({value:host.appearance.get(mode)[key],anchor:color,compact:true,title:(mode==='light'?'日间':'夜间')+' · '+(key==='bg'?'主色':'辅助色'),
-            onPreview:c=>preview(createAppearancePreview(base,mode,{[key]:c})),onCancel:()=>preview(null),
-            onConfirm:c=>{host.appearance.set(mode,{[key]:c});preview(null);}});
+        openAppearanceColor(color.dataset.mode,color.dataset.folioColor,color);
         return;
     }
     if(e.target.closest('[data-folio-open]'))host.openAppearance?.();
+}
+function openAppearanceColor(mode,key,anchor) {
+    picker?.();const base=settings;
+    const preview=draft=>window.dispatchEvent(new CustomEvent('small-bar-appearance-preview',{detail:draft}));
+    picker=openColorPicker({value:host.appearance.get(mode)[key],anchor,compact:true,title:(mode==='light'?'日间':'夜间')+' · '+(key==='bg'?'主色调':'辅助色'),
+        onPreview:c=>preview(createAppearancePreview(base,mode,{[key]:c})),onCancel:()=>preview(null),
+        onConfirm:c=>{nativeControls.commit(mode,key,c);host.appearance.set(mode,{[key]:c});preview(null);const root=$('#user-settings-block');if(root)syncAppearance(root);}});
 }
 function onChange(e) {const key=e.target.dataset?.folioSetting;if(key)host.setSettings?.(s=>{s[key]=e.target.value;if(key==='barStyle')seedFolioColors(s);});}
 function onToggle(e) {
@@ -282,7 +289,7 @@ export function configureFolio(settingsValue,adapter={}) {
     if(!listening){document.addEventListener('click',onClick);document.addEventListener('change',onChange);document.addEventListener('toggle',onToggle,true);listening=true;}
 }
 export function unmountFolioPages() {
-    const close=picker;picker=null;close?.(true);
+    const close=picker;picker=null;close?.(true);nativeControls.cleanup();
     for(const s of states.values())s.toolObserver?.disconnect();
     for(const mark of $$('.sb-folio-punctuation'))mark.replaceWith(...mark.childNodes);
     for(const [root,s]of states)if(s.detailsShown)root.classList.toggle('sb-open-detail',s.detailWasOpen);
