@@ -144,13 +144,23 @@ await p.evaluate(()=>{
     if(getComputedStyle(document.querySelector('#rm_button_create'),'::before').content!=='"＋ 逢一人"')throw Error('create character copy');
 });
 if(await p.locator('.sb-favs>.sb-label').isVisible())throw Error('favorite strip has leftover separator dashes');
+if(!await p.locator('.sb-favrow small').evaluateAll(nodes=>nodes.every(n=>n.textContent==='★ 常念')))throw Error('pinned favorite copy differs');
+for(const width of [320,390]){
+    await p.setViewportSize({width,height:900});
+    await p.evaluate(()=>{
+        const buttons=[...document.querySelectorAll('#rm_characters_block .rm_tag_filter .actionable')],r=buttons.map(n=>n.getBoundingClientRect());
+        if(r.some(n=>Math.abs(n.top-r[0].top)>1)||r[5].left<=r[4].left)throw Error('clear filter must stay after other actions in one row');
+        if(r[5].right>innerWidth||document.documentElement.scrollWidth>innerWidth)throw Error('filter row overflows phone');
+    });
+}
+
 await p.locator('#charListGridToggle').click();
 await p.evaluate(()=>{
     for(const field of document.querySelectorAll('#rm_print_characters_block :is(.ch_description,.tags_inline,.character_version)'))if(getComputedStyle(field).display!=='none')throw Error('grid must leave space around names');
     const list=document.querySelector('#rm_print_characters_block'),cards=[...list.querySelectorAll('.character_select')],r=cards.map(n=>n.getBoundingClientRect());
     if(cards.length<6||Math.abs(r[0].top-r[1].top)>1||Math.abs(r[0].top-r[2].top)>1||r[3].top<=r[0].bottom||r[2].right>list.getBoundingClientRect().right+1)throw Error('character grid must show three cards per row');
     for(const n of cards){for(const sel of ['.ch_name']){const field=n.querySelector(sel);if(!field.getClientRects().length||getComputedStyle(field).display==='none'||field.clientWidth<10)throw Error('character metadata missing '+sel);}if(getComputedStyle(n.querySelector('.ch_name')).textOverflow!=='ellipsis')throw Error('long character names need ellipsis');}
-    if(!cards[0].querySelector('.sb-folio-collection-flags').textContent.includes('常用'))throw Error('favorite badge missing');for(const card of cards){const r=card.getBoundingClientRect();if(Math.abs(r.width-r.height)>1||getComputedStyle(card.querySelector('.avatar')).borderRadius!=='50%')throw Error('grid requires square tiles and round avatars');if(getComputedStyle(card.querySelector('.ch_name')).writingMode!=='horizontal-tb')throw Error('grid name should remain horizontal');}
+    if(!cards[0].querySelector('.sb-folio-collection-flags').textContent.includes('常念'))throw Error('favorite badge missing');for(const card of cards){const r=card.getBoundingClientRect();if(Math.abs(r.width-r.height)>1||getComputedStyle(card.querySelector('.avatar')).borderRadius!=='50%')throw Error('grid requires square tiles and round avatars');if(getComputedStyle(card.querySelector('.ch_name')).writingMode!=='horizontal-tb')throw Error('grid name should remain horizontal');}
 });
 await p.locator('#rm_print_characters_block .character_select').first().click();
 await p.locator('#charListGridToggle').click();

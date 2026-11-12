@@ -178,7 +178,7 @@ function persona(root,s) {
 function collection(root) {
     attribute($('#character_search_bar',root),'placeholder','寻一位故人…');
     attribute($('#rm_button_create',root),'title','逢一人 · 新建角色');
-    const filters={filterByFavorites:'常念 · 只看常用',filterByGroups:'同行 · 只看群组',filterByFolders:'书匣 · 只看文件夹',filterByFolder:'书匣 · 只看文件夹',manageTags:'理签 · 管理标签',showTagList:'寻签 · 展开标签',clearAllFilters:'清筛 · 清除筛选'};
+    const filters={filterByFavorites:'常念 · 只看常念故人',filterByGroups:'同行 · 只看群组',filterByFolders:'书匣 · 只看文件夹',filterByFolder:'书匣 · 只看文件夹',manageTags:'理签 · 管理标签',showTagList:'寻签 · 展开标签',clearAllFilters:'清筛 · 清除筛选'};
     for(const [cls,label]of Object.entries(filters))for(const node of $$('.rm_tag_filter .'+cls,root)){attribute(node,'title',label);attribute($('.tag_name',node),'title',label);attribute(node,'aria-label',label);}
     const orders={'name:asc':'依名顺排','name:desc':'依名倒排','create_date:desc':'新识在前','create_date:asc':'旧识在前','fav:desc':'常念在前','date_last_chat:desc':'近叙在前','chat_size:desc':'长叙在前','chat_size:asc':'短叙在前','data_size:desc':'厚卷在前','data_size:asc':'薄卷在前','name:random':'随缘一逢','search:desc':'寻人结果'};
     for(const option of $$('#character_sort_order option',root)){const label=orders[option.dataset.field+':'+option.dataset.order];if(label)text(option,label);}
@@ -187,14 +187,15 @@ function collection(root) {
         const info=$('.character_select_container,.group_select_container',row);if(!info)continue;
         let flags=$('.sb-folio-collection-flags',info);if(!flags){flags=own('sb-folio-collection-flags');const heading=$('.character_name_block',info)||$('.ch_name',info);if(heading)heading.after(flags);else info.prepend(flags);}
         const states=[];
-        if(row.classList.contains('is_fav')||$('.ch_fav',row)?.value==='true'||row.classList.contains('default_persona'))states.push('★ 常用');
+        if(row.classList.contains('is_fav')||$('.ch_fav',row)?.value==='true')states.push('★ 常念');
+        else if(row.classList.contains('default_persona'))states.push('★ 常用');
         if(row.classList.contains('sb-cur')||(row.classList.contains('selected')&&!livePersona))states.push('在用');
         if(row.classList.contains('locked_to_character'))states.push('系于此人');
         if(row.classList.contains('locked_to_chat'))states.push('用于此叙');
         const label=states.join(' · ');if(flags.textContent!==label)flags.textContent=label;flags.title=label;
         for(const node of $$('.ch_name,.ch_description,.tags_inline',row))attribute(node,'title',$$('.tag_name',node).length?$$('.tag_name',node).map(n=>n.textContent).join(' / '):node.textContent.trim());
     }
-    for(const node of $$('.sb-favrow small',root))text(node,'★ 常用');
+    for(const node of $$('.sb-favrow small',root))text(node,'★ 常念');
 }
 function format(root, s) {
     if (s.rail) return;

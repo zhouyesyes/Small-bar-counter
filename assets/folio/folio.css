@@ -224,8 +224,8 @@ html.sb-bar.sb-folio .sb-lounge-group:last-child{border-bottom:1px solid var(--s
 html.sb-bar.sb-folio .sb-lounge-quick button{border-radius:0;background:none;border:0;border-top:1px solid var(--sb-bar-line);border-bottom:1px solid var(--sb-bar-line);color:var(--sb-bar-accent)}
 html.sb-bar.sb-folio .sb-lounge-quick button svg{display:none}
 html.sb-bar.sb-folio .sb-lounge-quick button:before{content:'';display:block;flex:none;width:15px;height:15px;background:currentColor;-webkit-mask-position:center;mask-position:center;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
-html.sb-bar.sb-folio #rm_characters_block .rm_tag_filter{display:flex;flex-wrap:wrap;gap:7px;margin:9px 0}
-html.sb-bar.sb-folio #rm_characters_block .rm_tag_filter .tag.actionable{display:inline-flex;align-items:center;justify-content:center;min-width:29px;height:29px;margin:0;padding:3px 6px;border:1px solid var(--sb-bar-line);border-radius:0;background:none!important;box-shadow:none;color:var(--sb-bar-sub);cursor:pointer}
+html.sb-bar.sb-folio #rm_characters_block .rm_tag_filter{display:flex;flex:1 1 100%;flex-wrap:nowrap;align-items:center;gap:7px;width:100%;min-width:0;max-width:100%;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;margin:9px 0}
+html.sb-bar.sb-folio #rm_characters_block .rm_tag_filter .tag.actionable{display:inline-flex;flex:0 0 auto;align-items:center;justify-content:center;width:auto;min-width:34px;height:29px;min-height:29px;aspect-ratio:auto;white-space:nowrap;margin:0;padding:3px 6px;border:1px solid var(--sb-bar-line);border-radius:0;background:none!important;box-shadow:none;color:var(--sb-bar-sub);cursor:pointer}
 html.sb-bar.sb-folio #rm_characters_block .rm_tag_filter .tag.actionable .tag_name{font-size:0!important;width:auto;line-height:1}
 html.sb-bar.sb-folio #rm_characters_block .rm_tag_filter .tag.actionable .tag_name:before{font:11px/1 var(--sb-type-body);content:var(--folio-filter-label,'签')}
 html.sb-bar.sb-folio #rm_characters_block .rm_tag_filter .filterByFavorites{--folio-filter-label:'常念'}
