@@ -25,3 +25,21 @@ test('selected persona and description remain live; blank overrides follow the p
     assert.equal(resolveMe(c,'b.png').avatar,'/thumb/persona/b.png');
     assert.equal(resolveMe(c,'b.png').persona,'Persona B description');
 });
+
+test('cover ownership keeps character, user Moments and both X accounts separate', async () => {
+    const {profileCover}=await import('../src/profile.mjs');
+    const config={cover:{mode:'fixed',fixed:'character-cover'}};
+    assert.equal(profileCover('cover',config),'character-cover');
+    for(const kind of ['coverWx','coverX','coverXMe'])assert.equal(profileCover(kind,config),'');
+    config.coverWx='my-moments';config.coverX='character-x';config.coverXMe='my-x';
+    assert.equal(profileCover('coverWx',config),'my-moments');
+    assert.equal(profileCover('coverX',config),'character-x');
+    assert.equal(profileCover('coverXMe',config,'',{cover:'anonymous-x'}),'anonymous-x');
+    config.cover.fixed='changed-character';
+    assert.equal(profileCover('coverWx',config),'my-moments');
+    assert.equal(profileCover('coverX',config),'character-x');
+    assert.equal(profileCover('coverXMe',config),'my-x');
+    config.cover={mode:'pick',images:[{tag:'晴',src:'sunny'},{tag:'雨',src:'rainy'}]};
+    assert.equal(profileCover('cover',config,'雨天'),'rainy');
+    assert.throws(()=>profileCover('unknown',config),TypeError);
+});

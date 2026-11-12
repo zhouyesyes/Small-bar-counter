@@ -1,5 +1,5 @@
 // Native chat nodes stay in place: editing, swiping and other extensions own their contents.
-import { artwork, personalProfile } from './artwork.mjs';
+import { profileCover } from './profile.mjs';
 import { updateLounge, unmountLounge } from './bar-lounge.mjs';
 import { syncFolioChat } from './folio-theme.mjs';
 export { loungeKey } from './bar-lounge.mjs';
@@ -23,14 +23,13 @@ function popup(anchor, items) {
 function outside(e) { if (!e.target.closest('.sb-chat-popup,.sb-lounge-more,.sb-lounge-settings')) closeMenu(); }
 function escape(e) { if (e.key === 'Escape') closeMenu(); }
 function schedule() { if (queued) return; queued = true; queueMicrotask(() => { queued = false; if (getHost) sync(); }); }
-function image(img, src) { if (src && img.getAttribute('src') !== src) img.src = src; }
+function image(img, src) { if(src){if(img.getAttribute('src')!==src)img.src=src;}else img.removeAttribute('src');img.hidden=!src; }
 // Read the same shared sources as the card / Moments, ignoring old message-only overrides.
-export function sharedChatImages({ side, person, nativeAvatar = '', config = {}, fallbackCover = '', image = value => value }) {
-    const cover = config.cover || {};
-    const common = cover.mode === 'fixed' ? cover.fixed : cover.mode === 'pick' ? cover.images?.[0]?.src : '';
+export function sharedChatImages({ side, person, nativeAvatar = '', config = {}, currentCover = '', image = value => value }) {
+    const source=profileCover(side==='me'?'coverWx':'cover',config,currentCover);
     return {
         avatar: person?.avatar || nativeAvatar,
-        cover: image((side === 'me' && config.coverWx) || common || fallbackCover),
+        cover: source?image(source):'',
     };
 }
 function decorateMessage(node, h, c) {
@@ -47,10 +46,11 @@ function decorateMessage(node, h, c) {
     }
     node.dataset.sbSide = side;
     const person = side === 'me' ? h.me() : (c.groupId ? null : h.him());
-    const art = artwork(personalProfile(h.settings()), document.documentElement.dataset.sbMode || 'light');
-    const pictures = sharedChatImages({ side, person, nativeAvatar: original?.getAttribute('src'), config: h.config(), fallbackCover: art.cover, image: h.image });
+    const config=h.config(),currentCover=config.cover?.mode==='pick'?(h.state?.()?.cover||''):'';
+    const pictures = sharedChatImages({ side, person, nativeAvatar: original?.getAttribute('src'), config, currentCover, image: h.image });
     image(record.av, pictures.avatar);
     image(record.coverImage, pictures.cover);
+    record.cover.dataset.sbCoverEmpty=String(!pictures.cover);
     const key = c.characters?.[c.characterId]?.avatar;
     const name = side === 'me' ? person?.name : nameFor(h, key, person?.remark || person?.name || nativeName?.textContent || '');
     if (record.name.textContent !== name) record.name.textContent = name;

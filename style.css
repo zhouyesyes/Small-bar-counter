@@ -60,6 +60,9 @@
 #sb-root .sb-w-night.sb-w-cloud{background:linear-gradient(160deg,#3d3d3d,#242424 60%,#151515)}
 #sb-root .sb-w-night.sb-w-rain{background:linear-gradient(170deg,#4c4c4c,#2c2c2c 55%,#161616)}
 #sb-root .sb-w-night.sb-w-snow{background:linear-gradient(170deg,#6a6a6a,#3c3c3c 55%,#222)}
+html.sb-bar #chat .sb-chat-cover[data-sb-cover-empty=true]{background:linear-gradient(160deg,#f2f2f2,#cfcfcf 60%,#a9a9a9)}
+html.sb-bar[data-sb-mode=dark] #chat .sb-chat-cover[data-sb-cover-empty=true]{background:linear-gradient(160deg,#4a4a4a,#262626 60%,#141414)}
+#sb-root :is(.sb-xpage,.sb-xfeed,.sb-dmhead) .sb-pav,#sb-root .sb-phone:has(.sb-dmhead) .sb-ph .sb-pav,#sb-root .sb-xav{background-color:#bdbdbd;color:#444}
 #sb-root .sb-w-snow .sb-logo,#sb-root .sb-w-clear:not(.sb-w-night) .sb-logo{color:#333;text-shadow:none}
 
 /* 动态 */

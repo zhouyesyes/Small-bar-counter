@@ -48,8 +48,13 @@ export function openColorPicker({ value, title = '颜色', anchor, onConfirm, on
     }
     if(compact) overlay.querySelector('section').setAttribute('aria-modal','false');
     // Native drawers close on document clicks outside them. The picker is a portal.
-    for(const type of ['pointerdown','pointerup','mousedown','mouseup'])overlay.addEventListener(type,e=>e.stopPropagation());
-    document.documentElement.append(overlay);
+    for(const type of ['pointerdown','pointerup','mousedown','mouseup','input','change'])overlay.addEventListener(type,e=>e.stopPropagation());
+    // TT also closes drawers during capture. Keep the portal inside its owning drawer.
+    const drawer=compact&&anchor?.closest('.drawer-content,#sb-splash-settings');
+    (drawer||document.documentElement).append(overlay);
+    if(drawer&&typeof overlay.showPopover==='function'){
+        overlay.setAttribute('popover','manual');overlay.showPopover();
+    }
     const $ = selector => overlay.querySelector(selector), wheel = $('[data-wheel]'), hexInput = $('[data-hex]');
     $('[data-subtitle]').textContent = title;
     const status = $('[data-status]');
@@ -135,7 +140,7 @@ export function openColorPicker({ value, title = '颜色', anchor, onConfirm, on
     return close;
 }
 const styles = `
-#sb-color-picker{--sb-bg:#f2f2f2;--sb-fg:#111;--sb-dim:#666;--sb-line:#ccc;--sb-accent:#404040;--sb-soft:#fafafa;position:fixed;inset:0;z-index:32030;display:flex;align-items:center;justify-content:center;padding:max(12px,env(safe-area-inset-top)) 16px max(12px,env(safe-area-inset-bottom));background:#0005;color:var(--sb-fg);font:12px/1.6 'Noto Serif SC','Songti SC','STSong',serif;isolation:isolate;box-sizing:border-box;}
+#sb-color-picker{--sb-bg:#f2f2f2;--sb-fg:#111;--sb-dim:#666;--sb-line:#ccc;--sb-accent:#404040;--sb-soft:#fafafa;position:fixed;inset:0;margin:0;border:0;width:auto;height:auto;z-index:32030;display:flex;align-items:center;justify-content:center;padding:max(12px,env(safe-area-inset-top)) 16px max(12px,env(safe-area-inset-bottom));background:#0005;color:var(--sb-fg);font:12px/1.6 'Noto Serif SC','Songti SC','STSong',serif;isolation:isolate;box-sizing:border-box;}
 #sb-color-picker *{box-sizing:border-box;text-shadow:none;}
 #sb-color-picker [hidden]{display:none!important;}
 #sb-color-picker section{width:min(100%,380px);max-height:100%;overflow-y:auto;padding:18px 20px;background:var(--sb-bg);border:1px solid var(--sb-line);border-radius:14px;box-shadow:0 8px 28px #0002;}

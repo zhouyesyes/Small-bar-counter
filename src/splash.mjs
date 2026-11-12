@@ -48,6 +48,8 @@ let settings = {}, save = () => {}, root, panel, ready = false, failed = false, 
 let previousFocus, unlockTimer, observer, appReadyCleanup, needsMount = false, hostDone = false, replaying = false, replayFrame = 0;
 try { const cached = JSON.parse(localStorage.getItem(KEY) || '{}'); if (cached && typeof cached === 'object') settings = cached; } catch { /* unavailable cache */ }
 const cfg = () => personalProfile(settings);
+// Data sync can replace extensionSettings; never save appearance through an old object.
+export function bindSplashSettings(next,onSave) {const changed=settings!==next;settings=next;if(onSave)save=onSave;if(changed)syncAppearancePanel();}
 // Opening artwork belongs to the opening settings, never to a chat persona.
 export function setSplashProfile() { paintImages(); }
 export function updatePersonalProfile(patch, mode) {
@@ -142,7 +144,7 @@ export function splashFailed() {
     if (root) { root.querySelector('[data-status]').textContent = 'could not finish loading · you can continue'; root.querySelector('[data-percent]').textContent = 'please try refreshing'; }
 }
 export function configureSplash(s, onSave, context) {
-    settings = s; save = onSave; persist(); paint();
+    bindSplashSettings(s,onSave);persist(); paint();
     if (cfg().enabled === false || settings.enabled === false) dismiss();
     if (!context) return;
     needsMount = true;
