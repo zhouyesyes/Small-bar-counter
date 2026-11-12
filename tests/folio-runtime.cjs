@@ -114,7 +114,7 @@ await p.evaluate(()=>{
 });
 await p.locator('#rm_print_characters_block .character_select').first().click();
 await p.locator('#charListGridToggle').click();
-await p.evaluate(()=>{const list=document.querySelector('#rm_print_characters_block'),cards=[...list.querySelectorAll('.character_select')],a=cards[0].getBoundingClientRect(),b=cards[1].getBoundingClientRect();if(Math.abs(a.top-b.top)>1||b.left<=a.left||a.width>90||list.scrollWidth<=list.clientWidth||getComputedStyle(cards[0].querySelector('.ch_name')).writingMode!=='vertical-rl')throw Error('character list must keep narrow vertical cards in a horizontal rail');for(const sel of ['.ch_description','.character_version','.tags_inline'])if(getComputedStyle(cards[0].querySelector(sel)).display==='none')throw Error('list metadata missing');list.scrollLeft=140;if(list.scrollLeft<100)throw Error('character list cannot scroll horizontally');list.scrollLeft=0;});
+await p.evaluate(()=>{const list=document.querySelector('#rm_print_characters_block'),cards=[...list.querySelectorAll('.character_select')],a=cards[0].getBoundingClientRect(),b=cards[1].getBoundingClientRect();if(Math.abs(a.top-b.top)>1||b.left<=a.left||a.width>90||Math.abs(b.left-a.right)>1||list.scrollWidth<=list.clientWidth||getComputedStyle(cards[0].querySelector('.ch_name')).writingMode!=='vertical-rl')throw Error('character list must keep narrow vertical cards in a horizontal rail');for(const sel of ['.ch_description','.character_version','.tags_inline'])if(getComputedStyle(cards[0].querySelector(sel)).display==='none')throw Error('list metadata missing');list.scrollLeft=140;if(list.scrollLeft<100)throw Error('character list cannot scroll horizontally');list.scrollLeft=0;});
 await p.evaluate(()=>showPage('PersonaManagement'));await p.waitForTimeout(180);
 await p.locator('#PersonaManagement [data-fold=personas]').click();
 await p.locator('#persona_grid_toggle').click();
@@ -126,7 +126,7 @@ await p.evaluate(()=>{
 });
 await p.locator('#user_avatar_block .avatar-container').first().click();
 await p.locator('#persona_grid_toggle').click();
-if(!await p.evaluate(()=>{const list=document.querySelector('#user_avatar_block'),cards=list.querySelectorAll('.avatar-container'),a=cards[0].getBoundingClientRect(),b=cards[1].getBoundingClientRect();list.scrollLeft=120;return Math.abs(b.top-a.top)<1&&b.left>a.left&&a.width<=90&&list.scrollLeft>=100&&getComputedStyle(cards[0].querySelector('.ch_name')).writingMode==='vertical-rl'&&collectionClicks.character===1&&collectionClicks.persona===1}))throw Error('persona list toggle or native selection broken');
+if(!await p.evaluate(()=>{const list=document.querySelector('#user_avatar_block'),cards=list.querySelectorAll('.avatar-container'),a=cards[0].getBoundingClientRect(),b=cards[1].getBoundingClientRect();list.scrollLeft=120;return Math.abs(b.top-a.top)<1&&b.left>a.left&&Math.abs(b.left-a.right)<1&&a.width<=90&&list.scrollLeft>=100&&getComputedStyle(cards[0].querySelector('.ch_name')).writingMode==='vertical-rl'&&collectionClicks.character===1&&collectionClicks.persona===1}))throw Error('persona list toggle or native selection broken');
 await p.locator('#PersonaManagement [data-fold=personas]').click();
 await p.evaluate(()=>showPage('rm_ch_create_block'));await p.waitForTimeout(180);
 if(await p.locator('#world_button').evaluate(n=>getComputedStyle(n,'::before').content)!=='"世间录"')throw Error('character lore label');
