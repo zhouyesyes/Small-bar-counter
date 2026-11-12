@@ -209,8 +209,24 @@ html.sb-bar.sb-folio .sb-lounge-groups{border:0;border-radius:0;background:none}
 html.sb-bar.sb-folio .sb-lounge-group{border-top:1px solid var(--sb-bar-line);border-bottom:0}
 html.sb-bar.sb-folio .sb-lounge-group:last-child{border-bottom:1px solid var(--sb-bar-line)}
 html.sb-bar.sb-folio .sb-lounge-quick button{border-radius:0;background:none;border:0;border-top:1px solid var(--sb-bar-line);border-bottom:1px solid var(--sb-bar-line);color:var(--sb-bar-accent)}
+html.sb-bar.sb-folio .sb-lounge-quick button svg{display:none}
+html.sb-bar.sb-folio .sb-lounge-quick button:before{content:'';display:block;flex:none;width:15px;height:15px;background:currentColor;-webkit-mask-position:center;mask-position:center;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
+html.sb-bar.sb-folio #rm_characters_block .rm_tag_filter{display:flex;flex-wrap:wrap;gap:7px;margin:9px 0}
+html.sb-bar.sb-folio #rm_characters_block .rm_tag_filter .tag.actionable{display:inline-flex;align-items:center;justify-content:center;min-width:29px;height:29px;margin:0;padding:3px 6px;border:1px solid var(--sb-bar-line);border-radius:0;background:none!important;box-shadow:none;color:var(--sb-bar-sub);cursor:pointer}
+html.sb-bar.sb-folio #rm_characters_block .rm_tag_filter .tag.actionable .tag_name{font-size:0!important;width:auto;line-height:1}
+html.sb-bar.sb-folio #rm_characters_block .rm_tag_filter .tag.actionable .tag_name:before{font:11px/1 var(--sb-type-body);content:var(--folio-filter-label,'签')}
+html.sb-bar.sb-folio #rm_characters_block .rm_tag_filter .filterByFavorites{--folio-filter-label:'常念'}
+html.sb-bar.sb-folio #rm_characters_block .rm_tag_filter .filterByGroups{--folio-filter-label:'同行'}
+html.sb-bar.sb-folio #rm_characters_block .rm_tag_filter :is(.filterByFolder,.filterByFolders){--folio-filter-label:'书匣'}
+html.sb-bar.sb-folio #rm_characters_block .rm_tag_filter .showTagList{--folio-filter-label:'寻签'}
+html.sb-bar.sb-folio #rm_characters_block .rm_tag_filter .manageTags{--folio-filter-label:'理签'}
+html.sb-bar.sb-folio #rm_characters_block .rm_tag_filter .clearAllFilters{--folio-filter-label:'清筛'}
+html.sb-bar.sb-folio #rm_characters_block .rm_tag_filter .tag.actionable:is(.selected,[data-filter-state=SELECTED]){color:var(--sb-bar-accent);border-color:var(--sb-bar-accent);background:color-mix(in srgb,var(--sb-bar-accent) 12%,transparent)!important}
+html.sb-bar.sb-folio #rm_characters_block .rm_tag_filter .tag.actionable:is(.excluded,[data-filter-state=EXCLUDED]){color:var(--sb-bar-accent);text-decoration:line-through;border-style:dashed}
+html.sb-bar.sb-folio #rm_characters_block .rm_tag_filter .tag.actionable:focus-visible{outline:1px solid var(--sb-bar-accent);outline-offset:2px}
 html.sb-bar.sb-folio .sb-lounge-label{font:14px var(--sb-type-body)!important;letter-spacing:0}
 html.sb-bar.sb-folio #send_form{border-radius:0!important;background:var(--sb-bar-bg)!important;border-color:var(--sb-bar-line)!important}
+html.sb-bar.sb-folio #send_textarea{align-self:center;box-sizing:border-box;min-height:calc(1.6em + 16px);height:auto;field-sizing:content;font-family:var(--sb-type-body)!important;line-height:1.6!important;padding:calc(8px - var(--progWidth,0px)) 6px 8px!important;margin:0!important}
 html.sb-bar.sb-folio #Backgrounds .bg_example{border-radius:0!important;border:1px solid var(--sb-bar-line)!important;box-shadow:none}
 html.sb-bar.sb-folio #Backgrounds .bg_example .bg_button{z-index:2}
 /* Scroll the whole background drawer, including its title and toolbar. */
@@ -236,7 +252,7 @@ html.sb-bar.sb-folio #Backgrounds #bg_tabs .bg_tab_panel{height:auto!important;o
 #sb-root.sb-folio-phone .sb-srow{min-height:39px;font:12px var(--sb-type-body)}
 .sb-folio-card [hidden],.sb-folio-editor[hidden]{display:none!important}
 @media(max-width:380px){html.sb-bar.sb-folio .sb-folio-colors{gap:9px}.sb-folio-colors fieldset{padding:7px}html.sb-bar.sb-folio .sb-folio-card{flex-basis:156px!important;width:156px!important}}
-html.sb-bar.sb-folio #world_popup_new:before{content:'＋ 添一笺'!important}html.sb-bar.sb-folio #create_dummy_persona:before{content:'＋ 落一名'!important}html.sb-bar.sb-folio #rm_button_create:before{content:'＋ 新建角色'!important}html.sb-bar.sb-folio #favorite_button:before{content:'☆ 常念'!important}html.sb-bar.sb-folio #favorite_button.fav_on:before{content:'★ 常念'!important}html.sb-bar.sb-folio #world_button:before{content:'关联世界书'!important}html.sb-bar.sb-folio #char_connections_button:before{content:'名帖'!important}html.sb-bar.sb-folio #Backgrounds .mobile-only-menu-toggle{display:flex!important;align-items:center;justify-content:center;border-radius:0!important;z-index:4}html.sb-bar.sb-folio #Backgrounds :is(.jg-menu,.bg_folder_tile_menu){border-radius:0!important;box-shadow:none!important}
+html.sb-bar.sb-folio #world_popup_new:before{content:'＋ 添一笺'!important}html.sb-bar.sb-folio #create_dummy_persona:before{content:'＋ 落一名'!important}html.sb-bar.sb-folio #rm_button_create:before{content:'＋ 逢一人'!important}html.sb-bar.sb-folio #favorite_button:before{content:'☆ 常念'!important}html.sb-bar.sb-folio #favorite_button.fav_on:before{content:'★ 常念'!important}html.sb-bar.sb-folio #world_button:before{content:'关联世界书'!important}html.sb-bar.sb-folio #char_connections_button:before{content:'名帖'!important}html.sb-bar.sb-folio #Backgrounds .mobile-only-menu-toggle{display:flex!important;align-items:center;justify-content:center;border-radius:0!important;z-index:4}html.sb-bar.sb-folio #Backgrounds :is(.jg-menu,.bg_folder_tile_menu){border-radius:0!important;box-shadow:none!important}
 html.sb-bar.sb-folio :is(.sb-page-bartenders,.sb-page-bartender) .sb-head:after{left:0;right:0}
 html.sb-bar.sb-folio .sb-folio-lines>span{position:relative;display:block;padding:0}
 html.sb-bar.sb-folio .sb-folio-lines i{position:absolute;left:50%;top:32px;transform:translateX(-50%);height:auto}

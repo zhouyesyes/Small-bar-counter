@@ -13,10 +13,12 @@ export function seedFolioColors(settings) {
     }
 }
 export function folioIconCss(icons) {
-    return icons.map(([selector],i) => {
-        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">${iconPaths[i]}</svg>`;
+    const masks=icons.map(([selector],i) => [`${selector} .drawer-icon::before`,iconPaths[i]]);
+    [1,8,6].forEach((index,i)=>masks.push([`.sb-lounge-quick button:nth-child(${i+1})::before`,iconPaths[index]]));
+    return masks.map(([selector,path]) => {
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
         const url = `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
-        return `html.sb-bar.sb-folio ${selector} .drawer-icon::before{-webkit-mask-image:${url};mask-image:${url};}`;
+        return `html.sb-bar.sb-folio ${selector}{-webkit-mask-image:${url};mask-image:${url};}`;
     }).join('\n');
 }
 const pages = { recipe:['文笺','预设·落笔成章'], cellar:['传讯','连接·尺素相通'], format:['章法','格式·字句有序'], menu:['世间录','世界书·山川有记'], lighting:['装帧','界面·随心成卷'], window:['借景','背景·借一窗景'], tools:['百工匣','扩展·各有所用'], card:['名帖','人设·以此为名'], bartenders:['故人录','角色·故人可寻'], bartender:['其人','人物·见字如晤'] };
@@ -142,6 +144,12 @@ function persona(root,s) {
     const remove=$('.sb-card-remove',root);attribute(remove,'title','删除当前名帖');attribute(remove,'aria-label','删除当前名帖');
 }
 function collection(root) {
+    attribute($('#character_search_bar',root),'placeholder','寻一位故人…');
+    attribute($('#rm_button_create',root),'title','逢一人 · 新建角色');
+    const filters={filterByFavorites:'常念 · 只看常用',filterByGroups:'同行 · 只看群组',filterByFolders:'书匣 · 只看文件夹',filterByFolder:'书匣 · 只看文件夹',manageTags:'理签 · 管理标签',showTagList:'寻签 · 展开标签',clearAllFilters:'清筛 · 清除筛选'};
+    for(const [cls,label]of Object.entries(filters))for(const node of $$('.rm_tag_filter .'+cls,root)){attribute(node,'title',label);attribute($('.tag_name',node),'title',label);attribute(node,'aria-label',label);}
+    const orders={'name:asc':'依名顺排','name:desc':'依名倒排','create_date:desc':'新识在前','create_date:asc':'旧识在前','fav:desc':'常念在前','date_last_chat:desc':'近叙在前','chat_size:desc':'长叙在前','chat_size:asc':'短叙在前','data_size:desc':'厚卷在前','data_size:asc':'薄卷在前','name:random':'随缘一逢','search:desc':'寻人结果'};
+    for(const option of $$('#character_sort_order option',root)){const label=orders[option.dataset.field+':'+option.dataset.order];if(label)text(option,label);}
     const livePersona=$('#user_avatar_block .sb-cur',root);
     for(const row of $$('#rm_print_characters_block :is(.character_select,.group_select),#user_avatar_block .avatar-container',root)){
         const info=$('.character_select_container,.group_select_container',row);if(!info)continue;
