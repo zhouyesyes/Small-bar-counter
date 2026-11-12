@@ -1,6 +1,7 @@
 import { installTypography } from './typography.mjs';
 import { artwork, artworkMode, personalProfile } from './artwork.mjs';
 import { applyPalette, defaults } from './palette.mjs';
+import { readAppearanceColors, updateAppearanceColors } from './appearance-api.mjs';
 import { openColorPicker } from './color-picker.mjs';
 import { imageUrl, saveImage } from './imgstore.mjs';
 const KEY = 'small_bar_splash_v1';
@@ -66,6 +67,18 @@ function paintImages() {
     });
 }
 function persist() { try { localStorage.setItem(KEY, JSON.stringify({ enabled: settings.enabled, theme: settings.theme, splash: cfg() })); } catch {} save(); }
+function syncAppearancePanel() {
+    if (!panel?.isConnected) return;
+    for (const button of panel.querySelectorAll('.sb-color-launch')) {
+        const color = readAppearanceColors(settings, button.dataset.mode)[button.dataset.color];
+        button.dataset.value = color;
+        button.querySelector('span').style.backgroundColor = color;
+        button.querySelector('code').textContent = color.toUpperCase();
+    }
+    const mode = panel.querySelector('[data-theme]');
+    if (mode) mode.value = settings.theme || 'auto';
+}
+if (typeof window !== 'undefined') window.addEventListener('small-bar-appearance', syncAppearancePanel);
 function image(src, node) { const update = () => { const url = imageUrl(src, update); if (url && node.isConnected) { node.src = url; node.hidden = false; } }; update(); }
 function dismiss() {
     clearTimeout(unlockTimer); cancelAnimationFrame(replayFrame); replaying = false; observer?.disconnect(); appReadyCleanup?.();
@@ -226,7 +239,7 @@ export function openSplashSettings() {
             title: (mode === 'light' ? '日间' : '夜间') + ' · ' + (key === 'bg' ? '背景色' : '辅助色'),
             onConfirm(color) {
                 if (!panel?.isConnected) return;
-                (s.colors[mode] ??= {})[key] = color;
+                updateAppearanceColors(settings, mode, { [key]: color });
                 button.dataset.value = color;
                 button.querySelector('span').style.backgroundColor = color;
                 button.querySelector('code').textContent = color.toUpperCase();

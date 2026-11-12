@@ -1,4 +1,5 @@
 import { installTypography } from './typography.mjs';
+import { syncFolioPages, unmountFolioPages } from './folio-theme.mjs';
 // 吧台美化第 2 批：十页（配方本、酒窖、酒单、会员卡、调酒师名单、调酒师主页、工具箱、灯光、窗景、格式），样子见 docs/bar-theme.md
 // 做法：酒馆原来的按钮、输入框、列表都留着照常用，只换样子和字（CSS 在 style.css「吧台美化」那段）。
 // 这里只加：每页顶上的标题、几张小卡片（点上面的按钮就是点酒馆原来那个）、「+」收起展开，和让列表不卡的一点东西。
@@ -191,6 +192,7 @@ const PAGES = {
         },
         // 酒馆的「连接配置」扩展是后来才塞到最上面的，每次都看一眼位置对不对：在我们的卡片下面，前面一行 Supplier
         place(root) {
+            if (document.documentElement.classList.contains('sb-folio') && root.querySelector(':scope > .sb-folio-rail')) return;
             const prof = $('#connection_profiles', root)?.closest('#rm_api_block > *');
             const card = $('.sb-pour', root); if (!card) return;
             let sup = $('.sb-supplier', root), fd = $(':scope > .sb-fold', root);
@@ -257,7 +259,7 @@ const PAGES = {
             autoPickBook(root, ctx);
             placeWorldRules(root);
             const card = $('.sb-tonight',root), popup = $('#world_popup',root), select = $('#world_editor_select',root);
-            if (card && popup && card.parentElement !== popup) popup.prepend(card);
+            if (card && popup && card.parentElement !== popup && !document.documentElement.classList.contains('sb-folio')) popup.prepend(card);
             if (card && select && !card.contains(select)) { const row = select.parentElement; row.classList.add('sb-native-actions'); moveNative(row,card); }
             if (card && !$('.sb-status',card)) card.prepend(bx('sb-status','<b></b><em></em>'));
             const status = card && $('.sb-status',card); if (status) { status.classList.toggle('ok',!!select?.value); $('em',status).textContent = select?.value ? '有效' : '未选择'; }
@@ -459,6 +461,7 @@ function syncAll() {
         try { PAGES[name].sync?.(root, ctx); } catch (e) { console.warn('[Small Bar] bar page', name, e); }
     }
     lazyImgs(document);
+    syncFolioPages();
 }
 const soon = () => { clearTimeout(timer); timer = setTimeout(syncAll, 120); };
 
@@ -501,6 +504,7 @@ export function mountPages(getContext) {
 }
 
 export function unmountPages() {
+    unmountFolioPages();
     if (!on) return;
     on = false;
     document.removeEventListener('click', onClick, true);

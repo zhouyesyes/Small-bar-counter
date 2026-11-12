@@ -219,7 +219,7 @@ export function createUI(host) {
         const wasOpen = root.dataset.open || '';
         const nowOpen = (v.drawer ? 'd' : '') + (v.phone ? 'p' : '');
         root.dataset.open = nowOpen;
-        const cls = `sb-${theme()} sb-era-${era}` + (nowOpen && nowOpen !== wasOpen ? ' sb-anim' : '');
+        const cls = `sb-${theme()} sb-era-${era}` + ((s.barStyle || 'folio') === 'folio' ? ' sb-folio-phone' : '') + (nowOpen && nowOpen !== wasOpen ? ' sb-anim' : '');
         if (root.className !== cls) { root.className = cls; lastHtml = ''; }
         if (!s.enabled) { root.innerHTML = ''; lastHtml = ''; return; }
         const keepScroll = [...root.querySelectorAll('[data-keep]')].map(el => [el.dataset.keep, el.scrollTop]);
@@ -276,7 +276,7 @@ export function createUI(host) {
 <div class="${floating ? 'sb-phone sb-float sb-landing' : 'sb-drawer sb-landing'}" role="dialog" aria-label="小吧台主页">
  <div class="sb-body" data-keep="landing">
  <div class="sb-cover sb-cover-img" style="background-image:url('${esc(p.cover)}')">
-  <span class="sb-logo">SMALL BAR</span><button class="sb-x" data-act="${floating ? 'phone-close' : 'close'}" aria-label="关上">×</button>
+  <span class="sb-logo">${(host.settings().barStyle || 'folio') === 'folio' ? '随身匣' : 'SMALL BAR'}</span><button class="sb-x" data-act="${floating ? 'phone-close' : 'close'}" aria-label="关上">×</button>
   <input type="file" accept="image/*" data-upload="opening-cover" data-bg-picker hidden>
   <button class="sb-personal-edit" data-act="splash-settings" aria-label="编辑个人卡片" title="编辑个人卡片"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5 4 4M4 20l4-1L20 7a2.8 2.8 0 0 0-4-4L4 15z"/></svg></button>
  </div>
@@ -306,7 +306,7 @@ export function createUI(host) {
  <div class="sb-minibar"><span class="sb-mininame">${esc(him.name)}</span><button class="sb-x" data-act="close" aria-label="关上">×</button></div>
  <div class="sb-body" data-keep="body">
  <div class="sb-cover ${coverClass()}" style="${coverStyle()}" data-bg-settings tabindex="0" role="button" aria-label="更换背景">
-  <span class="sb-logo">SMALL BAR</span><button class="sb-x" data-act="close" aria-label="关上">×</button>
+  <span class="sb-logo">${(host.settings().barStyle || 'folio') === 'folio' ? '随身匣' : 'SMALL BAR'}</span><button class="sb-x" data-act="close" aria-label="关上">×</button>
 
  </div>
  <div class="sb-home-identity"><label class="sb-av" style="background-image:url('${esc(him.avatar)}')" title="点一下换头像"><input type="file" accept="image/*" data-upload="him-avatar" hidden></label>
@@ -923,7 +923,8 @@ export function createUI(host) {
   <label class="sb-srow"><span>回复时不自动更新状态<small>只对这张卡：正文后不再让TA写状态段，小手机回消息也不顺带更新。多角色、群像卡打开这个；手动点按钮生成照常能用</small></span><input type="checkbox" class="sb-tg" data-cset="noAutoStatus" ${c.noAutoStatus ? 'checked' : ''}></label>
  </div>
  <div class="sb-sh">外观</div><div class="sb-sgrp">
-  ${toggle('酒馆页面美化', 'barTheme', s.barTheme, '使用原来的默认小吧台美化')}
+  ${toggle('酒馆页面美化', 'barTheme', s.barTheme, '与小吧台共用主色、辅助色和美化样式')}
+  <label class="sb-srow"><span>美化样式</span><select data-set="barStyle">${[['folio', '闲庭手记'], ['default', '原版酒吧']].map(([k, n]) => `<option value="${k}" ${(s.barStyle || 'folio') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
   <label class="sb-srow"><span>明暗模式</span><select data-set="theme">${[['auto', '跟酒馆'], ['light', '浅色'], ['dark', '深色']].map(([k, n]) => `<option value="${k}" ${(s.theme || 'auto') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
   <button data-act="splash-settings" class="sb-srow"><span>开场与配色</span><span class="sb-sv">主色 · 辅助色 ›</span></button>
  </div><div class="sb-sh">其他</div><div class="sb-sgrp">

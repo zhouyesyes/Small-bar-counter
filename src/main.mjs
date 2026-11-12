@@ -1,5 +1,7 @@
 import { artwork, artworkMode, personalProfile } from './artwork.mjs';
 import { resolveMe } from './profile.mjs';
+import { createAppearanceBridge } from './appearance-api.mjs';
+import { seedFolioColors } from './folio-theme.mjs';
 // 小吧台 —— 入口：把界面接到酒馆上
 // 只从 extensions.js 拿 getContext（酒馆 1.18 起它带了要用的全部东西），不逐个 import script.js 里的名字：
 // 酒馆版本差一点、少一个名字，整个扩展就加载不出来（「酒馆你害我不浅」0.6.0 踩过）
@@ -28,6 +30,8 @@ function settings() {
     const c = ctx();
     const s = (c.extensionSettings[NS] ??= {});
     s.enabled ??= true; s.barTheme ??= false; s.cat ??= true; s.theme ??= 'auto'; s.api ??= 'main'; s.wxMemory ??= 50; s.storyPhoneN ??= 2; s.catTop ??= 46;
+    if (!['folio', 'default'].includes(s.barStyle)) s.barStyle = 'folio';
+    seedFolioColors(s);
     s.chars ??= {}; s.me ??= {};
     return s;
 }
@@ -519,9 +523,9 @@ function hasChar() { const c = ctx(); return c.characterId != null && c.characte
 // ---------- 接起来 ----------
 const host = {
     settings, setSettings: f => {
-        const s = settings(), before = [s.barTheme, s.theme];
+        const s = settings(), before = [s.barTheme, s.theme, s.barStyle];
         f(s); saveSettings(); refreshInject();
-        if (before[0] !== s.barTheme || before[1] !== s.theme) applyAppearance();
+        if (before[0] !== s.barTheme || before[1] !== s.theme || before[2] !== s.barStyle) { applyAppearance(); ui.render(); }
     },
     openingProfile: () => { const h = personalProfile(settings()), art = artwork(h, artworkMode(settings())); return { avatar: img(art.avatar), cover: img(art.cover), name: h.signature ?? 'yesyes', sign: h.quote ?? 'a quiet seat, kept for you', table: h.table ?? 'by the window', order: h.order ?? 'the usual', date: h.date || new Intl.DateTimeFormat('sv-SE').format(new Date()).replaceAll('-', '.') }; },
     setHomeProfile: patch => { const shared = {}; if ('name' in patch) shared.signature = patch.name; if ('sign' in patch) shared.quote = patch.sign; updatePersonalProfile(shared); },
@@ -551,6 +555,12 @@ const host = {
     confirm: async text => { const c = ctx(); return c.callGenericPopup ? !!await c.callGenericPopup(text, c.POPUP_TYPE.CONFIRM) : confirm(text); },
     prompt: async (title, value) => { const c = ctx(); if (c.callGenericPopup) { const r = await c.callGenericPopup(title, c.POPUP_TYPE.INPUT, value); return r === false || r == null ? null : String(r); } return prompt(title, value); },
 };
+// Native appearance and Small Bar share the existing saved palette.
+// updatePersonalProfile also refreshes the opening cache and existing appearance listeners.
+host.appearance = createAppearanceBridge({
+    getSettings: settings,
+    save: () => updatePersonalProfile({ colors: settings().splash.colors }),
+});
 const ui = createUI(host);
 let refreshTimer = 0;
 // Pass existing profile resolvers so message avatars follow Moments / character cards.
@@ -558,7 +568,7 @@ const barChatHost = () => ({ context: ctx, settings, config: charCfg, me, him, i
     saveChat: saveMeta, saveSettings, saveImage: saveImageHere, openAppearance: openSplashSettings,
     setTheme: theme => { settings().theme = theme; saveSettings(); window.dispatchEvent(new Event('small-bar-appearance')); } });
 function applyAppearance() {
-    applyBarTheme(settings(), ctx);
+    applyBarTheme(settings(), ctx, { appearance: host.appearance, setSettings: host.setSettings, openAppearance: openSplashSettings });
     if (settings().barTheme) mountChat(barChatHost); else unmountChat();
     const toggle = document.getElementById('sb-bartheme');
     if (toggle) toggle.checked = !!settings().barTheme;

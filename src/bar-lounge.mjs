@@ -1,4 +1,5 @@
 // Organize existing native chat rows by role. Never clone their click handlers or fetch chat content.
+import { syncFolioLounge } from './folio-theme.mjs';
 const glass = new URL('../assets/bar/glass.png', import.meta.url).href;
 const panels = new Map();
 const $ = (s, root) => root.querySelector(s);
@@ -296,6 +297,7 @@ function render(state) {
     state.list.hidden = !visibleGroups;
     state.empty.hidden = visibleGroups || (!query && state.pins.children.length > 0);
     updateText(state.empty, query ? '没有找到这段对话。' : '暂时没有聊天记录。');
+    syncFolioLounge(state.root, state.host.settings());
 }
 export function updateLounge(panel, host, popup) {
     let state = panels.get(panel);

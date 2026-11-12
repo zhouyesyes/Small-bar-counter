@@ -3,6 +3,7 @@ import { installTypography } from './typography.mjs';
 // 只在 <html> 上挂一个 sb-bar 的类、加一段 <style>；关掉就把这两样拿掉，酒馆原样回来，不动酒馆自己的东西
 import { palette, mix, modeFor } from './palette.mjs';
 import { mountPages, unmountPages, relabelCss } from './bar-pages.mjs';
+import { configureFolio, folioIconCss, isFolio } from './folio-theme.mjs';
 
 // 顶栏九个，位置和酒馆原来的一一对应（样子图 docs/mockups/bar-theme/topbar.html 她选的 A）
 export const ICONS = [
@@ -72,8 +73,9 @@ ${icons}`;
 let observer = null, media = null, last = '';
 // 开着就挂上 / 更新，关着就拿掉；调色、换深浅、酒馆改了自己的颜色，都再调一次
 let getCtx = () => null;
-export function applyBarTheme(settings, ctx) {
+export function applyBarTheme(settings, ctx, adapter) {
     installTypography();
+    configureFolio(settings, adapter);
     if (ctx) getCtx = ctx;
     const html = document.documentElement;
     let style = document.getElementById('sb-bar-theme');
@@ -92,7 +94,7 @@ export function applyBarTheme(settings, ctx) {
     mountPages(getCtx);
     const mode = modeFor(settings);
     html.dataset.sbMode = mode;
-    const css = barCss(palette(mode, settings.splash?.colors?.[mode]));
+    const css = barCss(palette(mode, settings.splash?.colors?.[mode])) + (isFolio(settings) ? folioIconCss(ICONS) : '');
     if (!style) { style = document.createElement('style'); style.id = 'sb-bar-theme'; document.head.appendChild(style); }
     if (css !== last) { style.textContent = css; last = css; }
     if (!observer) {

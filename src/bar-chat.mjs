@@ -1,6 +1,7 @@
 // Native chat nodes stay in place: editing, swiping and other extensions own their contents.
 import { artwork, personalProfile } from './artwork.mjs';
 import { updateLounge, unmountLounge } from './bar-lounge.mjs';
+import { syncFolioChat } from './folio-theme.mjs';
 export { loungeKey } from './bar-lounge.mjs';
 
 let getHost, observer, surface, queued = false, menu;
@@ -69,6 +70,7 @@ function sync() {
         $('.sb-reading-head', surface)?.remove(); for (const panel of surface.querySelectorAll('.welcomePanel')) updateLounge(panel, h, popup);
     }
     for (const [node] of touched) if (!node.isConnected) touched.delete(node);
+    syncFolioChat(surface, h.settings());
 }
 export function mountChat(host) {
     getHost = host;
