@@ -5,6 +5,11 @@ export function artwork(profile = {}, mode = 'light') {
     return { avatar: images.avatar || profile.avatar || fallback('avatar'), cover: images.cover || profile.cover || fallback('cover') };
 }
 export const artworkMode = settings => modeFor(settings);
+// Landing and welcome assistant share explicit day/night art; empty cover stays neutral.
+export function landingArtwork(profile={},mode='light',assistantAvatar='') {
+    const images=profile.images?.[mode]||{};
+    return {avatar:images.avatar||profile.avatar||assistantAvatar,cover:images.cover||profile.cover||''};
+}
 
 // The landing page and startup ticket are two views of the same personal profile.
 // Keep legacy home settings as a backup; migrate them only once and never read personas.

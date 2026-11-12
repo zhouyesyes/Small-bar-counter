@@ -1,7 +1,7 @@
 import { installTypography } from './typography.mjs';
 import { updateLyrics, invalidateLyricsLayout } from './music-lyrics.mjs';
 import { bindMusicCovers } from './music-cover.mjs';
-import { applyPalette, modeFor } from './palette.mjs';
+import { applyPalette, modeFor, phoneModeFor } from './palette.mjs';
 import { profileCover } from './profile.mjs';
 import { openSplashSettings } from './splash.mjs';
 // 小吧台的界面：小猫入口、左边滑出的抽屉、弹出来的小手机
@@ -205,7 +205,7 @@ export function createUI(host) {
     }
 
     // 跟酒馆：看酒馆页面底色的深浅（吧台美化开着时看酒馆原来设的颜色，见 palette.mjs）
-    const theme = () => modeFor(host.settings());
+    const theme = () => phoneModeFor(host.settings());
 
     function drawCat() {
         const el = root?.querySelector('.sb-cat'); if (!el) return;
@@ -266,19 +266,19 @@ export function createUI(host) {
     }
     const coverBtn = kind => `<input type="file" accept="image/*" data-upload="${kind}" data-bg-picker hidden>`;
     function landingHtml(floating) {
-        const p = host.openingProfile();
+        const p = host.openingProfile(theme());
         return `${floating ? '' : '<div class="sb-shade" data-act="close"></div>'}
 <div class="${floating ? 'sb-phone sb-float sb-landing' : 'sb-drawer sb-landing'}" role="dialog" aria-label="小吧台主页">
  <div class="sb-body" data-keep="landing">
- <div class="sb-cover sb-cover-img" style="background-image:url('${esc(p.cover)}')">
+ <div class="sb-cover ${p.cover?'sb-cover-img':'sb-w-clear'+(theme()==='dark'?' sb-w-night':'')}" style="${p.cover?`background-image:url('${esc(p.cover)}')`:''}">
   <span class="sb-logo">${(host.settings().barStyle || 'folio') === 'folio' ? '随身匣' : 'SMALL BAR'}</span><button class="sb-x" data-act="${floating ? 'phone-close' : 'close'}" aria-label="关上">×</button>
   <input type="file" accept="image/*" data-upload="opening-cover" data-bg-picker hidden>
-  <button class="sb-personal-edit" data-act="splash-settings" aria-label="编辑个人卡片" title="编辑个人卡片"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5 4 4M4 20l4-1L20 7a2.8 2.8 0 0 0-4-4L4 15z"/></svg></button>
+
  </div>
  <div class="sb-home-identity"><label class="sb-av" style="background-image:url('${esc(p.avatar)}')" title="点一下换头像"><input type="file" accept="image/*" data-upload="opening-avatar" hidden></label>
  <div class="sb-home-words"><div class="sb-name" data-act="home-name" role="button" tabindex="0">${esc(p.name)}</div><div class="sb-sign" data-act="home-sign" role="button" tabindex="0">${esc(p.sign)}</div></div></div>
 
- <dl class="sb-home-tab" aria-label="个人单据">${[['SEAT',p.table],['DRINK',p.order],['DATE',p.date]].map(([label,value])=>`<div><dt>${label}</dt><dd>${esc(value)}</dd></div>`).join('')}</dl>
+ <dl class="sb-home-tab" aria-label="个人单据">${[['座位',p.table,'table'],['酒单',p.order,'order'],['日期',p.date,'date']].map(([label,value,key])=>`<div><dt>${label}</dt><dd><button type="button" data-act="home-field" data-key="${key}">${esc(value)}</button></dd></div>`).join('')}</dl>
  ${musicHtml({})}</div></div>`;
     }
     function drawerHtml(era) {
@@ -292,7 +292,7 @@ export function createUI(host) {
         // 小手机那一格：手机直接嵌在抽屉里（不另外弹出来）
         if (v.tab === 'phone') return `<div class="sb-shade" data-act="close"></div>
 <div class="sb-drawer sb-phonemode" role="dialog" aria-label="小吧台">
- <div class="sb-pmhead ${coverClass()}" style="${coverStyle()}"><span class="sb-mininame">${esc(him.name)}</span><button class="sb-x" data-act="close" aria-label="关上">×</button></div>
+ <div class="sb-pmhead"><span class="sb-mininame">${esc(him.name)}</span><button class="sb-x" data-act="close" aria-label="关上">×</button></div>
  <div class="sb-phone sb-inline${era !== 'modern' ? ' sb-letterbox' : ''}">${phoneInner(era)}</div>
  ${tabsNav}
 </div>`;
@@ -913,15 +913,13 @@ export function createUI(host) {
  <div class="sb-sh">API</div><div class="sb-sgrp">${row('小手机用哪个', apiName, 'set-api')}${row('TA什么时候回', host.settings().phoneWhen === 'next' ? '下一轮正文顺带回' : '马上回', 'set-when')}${row('回复时带什么', host.replyMode() === 'full' ? '整套（预设 + 世界书 + 剧情）' : '自己挑', 'set-reply')}${toggle('省一点', 'saveMode', s.saveMode, '正文只顺带写时间、天气、在哪、心声；小手机回消息时不顺带更新动态、日记、此刻')}
   <label class="sb-srow"><span>正文带几件手机里的事<small>最近的微信、你的朋友圈、留言，TA看情况在正文里提一笔；0 就是不带</small></span><input type="number" min="0" max="10" class="sb-num" data-set="storyPhoneN" value="${Number(s.storyPhoneN ?? 2)}"></label></div>
  <div class="sb-sh">TA</div><div class="sb-sgrp">
-  <label class="sb-srow"><span>时代</span><select data-cset="era">${[['auto', eraName.startsWith('自动') ? eraName : '自动'], ['modern', '现代'], ['minguo', '民国'], ['ancient', '古风']].map(([k, n]) => `<option value="${k}" ${(c.era || 'auto') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+
   ${row('提示词', s.prompt ? '改过' : '默认', 'set-prompt')}
   <label class="sb-srow"><span>回复时不自动更新状态<small>只对这张卡：正文后不再让TA写状态段，小手机回消息也不顺带更新。多角色、群像卡打开这个；手动点按钮生成照常能用</small></span><input type="checkbox" class="sb-tg" data-cset="noAutoStatus" ${c.noAutoStatus ? 'checked' : ''}></label>
  </div>
  <div class="sb-sh">外观</div><div class="sb-sgrp">
-  ${toggle('酒馆页面美化', 'barTheme', s.barTheme, '与小吧台共用主色、辅助色和美化样式')}
-  <label class="sb-srow"><span>美化样式</span><select data-set="barStyle">${[['folio', '闲庭手记'], ['default', '原版酒吧']].map(([k, n]) => `<option value="${k}" ${(s.barStyle || 'folio') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
-  <label class="sb-srow"><span>明暗模式</span><select data-set="theme">${[['auto', '跟酒馆'], ['light', '浅色'], ['dark', '深色']].map(([k, n]) => `<option value="${k}" ${(s.theme || 'auto') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
-  <button data-act="splash-settings" class="sb-srow"><span>开场与配色</span><span class="sb-sv">主色 · 辅助色 ›</span></button>
+  <label class="sb-srow"><span>美化时代</span><select data-cset="era">${[['auto', eraName.startsWith('自动') ? eraName : '自动'], ['modern', '现代'], ['minguo', '民国'], ['ancient', '古风']].map(([k, n]) => `<option value="${k}" ${(c.era || 'auto') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+  <label class="sb-srow"><span>明暗模式</span><select data-set="phoneTheme">${[['auto','跟美化'],['light','浅'],['dark','深']].map(([k,n])=>`<option value="${k}" ${(s.phoneTheme||'auto')===k?'selected':''}>${n}</option>`).join('')}</select></label>
  </div><div class="sb-sh">其他</div><div class="sb-sgrp">
   <label class="sb-srow"><span>小手机怎么打开<small>抽屉里：嵌在抽屉那一格；浮窗：浮在聊天上，能拖，只有 × 关</small></span><select data-set="phoneMode">${[['drawer', '抽屉里'], ['float', '浮窗']].map(([k, n]) => `<option value="${k}" ${(s.phoneMode || 'drawer') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
   ${toggle('小猫入口', 'cat', s.cat !== false)}
@@ -1060,6 +1058,10 @@ export function createUI(host) {
         if (!act) return;
         const meta = host.meta();
         switch (act) {
+            case 'home-field': {
+                const key=b.dataset.key,value=await host.prompt({table:'座位',order:'酒单',date:'日期（留空用今天）'}[key],host.openingProfile()[key]);
+                if(value!=null)host.setHomeProfile({[key]:String(value)});break;
+            }
             case 'home-name':
             case 'home-sign': {
                 const key = act === 'home-name' ? 'name' : 'sign';
@@ -1370,7 +1372,7 @@ export function createUI(host) {
             try { src = await cropImage(file, frame); } catch (err) { host.toast('error', err?.message || '这张图读不出来'); return; }
             if (!src) return; // 点了取消
             src = await host.saveImage(src); // 只存在这台手机的浏览器里，设置里记个编号
-            if (/^opening-(cover|avatar)(-(light|dark))?$/.test(kind)) { const [, field, , mode] = kind.match(/^opening-(cover|avatar)(-(light|dark))?$/); host.setOpeningImage(field, src, mode); }
+            if (/^opening-(cover|avatar)(-(light|dark))?$/.test(kind)) { const [, field, , mode] = kind.match(/^opening-(cover|avatar)(-(light|dark))?$/); host.setOpeningImage(field, src, mode||theme()); }
             if (kind === 'fixed') host.setCharCfg(c => { c.cover = { ...(c.cover || {}), mode: 'fixed', fixed: src }; });
             if (kind === 'pick') host.setCharCfg(c => { c.cover = { ...(c.cover || {}), mode: 'pick', images: [...(c.cover?.images || []), { tag: '', src }] }; });
             if (kind === 'him-avatar') host.setCharCfg(c => { c.him = { ...(c.him || {}), avatar: src }; });

@@ -1,5 +1,5 @@
 import { installTypography } from './typography.mjs';
-import { artwork, artworkMode, personalProfile } from './artwork.mjs';
+import { artwork, artworkMode, personalProfile, landingArtwork } from './artwork.mjs';
 import { applyPalette, defaults } from './palette.mjs';
 import { readAppearanceColors, updateAppearanceColors, createAppearancePreview } from './appearance-api.mjs';
 import { openColorPicker } from './color-picker.mjs';
@@ -46,6 +46,8 @@ window.addEventListener('resize', scaleTicket);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let settings = {}, save = () => {}, root, panel, ready = false, failed = false, entered = false, stage = 0;
 let previousFocus, unlockTimer, observer, appReadyCleanup, needsMount = false, hostDone = false, replaying = false, replayFrame = 0;
+let assistantAvatarSource=()=>'';
+export function setAssistantAvatarSource(getter){assistantAvatarSource=getter;}
 try { const cached = JSON.parse(localStorage.getItem(KEY) || '{}'); if (cached && typeof cached === 'object') settings = cached; } catch { /* unavailable cache */ }
 const cfg = () => personalProfile(settings);
 // Data sync can replace extensionSettings; never save appearance through an old object.
@@ -77,6 +79,7 @@ function syncAppearancePanel() {
         button.querySelector('span').style.backgroundColor = color;
         button.querySelector('code').textContent = color.toUpperCase();
     }
+    for(const preview of panel.querySelectorAll('[data-image-preview]')){const art=landingArtwork(cfg(),preview.dataset.mode,assistantAvatarSource()||document.querySelector('#chat.sb-lounge .mes .mesAvatarWrapper .avatar img')?.getAttribute('src')||'');const source=art[preview.dataset.imagePreview]||'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="120" height="60"%3E%3Crect width="120" height="60" fill="%23bdbdbd"/%3E%3C/svg%3E';image(source,preview);}
     const mode = panel.querySelector('[data-theme]');
     if (mode) mode.value = settings.theme || 'auto';
 }
@@ -224,15 +227,15 @@ export function openSplashSettings() {
     panel.addEventListener('click', event => event.stopPropagation());
     const focus = document.activeElement;
     panel.innerHTML = `<style>${styles}</style><div class="sb-custom"><header><b>SMALL BAR / APPEARANCE</b><button data-close aria-label="Close settings">×</button></header>
-    <label>Show on startup<input type="checkbox" data-key="enabled" ${s.enabled !== false ? 'checked' : ''}></label>
-    <label>Mode<select data-theme>${['auto','light','dark'].map(x=>`<option ${settings.theme === x ? 'selected' : ''}>${x}</option>`).join('')}</select></label>
-    <label>页面宽度<select data-key="pageWidth" aria-label="页面宽度"><option value="" ${!s.pageWidth ? 'selected' : ''}>默认</option>${[60,65,70,75,80,85,90,95,100].map(width=>`<option value="${width}" ${Number(s.pageWidth) === width ? 'selected' : ''}>${width}%</option>`).join('')}</select></label>
-    ${['light','dark'].map(mode => `<fieldset><legend>${mode === 'light' ? '日间配色' : '夜间配色'}</legend>${['bg','accent'].map(key => { const color = s.colors[mode]?.[key] || defaults[mode][key]; return `<div class="sb-color-setting"><span>${key === 'bg' ? '背景色' : '辅助色'}</span><button type="button" class="sb-color-launch" data-mode="${mode}" data-color="${key}" data-value="${esc(color)}" aria-label="调整${mode === 'light' ? '日间' : '夜间'}${key === 'bg' ? '背景色' : '辅助色'}"><span style="background:${esc(color)}"></span><code>${esc(color.toUpperCase())}</code></button></div>`; }).join('')}</fieldset>`).join('')}
+    <label>显示开场<input type="checkbox" data-key="enabled" ${s.enabled !== false ? 'checked' : ''}></label>
+    <label>美化明暗<select data-theme>${['auto','light','dark'].map(x=>`<option ${settings.theme === x ? 'selected' : ''}>${x}</option>`).join('')}</select></label>
+    <label>小吧台宽度<select data-key="pageWidth" aria-label="小吧台宽度"><option value="" ${!s.pageWidth ? 'selected' : ''}>默认</option>${[60,65,70,75,80,85,90,95,100].map(width=>`<option value="${width}" ${Number(s.pageWidth) === width ? 'selected' : ''}>${width}%</option>`).join('')}</select></label>
+    ${['light','dark'].map(mode => `<fieldset class="sb-palette-line"><legend>${mode === 'light' ? '日间配色' : '夜间配色'}</legend>${['bg','accent'].map(key => { const color = s.colors[mode]?.[key] || defaults[mode][key]; return `<div class="sb-color-setting"><span>${key === 'bg' ? '背景色' : '辅助色'}</span><button type="button" class="sb-color-launch" data-mode="${mode}" data-color="${key}" data-value="${esc(color)}" aria-label="调整${mode === 'light' ? '日间' : '夜间'}${key === 'bg' ? '背景色' : '辅助色'}"><span style="background:${esc(color)}"></span><code>${esc(color.toUpperCase())}</code></button></div>`; }).join('')}</fieldset>`).join('')}
     <fieldset><legend>卡片文字 · CARD DETAILS</legend><p>修改后自动保存，下次打开也会保留。</p>
     ${[['quote','头像旁的小字','a quiet seat, kept for you'],['table','座位 · SEAT','by the window'],['order','酒单 · DRINK','the usual'],['date','日期 · DATE（留空用今天）',''],['signature','底部署名 · SIGNED, WITH LOVE','yesyes']].map(([key,label,value])=>`<label>${label}<input type="text" data-key="${key}" maxlength="${key === 'quote' ? 120 : 60}" value="${esc(s[key] ?? value)}"></label>`).join('')}</fieldset>
-    ${['light','dark'].map(mode => `<fieldset><legend>${mode === 'light' ? '日间图片' : '夜间图片'}</legend>${[['cover','横图'],['avatar','头像']].map(([key,label])=>`<label>${label}<input type="file" accept="image/*" data-upload="${key}" data-image-mode="${mode}"></label><button data-clear="${key}" data-image-mode="${mode}">恢复默认${label}</button>`).join('')}</fieldset>`).join('')}
+    ${['light','dark'].map(mode => `<fieldset class="sb-image-settings"><legend>${mode === 'light' ? '日间图片' : '夜间图片'}</legend>${[['cover','横图'],['avatar','头像']].map(([key,label])=>`<label><span>${label}</span><img data-image-preview="${key}" data-mode="${mode}" alt="当前${label}"><input type="file" accept="image/*" data-upload="${key}" data-image-mode="${mode}"></label><button data-clear="${key}" data-image-mode="${mode}">恢复默认${label}</button>`).join('')}</fieldset>`).join('')}
     <p class="sb-upload-status" role="status"></p><p>照片保存在这台设备的浏览器。卡片上的 keep my tab open 会立即保存当前署名；修改署名后，再勾选即可重新保存。</p><button data-preview>Preview opening</button></div>`;
-    document.documentElement.appendChild(panel); applyPalette(panel, settings);
+    document.documentElement.appendChild(panel); applyPalette(panel, settings);syncAppearancePanel();
     let closeColorPicker;
     const close = () => { closeColorPicker?.(); panel.remove(); panel = null; if (focus?.isConnected) focus.focus({preventScroll:true}); };
     panel.querySelectorAll('.sb-color-launch').forEach(button => button.onclick = () => {
@@ -258,9 +261,9 @@ export function openSplashSettings() {
     panel.onkeydown = e => { if (e.key === 'Escape') { e.stopPropagation(); close(); return; } trapFocus(e, panel); };
     panel.querySelector('[data-close]').focus();
     panel.querySelector('[data-preview]').onclick = () => { close(); dismiss(); startSplash(true); };
-    panel.querySelectorAll('[data-clear]').forEach(b => b.onclick = () => { delete (s.images ??= {})[b.dataset.imageMode]?.[b.dataset.clear]; delete s[b.dataset.clear]; persist(); paint(); });
+    panel.querySelectorAll('[data-clear]').forEach(b => b.onclick = () => { const profile=cfg();delete (profile.images ??= {})[b.dataset.imageMode]?.[b.dataset.clear]; delete profile[b.dataset.clear]; persist(); paint();syncAppearancePanel();window.dispatchEvent(new Event('small-bar-appearance')); });
     panel.onchange = async e => {
-        const t = e.target;
+        const s=cfg(),t = e.target;
         if (t.dataset.upload && t.files?.[0]) {
             const status = panel.querySelector('.sb-upload-status'); status.textContent = 'Saving photo…'; t.disabled = true;
             try { const { cropImage } = await import('./crop.mjs'); const data = await cropImage(t.files[0], { ratio: t.dataset.upload === 'avatar' ? 1 : 2.25, round: t.dataset.upload === 'avatar' }); if (data) { ((s.images ??= {})[t.dataset.imageMode] ??= {})[t.dataset.upload] = await saveImage(data); } status.textContent = data ? 'Photo saved.' : ''; }
@@ -268,7 +271,7 @@ export function openSplashSettings() {
             finally { t.disabled = false; t.value = ''; }
         } else if (t.hasAttribute('data-theme')) settings.theme = t.value;
         else if (t.dataset.key) s[t.dataset.key] = t.type === 'checkbox' ? t.checked : t.value;
-        persist(); paint(); if (panel) applyPalette(panel, settings);
+        persist(); paint();syncAppearancePanel(); if (panel) applyPalette(panel, settings);
         window.dispatchEvent(new Event('small-bar-appearance'));
     };
 }
@@ -388,4 +391,17 @@ const styles = `
 #sb-splash-settings .sb-color-launch{display:flex;align-items:center;gap:10px;min-height:32px;padding:3px 0;border:0;border-radius:0;background:none;color:var(--sb-dim);}
 #sb-splash-settings .sb-color-launch>span{display:block;width:48px;height:24px;border:1px solid var(--sb-line);border-radius:14px;}
 #sb-splash-settings .sb-color-launch code{font:11px ui-monospace,monospace;}
+
+#sb-splash-settings .sb-custom{width:min(100%,400px)}
+#sb-splash-settings fieldset{margin:12px 0;padding:7px 10px;border-radius:4px}
+#sb-splash-settings .sb-palette-line{display:flex;align-items:center;gap:14px;flex-wrap:nowrap}
+#sb-splash-settings .sb-color-setting{display:flex;align-items:center;gap:5px;min-width:0;font-size:11px;margin:3px 0}
+#sb-splash-settings .sb-color-launch{display:inline-flex;align-items:center;gap:5px;padding:3px 0;min-width:0}
+#sb-splash-settings .sb-color-launch>span{width:13px;height:13px;min-width:13px;border-radius:50%;border:1px solid var(--sb-dim)}
+#sb-splash-settings .sb-color-launch code{font:11px ui-monospace,monospace;color:var(--sb-fg)!important;background:none!important;padding:0!important;box-shadow:none!important;white-space:nowrap}
+#sb-splash-settings .sb-image-settings label{display:grid;grid-template-columns:30px 54px minmax(0,1fr);gap:8px;align-items:center;font-size:11px;margin:7px 0}
+#sb-splash-settings [data-image-preview]{width:54px;height:30px;object-fit:cover;border:1px solid var(--sb-line)}
+#sb-splash-settings [data-image-preview=avatar]{width:30px;height:30px;border-radius:50%;justify-self:center}
+#sb-splash-settings .sb-image-settings input{max-width:100%!important;width:100%;font-size:10px}
+#sb-splash-settings .sb-image-settings [data-clear]{margin:0 0 5px 38px;font-size:10px}
 `;

@@ -24,7 +24,7 @@ await p.evaluate(() => {
         const r = action.getBoundingClientRect();
         if (r.left < card.left || r.right > card.right || r.top < card.top || r.bottom > card.bottom) throw Error('preset action outside card');
     }
-    if (getComputedStyle(document.querySelector('.sb-folio-punctuation')).writingMode !== 'horizontal-tb') throw Error('title brackets must use horizontal glyphs');
+    if (getComputedStyle(document.querySelector('.sb-folio-punctuation')).textOrientation !== 'sideways') throw Error('title brackets must turn with Latin runs');
 });
 await p.evaluate(() => {
     const tools = document.querySelector('.sb-folio-preset-tools');
@@ -74,9 +74,9 @@ await p.evaluate(async()=>{
     });
     const {syncFolioPages}=await import('/src/folio-theme.mjs');syncFolioPages();
     for(const {button,clicked}of probes){
-        if(button.textContent!==sample||getComputedStyle(button).textOrientation!=='upright')throw Error('vertical Latin/digits changed or still sideways');
+        if(button.textContent!==sample||getComputedStyle(button).textOrientation!=='mixed')throw Error('Latin/digit runs must remain continuous and sideways');
         if(button.querySelectorAll('.sb-folio-punctuation').length!==22)throw Error('some vertical bracket types were missed');
-        for(const mark of button.querySelectorAll('.sb-folio-punctuation'))if(getComputedStyle(mark).writingMode!=='horizontal-tb')throw Error('vertical font bracket substitution remains');
+        for(const mark of button.querySelectorAll('.sb-folio-punctuation'))if(getComputedStyle(mark).textOrientation!=='sideways')throw Error('vertical font bracket substitution remains');
         button.click();if(clicked()!==1)throw Error('glyph handling replaced native button');button.remove();
     }
     if(document.querySelector('textarea .sb-folio-punctuation,select .sb-folio-punctuation'))throw Error('glyph handling changed native editor values');

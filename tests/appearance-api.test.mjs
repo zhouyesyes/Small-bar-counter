@@ -1,6 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { defaults } from '../src/palette.mjs';
+import { phoneModeFor,modeFor } from '../src/palette.mjs';
+
+test('companion mode follows appearance by default and overrides only its own surface',()=>{
+    const settings={theme:'light',phoneTheme:'dark'};
+    assert.equal(phoneModeFor(settings),'dark');assert.equal(modeFor(settings),'light');
+    settings.phoneTheme='auto';assert.equal(phoneModeFor(settings),'light');
+    settings.theme='dark';assert.equal(phoneModeFor(settings),'dark');
+});
 import { createAppearanceBridge, createAppearancePreview, readAppearanceColors, updateAppearanceColors } from '../src/appearance-api.mjs';
 
 test('appearance entry points share the same saved fields without touching images or the opposite mode', () => {

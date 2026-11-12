@@ -1,13 +1,13 @@
-import { artwork, artworkMode, personalProfile } from './artwork.mjs';
+import { artwork, artworkMode, personalProfile, landingArtwork } from './artwork.mjs';
 import { resolveMe } from './profile.mjs';
 import { createAppearanceBridge } from './appearance-api.mjs';
-import { applyPalette } from './palette.mjs';
+import { applyPalette, phoneModeFor } from './palette.mjs';
 import { seedFolioColors } from './folio-theme.mjs';
 // 小吧台 —— 入口：把界面接到酒馆上
 // 只从 extensions.js 拿 getContext（酒馆 1.18 起它带了要用的全部东西），不逐个 import script.js 里的名字：
 // 酒馆版本差一点、少一个名字，整个扩展就加载不出来（「酒馆你害我不浅」0.6.0 踩过）
 import { getContext } from '../../../../extensions.js';
-import { progress, openSplashSettings, setSplashProfile, updatePersonalProfile, bindSplashSettings } from './splash.mjs';
+import { progress, openSplashSettings, setSplashProfile, updatePersonalProfile, bindSplashSettings, setAssistantAvatarSource } from './splash.mjs';
 // 你现在用的人设头像在 personas.js 里；整个模块导入，按名字取，没有也不报错
 import * as personas from '../../../../personas.js';
 // 世界书：全局选中的书在 world-info.js 里；整个模块导入，按名字取
@@ -18,7 +18,7 @@ import { createUI } from './ui.mjs';
 import { applyBarTheme } from './bar-theme.mjs';
 import { setPersonaSource } from './bar-pages.mjs';
 setPersonaSource(() => personas.user_avatar);
-import { mountChat, unmountChat } from './bar-chat.mjs';
+import { mountChat, unmountChat, activeChat } from './bar-chat.mjs';
 import { saveImage, imageUrl, deleteImage, listImages } from './imgstore.mjs';
 
 const NS = 'small_bar';          // 扩展设置里的位置
@@ -521,6 +521,9 @@ function refreshInject() {
 }
 
 function hasChar() { const c = ctx(); return c.characterId != null && c.characterId !== '' && !c.groupId && !!c.characters?.[c.characterId]; }
+let lastAssistantAvatar='';
+function assistantAvatar(){if(!activeChat(ctx()))lastAssistantAvatar=document.querySelector('#chat .mes:not([is_user=true]) .mesAvatarWrapper .avatar img')?.getAttribute('src')||lastAssistantAvatar;return lastAssistantAvatar;}
+setAssistantAvatarSource(assistantAvatar);
 
 // ---------- 接起来 ----------
 const host = {
@@ -529,8 +532,8 @@ const host = {
         f(s); saveSettings(); refreshInject();
         if (before[0] !== s.barTheme || before[1] !== s.theme || before[2] !== s.barStyle) { applyAppearance(); ui.render(); }
     },
-    openingProfile: () => { const h = personalProfile(settings()), art = artwork(h, artworkMode(settings())); return { avatar: img(art.avatar), cover: img(art.cover), name: h.signature ?? 'yesyes', sign: h.quote ?? 'a quiet seat, kept for you', table: h.table ?? 'by the window', order: h.order ?? 'the usual', date: h.date || new Intl.DateTimeFormat('sv-SE').format(new Date()).replaceAll('-', '.') }; },
-    setHomeProfile: patch => { const shared = {}; if ('name' in patch) shared.signature = patch.name; if ('sign' in patch) shared.quote = patch.sign; updatePersonalProfile(shared); },
+    openingProfile: (mode=artworkMode(settings())) => { const h = personalProfile(settings()), art = landingArtwork(h, mode,assistantAvatar()); return { avatar: img(art.avatar), cover: img(art.cover), name: h.signature ?? 'yesyes', sign: h.quote ?? 'a quiet seat, kept for you', table: h.table ?? 'by the window', order: h.order ?? 'the usual', date: h.date || new Intl.DateTimeFormat('sv-SE').format(new Date()).replaceAll('-', '.') }; },
+    setHomeProfile: patch => { const shared = {}; if ('name' in patch) shared.signature = patch.name; if ('sign' in patch) shared.quote = patch.sign; for(const key of ['table','order','date'])if(key in patch)shared[key]=patch[key]; updatePersonalProfile(shared); },
     setOpeningImage: (kind, src, mode = artworkMode(settings())) => { owners()[src] = 'global'; updatePersonalProfile({ [kind]: src }, mode); },
     meCfg: () => charCfg().me || {}, setMeProfile,
     charCfg, setCharCfg: f => { f(charCfg()); saveMeta(); refreshInject(); if (settings().barTheme) mountChat(barChatHost); },
@@ -568,6 +571,12 @@ let refreshTimer = 0;
 // Pass existing profile resolvers so message avatars follow Moments / character cards.
 const barChatHost = () => ({ context: ctx, settings, config: charCfg, state, me, him, image: img,
     saveChat: saveMeta, saveSettings, saveImage: saveImageHere, openAppearance: openSplashSettings,
+    setChatImage: (side,kind,source,greeting,mode) => {
+        if(greeting)host.setOpeningImage(kind,source,mode);
+        else if(side==='me'&&kind==='avatar')setMeProfile({avatar:source});
+        else host.setCharCfg(config=>{if(kind==='avatar')config.him={...(config.him||{}),avatar:source};else if(side==='me')config.coverWx=source;else config.cover={...(config.cover||{}),mode:'fixed',fixed:source};});
+        ui.render();
+    },
     setTheme: theme => { settings().theme = theme; saveSettings(); window.dispatchEvent(new Event('small-bar-appearance')); } });
 function applyAppearance() {
     applyBarTheme(settings(), ctx, { appearance: host.appearance, setSettings: host.setSettings, openAppearance: openSplashSettings });
@@ -656,7 +665,7 @@ window.addEventListener('small-bar-appearance', () => { ui.render(); applyAppear
 window.addEventListener('small-bar-appearance-preview', event => {
     const draft = event.detail || settings();
     applyBarTheme(draft, ctx, { appearance: host.appearance, setSettings: host.setSettings, openAppearance: openSplashSettings });
-    for (const node of document.querySelectorAll('#sb-root,#sb-splash-settings')) applyPalette(node, draft);
+    for (const node of document.querySelectorAll('#sb-root,#sb-splash-settings')) applyPalette(node, draft, node.id==='sb-root'?phoneModeFor(draft):undefined);
 });
 
 jQuery(() => {
