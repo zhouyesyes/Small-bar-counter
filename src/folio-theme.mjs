@@ -119,10 +119,10 @@ function worldEntries(root,s) {
 }
 function persona(root,s) {
     const member=$('.sb-member',root),use=$('.sb-use',root);
-    if(member&&use&&!s.rail){
+    if(member&&use&&!s.post){
         const caption=use.previousElementSibling;
-        s.rail=rail(root,member.parentElement);s.rail.classList.add('sb-folio-persona-rail');
-        move(member,s.rail);s.scope=card(s.rail,'名帖所系');s.scope.classList.add('sb-folio-scope-card');
+        s.post=own('sb-folio-persona-post');member.before(s.post);
+        move(member,s.post);s.scope=own('sb-folio-scope-card','<span class="sb-folio-persona-scope-title">名帖所系</span><div class="sb-folio-native"></div>');s.post.append(s.scope);
         move(use,$('.sb-folio-native',s.scope));
         if(caption?.classList.contains('sb-label'))attribute(caption,'hidden','');
         move($('.sb-acts',member),$('.sb-mc',member));
@@ -131,7 +131,7 @@ function persona(root,s) {
     if(more&&!s.morePanel){s.morePanel=own('sb-folio-persona-more');more.after(s.morePanel);}
     if(s.morePanel){
         const backup=$('#personas_backup',root)?.parentElement?.parentElement;
-        if(backup&&backup!==root&&!backup.contains(s.rail)&&!backup.contains(more))move(backup,s.morePanel);
+        if(backup&&backup!==root&&!backup.contains(s.post)&&!backup.contains(more))move(backup,s.morePanel);
         const settings=$('.persona_management_right_column',root);if(settings)move(settings,s.morePanel);
     }
     const captions={lock_persona_default:['常用此帖','设为新对话的默认名帖'],lock_persona_to_char:['系于此人','将名帖绑定到当前角色'],lock_user_name:['用于此叙','将名帖绑定到当前聊天']};
