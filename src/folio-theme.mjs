@@ -117,12 +117,28 @@ function worldEntries(root,s) {
         tab.dataset.state=state;
     });
 }
-function persona(root) {
+function persona(root,s) {
+    const member=$('.sb-member',root),use=$('.sb-use',root);
+    if(member&&use&&!s.rail){
+        const caption=use.previousElementSibling;
+        s.rail=rail(root,member.parentElement);s.rail.classList.add('sb-folio-persona-rail');
+        move(member,s.rail);s.scope=card(s.rail,'名帖所系');s.scope.classList.add('sb-folio-scope-card');
+        move(use,$('.sb-folio-native',s.scope));
+        if(caption?.classList.contains('sb-label'))attribute(caption,'hidden','');
+        move($('.sb-acts',member),$('.sb-mc',member));
+    }
+    const more=$('[data-fold="more"]',root)?.closest('.sb-fold');
+    if(more&&!s.morePanel){s.morePanel=own('sb-folio-persona-more');more.after(s.morePanel);}
+    if(s.morePanel){
+        const backup=$('#personas_backup',root)?.parentElement?.parentElement;
+        if(backup&&backup!==root&&!backup.contains(s.rail)&&!backup.contains(more))move(backup,s.morePanel);
+        const settings=$('.persona_management_right_column',root);if(settings)move(settings,s.morePanel);
+    }
     const captions={lock_persona_default:['常用此帖','设为新对话的默认名帖'],lock_persona_to_char:['系于此人','将名帖绑定到当前角色'],lock_user_name:['用于此叙','将名帖绑定到当前聊天']};
     for(const [key,[label,hint]]of Object.entries(captions)){
         const button=$('.sb-use [data-do="'+key+'"]',root);text(button,label);attribute(button,'title',hint);
     }
-    const use=$('.sb-use',root);if(use?.previousElementSibling?.classList.contains('sb-label'))text(use.previousElementSibling,'名帖所系');
+    attribute($('[data-do=lore]',root),'title','关联世界书');
     const remove=$('.sb-card-remove',root);attribute(remove,'title','删除当前名帖');attribute(remove,'aria-label','删除当前名帖');
 }
 function format(root, s) {
@@ -159,7 +175,7 @@ function tools(root,s) {if(s.rail)return;const manage=$('#extensions_details',ro
 export function syncFolioPages() {
     const appearance=$('#user-settings-block');if(appearance)syncAppearance(appearance);
     if(!active)return;
-    for(const name of Object.keys(pages)){const root=$('.sb-page-'+name);if(!root)continue;heading(root,name);for(const n of $$('.sb-fold-h b,.sb-title b,.sb-sec b,.sb-lighting-label b',root)){const aliases={'进货细节':'连接细节','进货单':'连接配置','调酒台':'落笔有度','原料':'提示条目','常备':'全局常驻','其他会员卡':'其他名帖','其余设置':'其他设置','更多设定':'更多设定','灯光搭配':'装帧与配色','角色习惯':'角色习惯','店内杂项':'界面杂项','对话习惯':'对话习惯','输入提示':'输入提示','吧台脚本':'脚本'};const next=aliases[n.textContent.replace(/\s/g,'')];if(next)text(n,next);}for(const b of $$('[data-do]',root)){const names={model:'换模型',connect:'重新连接',test:'测试',newbook:'新建',desc:'改小传',photo:'换头像',dupe:'复制',lore:'关联世界书',back:'‹ 故人录',closeback:'收起小传'};if(names[b.dataset.do])text(b,names[b.dataset.do]);}const footer=$('.sb-foot i',root);text(footer,'一卷收好，随时再续');const s=record(root);if(name==='recipe')preset(root,s);if(name==='cellar')cellar(root,s);if(name==='menu')world(root,s);if(name==='format')format(root,s);if(name==='tools')tools(root,s);if(name==='card')persona(root);}
+    for(const name of Object.keys(pages)){const root=$('.sb-page-'+name);if(!root)continue;heading(root,name);for(const n of $$('.sb-fold-h b,.sb-title b,.sb-sec b,.sb-lighting-label b',root)){const aliases={'进货细节':'连接细节','进货单':'连接配置','调酒台':'落笔有度','原料':'提示条目','常备':'全局常驻','其他会员卡':'其他名帖','其余设置':'其他设置','更多设定':'更多设定','灯光搭配':'装帧与配色','角色习惯':'角色习惯','店内杂项':'界面杂项','对话习惯':'对话习惯','输入提示':'输入提示','吧台脚本':'脚本'};const next=aliases[n.textContent.replace(/\s/g,'')];if(next)text(n,next);}for(const b of $$('[data-do]',root)){const names={model:'换模型',connect:'重新连接',test:'测试',newbook:'新建',desc:'改小传',photo:'换头像',dupe:'复制',lore:'系一卷',back:'‹ 故人录',closeback:'收起小传'};if(names[b.dataset.do])text(b,names[b.dataset.do]);}const footer=$('.sb-foot i',root);text(footer,'一卷收好，随时再续');const s=record(root);if(name==='recipe')preset(root,s);if(name==='cellar')cellar(root,s);if(name==='menu')world(root,s);if(name==='format')format(root,s);if(name==='tools')tools(root,s);if(name==='card')persona(root,s);}
     const all=['#ai-config-button','#sys-settings-button','#advanced-formatting-button','#WI-SP-button','#user-settings-button','#backgrounds-button','#extensions-settings-button','#persona-management-button','#rightNavHolder'];all.forEach((sel,i)=>attribute($(sel+' .drawer-icon'),'title',iconNames[i]));
 }
 function onClick(e) {
