@@ -2,6 +2,7 @@ import { installTypography } from './typography.mjs';
 import { updateLyrics, invalidateLyricsLayout } from './music-lyrics.mjs';
 import { bindMusicCovers } from './music-cover.mjs';
 import { applyPalette, modeFor } from './palette.mjs';
+import { profileCover } from './profile.mjs';
 import { openSplashSettings } from './splash.mjs';
 // 小吧台的界面：小猫入口、左边滑出的抽屉、弹出来的小手机
 // 只管画和点，数据和酒馆那边都从 host 拿（见 index.js），方便以后换酒馆版本
@@ -247,27 +248,21 @@ export function createUI(host) {
 
     // ---------- 头图 ----------
     function coverStyle() {
-        const c = host.charCfg().cover || {};
-        const st = host.state();
-        if (c.mode === 'fixed' && c.fixed) return `background-image:url('${host.img(c.fixed)}')`;
-        if (c.mode === 'pick' && c.images?.length) {
-            const hit = c.images.find(x => x.tag && st.cover && (st.cover.includes(x.tag) || x.tag.includes(st.cover))) || c.images[0];
-            return `background-image:url('${host.img(hit.src)}')`;
-        }
-        return '';
+        const source=profileCover('cover',host.charCfg(),host.state().cover);
+        return source ? `background-image:url('${host.img(source)}')` : '';
     }
     function coverClass() {
-        const c = host.charCfg().cover || {};
-        if ((c.mode === 'fixed' && c.fixed) || (c.mode === 'pick' && c.images?.length)) return 'sb-cover-img';
+        if(profileCover('cover',host.charCfg(),host.state().cover))return 'sb-cover-img';
         const { night, kind } = weatherTone(host.state().now.weather, host.state().now.time);
         return `sb-w-${kind}${night ? ' sb-w-night' : ''}`;
     }
 
     // ---------- 抽屉 ----------
-    // 朋友圈、X（TA的 / 我的）各有自己的背景；没传就跟抽屉头图一样
+    // 我的朋友圈、双方 X 各自取图；未设置时只用灰阶背景，不借用 char 的头图
     function sideCover(kind) {
-        const src = host.charCfg()[kind];
-        return src ? { cls: 'sb-cover-img', style: `background-image:url('${host.img(src)}')` } : { cls: coverClass(), style: coverStyle() };
+        const src = profileCover(kind,host.charCfg(),host.state().cover);
+        const {night,kind:tone}=weatherTone(host.state().now.weather,host.state().now.time);
+        return src ? { cls: 'sb-cover-img', style: `background-image:url('${host.img(src)}')` } : { cls: `sb-w-${tone}${night?' sb-w-night':''}`, style: '' };
     }
     const coverBtn = kind => `<input type="file" accept="image/*" data-upload="${kind}" data-bg-picker hidden>`;
     function landingHtml(floating) {

@@ -7,7 +7,7 @@ import { seedFolioColors } from './folio-theme.mjs';
 // 只从 extensions.js 拿 getContext（酒馆 1.18 起它带了要用的全部东西），不逐个 import script.js 里的名字：
 // 酒馆版本差一点、少一个名字，整个扩展就加载不出来（「酒馆你害我不浅」0.6.0 踩过）
 import { getContext } from '../../../../extensions.js';
-import { progress, openSplashSettings, setSplashProfile, updatePersonalProfile } from './splash.mjs';
+import { progress, openSplashSettings, setSplashProfile, updatePersonalProfile, bindSplashSettings } from './splash.mjs';
 // 你现在用的人设头像在 personas.js 里；整个模块导入，按名字取，没有也不报错
 import * as personas from '../../../../personas.js';
 // 世界书：全局选中的书在 world-info.js 里；整个模块导入，按名字取
@@ -34,6 +34,7 @@ function settings() {
     if (!['folio', 'default'].includes(s.barStyle)) s.barStyle = 'folio';
     seedFolioColors(s);
     s.chars ??= {}; s.me ??= {};
+    bindSplashSettings(s,saveSettings);
     return s;
 }
 const saveSettings = () => ctx().saveSettingsDebounced();
@@ -565,7 +566,7 @@ host.appearance = createAppearanceBridge({
 const ui = createUI(host);
 let refreshTimer = 0;
 // Pass existing profile resolvers so message avatars follow Moments / character cards.
-const barChatHost = () => ({ context: ctx, settings, config: charCfg, me, him, image: img,
+const barChatHost = () => ({ context: ctx, settings, config: charCfg, state, me, him, image: img,
     saveChat: saveMeta, saveSettings, saveImage: saveImageHere, openAppearance: openSplashSettings,
     setTheme: theme => { settings().theme = theme; saveSettings(); window.dispatchEvent(new Event('small-bar-appearance')); } });
 function applyAppearance() {
@@ -678,6 +679,7 @@ jQuery(() => {
     };
     if (!addWand()) { let n = 0; const t = setInterval(() => { if (addWand() || ++n > 30) clearInterval(t); }, 1000); }
     const on = (type, f) => { if (type) ev.on(type, f); };
+    for(const type of new Set([T.SETTINGS_LOADED,T.EXTENSION_SETTINGS_LOADED].filter(Boolean)))on(type,()=>{dirty();applyAppearance();ui.render();settingsPanel();});
     // 关掉小吧台（扩展面板里那个勾）时什么都不做：不读楼层、不算状态、不重画（重新打开时会补读一遍）
     const onIfEnabled = (type, f) => on(type, (...a) => { if (settings().enabled) f(...a); });
     onIfEnabled(T.CHAT_CHANGED, () => { ui.reset({ keepOpen: true }); absorbAll(); refresh(); claimImages(); setSplashProfile(me); });

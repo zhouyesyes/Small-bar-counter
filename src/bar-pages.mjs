@@ -13,6 +13,7 @@ const checked = id => !!document.getElementById(id)?.checked;
 const click = id => document.getElementById(id)?.click();
 // Preserve original placement so disabling the theme restores native editors/actions.
 const moved = new Map();
+const owned = new Set(), mountedRoots = new Set();
 const formatDetails = new Map();
 const lightingSearch = new Map();
 function moveNative(el, target) {
@@ -20,7 +21,7 @@ function moveNative(el, target) {
     if (!moved.has(el)) { const marker = document.createComment('sb-original-place'); el.before(marker); moved.set(el,marker); }
     target.append(el);
 }
-const bx = (cls, html) => { const d = document.createElement('div'); d.className = 'sb-bx ' + cls; d.innerHTML = html; return d; };
+const bx = (cls, html = '', tag = 'div') => { const d = document.createElement(tag); d.className = 'sb-bx ' + cls; d.innerHTML = html; owned.add(d); return d; };
 const head = (script, en, zh) => bx('sb-head', `<div class="sb-script">${script}</div><div class="sb-en">${en}</div><div class="sb-zh">${zh}</div>`);
 const label = text => bx('sb-label', `— <i>${text}</i> —`);
 const foot = text => bx('sb-foot', `— <i>${text}</i> —`);
@@ -62,12 +63,12 @@ const PAGES = {
     format: {
         root: '#AdvancedFormatting',
         mount(root) {
-            root.prepend(head('The Script', 'WORDS IN ORDER · BEFORE THE POUR', '格 式 · 把 话 写 好'));
+            if(!$('.sb-head',root))root.prepend(head('The Script', 'WORDS IN ORDER · BEFORE THE POUR', '格 式 · 把 话 写 好'));
             // Native sequence subpanels also start closed, and recover on disable.
-            for (const detail of root.querySelectorAll('details')) { formatDetails.set(detail, detail.open); detail.open = false; }
+            for (const detail of root.querySelectorAll('details:not(.sb-format-group)')) if(!formatDetails.has(detail)){ formatDetails.set(detail, detail.open); detail.open = false; }
             const wrap = (nodes, zh, en) => {
-                nodes = nodes.filter(Boolean); if (!nodes.length) return;
-                const group = document.createElement('details'); group.className = 'sb-bx sb-format-group';
+                nodes = nodes.filter(node=>node&&!node.closest('.sb-format-group,.sb-format-content')); if (!nodes.length) return;
+                const group = bx('sb-format-group', '', 'details');
                 const summary = document.createElement('summary');
                 summary.innerHTML = '<b>' + zh + '</b><i>' + en + '</i><span class="sb-plus">+</span>';
                 const body = document.createElement('div'); body.className = 'sb-format-content';
@@ -91,6 +92,7 @@ const PAGES = {
             wrap([$('#InstructSequencesColumn', root)], '指 令 序 列', 'Sequences');
             wrap([root.querySelector('[name="tokenizerSettingsBlock"]')], '分 词 与 填 充', 'Tokenizer');
         },
+        sync(root) { this.mount(root); },
     },
 
     window: {
@@ -124,7 +126,7 @@ const PAGES = {
                     const summary = [...native.children].find(n => n.tagName === 'SUMMARY');
                     if (summary && !summary.querySelector('.sb-lighting-label')) summary.append(label);
                 } else {
-                    const group = document.createElement('details'); group.className = 'sb-bx sb-lighting-group';
+                    const group = bx('sb-lighting-group', '', 'details');
                     const summary = document.createElement('summary'); summary.append(label);
                     group.append(summary); block.before(group); moveNative(block, group);
                 }
@@ -158,7 +160,7 @@ const PAGES = {
     recipe: {
         root: '#left-nav-panel',
         mount(root) {
-            const cfg = $('#ai_response_configuration', root); if (!cfg) return;
+            const cfg = $('#ai_response_configuration', root); if (!cfg||!$('#respective-presets-block',cfg)) return false;
             cfg.before(head('Recipe Book', 'HOUSE RECIPES · TONIGHT\'S POUR', '小 吧 台 · 配 方 本'));
             $('#respective-presets-block', root)?.prepend(bx('sb-cardlabel', '<i>Tonight\'s Recipe</i>'));
             $('#respective-presets-block', root)?.after(fold('params', '调 酒 台', 'Behind the Bar'));
@@ -283,7 +285,7 @@ const PAGES = {
                 const state = off ? 'off' : ($('select[name="entryStateSelector"]', e)?.value || 'normal');
                 if (e.dataset.sbState !== state) e.dataset.sbState = state;
                 let meta = $('.sb-wi-meta', e);
-                if (!meta) { meta = document.createElement('div'); meta.className = 'sb-bx sb-wi-meta'; $('.inline-drawer-header', e)?.after(meta); }
+                if (!meta) { meta = bx('sb-wi-meta'); $('.inline-drawer-header', e)?.after(meta); }
                 const v = n => $(`[name="${n}"]`, e)?.value ?? '';
                 const keys = [...($('select.keyprimaryselect', e)?.selectedOptions || [])].map(o => o.textContent).filter(Boolean).slice(0, 4).join('、') || v('key').split(',').slice(0, 4).join('、');
                 const bits = [v('depth') !== '' && `深度 ${v('depth')}`, v('order') !== '' && `顺序 ${v('order')}`, v('probability') !== '' && v('probability') !== '100' && `${v('probability')}%`, state === 'normal' && keys && `${folio ? '关键词' : '点单词'} ${keys}`].filter(Boolean);
@@ -458,8 +460,8 @@ function syncAll() {
     const ctx = getCtx();
     for (const name of Object.keys(PAGES)) {
         const root = rootOf(name); if (!root) continue;
-        root.classList.add('sb-page', 'sb-page-' + name);
-        if (!root.dataset.sbMounted) { root.dataset.sbMounted = '1'; try { PAGES[name].mount(root); } catch (e) { console.warn('[Small Bar] bar page', name, e); } }
+        mountedRoots.add(root);root.classList.add('sb-page', 'sb-page-' + name);
+        if (!root.dataset.sbMounted) { try { if(PAGES[name].mount(root)!==false)root.dataset.sbMounted='1'; } catch (e) { console.warn('[Small Bar] bar page', name, e); } }
         // Owned page titles share one top-level anchor, even when native toolbars nest differently.
         const title = $('.sb-bx.sb-head', root);
         if (title && (title.parentElement !== root || root.firstElementChild !== title)) root.prepend(title);
@@ -523,13 +525,15 @@ export function unmountPages() {
     lightingSearch.clear();
     for (const [detail, open] of formatDetails) detail.open = open;
     formatDetails.clear();
-    for (const [el, marker] of moved) { if (marker.isConnected) marker.replaceWith(el); } moved.clear();
+    for (const [el, marker] of [...moved].reverse()) { if (marker.parentNode) marker.replaceWith(el); } moved.clear();
     $$('.sb-native-actions').forEach(el=>el.classList.remove('sb-native-actions'));
+    for(const el of owned)el.remove();owned.clear();
     $$('.sb-bx').forEach(el => el.remove());
-    for (const root of $$('.sb-page')) {
+    for (const root of mountedRoots) {
         delete root.dataset.sbMounted;
         root.classList.remove(...[...root.classList].filter(c => c.startsWith('sb-page') || c.startsWith('sb-open-')));
     }
+    mountedRoots.clear();
     $$('.world_entry[data-sb-state]').forEach(e => delete e.dataset.sbState);
     $$('.sb-cur').forEach(e => e.classList.remove('sb-cur'));
     $$('[data-sb-auto-book]').forEach(e => delete e.dataset.sbAutoBook);

@@ -25,7 +25,11 @@ test('conversation pictures follow shared sources and ignore legacy chat-only ov
     own.avatar = 'new-moments-avatar'; config.coverWx = 'new-moments-cover';
     assert.deepEqual(read('me', own), { avatar: 'new-moments-avatar', cover: 'resolved:new-moments-cover' });
     delete config.coverWx;
-    assert.equal(read('me', own).cover, 'resolved:card-cover');
+    assert.equal(read('me', own).cover, '');
+    config.cover={mode:'none'};
+    assert.equal(read('him',other).cover,'');
+    config.cover={mode:'pick',images:[{tag:'晴',src:'sunny'},{tag:'雨',src:'rainy'}]};
+    assert.equal(sharedChatImages({side:'him',config,currentCover:'雨天'}).cover,'rainy');
     assert.equal(sharedChatImages({ side: 'him', config, nativeAvatar: 'group-member-avatar' }).avatar, 'group-member-avatar');
 });
 

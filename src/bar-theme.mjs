@@ -73,7 +73,9 @@ ${icons}`;
 let observer = null, media = null, last = '';
 // 开着就挂上 / 更新，关着就拿掉；调色、换深浅、酒馆改了自己的颜色，都再调一次
 let getCtx = () => null;
+let currentSettings;
 export function applyBarTheme(settings, ctx, adapter) {
+    currentSettings=settings;
     installTypography();
     configureFolio(settings, adapter);
     if (ctx) getCtx = ctx;
@@ -100,9 +102,9 @@ export function applyBarTheme(settings, ctx, adapter) {
     if (!observer) {
         // 她在酒馆「用户设置」里换主题、改颜色时，酒馆会改 <html> 的 style：跟着重算一次（深浅、透明度）
         let t = 0;
-        observer = new MutationObserver(() => { clearTimeout(t); t = setTimeout(() => applyBarTheme(settings), 80); });
+        observer = new MutationObserver(() => { clearTimeout(t); t = setTimeout(() => applyBarTheme(currentSettings), 80); });
         observer.observe(html, { attributes: true, attributeFilter: ['style'] });
-        media = matchMedia('(prefers-color-scheme: dark)'); media.sb = () => applyBarTheme(settings);
+        media = matchMedia('(prefers-color-scheme: dark)'); media.sb = () => applyBarTheme(currentSettings);
         media.addEventListener('change', media.sb);
     }
 }

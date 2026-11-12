@@ -23,16 +23,17 @@ export function folioIconCss(icons) {
 }
 const pages = { recipe:['文笺','预设·落笔成章'], cellar:['传讯','连接·尺素相通'], format:['章法','格式·字句有序'], menu:['世间录','世界书·山川有记'], lighting:['装帧','界面·随心成卷'], window:['借景','背景·借一窗景'], tools:['百工匣','扩展·各有所用'], card:['名帖','人设·以此为名'], bartenders:['故人录','角色·故人可寻'], bartender:['其人','人物·见字如晤'] };
 const moved = new Map(), texts = new Map(), attrs = new Map(), states = new Map();
+const owned = new Set();
 const presetAuxSelector='label[for="bind_preset_to_connection"],.ttas-agent-embed-button[data-ttas-embed-target="preset"],[id^="ttas_agent_embed_preset_"],.fa-atom';
 let settings = {}, host = {}, active = false, listening = false, picker;
 const $ = (s,r=document) => r.querySelector(s);
 const $$ = (s,r=document) => [...r.querySelectorAll(s)];
 const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const own = (cls,html='') => { const n=document.createElement('div');n.className='sb-bx sb-folio-owned '+cls;n.innerHTML=html;return n; };
+const own = (cls,html='') => { const n=document.createElement('div');n.className='sb-bx sb-folio-owned '+cls;n.innerHTML=html;owned.add(n);return n; };
 const text = (n,value) => { if(!n)return;if(!texts.has(n))texts.set(n,[...n.childNodes]);if(n.textContent!==value)n.textContent=value; };
 const attribute = (n,key,value) => { if(!n)return;if(!attrs.has(n))attrs.set(n,new Map());if(!attrs.get(n).has(key))attrs.get(n).set(key,n.getAttribute(key));if(n.getAttribute(key)!==value)n.setAttribute(key,value); };
 function move(n,target) { if(!n||!target||n.parentElement===target)return;if(!moved.has(n)){const marker=document.createComment('sb-folio-native');n.before(marker);moved.set(n,marker);}target.append(n); }
-function restore(n) { const marker=moved.get(n);if(!marker)return;if(marker.isConnected)marker.replaceWith(n);moved.delete(n); }
+function restore(n) { const marker=moved.get(n);if(!marker)return;if(marker.parentNode)marker.replaceWith(n);moved.delete(n); }
 function rail(root,parent=root) { const n=own('sb-folio-rail');const title=$('.sb-head',parent);if(title?.parentElement===parent)title.after(n);else parent.prepend(n);return n; }
 function card(parent,title,deep=false) { const n=own('sb-folio-card'+(deep?' is-deep':''),`<span class="sb-folio-title">${title}</span><div class="sb-folio-native"></div>`);parent.append(n);return n; }
 function value(cardNode, label) {
@@ -178,7 +179,7 @@ function persona(root,s) {
 function collection(root) {
     attribute($('#character_search_bar',root),'placeholder','寻一位故人…');
     attribute($('#rm_button_create',root),'title','逢一人 · 新建角色');
-    const filters={filterByFavorites:'常念 · 只看常用',filterByGroups:'同行 · 只看群组',filterByFolders:'书匣 · 只看文件夹',filterByFolder:'书匣 · 只看文件夹',manageTags:'理签 · 管理标签',showTagList:'寻签 · 展开标签',clearAllFilters:'清筛 · 清除筛选'};
+    const filters={filterByFavorites:'常念 · 只看常念故人',filterByGroups:'同行 · 只看群组',filterByFolders:'书匣 · 只看文件夹',filterByFolder:'书匣 · 只看文件夹',manageTags:'理签 · 管理标签',showTagList:'寻签 · 展开标签',clearAllFilters:'清筛 · 清除筛选'};
     for(const [cls,label]of Object.entries(filters))for(const node of $$('.rm_tag_filter .'+cls,root)){attribute(node,'title',label);attribute($('.tag_name',node),'title',label);attribute(node,'aria-label',label);}
     const orders={'name:asc':'依名顺排','name:desc':'依名倒排','create_date:desc':'新识在前','create_date:asc':'旧识在前','fav:desc':'常念在前','date_last_chat:desc':'近叙在前','chat_size:desc':'长叙在前','chat_size:asc':'短叙在前','data_size:desc':'厚卷在前','data_size:asc':'薄卷在前','name:random':'随缘一逢','search:desc':'寻人结果'};
     for(const option of $$('#character_sort_order option',root)){const label=orders[option.dataset.field+':'+option.dataset.order];if(label)text(option,label);}
@@ -187,24 +188,24 @@ function collection(root) {
         const info=$('.character_select_container,.group_select_container',row);if(!info)continue;
         let flags=$('.sb-folio-collection-flags',info);if(!flags){flags=own('sb-folio-collection-flags');const heading=$('.character_name_block',info)||$('.ch_name',info);if(heading)heading.after(flags);else info.prepend(flags);}
         const states=[];
-        if(row.classList.contains('is_fav')||$('.ch_fav',row)?.value==='true'||row.classList.contains('default_persona'))states.push('★ 常用');
+        if(row.classList.contains('is_fav')||$('.ch_fav',row)?.value==='true')states.push('★ 常念');
+        else if(row.classList.contains('default_persona'))states.push('★ 常用');
         if(row.classList.contains('sb-cur')||(row.classList.contains('selected')&&!livePersona))states.push('在用');
         if(row.classList.contains('locked_to_character'))states.push('系于此人');
         if(row.classList.contains('locked_to_chat'))states.push('用于此叙');
         const label=states.join(' · ');if(flags.textContent!==label)flags.textContent=label;flags.title=label;
         for(const node of $$('.ch_name,.ch_description,.tags_inline',row))attribute(node,'title',$$('.tag_name',node).length?$$('.tag_name',node).map(n=>n.textContent).join(' / '):node.textContent.trim());
     }
-    for(const node of $$('.sb-favrow small',root))text(node,'★ 常用');
+    for(const node of $$('.sb-favrow small',root))text(node,'★ 常念');
 }
 function format(root, s) {
-    if (s.rail) return;
     const groups = $$('.sb-format-group', root);
     if (!groups.length) return;
-    s.rail = rail(root);
-    s.editor = own('sb-folio-editor');
-    s.editor.hidden = true;
-    s.rail.after(s.editor);
-    s.entries = groups.map((group, index) => {
+    if(!s.rail){s.rail=rail(root);s.editor=own('sb-folio-editor');s.editor.hidden=true;s.rail.after(s.editor);s.entries=[];}
+    let added=false;
+    for(const group of groups){
+        if(s.entries.some(entry=>entry.group===group))continue;
+        added=true;
         const title = $('summary>b', group);
         const label = title?.textContent.replace(/\s/g, '') || '设置';
         text(title, label);
@@ -212,12 +213,15 @@ function format(root, s) {
         const section = own('sb-folio-format-section', `<h3>${esc(label)}</h3>`);
         section.hidden = true;
         s.editor.append(section);
-        attribute(group, 'data-folio-format', String(index));
         attribute(group, 'class', group.className + ' sb-folio-format-card');
         move(group, s.rail);
         group.open = false;
-        return { group, body, section };
-    });
+        s.entries.push({ group, body, section });
+    }
+    if(added){
+        s.entries.sort((a,b)=>((moved.get(a.group)||a.group).compareDocumentPosition(moved.get(b.group)||b.group)&Node.DOCUMENT_POSITION_FOLLOWING)?-1:1);
+        s.entries.forEach((entry,index)=>{s.rail.append(entry.group);s.editor.append(entry.section);attribute(entry.group,'data-folio-format',String(index));});
+    }
 }
 
 function syncAppearance(root) {
@@ -272,19 +276,20 @@ function onToggle(e) {
 
 export function configureFolio(settingsValue,adapter={}) {
     settings=settingsValue;host={...host,...adapter};
-    const next=!!settings.barTheme&&isFolio(settings);if(active&&!next)unmountFolioPages();active=next;
+    const next=!!settings.barTheme&&isFolio(settings),previous=active;active=next;if(previous&&!next)unmountFolioPages();
     document.documentElement.classList.toggle('sb-folio',active);
     let css=$('#sb-folio-styles');if(!css){css=document.createElement('link');css.id='sb-folio-styles';css.rel='stylesheet';css.href=new URL('../assets/folio/folio.css',import.meta.url).href;document.head.append(css);}
     if(!listening){document.addEventListener('click',onClick);document.addEventListener('change',onChange);document.addEventListener('toggle',onToggle,true);listening=true;}
 }
 export function unmountFolioPages() {
-    picker?.();picker=null;
+    const close=picker;picker=null;close?.(true);
     for(const s of states.values())s.toolObserver?.disconnect();
     for(const mark of $$('.sb-folio-punctuation'))mark.replaceWith(...mark.childNodes);
     for(const [root,s]of states)if(s.detailsShown)root.classList.toggle('sb-open-detail',s.detailWasOpen);
     for(const n of [...moved.keys()].reverse())restore(n);
-    for(const [n,t]of texts)if(n.isConnected)n.replaceChildren(...t);texts.clear();
-    for(const [n,values]of attrs)if(n.isConnected)for(const [key,v]of values){if(v==null)n.removeAttribute(key);else n.setAttribute(key,v);}attrs.clear();
+    for(const [n,t]of texts)n.replaceChildren(...t);texts.clear();
+    for(const [n,values]of attrs)for(const [key,v]of values){if(v==null)n.removeAttribute(key);else n.setAttribute(key,v);}attrs.clear();
+    for(const n of owned)n.remove();owned.clear();
     $$('.sb-folio-owned').forEach(n=>n.remove());states.clear();
 }
 export function syncFolioChat(surface,s) {if(!s?.barTheme||!isFolio(s))return;const h=$('.sb-reading-head .sb-chat-script',surface);text(h,'对坐');attribute(surface,'data-folio-chat','true');}
