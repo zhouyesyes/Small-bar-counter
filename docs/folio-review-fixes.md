@@ -21,6 +21,10 @@
 
 [故人录三列陈列](folio-runtime/characters-three-column.png)、[竖排横滑列表](folio-runtime/characters-horizontal-list.png)与[其他名帖三列](folio-runtime/personas-three-column.png)使用测试数据演示姓名、备注和标签的完整结构；原生切换按钮沿用宿主行为。
 
+## 竖排与按钮底线
+
+传讯、连接配置、预设及世界书的竖排操作文字统一贴近卡片内框下线，短标签从底部向上留出空间。全部主题竖排区域统一英文与数字的正向逐字字形；各类括号使用横排字形，避免字体自动替换成竖式括号。原生输入框、下拉选项与可编辑内容不拆分，关闭美化时还原包装。[传讯底线与字形预览](folio-runtime/api-bottom-aligned.png)使用测试数据演示。
+
 ## 验证
 
 浏览器回归入口仍为 `tests/folio-runtime.cjs`。除原有事件、节点身份、颜色双向同步、编辑值保留与关闭美化恢复外，补充多条展开顺序、手机宽度、不跳页调色、取消不保存、彩色状态点、方形头像和绑定按钮等检查。
