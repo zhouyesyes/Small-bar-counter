@@ -14,7 +14,7 @@ const checked = id => !!document.getElementById(id)?.checked;
 const click = id => document.getElementById(id)?.click();
 // Preserve original placement so disabling the theme restores native editors/actions.
 const moved = new Map();
-const owned = new Set(), mountedRoots = new Set();
+const owned = new Set(), mountedRoots = new Set(), pageDrawers = new Set();
 const formatDetails = new Map();
 const lightingSearch = new Map();
 function moveNative(el, target) {
@@ -469,6 +469,7 @@ function syncAll() {
         if (title && (title.parentElement !== root || root.firstElementChild !== title)) root.prepend(title);
         // 抽屉关着就不算（省电）；调酒师名单 / 主页看右边那个抽屉开没开
         const drawer = root.closest('.drawer-content') || root;
+        if (drawer.matches('.drawer-content')) { drawer.classList.add('sb-host-page-drawer');pageDrawers.add(drawer); }
         if (drawer.classList.contains('closedDrawer') && !drawer.classList.contains('openDrawer')) continue;
         try { PAGES[name].sync?.(root, ctx); } catch (e) { console.warn('[Small Bar] bar page', name, e); }
     }
@@ -537,6 +538,8 @@ export function unmountPages() {
         root.classList.remove(...[...root.classList].filter(c => c.startsWith('sb-page') || c.startsWith('sb-open-')));
     }
     mountedRoots.clear();
+    for (const drawer of pageDrawers) drawer.classList.remove('sb-host-page-drawer');
+    pageDrawers.clear();
     $$('.world_entry[data-sb-state]').forEach(e => delete e.dataset.sbState);
     $$('.sb-cur').forEach(e => e.classList.remove('sb-cur'));
     $$('[data-sb-auto-book]').forEach(e => delete e.dataset.sbAutoBook);

@@ -1590,3 +1590,18 @@ html.sb-bar #world_popup_entries_list .sb-entry-layout select[name=entryStateSel
 }
 html.sb-bar[data-sb-mode=dark] .sb-entry-common,
 html.sb-bar[data-sb-mode=dark] .sb-entry-layout select[name=entryStateSelector] {color-scheme:dark;}
+
+/* All native page drawers use the full area beside the tablet companion.
+   TT sets width, height and centering transforms (sometimes inline): reset each. */
+@media(min-width:768px) {
+    html.sb-bar.sb-panel-docked .drawer-content.sb-host-page-drawer {
+        position:fixed!important;
+        top:var(--topBarBlockSize,48px)!important;bottom:0!important;
+        left:var(--sb-panel-width)!important;right:0!important;
+        width:calc(100vw - var(--sb-panel-width))!important;
+        height:calc(100dvh - var(--topBarBlockSize,48px))!important;
+        max-width:none!important;max-height:none!important;min-width:0!important;
+        margin:0!important;transform:none!important;translate:none!important;
+        box-sizing:border-box;overflow-y:auto;border-radius:0!important;
+    }
+}

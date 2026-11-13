@@ -406,3 +406,9 @@ html.sb-bar.sb-folio .sb-folio-profile-view {width:100%;min-width:0;margin:18px 
 html.sb-bar.sb-folio .sb-folio-profile-view[hidden] {display:none!important;}
 html.sb-bar.sb-folio .sb-folio-profile-view ul {margin:0;padding-left:20px;}
 html.sb-bar.sb-folio .sb-folio-profile-view li {padding:4px 0;line-height:1.8;}
+/* The vertical preset name is part of the native select's touch target. */
+html.sb-bar.sb-folio #respective-presets-block select {
+    left:42px!important;right:8px!important;top:30px!important;bottom:62px!important;
+    width:calc(100% - 50px)!important;height:calc(100% - 92px)!important;
+    cursor:pointer;pointer-events:auto;touch-action:manipulation;
+}
