@@ -26,6 +26,24 @@ const asDataUrl = blob => new Promise((resolve,reject) => {
     const reader = new FileReader();reader.onload = () => resolve(reader.result);
     reader.onerror = () => reject(reader.error);reader.readAsDataURL(blob);
 });
+// Walk references without serializing megabytes of embedded image contents.
+export function imageReferences(value) {
+    const refs = new Set(), seen = new WeakSet();
+    const visit = item => {
+        if (typeof item === 'string') { for (const ref of item.match(/idb:[a-z0-9]+/gi) || []) refs.add(ref);return; }
+        if (!item || typeof item !== 'object' || seen.has(item)) return;
+        seen.add(item);
+        for (const [key, child] of Object.entries(item)) { if (key === 'imageData') continue;visit(key);visit(child); }
+    };
+    visit(value);return refs;
+}
+const embeddedUrls = new Map(), embeddedJobs = new Map();
+function cacheEmbedded(id, data, blob) {
+    const old = embeddedUrls.get(id);
+    if (old?.data === data) return old.url;
+    if (old) URL.revokeObjectURL(old.url);
+    const url = URL.createObjectURL(blob);embeddedUrls.set(id,{data,url});return url;
+}
 export function configureImageStore(settings, save) {
     portableSettings = settings;persistPortable = save;
     settings.imageData ??= {};
@@ -34,7 +52,7 @@ export function configureImageStore(settings, save) {
     // Preserve old IDs so chat-specific references continue working after import.
     (async () => {
         let changed = false;
-        const references = new Set(JSON.stringify({...settings,imageData:null}).match(/idb:[a-z0-9]+/gi) || []);
+        const references = imageReferences(settings);
         for (const src of references) {
             const id = src.slice(4);
             if (settings.imageData[id]) continue;
@@ -55,6 +73,7 @@ export async function saveImage(dataUrl) {
     const existing = Object.keys(target.imageData).find(key => target.imageData[key] === data);
     const id = existing || (digest ? 'h' + [...new Uint8Array(digest)].map(n => n.toString(16).padStart(2,'0')).join('') : 'i' + Date.now().toString(36) + Math.random().toString(36).slice(2));
     target.imageData[id] ??= data;
+    cacheEmbedded(id,target.imageData[id],blob);
     save();
     // Portable settings remain usable even if the browser cache is unavailable.
     try { await tx('readwrite', s => s.put(blob,id)); } catch { /* optional cache */ }
@@ -67,7 +86,18 @@ export function imageUrl(src, onReady) {
     if (!src || !String(src).startsWith('idb:')) return src || '';
     const id = src.slice(4);
     const embedded = portableSettings?.imageData?.[id];
-    if (typeof embedded === 'string' && /^data:image\//i.test(embedded)) return embedded;
+    if (typeof embedded === 'string' && /^data:image\//i.test(embedded)) {
+        const cached = embeddedUrls.get(id);
+        if (cached?.data === embedded) return cached.url;
+        if (embeddedJobs.get(id) !== embedded) {
+            embeddedJobs.set(id,embedded);
+            fetch(embedded).then(r => r.blob()).then(blob => {
+                if (embeddedJobs.get(id) !== embedded || portableSettings?.imageData?.[id] !== embedded) return;
+                cacheEmbedded(id,embedded,blob);onReady?.();
+            }).catch(() => {}).finally(() => { if (embeddedJobs.get(id) === embedded) embeddedJobs.delete(id); });
+        }
+        return '';
+    }
     if (urls.has(id)) return urls.get(id);
     if (!loading.has(id)) {
         loading.add(id);
@@ -82,6 +112,8 @@ export function imageUrl(src, onReady) {
 export async function deleteImage(src) {
     if (!src || !String(src).startsWith('idb:')) return;
     const id = src.slice(4);
+    embeddedJobs.delete(id);
+    if (embeddedUrls.has(id)) { URL.revokeObjectURL(embeddedUrls.get(id).url);embeddedUrls.delete(id); }
     if (portableSettings?.imageData?.[id]) { delete portableSettings.imageData[id];persistPortable(); }
     try { await tx('readwrite', s => s.delete(id)); } catch { /* 删不掉就算了 */ }
     if (urls.has(id)) { URL.revokeObjectURL(urls.get(id)); urls.delete(id); }

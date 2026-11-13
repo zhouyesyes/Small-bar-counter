@@ -28,7 +28,7 @@ const exported=await p.evaluate(async()=>{
  if(a!==b||Object.keys(s.imageData).length!==1)throw Error('image not deduplicated');return {s,src:a};
 });
 const other=await b.newContext();const q=await other.newPage();await q.goto('http://127.0.0.1:8870/tests/fixtures/folio-runtime.html');await q.waitForFunction(()=>window.ready);
-assert(await q.evaluate(async({s,src})=>{const m=await import('/src/imgstore.mjs');m.configureImageStore(s,()=>{});const image=m.imageUrl(src);const img=new Image();img.src=image;await img.decode();return img.naturalWidth===1;},exported));
+assert(await q.evaluate(async({s,src})=>{const m=await import('/src/imgstore.mjs');m.configureImageStore(s,()=>{});const image=await new Promise(resolve=>{const ready=()=>{const url=m.imageUrl(src,ready);if(url)resolve(url)};ready()});const img=new Image();img.src=image;await img.decode();return img.naturalWidth===1;},exported));
 console.log('Both themes: native controls, restore, values/events; portable image export/import and deduplication passed.');
 await b.close();
 })().catch(e=>{console.error(e);process.exit(1)});

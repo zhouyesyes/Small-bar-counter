@@ -83,6 +83,7 @@ export function createUI(host) {
     }
     // 每秒只改进度条和歌词那几个字，不整页重画
     function tickMusic() {
+        if (document.hidden) return;
         // 主页小卡片：放到哪句显示哪句
         const wl = root?.querySelector('.sb-wlyr');
         if (wl) { const i = player.line(); if (wl.dataset.i !== String(i)) { wl.dataset.i = i; wl.textContent = player.lyric()[i]?.text || ''; } }
@@ -101,7 +102,7 @@ export function createUI(host) {
     function animateMusic(now) {
         lyricFrame = 0;
         if (!root?.querySelector('.sb-music') || document.hidden || player.audio.paused) return;
-        if (now - lyricTickAt >= 40) { lyricTickAt = now; tickMusic(); }
+        if (now - lyricTickAt >= 100) { lyricTickAt = now; tickMusic(); }
         lyricFrame = requestAnimationFrame(animateMusic);
     }
 

@@ -19,7 +19,7 @@ import { applyBarTheme } from './bar-theme.mjs';
 import { setPersonaSource } from './bar-pages.mjs';
 setPersonaSource(() => personas.user_avatar);
 import { mountChat, unmountChat, activeChat } from './bar-chat.mjs';
-import { configureImageStore, saveImage, imageUrl, deleteImage, listImages } from './imgstore.mjs';
+import { configureImageStore, imageReferences, saveImage, imageUrl, deleteImage, listImages } from './imgstore.mjs';
 
 const NS = 'small_bar';          // 扩展设置里的位置
 const META = 'small_bar';        // 每个聊天自己的数据（chat_metadata 里）
@@ -378,7 +378,7 @@ const img = src => imageUrl(src, () => { ui.render(); setSplashProfile(me); if (
 // 图存在浏览器里，背景、头像大多跟着聊天走（存在聊天自己的数据里）：聊天删了、图换了，旧图会一直留着
 // 所以每张图记一下是哪个聊天传的（settings.imgOwner），清理时就知道哪些已经没人用了
 const chatKey = () => { const c = ctx(); if (c.chatId == null) return ''; return (c.groupId ? 'g:' + c.groupId : 'c:' + (c.characters?.[c.characterId]?.avatar ?? c.characterId)) + '|' + c.chatId; };
-const refsIn = obj => new Set((JSON.stringify(obj ?? null).match(/idb:[a-z0-9]+/gi) || []));
+const refsIn = imageReferences;
 const owners = () => (settings().imgOwner ??= {});
 async function saveImageHere(dataUrl) {
     const src = await saveImage(dataUrl);

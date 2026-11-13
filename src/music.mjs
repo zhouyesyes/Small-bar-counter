@@ -1,3 +1,4 @@
+import { attachMediaSession } from './media-session.mjs';
 // 小吧台的音乐：搜歌、贴网易云链接加歌、歌单、歌词、播放
 // 歌都来自第三方公开的 Meting 接口（参考 QuietRoom 的做法，代码是自己写的）：几个节点一起问，谁先回用谁；
 // 接口哪天不能用、会员歌能不能放，都看接口那边，不保证
@@ -276,7 +277,8 @@ export const lineAt = (lrc, sec) => { let cur = -1; for (let i = 0; i < lrc.leng
 // 播放器：一个真的 <audio>，不随界面重画；界面每秒问它一次进度
 export function createPlayer({ load, save, onChange, onStatus = () => {} }) {
     const audio = new Audio();
-    audio.preload = 'none';
+    audio.preload = 'auto';
+    let confirmedSource = '';
     let lrc = [], lrcFor = '', sources = [], srcIdx = 0, playing = null, swapped = false; // swapped：换成了另一个平台的同一首（这时不记来源）
     const twinMode = () => { swapped = true; }; // playing：真正在响的那首（切歌单不影响它）
     const st = () => load(); // { list: [], idx, mode }
@@ -361,21 +363,29 @@ export function createPlayer({ load, save, onChange, onStatus = () => {} }) {
     let dog = 0;
     function watch() {
         clearTimeout(dog);
-        dog = setTimeout(() => { if (audio.paused || audio.currentTime < 0.3) { onStatus('等太久了，换一个来源…'); fallback(); } }, 6000);
+        if (document.hidden) return;
+        dog = setTimeout(() => { if (!document.hidden && (audio.paused || audio.currentTime < 0.3)) { onStatus('等太久了，换一个来源…'); fallback(); } }, 6000);
     }
     audio.addEventListener('playing', () => {
         clearTimeout(dog);
         const t = playing, k = sources[srcIdx]?.k;
-        if (t && k && !swapped) { t.ok = k; t.okUrl = audio.dataset.src; t.okAt = Date.now(); save(); } // 记住这首用哪个来源放得出来
+        const sourceKey = t && `${t.src || 'netease'}:${t.id}:${k}:${audio.dataset.src}`;
+        if (t && k && !swapped && sourceKey !== confirmedSource) { confirmedSource = sourceKey; t.ok = k; t.okUrl = audio.dataset.src; t.okAt = Date.now(); save(); } // 记住这首用哪个来源放得出来
     });
     audio.addEventListener('pause', () => clearTimeout(dog));
     audio.addEventListener('error', () => { clearTimeout(dog); if (audio.src) fallback(); });
     audio.addEventListener('play', () => onChange?.('state'));
     audio.addEventListener('pause', () => onChange?.('state'));
+    const resume = () => audio.src && playing ? audio.play().catch(e => { if (e?.name === 'NotAllowedError') onChange?.('error','点一下播放键继续'); }) : play();
+    attachMediaSession(audio,{track:()=>playing,play:resume,next:()=>next(false),prev});
+    document.addEventListener('visibilitychange', () => {
+        clearTimeout(dog);
+        if (!document.hidden && !audio.paused && audio.readyState < 2) watch();
+    });
     return {
         audio, play, next, prev,
         skipSource: () => { const t = playing || cur(); if (t) { delete t.ok; delete t.okUrl; delete t.okAt; } fallback(); }, // 她手动点「换个来源」：这首记的来源作废，换下一个
-        toggle: () => (audio.paused ? play() : audio.pause()),
+        toggle: () => (audio.paused ? resume() : audio.pause()),
         seek: frac => { if (audio.duration) audio.currentTime = audio.duration * frac; },
         current: () => playing || cur(), playing: () => !audio.paused,
         lyric: () => lrc, line: () => lineAt(lrc, audio.currentTime || 0),
