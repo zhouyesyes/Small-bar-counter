@@ -1,0 +1,106 @@
+/* Default bar surfaces. Native chat messages and folio layout are not replaced. */
+html.sb-glass-chat #sheld,html.sb-glass-chat #form_sheld{background:transparent!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+html.sb-glass-chat #sheld #chat:is(.sb-reading,.sb-lounge){box-sizing:border-box;width:min(100%,max(240px,var(--sb-glass-width)))!important;max-width:none!important;min-height:0;margin-inline:auto!important;margin-top:var(--sb-glass-edge);background:color-mix(in srgb,var(--sb-bar-bg) calc(var(--sb-glass-opacity)*100%),transparent)!important;border:1px solid color-mix(in srgb,var(--sb-bar-accent) 20%,transparent);border-bottom:0;border-radius:var(--sb-glass-radius) var(--sb-glass-radius) 0 0;box-shadow:0 8px 28px #14202c18;backdrop-filter:blur(var(--sb-glass-blur)) saturate(.9);-webkit-backdrop-filter:blur(var(--sb-glass-blur)) saturate(.9)}
+html.sb-glass-chat #sheld #send_form{position:relative!important;left:auto!important;right:auto!important;bottom:auto!important;transform:none!important;flex-shrink:0;box-sizing:border-box;width:min(100%,max(240px,var(--sb-glass-width)))!important;max-width:none!important;margin-inline:auto!important;background:color-mix(in srgb,var(--sb-bar-bg) calc(var(--sb-glass-opacity)*100%),transparent)!important;border:1px solid color-mix(in srgb,var(--sb-bar-accent) 20%,transparent);border-top:1px solid var(--sb-bar-line);border-radius:0 0 var(--sb-glass-radius) var(--sb-glass-radius);box-shadow:0 12px 28px #14202c12;backdrop-filter:blur(var(--sb-glass-blur)) saturate(.9);-webkit-backdrop-filter:blur(var(--sb-glass-blur)) saturate(.9)}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){html.sb-glass-chat #sheld #chat,html.sb-glass-chat #sheld #send_form{background:var(--sb-bar-bg)!important}}
+#sb-root.sb-default-bar .sb-drawer{border-right:1px solid color-mix(in srgb,var(--sb-accent) 28%,transparent);box-shadow:10px 0 25px #14202c1b,inset -3px 0 0 color-mix(in srgb,var(--sb-accent) 5%,transparent)}
+#sb-root .sb-wine-bridge{display:flex;align-items:center;gap:9px;margin:9px 22px 15px;color:var(--sb-dim)}
+#sb-root .sb-wine-bridge span{font:7px Georgia,serif;letter-spacing:.15em;white-space:nowrap}
+#sb-root .sb-wine-bridge i{height:1px;flex:1;background:color-mix(in srgb,var(--sb-accent) 23%,transparent)}
+#sb-root .sb-wine-bridge b{font:400 10px/1.7 var(--sb-serif);color:var(--sb-accent)}
+#sb-root.sb-default-bar .sb-cocktail{--paper:var(--sb-card);--ink:var(--sb-fg);--dim:var(--sb-dim);--accent:var(--sb-accent);--rim:color-mix(in srgb,var(--sb-accent) 62%,var(--sb-dim));--line:color-mix(in srgb,var(--sb-accent) 24%,transparent);--wash:color-mix(in srgb,var(--sb-accent) 8%,var(--sb-bg));background:var(--sb-bg)}
+#sb-root.sb-default-bar .sb-cocktail .main-toggle h2{font:30px/1.2 SmallBarHand,'Snell Roundhand',cursive;letter-spacing:0}
+#sb-root .sb-title-a{position:relative;display:inline-block;width:19px;height:29px;vertical-align:-4px}
+#sb-root .sb-title-a>span{visibility:hidden}
+#sb-root .sb-title-a>.cup-mini-svg{position:absolute;width:28px;height:36px;left:-3px;top:-1px;transform:rotate(-12deg);transform-origin:50% 75%}
+#sb-root .sb-title-a .glass-outline{stroke-width:3}
+#sb-root .sb-title-a .stem-line{stroke-width:2.6}
+#sb-root .sb-cocktail.sb-calendar-panel{margin:24px 20px 18px;padding:0;background:none;border:0;box-shadow:none;border-radius:0}
+#sb-root .sb-calendar-panel:before{display:none}
+#sb-root .sb-calendar-panel>.calendar{margin:0 0 6px;padding:22px 13px 13px;background:var(--sb-card);border-color:color-mix(in srgb,var(--sb-accent) 25%,transparent);border-radius:3px;box-shadow:0 4px 0 -1px var(--sb-bg),0 5px 0 -1px color-mix(in srgb,var(--sb-accent) 20%,transparent)}
+#sb-root .sb-calendar-panel .month-word{font-family:Georgia,serif;font-style:italic}
+#sb-root .sb-calendar-panel .month-no{font-size:48px}
+#sb-root .sb-calendar-panel .important{background:none}
+#sb-root .sb-calendar-panel .important .num{position:relative}
+#sb-root .sb-calendar-panel .important .num:after{content:'';position:absolute;inset:-3px -5px;border:1px solid var(--sb-accent);border-radius:48% 56% 47% 53%;transform:rotate(-13deg);opacity:.65;pointer-events:none}
+/* Record sleeve: only the default bar opts in, with the real cover and playback state. */
+#sb-root.sb-default-bar .sb-music{margin:22px 20px;background:none;border-radius:0;overflow:visible}
+#sb-root.sb-default-bar .sb-player-main{position:relative;padding:0 16px 9px;border:1px solid color-mix(in srgb,var(--sb-accent) 25%,transparent);border-radius:5px;background:var(--sb-card);box-shadow:0 4px 14px #40302609;overflow:hidden}
+#sb-root.sb-default-bar .sb-player-main>.sb-cap{margin:0 -16px;padding:13px 16px 11px;border-bottom:1px solid color-mix(in srgb,var(--sb-accent) 25%,transparent);background:transparent;font-size:12px!important;letter-spacing:.12em;color:var(--sb-fg)}
+#sb-root.sb-default-bar .sb-track-head{position:relative;gap:16px;margin:18px 0 16px}
+#sb-root.sb-default-bar .sb-track-head .sb-bigcover{position:relative;width:108px!important;height:108px!important;flex:0 0 108px;border:0!important;background:repeating-radial-gradient(circle at center,#262b29 0 1px,#393c37 1px 2px,#262b29 2px 3px);box-shadow:1px 3px 5px #24211c28,inset 0 0 0 1px #fff2;overflow:hidden;animation:sb-record-spin 12s linear infinite paused}
+#sb-root.sb-default-bar .is-record-active .sb-bigcover{animation-play-state:running}
+#sb-root.sb-default-bar .sb-bigcover:before{content:'';position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 35deg,transparent,#ffffff28 18%,transparent 35%,transparent 55%,#ffffff15 72%,transparent);pointer-events:none}
+#sb-root.sb-default-bar .sb-bigcover:not(:has(img)):after{content:'s b';position:absolute;inset:22px;border-radius:50%;display:grid;place-items:center;background:var(--sb-bg);color:var(--sb-accent);font:italic 20px Georgia,serif}
+#sb-root.sb-default-bar .sb-track-head .sb-bigcover img{position:absolute;inset:17px;width:74px;height:74px;border-radius:50%;border:1px solid color-mix(in srgb,var(--sb-accent) 32%,transparent);object-fit:cover}
+#sb-root.sb-default-bar .sb-track-meta{min-width:0}
+#sb-root.sb-default-bar .sb-track-meta .sb-mt{font-size:17px!important;letter-spacing:.04em;line-height:1.5;overflow-wrap:anywhere}
+#sb-root.sb-default-bar .sb-track-meta .sb-ma{font-size:10px!important;line-height:1.8;margin-top:5px}
+#sb-root .sb-record-note{display:flex;align-items:center;gap:10px;margin:10px 0 13px;color:var(--sb-dim)}
+#sb-root .sb-record-note span{font:7px Georgia,serif;letter-spacing:.16em}
+#sb-root .sb-record-note i{flex:1;height:1px;background:color-mix(in srgb,var(--sb-accent) 25%,transparent)}
+#sb-root .sb-tone-arm{position:absolute;left:88px;top:-3px;width:33px;height:83px;z-index:2;pointer-events:none;transform-origin:21px 10px;transform:rotate(0);color:color-mix(in srgb,var(--sb-accent) 65%,var(--sb-fg));transition:transform .38s cubic-bezier(.2,.7,.3,1)}
+#sb-root .is-playing .sb-tone-arm{transform:rotate(24deg)}
+@keyframes sb-record-spin{to{transform:rotate(360deg)}}
+/* All appearance entry points use the same saved controls. */
+:where(#sb-root,#sb-splash-settings,html.sb-bar) .sb-glass-controls{display:block;min-width:0;margin:16px 0;padding:13px;border:1px solid color-mix(in srgb,currentColor 17%,transparent);border-radius:8px}
+:where(#sb-root,#sb-splash-settings,html.sb-bar) .sb-glass-controls legend{padding:0 6px;font-size:12px}
+:where(#sb-root,#sb-splash-settings,html.sb-bar) .sb-glass-controls label.sb-glass-row{display:block!important;margin:13px 0!important;width:100%}
+:where(#sb-root,#sb-splash-settings,html.sb-bar) .sb-glass-row>span{display:flex;align-items:center;justify-content:space-between;font-size:12px;line-height:1.7}
+:where(#sb-root,#sb-splash-settings,html.sb-bar) .sb-glass-controls output{font-size:11px;font-variant-numeric:tabular-nums;color:inherit}
+:is(#sb-root,#sb-splash-settings,html.sb-bar) .sb-glass-controls input[type=range]{display:block;width:100%!important;max-width:100%!important;min-width:0;height:26px;margin:7px 0 0;padding:0;border:0;accent-color:var(--sb-accent,var(--sb-bar-accent));background:transparent;cursor:ew-resize;touch-action:pan-y}
+:where(#sb-root,#sb-splash-settings,html.sb-bar) .sb-glass-controls .sb-glass-switch{display:flex;align-items:center;justify-content:space-between;margin:4px 0 10px;font-size:12px}
+:where(#sb-root,#sb-splash-settings,html.sb-bar) .sb-glass-controls p{font-size:10px;line-height:1.8;color:inherit;opacity:.7;margin:9px 0 0}
+@media(max-width:355px){#sb-root.sb-default-bar .sb-track-head{gap:12px}#sb-root.sb-default-bar .sb-track-head .sb-bigcover{width:94px!important;height:94px!important;flex-basis:94px}#sb-root.sb-default-bar .sb-track-head .sb-bigcover img{inset:14px;width:66px;height:66px}#sb-root .sb-tone-arm{left:73px}}
+@media(prefers-reduced-motion:reduce){#sb-root.sb-default-bar .sb-bigcover{animation:none!important}#sb-root .sb-tone-arm{transition:none}}
+#sb-root .sb-coaster-entry{padding:4px 21px 25px;color:var(--sb-fg)}
+#sb-root .sb-coaster-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 16px}
+#sb-root .sb-coaster-heading h3{margin:0;font-size:12px;font-weight:400;letter-spacing:.06em}
+#sb-root .sb-coaster-heading button{font-size:10px;color:var(--sb-dim);padding:5px 0;white-space:nowrap}
+#sb-root .sb-coaster-stack{position:relative;display:block;width:100%;height:152px;touch-action:pan-y;cursor:grab;border:0;background:transparent}
+#sb-root .sb-coaster-stack:active{cursor:grabbing}
+#sb-root .sb-coaster{display:flex;align-items:center;gap:10px;position:absolute;left:6%;right:6%;height:120px;top:10px;padding:14px;background:var(--sb-card);border:1px solid color-mix(in srgb,var(--sb-accent) 25%,transparent);border-radius:9px;box-shadow:1px 4px 11px #2433440d;transition:transform .28s cubic-bezier(.2,.7,.2,1);text-align:left}
+#sb-root .sb-coaster:nth-last-child(3){transform:translate(5px,12px) rotate(5deg);z-index:0}
+#sb-root .sb-coaster:nth-last-child(2){transform:translate(-5px,5px) rotate(-4deg);z-index:1}
+#sb-root .sb-coaster:last-child{transform:rotate(1deg);z-index:2}
+#sb-root .sb-coaster strong{display:block;font:400 15px/1.5 var(--sb-serif);letter-spacing:.04em;color:var(--sb-fg);overflow-wrap:anywhere}
+#sb-root .sb-coaster small{font-size:9px;line-height:1.7;margin-top:5px}
+#sb-root .sb-coaster em{display:block;font:7px Georgia,serif;color:var(--sb-dim);letter-spacing:.12em;margin-bottom:8px}
+#sb-root .sb-coaster .cup-mini-svg{width:62px;height:87px;flex:none}
+#sb-root .sb-coaster-dots{display:flex;align-items:center;gap:8px;justify-content:center;font:italic 9px Georgia,serif;color:var(--sb-dim);margin:2px 0 0}
+#sb-root .sb-coaster-dots i{width:4px;height:4px;border-radius:50%;background:var(--sb-accent);opacity:.5}
+#sb-root .sb-coaster-dots i.active{opacity:1;width:14px;border-radius:3px}
+#sb-root .sb-wine-history{padding:16px 18px 25px;color:var(--sb-fg)}
+#sb-root .sb-wine-history>header{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:0 0 15px}
+#sb-root .sb-wine-history h2{font:400 18px/1.5 var(--sb-serif);margin:0}
+#sb-root .sb-wine-history header>span{font:9px ui-monospace,monospace;color:var(--sb-dim)}
+#sb-root .sb-wine-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+#sb-root .sb-wine-card{display:block;position:relative;width:100%;min-height:147px;padding:10px 9px 9px;background:var(--sb-card);border:1px solid color-mix(in srgb,var(--sb-accent) 22%,transparent);border-radius:10px;text-align:center;overflow:hidden;content-visibility:auto;contain-intrinsic-size:auto 147px}
+#sb-root .sb-wine-card time{display:block;text-align:right;font:8px ui-monospace,monospace;color:var(--sb-dim)}
+#sb-root .sb-wine-card strong{display:block;font:400 13px/1.5 var(--sb-serif);overflow-wrap:anywhere}
+#sb-root .sb-wine-card small{font-size:9px;line-height:1.7}
+#sb-root .sb-wine-card .cup-mini-svg{width:72px;height:82px;margin:4px auto;display:block}
+#sb-root :is(.sb-coaster,.sb-wine-card,.sb-wine-overview) .glass-outline{fill:#ffffff0b;stroke:color-mix(in srgb,var(--sb-accent) 70%,var(--sb-dim));stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#sb-root :is(.sb-coaster,.sb-wine-card,.sb-wine-overview) .stem-line{fill:none;stroke-width:1.8}
+#sb-root :is(.sb-coaster,.sb-wine-card,.sb-wine-overview) .cup-mini-svg>ellipse{fill:none;stroke:var(--sb-accent);stroke-width:1.8}
+#sb-root .sb-history-end{font-size:11px;color:var(--sb-dim);text-align:center;margin-top:20px}
+#sb-root .sb-wine-dialog{pointer-events:auto;box-sizing:border-box;width:min(620px,calc(100vw - 24px));max-height:calc(100dvh - 32px);margin:auto;padding:0;border:1px solid color-mix(in srgb,var(--sb-accent) 30%,transparent);border-radius:14px;background:var(--sb-bg);color:var(--sb-fg);box-shadow:0 20px 60px #0003;overflow:auto}
+#sb-root .sb-wine-dialog::backdrop{background:#08131565}
+#sb-root .sb-wine-dialog>header{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:22px 25px 15px;border-bottom:1px solid var(--sb-line)}
+#sb-root .sb-wine-dialog header h2{font:400 22px/1.5 var(--sb-serif);margin:5px 0 0}
+#sb-root .sb-wine-dialog header small{font:8px/1.5 ui-monospace,monospace;letter-spacing:.12em;color:var(--sb-dim)}
+#sb-root .sb-wine-dialog header button{min-width:40px;min-height:40px;font-size:26px}
+#sb-root .sb-wine-detail{padding:18px 25px 25px;font-size:12px;line-height:1.9}
+#sb-root .sb-wine-detail p{white-space:pre-wrap;overflow-wrap:anywhere;margin:6px 0 12px}
+#sb-root .sb-wine-overview{display:grid;grid-template-columns:95px minmax(0,1fr);gap:20px;align-items:center}
+#sb-root .sb-wine-overview>.cup-mini-svg{width:95px;height:125px;overflow:visible}
+#sb-root .sb-wine-overview dl{display:grid;grid-template-columns:44px minmax(0,1fr);gap:6px;font-size:11px;margin:0}
+#sb-root .sb-wine-overview dt{color:var(--sb-dim)}
+#sb-root .sb-wine-overview dd{margin:0;overflow-wrap:anywhere}
+#sb-root .sb-wine-detail details{border-top:1px solid color-mix(in srgb,var(--sb-accent) 18%,transparent);margin-top:13px}
+#sb-root .sb-wine-detail summary{padding:12px 0;cursor:pointer;font-size:14px;color:var(--sb-accent)}
+#sb-root .sb-wine-detail h4{font-size:12px;font-weight:400;margin:5px 0}
+#sb-root .sb-history-field{border-top:1px dotted color-mix(in srgb,var(--sb-accent) 18%,transparent);padding-top:8px}
+#sb-root .sb-legacy-history{margin:15px 20px;font-size:11px;color:var(--sb-dim)}
+@media(prefers-reduced-motion:reduce){#sb-root .sb-coaster{transition:none}}
+#sb-root.sb-default-bar .sb-cocktail .main-toggle>span{position:static;margin-left:auto;font:13px Georgia,serif}

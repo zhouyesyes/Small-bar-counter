@@ -1,3 +1,4 @@
+import {glassControlsHtml,bindGlassControls,syncGlassControls} from './glass.mjs';
 import { drawerLimits, drawerWidth, setDrawerWidth, notifyDrawerSize } from './drawer-size.mjs';
 import { installTypography } from './typography.mjs';
 import { artwork, artworkMode, personalProfile, landingArtwork } from './artwork.mjs';
@@ -81,6 +82,7 @@ window.addEventListener('small-bar-drawer-size',syncDrawerWidthControls);
 window.addEventListener('resize',syncDrawerWidthControls);
 function syncAppearancePanel() {
     syncDrawerWidthControls();
+    if(panel)syncGlassControls(panel,settings);
     if (!panel?.isConnected) return;
     for (const button of panel.querySelectorAll('.sb-color-launch')) {
         const color = readAppearanceColors(settings, button.dataset.mode)[button.dataset.color];
@@ -110,6 +112,7 @@ function paint() {
     if (!root) return;
     applyPalette(root, settings);
     root.querySelector('[data-signature]').value = cfg().signature ?? 'yesyes';
+    root.querySelector('[data-signature-ink]').textContent = root.querySelector('[data-signature]').value;
     root.querySelector('[data-remember]').checked = cfg().remember === true;
     root.querySelector('[data-save-label]').textContent = 'keep my tab open';
     root.querySelector('[data-quote]').textContent = cfg().quote ?? 'a quiet seat, kept for you';
@@ -184,7 +187,7 @@ export function startSplash(force = false) {
     <div class="sb-ticket-frame"><section class="sb-ticket"><div class="sb-ticket-head" role="button" tabindex="0" aria-expanded="false" aria-controls="sb-ticket-details" aria-label="Expand your tab"><div class="sb-ticket-cover"><img data-image="cover" alt="" hidden><span>SMALL BAR</span><span>NO.0137</span></div>
     <div class="sb-ticket-profile"><div class="sb-ticket-avatar"><img data-image="avatar" alt="Your avatar" hidden></div><p data-quote></p><span class="sb-unfold-mark" aria-hidden="true">⌄</span></div></div>
     <div class="sb-ticket-body" id="sb-ticket-details" aria-hidden="true" inert hidden><p class="sb-tab-title">HOUSE TAB</p><dl><div><dt>SEAT</dt><dd data-table></dd></div><div><dt>DRINK</dt><dd data-order></dd></div><div><dt>DATE</dt><dd data-date>${stamp}</dd></div></dl>
-    <label class="sb-sign-label">SIGNED, WITH LOVE<span class="sb-sign-field"><span aria-hidden="true">×</span><input data-signature aria-label="Signature" maxlength="60" autocomplete="nickname"></span></label><div class="sb-stamp" aria-hidden="true">REGULAR<br>SINCE<br>${date.getFullYear()}</div>
+    <label class="sb-sign-label">SIGNED, WITH LOVE<span class="sb-sign-field"><span aria-hidden="true">×</span><span class="sb-sign-writing"><input data-signature aria-label="Signature" maxlength="60" autocomplete="nickname"><span data-signature-ink aria-hidden="true"></span></span></span></label><div class="sb-stamp" aria-hidden="true">REGULAR<br>SINCE<br>${date.getFullYear()}</div>
     <label class="sb-remember"><input data-remember type="checkbox"><span data-save-label aria-live="polite">keep my tab open</span></label></div><div class="sb-ticket-actions"><footer><div class="sb-barcode" aria-hidden="true"><i></i><span>0137 ${date.getFullYear()}</span></div><div class="sb-footer-actions"><button class="sb-pour">pour me one</button><button class="sb-pass">only passing by →</button></div></footer></div></section></div>
     <section class="sb-pouring" hidden><svg viewBox="0 0 48 80" aria-hidden="true"><defs><clipPath id="sb-glass-clip"><path d="M9 8H39V20C39 40 9 40 9 20Z"/></clipPath></defs><g clip-path="url(#sb-glass-clip)"><rect class="sb-wine" x="8" y="8" width="32" height="30"/></g><path d="M9 8H39V20C39 40 9 40 9 20ZM24 36V70M15 70H33" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg><div><p data-status aria-live="polite">pouring your usual</p><small data-percent></small><div class="sb-progress" role="progressbar" aria-label="Small Bar startup stages" aria-valuemin="0" aria-valuemax="100"><i></i></div><small class="sb-progress-note">preparing small bar</small></div></section>`;
     document.documentElement.appendChild(root); paint();
@@ -210,7 +213,7 @@ export function startSplash(force = false) {
         if (remember.checked) s.signature = signature.value.trim();
         persist(); saveLabel.textContent = 'keep my tab open';
     };
-    signature.oninput = () => { remember.checked = false; saveLabel.textContent = 'keep my tab open'; };
+    signature.oninput = () => { root.querySelector('[data-signature-ink]').textContent = signature.value; remember.checked = false; saveLabel.textContent = 'keep my tab open'; };
     root.querySelector('.sb-pour').onclick = () => {
         const s = (settings.splash ??= {}); s.remember = root.querySelector('[data-remember]').checked;
         if (s.remember) s.signature = signature.value.trim();
@@ -239,12 +242,14 @@ export function openSplashSettings() {
     <label>显示开场<input type="checkbox" data-key="enabled" ${s.enabled !== false ? 'checked' : ''}></label>
     <label>美化明暗<select data-theme>${['auto','light','dark'].map(x=>`<option ${settings.theme === x ? 'selected' : ''}>${x}</option>`).join('')}</select></label>
     <label><span data-width-device>抽屉宽度</span><span class="sb-width-input"><input type="number" data-drawer-width aria-label="抽屉宽度（像素）" step="1" value="${drawerWidth(settings)}"> px</span></label><p>拖动抽屉与聊天之间的分隔线也能调宽。手机与平板分别记住，修改后自动保存。</p>
+    ${glassControlsHtml(settings)}
     ${['light','dark'].map(mode => `<fieldset class="sb-palette-line"><legend>${mode === 'light' ? '日间配色' : '夜间配色'}</legend>${['bg','accent'].map(key => { const color = s.colors[mode]?.[key] || defaults[mode][key]; return `<div class="sb-color-setting"><span>${key === 'bg' ? '背景色' : '辅助色'}</span><button type="button" class="sb-color-launch" data-mode="${mode}" data-color="${key}" data-value="${esc(color)}" aria-label="调整${mode === 'light' ? '日间' : '夜间'}${key === 'bg' ? '背景色' : '辅助色'}"><span style="background:${esc(color)}"></span><code>${esc(color.toUpperCase())}</code></button></div>`; }).join('')}</fieldset>`).join('')}
     <fieldset><legend>卡片文字 · CARD DETAILS</legend><p>修改后自动保存，下次打开也会保留。</p>
     ${[['quote','头像旁的小字','a quiet seat, kept for you'],['table','座位 · SEAT','by the window'],['order','酒单 · DRINK','the usual'],['date','日期 · DATE（留空用今天）',''],['signature','底部署名 · SIGNED, WITH LOVE','yesyes']].map(([key,label,value])=>`<label>${label}<input type="text" data-key="${key}" maxlength="${key === 'quote' ? 120 : 60}" value="${esc(s[key] ?? value)}"></label>`).join('')}</fieldset>
     ${['light','dark'].map(mode => `<fieldset class="sb-image-settings"><legend>${mode === 'light' ? '日间图片' : '夜间图片'}</legend>${[['cover','横图'],['avatar','头像']].map(([key,label])=>`<label><span>${label}</span><img data-image-preview="${key}" data-mode="${mode}" alt="当前${label}"><input type="file" accept="image/*" data-upload="${key}" data-image-mode="${mode}"></label><button data-clear="${key}" data-image-mode="${mode}">恢复默认${label}</button>`).join('')}</fieldset>`).join('')}
     <p class="sb-upload-status" role="status"></p><p>私人照片随酒馆扩展设置保存，不进入仓库。卡片上的 keep my tab open 会立即保存当前署名；修改署名后，再勾选即可重新保存。</p><button data-preview>Preview opening</button></div>`;
     document.documentElement.appendChild(panel); applyPalette(panel, settings);syncAppearancePanel();
+    bindGlassControls(panel,{getSettings:()=>settings,save:persist});
     let closeColorPicker;
     const close = () => { closeColorPicker?.(); panel.remove(); panel = null; if (focus?.isConnected) focus.focus({preventScroll:true}); };
     panel.querySelectorAll('.sb-color-launch').forEach(button => button.onclick = () => {
@@ -325,8 +330,12 @@ const styles = `
 #sb-splash dd{color:color-mix(in srgb,var(--sb-fg) 82%,var(--sb-card))}
 #sb-splash .sb-sign-label{font-size:11px;letter-spacing:.2em;color:color-mix(in srgb,var(--sb-fg) 45%,var(--sb-card))}
 #sb-splash .sb-sign-field{display:flex;align-items:center;gap:10px;border-bottom:1px solid color-mix(in srgb,var(--sb-fg) 40%,var(--sb-card));margin-top:2px;position:relative;z-index:1}
-#sb-splash .sb-sign-field>span{font-size:17px;color:color-mix(in srgb,var(--sb-fg) 36%,var(--sb-card))}
-#sb-splash [data-signature]{font-size:23px;line-height:1.35;border:0;padding:4px 0 5px;letter-spacing:.08em;caret-color:var(--sb-accent);color:color-mix(in srgb,var(--sb-fg) 88%,var(--sb-card))}
+#sb-splash .sb-sign-field>span:not(.sb-sign-writing){font-size:17px;color:color-mix(in srgb,var(--sb-fg) 36%,var(--sb-card))}
+#sb-splash [data-signature]{min-width:0;flex:1;height:auto;font-size:23px;line-height:1.8;border:0;padding:8px 4px 12px;letter-spacing:.08em;caret-color:var(--sb-accent);color:color-mix(in srgb,var(--sb-fg) 88%,var(--sb-card))}
+/* Draw the script outside the native input's internally clipped glyph viewport. */
+#sb-splash .sb-sign-writing{position:relative;display:block;flex:1;min-width:0;overflow:visible}
+#sb-splash .sb-sign-writing [data-signature]{width:100%;color:transparent!important;-webkit-text-fill-color:transparent;caret-color:var(--sb-accent)}
+#sb-splash [data-signature-ink]{position:absolute;left:4px;right:4px;top:8px;pointer-events:none;white-space:pre;overflow:visible;font-family:var(--sb-type-script);font-size:calc(22px / var(--sb-ticket-scale,1));font-weight:400;line-height:1.8;letter-spacing:.08em;color:color-mix(in srgb,var(--sb-fg) 88%,var(--sb-card))}
 #sb-splash .sb-stamp{right:31px;bottom:118px;width:110px;height:110px;padding-top:23px;font-size:11px;line-height:18px;outline-offset:-8px;opacity:.26}
 #sb-splash .sb-remember{font-size:12px;margin:11px 0 19px;gap:10px;letter-spacing:.08em;color:color-mix(in srgb,var(--sb-fg) 54%,var(--sb-card))}
 #sb-splash input[type=checkbox]{appearance:none;-webkit-appearance:none;flex:none;width:15px;height:15px;border:1px solid color-mix(in srgb,var(--sb-fg) 42%,var(--sb-card));border-radius:2px;background:transparent;position:relative}

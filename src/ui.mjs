@@ -1,3 +1,5 @@
+import {createCocktailHistory} from './cocktail-history.mjs';
+import {glassControlsHtml,bindGlassControls} from './glass.mjs';
 import { createCocktailPanel } from './cocktail-panel.mjs';
 import { cocktailProtocol, cocktailFromState, parseCocktail } from './cocktail-state.mjs';
 import { bindDrawerSize, applyDrawerSize } from './drawer-size.mjs';
@@ -53,7 +55,7 @@ export function createUI(host) {
     installTypography();
     const widePanel = matchMedia('(min-width: 768px)');
     const v = { drawer: false, tab: 'posts', diaryId: '', phone: false, view: 'home', plus: false, momentsN: 10, xN: 10, busy: false, flip: false, menuFor: '', edit: null };
-    let cocktail, manualRequest=0;
+    let cocktail, archive, manualRequest=0;
     let root, catBlink = 0, lastHtml = '', lyricView = null, lyricFrame = 0, lyricTickAt = 0;
     // 音乐：歌单存在扩展设置里（不跟聊天走）；播放器不随界面重画
     function musicState() {
@@ -83,6 +85,7 @@ export function createUI(host) {
     function patchMusic() {
         if (!root) return;
         root.querySelectorAll('.sb-mplay').forEach(el => { el.innerHTML = mi(player.playing() ? 'pause' : 'play'); });
+        root.querySelectorAll('.sb-player-main').forEach(el=>el.classList.toggle('is-playing',player.playing()));
         root.querySelectorAll('.sb-wplay').forEach(el => { el.innerHTML = mi(player.playing() ? 'pause' : 'play'); });
         tickMusic();
     }
@@ -101,6 +104,7 @@ export function createUI(host) {
 
     function syncMusicAnimation() {
         const visible = root?.isConnected && root.querySelector('.sb-music') && !document.hidden && !player.audio.paused;
+        root?.querySelectorAll('.sb-player-main').forEach(el=>el.classList.toggle('is-record-active',!!visible));
         if (visible && !lyricFrame) lyricFrame = requestAnimationFrame(animateMusic);
         else if (!visible && lyricFrame) { cancelAnimationFrame(lyricFrame); lyricFrame = 0; }
     }
@@ -116,6 +120,8 @@ export function createUI(host) {
         root = document.createElement('div');
         root.id = 'sb-root';
         cocktail=createCocktailPanel(root,{...host,cocktailBusy:()=>v.busy==='cocktail'},{render,generate:replan=>generate(replan?'cocktail-replan':'cocktail')});
+        archive=createCocktailHistory(root,{...host,openHistory:value=>{v.nowBook=value;}},{render});
+        bindGlassControls(root,{getSettings:host.settings,save:()=>host.saveSettings()});
         bindDrawerSize(root,{settings:()=>host.settings(),save:()=>host.saveSettings()});
         widePanel.addEventListener('change', () => render());
         document.documentElement.appendChild(root); // 不放进 body：酒馆主题可能给 body 加变形，会把固定定位困住
@@ -234,9 +240,9 @@ export function createUI(host) {
         const drawerVisible = v.drawer || docked;
         const nowOpen = (drawerVisible ? 'd' : '') + (v.phone ? 'p' : '');
         root.dataset.open = nowOpen;
-        const cls = `sb-${theme()} sb-era-${era}` + ((s.barStyle || 'folio') === 'folio' ? ' sb-folio-phone' : '') + (nowOpen && nowOpen !== wasOpen ? ' sb-anim' : '');
+        const cls = `sb-${theme()} sb-era-${era}` + ((s.barStyle || 'folio') === 'folio' ? ' sb-folio-phone' : ' sb-default-bar') + (nowOpen && nowOpen !== wasOpen ? ' sb-anim' : '');
         if (root.className !== cls) { root.className = cls; lastHtml = null; }
-        if (!s.enabled) { cocktail?.detach(); root.innerHTML = ''; lastHtml = ''; return; }
+        if (!s.enabled) { cocktail?.detach();archive?.detach(); root.innerHTML = ''; lastHtml = ''; return; }
         const keepScroll = [...root.querySelectorAll('[data-keep]')].map(el => [el.dataset.keep, el.scrollTop]);
         const html = (s.cat !== false && !drawerVisible && !v.phone ? `<button class="sb-cat" style="top:${Number(s.catTop) || 46}%" aria-label="打开小吧台（上下拖可以挪位置）"></button>` : '')
             + (drawerVisible ? (host.hasChar() ? drawerHtml(era) : landingHtml(false)) : '')
@@ -245,7 +251,7 @@ export function createUI(host) {
         if (html === lastHtml) return; // 什么都没变：不重画，进新聊天时不来回闪
         lastHtml = html;
         lyricView = root.querySelector('.sb-lyr') || lyricView;
-        cocktail?.detach();
+        cocktail?.detach();archive?.detach();
         root.innerHTML = html;
         applyDrawerSize(root,s);
         const lyricSlot = root.querySelector('.sb-lyr');
@@ -260,7 +266,7 @@ export function createUI(host) {
         const msgs = root.querySelector('.sb-msgs'); if (msgs && v.stick) { msgs.scrollTop = msgs.scrollHeight; }
         v.stick = false;
         if (v.phone && v.view === 'set-reply') countTokens();
-        cocktail?.mount();
+        cocktail?.mount();archive?.mount();
         tickMusic(); syncMusicAnimation();
     }
 
@@ -305,7 +311,7 @@ export function createUI(host) {
         let body = '';
         const original = host.settings().barStyle === 'default';
         if (original && v.tab === 'now') v.tab = 'posts';
-        if (v.tab === 'posts') body = (original ? (v.nowBook ? nowBookHtml() : nowHtml(st)) : postsHtml(st, him)) + musicHtml(st);
+        if (v.tab === 'posts') body = original ? (v.nowBook ? nowBookHtml() : nowHtml(st)+musicHtml(st)+archive.entryHtml()) : postsHtml(st,him)+musicHtml(st);
         if (v.tab === 'now') body = v.nowBook ? nowBookHtml() : nowHtml(st);
         if (v.tab === 'diary') body = v.diaryId ? diaryOneHtml(st, him) : diaryListHtml(st);
         const tabsNav = `<nav class="sb-tabs">${TAB_KEYS.filter(k=>!original||k!=='now').map(k => { const i=TAB_KEYS.indexOf(k); return `<button data-act="tab" data-tab="${k}" class="${v.tab === k ? 'on' : ''}">${original && k === 'posts' ? '此刻' : labels[i]}${k === 'phone' && host.unread() ? ` <b class="sb-badge">${host.unread()}</b>` : ''}</button>`; }).join('')}</nav>`;
@@ -328,7 +334,7 @@ export function createUI(host) {
  <div class="sb-home-words"><div class="sb-name">${esc(him.name)}</div>
  ${him.handle ? `<div class="sb-handle">${esc(him.handle)}</div>` : ''}
  ${him.sign || n.sign ? `<div class="sb-sign">${esc(him.sign || n.sign)}</div>` : ''}</div></div>
- <div class="sb-meta">${[n.time, n.weather].filter(Boolean).map(x => `<span>${esc(x)}</span>`).join('') || '还没有状态 · 等TA下一次回复'}</div>
+ ${original?`<div class="sb-wine-bridge"><span>ON THE HOUSE</span><i></i><b>${esc(host.cocktailState?.().drink?.name||'为此刻留一杯')}</b></div>`:`<div class="sb-meta">${[n.time,n.weather].filter(Boolean).map(x=>`<span>${esc(x)}</span>`).join('')||'还没有状态 · 等TA下一次回复'}</div>`}
  ${body}</div>
  ${tabsNav}
 </div>`;
@@ -464,15 +470,16 @@ export function createUI(host) {
     function musicHtml(st) {
         const m = st.music, t = player.current(), list = host.settings().music?.list || [], mode = host.settings().music?.mode || 'all';
         const ms = musicState(), names = Object.keys(ms.lists);
-        return `<section class="sb-music${ms.compact ? ' is-mini' : ''}"><div class="sb-player-main">
- <button class="sb-cap sb-music-toggle" data-act="music-compact" aria-expanded="${!ms.compact}" title="展开或收起音乐面板">${t ? 'now playing' : 'music'} · ${Wd().music}<span class="sb-music-caret" aria-hidden="true">${ms.compact ? '⌄' : '⌃'}</span></button>
+        return `<section class="sb-music${ms.compact ? ' is-mini' : ''}"><div class="sb-player-main${player.playing()?' is-playing':''}">
+ <button class="sb-cap sb-music-toggle" data-act="music-compact" aria-expanded="${!ms.compact}" title="展开或收起音乐面板">${host.settings().barStyle==='default'?'吧台今日选曲':`${t?'now playing':'music'} · ${Wd().music}`}<span class="sb-music-caret" aria-hidden="true">${ms.compact ? '⌄' : '⌃'}</span></button>
  ${t ? `<div class="sb-mstate"><span class="sb-mstxt" role="status">${esc(v.mstate || '')}</span> <button class="sb-link" data-act="mskip">换个来源</button></div>` : ''}
- <div class="sb-track-head"><div class="sb-bigcover">${t ? coverImg(t, 'sb-bigimg') : ''}</div><div class="sb-track-meta">
+ <div class="sb-track-head"><div class="sb-bigcover">${t ? coverImg(t, 'sb-bigimg') : ''}</div>${host.settings().barStyle==='default'?`<svg class="sb-tone-arm" viewBox="0 0 33 83" aria-hidden="true"><path d="M21 11V48L10 68" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><circle cx="21" cy="11" r="6" fill="var(--sb-bg)" stroke="currentColor" stroke-width="2"/><path d="m8 65 6 3-5 10-6-3z" fill="currentColor"/></svg>`:''}<div class="sb-track-meta">
  <div class="sb-mt">${esc(t?.title || '还没放歌')}</div>
  <div class="sb-ma">${esc(t?.artist || '搜一首喜欢的歌')}</div></div></div>
  <div class="sb-lyr" aria-label="滚动歌词"></div>
 
  ${t ? `<input class="sb-mbar" data-mseek type="range" min="0" max="1000" step="1" value="0" aria-label="播放进度"><div class="sb-mtime">0:00 / 0:00</div>` : ''}
+ ${host.settings().barStyle==='default'?'<div class="sb-record-note" aria-hidden="true"><span>SIDE A</span><i></i><span>33⅓ RPM</span></div>':''}
  <div class="sb-mctl"><button data-act="mmode" title="${{ all: '列表循环', one: '单曲循环', shuffle: '随机' }[mode]}">${mi(mode)}</button><button data-act="mprev" aria-label="上一首">${mi('prev')}</button><button class="sb-mplay" data-act="mtoggle" aria-label="播放">${mi(player.playing() ? 'pause' : 'play')}</button><button data-act="mnext" aria-label="下一首">${mi('next')}</button><button data-act="mlist" class="${v.mlist ? 'on' : ''}" aria-label="歌单">${mi('list')}</button></div>
 
  </div><div class="sb-music-extras" ${ms.compact ? 'hidden' : ''}>
@@ -543,6 +550,12 @@ export function createUI(host) {
     }
     // 此刻的本子：每一轮的此刻一页，新的在上面，按日子分开
     function nowBookHtml() {
+        if(host.settings().barStyle!=='default')return legacyNowBookHtml();
+        const state=host.state(),wineIds=new Set((state.cocktailLog||[]).map(row=>row.sourceId));
+        const hasLegacy=(state.nowLog||[]).some(row=>!wineIds.has(row.id));
+        return archive.html()+(hasLegacy?'<details class="sb-legacy-history"><summary>早前的文字记录</summary>'+legacyNowBookHtml()+'</details>':'');
+    }
+    function legacyNowBookHtml() {
         const st = host.state();
         const hiddenNow = host.meta().hidden || {};
         const list = st.nowLog.filter(p => !hiddenNow[p.id]).reverse().slice(0, v.bookN || 20);
@@ -958,7 +971,7 @@ export function createUI(host) {
  <div class="sb-sh">外观</div><div class="sb-sgrp">
   <label class="sb-srow"><span>美化时代</span><select data-cset="era">${[['auto', eraName.startsWith('自动') ? eraName : '自动'], ['modern', '现代'], ['minguo', '民国'], ['ancient', '古风']].map(([k, n]) => `<option value="${k}" ${(c.era || 'auto') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
   <label class="sb-srow"><span>明暗模式</span><select data-set="phoneTheme">${[['auto','跟美化'],['light','浅'],['dark','深']].map(([k,n])=>`<option value="${k}" ${(s.phoneTheme||'auto')===k?'selected':''}>${n}</option>`).join('')}</select></label>
- </div><div class="sb-sh">其他</div><div class="sb-sgrp">
+ ${glassControlsHtml(s)}</div><div class="sb-sh">其他</div><div class="sb-sgrp">
   <label class="sb-srow"><span>小手机怎么打开<small>抽屉里：嵌在抽屉那一格；浮窗：浮在聊天上，能拖，只有 × 关</small></span><select data-set="phoneMode">${[['drawer', '抽屉里'], ['float', '浮窗']].map(([k, n]) => `<option value="${k}" ${(s.phoneMode || 'drawer') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
   ${toggle('小猫入口', 'cat', s.cat !== false)}
   <label class="sb-srow"><span>小猫高度<small>离屏幕顶上的百分比</small></span><input type="number" min="10" max="85" class="sb-num" data-set="catTop" value="${Number(s.catTop) || 46}"></label>
@@ -1633,7 +1646,7 @@ export function createUI(host) {
             else { v.drawer = true; v.tab = 'phone'; v.phone = false; }
             render();
         },
-        reset: ({ keepOpen = false } = {}) => { manualRequest++;cocktail?.reset(); if (!keepOpen) { v.drawer = false; v.phone = false; } v.tab = 'posts'; v.view = 'home'; v.diaryId = ''; v.edit = null; v.menuFor = ''; v.busy = false; render(); },
+        reset: ({ keepOpen = false } = {}) => { manualRequest++;cocktail?.reset();archive?.reset(); if (!keepOpen) { v.drawer = false; v.phone = false; } v.tab = 'posts';v.nowBook=false; v.view = 'home'; v.diaryId = ''; v.edit = null; v.menuFor = ''; v.busy = false; render(); },
         isOpen: () => v.drawer || v.phone || document.documentElement.classList.contains('sb-panel-docked'),
     };
 }

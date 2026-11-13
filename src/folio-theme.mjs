@@ -1,3 +1,4 @@
+import {glassControlsHtml,bindGlassControls} from './glass.mjs';
 import { normalizeHex, openColorPicker } from './color-picker.mjs';
 import { createAppearancePreview, isAppearancePreview } from './appearance-api.mjs';
 import { paths as iconPaths, names as iconNames } from './folio-icons.mjs';
@@ -231,7 +232,8 @@ function format(root, s) {
 
 function syncAppearance(root) {
     if(!host.appearance)return;let box=$('.sb-shared-appearance',root);
-    if(!box){box=own('sb-shared-appearance',`<div class="sb-folio-appearance-title">小吧台 · 共用美化</div><label>美化样式<select data-folio-setting="barStyle"><option value="folio">闲庭手记</option><option value="default">原版酒吧</option></select></label><label>明暗模式<select data-folio-setting="theme"><option value="auto">跟酒馆</option><option value="light">日间</option><option value="dark">夜间</option></select></label><div class="sb-folio-colors">${['light','dark'].map(mode=>`<fieldset><legend>${mode==='light'?'日间':'夜间'}</legend>${['bg','accent'].map(key=>`<div data-folio-slot="${key}" data-mode="${mode}"><button type="button" data-folio-color="${key}" data-mode="${mode}"><span>${key==='bg'?'主色调':'辅助色'}</span><i></i><code></code></button></div>`).join('')}</fieldset>`).join('')}</div><button type="button" data-folio-open>开场、图片与小吧台外观 ›</button>`);const head=$('.sb-head',root);if(head)head.after(box);else root.prepend(box);}
+    if(!box){box=own('sb-shared-appearance',`<div class="sb-folio-appearance-title">小吧台 · 共用美化</div><label>美化样式<select data-folio-setting="barStyle"><option value="folio">闲庭手记</option><option value="default">原版酒吧</option></select></label><label>明暗模式<select data-folio-setting="theme"><option value="auto">跟酒馆</option><option value="light">日间</option><option value="dark">夜间</option></select></label><div class="sb-folio-colors">${['light','dark'].map(mode=>`<fieldset><legend>${mode==='light'?'日间':'夜间'}</legend>${['bg','accent'].map(key=>`<div data-folio-slot="${key}" data-mode="${mode}"><button type="button" data-folio-color="${key}" data-mode="${mode}"><span>${key==='bg'?'主色调':'辅助色'}</span><i></i><code></code></button></div>`).join('')}</fieldset>`).join('')}</div>${glassControlsHtml(settings)}<button type="button" data-folio-open>开场、图片与小吧台外观 ›</button>`);const head=$('.sb-head',root);if(head)head.after(box);else root.prepend(box);}
+    bindGlassControls(box,{getSettings:()=>settings,save:()=>host.setSettings?.(()=>{})});
     if(!isAppearancePreview(settings))nativeControls.sync(root,box);
     for(const key of ['barStyle','theme']){const el=$(`[data-folio-setting="${key}"]`,box);el.value=settings[key]||(key==='barStyle'?'folio':'auto');}
     $$('[data-folio-color]',box).forEach(b=>{const c=host.appearance.get(b.dataset.mode)[b.dataset.folioColor];b.dataset.value=c;$('i',b).style.backgroundColor=c;text($('code',b),c.toUpperCase());});

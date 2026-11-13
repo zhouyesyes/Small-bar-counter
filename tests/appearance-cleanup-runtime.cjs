@@ -9,7 +9,7 @@ const{chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
  });
  await p.evaluate(()=>openLegacy());
  await p.evaluate(()=>{
-  if(!document.querySelector('[data-key=pageWidth]').closest('label').textContent.includes('小吧台宽度'))throw Error('width label');
+  if(!document.querySelector('[data-drawer-width]').closest('label').textContent.includes('抽屉宽度'))throw Error('width label');
   for(const line of document.querySelectorAll('#sb-splash-settings .sb-palette-line')){const labels=[...line.querySelectorAll('.sb-color-setting')].map(n=>n.getBoundingClientRect());if(Math.abs(labels[0].top-labels[1].top)>1)throw Error('day/night colors must each occupy one row');}
   if(document.querySelectorAll('[data-image-preview]').length!==4)throw Error('day/night thumbnails missing');
  });

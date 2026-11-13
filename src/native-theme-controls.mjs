@@ -79,7 +79,9 @@ export function createNativeThemeControls({ move, attribute, text, openColor, ap
     }
     function commit(mode, key, color) {
         const binding = bindings.get(key);
-        if (!binding) return false;
+        // Binding tracks the canonical active mode; color previews may temporarily
+        // change currentMode(), but must not write an inactive palette to the host.
+        if (!binding || mode !== binding.mode) return false;
         const previousMode = binding.mode; binding.mode = mode;
         // Native toolcool's setter emits the same change event as its original popup.
         try {

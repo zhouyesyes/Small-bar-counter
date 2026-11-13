@@ -55,12 +55,13 @@ const pics = v => (v || '').replace(/^(照片|图片|图)\s*[:：]?/, '').split(
 
 // 把整段聊天（只看他的楼）里的状态段按顺序叠起来，得到现在的样子
 // msgs: [{ id, raw, at }]，id 是这一楼稳定的编号（发出时间 + 第几页回复），at 是这一楼的时间（毫秒，排先后用）
-export function buildState(msgs) {
+export function buildState(msgs, {history=true}={}) {
     const st = {
-        cocktails: {}, now: {}, nowLog: [], posts: [], moments: [], diary: [], memo: [], music: null, xposts: [], xfeed: [], weibo: [], hot: [], photos: [], freq: [], blockedMe: false, wechat: [], npcComments: [], replies: [], cover: '',
+        cocktails: {}, cocktailLog: [], now: {}, nowLog: [], posts: [], moments: [], diary: [], memo: [], music: null, xposts: [], xfeed: [], weibo: [], hot: [], photos: [], freq: [], blockedMe: false, wechat: [], npcComments: [], replies: [], cover: '',
         likes: {}, // 谁点了赞：帖子 id → [名字]（TA按关系写的，界面不自己猜）
     };
-    for (const { id, raw, at = 0 } of msgs) {
+    const historyIndex=new Map();
+    for (const [messageIndex, { id, raw, at = 0 }] of msgs.entries()) {
         if (!raw) continue;
         const b = parseBlock(raw);
         const n = st.now;
@@ -71,6 +72,14 @@ export function buildState(msgs) {
             if (!candidate) continue;
             candidate.sourceId = id;
             st.cocktails[candidate.mode] = candidate;
+            // Keep small historical summaries. Rebuild the selected reply only when opened.
+            if(history){const entry={id:id+':'+candidate.mode,sourceId:id,mode:candidate.mode,at,
+                date:candidate.calendar.date||candidate.scene.storyDate||'',time:candidate.scene.storyTime||'',
+                drink:{name:candidate.drink.name,cupType:candidate.drink.cupType,colors:[...(candidate.drink.colors||['#d6a16c','#a86454'])]},
+                mood:candidate.emotion.visibleMood||''};
+            Object.defineProperty(entry,'snapshot',{get:()=>buildState(msgs.slice(0,messageIndex+1),{history:false}).cocktails[candidate.mode]});
+            const previous=historyIndex.get(entry.id);
+            if(previous===undefined){historyIndex.set(entry.id,st.cocktailLog.length);st.cocktailLog.push(entry);}else st.cocktailLog[previous]=entry;}
             if (candidate.mode === 'default') {
                 const pairs = { time: candidate.scene.storyDate, weather: candidate.scene.weather, where: candidate.scene.location,
                     wear: candidate.gestures.clothing, want: candidate.emotion.want,

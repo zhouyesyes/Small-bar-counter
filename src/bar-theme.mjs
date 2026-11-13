@@ -1,3 +1,4 @@
+import {applyChatGlass} from './glass.mjs';
 import { syncHelperDialogs, restoreHelperDialogs } from './helper-dialogs.mjs';
 import { installTypography } from './typography.mjs';
 // 吧台美化（docs/bar-theme.md 第 1 批）：总开关、酒馆颜色跟小吧台调色走、顶栏九个按钮换成细线小物件
@@ -77,6 +78,7 @@ let getCtx = () => null;
 let currentSettings;
 export function applyBarTheme(settings, ctx, adapter) {
     currentSettings=settings;
+    applyChatGlass(settings);
     installTypography();
     configureFolio(settings, adapter);
     if (ctx) getCtx = ctx;
@@ -105,7 +107,10 @@ export function applyBarTheme(settings, ctx, adapter) {
     if (!observer) {
         // 她在酒馆「用户设置」里换主题、改颜色时，酒馆会改 <html> 的 style：跟着重算一次（深浅、透明度）
         let t = 0;
-        observer = new MutationObserver(() => { clearTimeout(t); t = setTimeout(() => applyBarTheme(currentSettings), 80); });
+        // Our glass and drawer variables are presentation updates, not host theme changes.
+        const hostSignature=()=>Array.from(html.style).filter(key=>!key.startsWith('--sb-')).sort().map(key=>key+':'+html.style.getPropertyValue(key)).join(';');
+        let previousHostStyle=hostSignature();
+        observer = new MutationObserver(() => {const signature=hostSignature();if(signature===previousHostStyle)return;previousHostStyle=signature;clearTimeout(t);t=setTimeout(()=>applyBarTheme(currentSettings),80);});
         observer.observe(html, { attributes: true, attributeFilter: ['style'] });
         media = matchMedia('(prefers-color-scheme: dark)'); media.sb = () => applyBarTheme(currentSettings);
         media.addEventListener('change', media.sb);
