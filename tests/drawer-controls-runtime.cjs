@@ -18,7 +18,9 @@ assert(await p.locator('#sb-splash-settings .sb-custom').evaluate(n=>{const r=n.
 const input=p.locator('[data-drawer-width]');await input.fill('390');await input.press('Tab');
 assert.equal(await p.locator('#sb-root .sb-drawer').evaluate(n=>Math.round(n.getBoundingClientRect().width)),390);
 await p.locator('#sb-splash-settings [data-close]').click();
-const handle=p.locator('[data-drawer-resize]');const h=await handle.boundingBox(),before=await p.evaluate(()=>saves);
+const handle=p.locator('[data-drawer-resize]');
+assert(await handle.evaluate(n=>{const drawer=document.querySelector('.sb-drawer');return getComputedStyle(n,'::before').display==='none'&&getComputedStyle(n,'::after').display==='none'&&getComputedStyle(drawer).borderRightWidth==='0px'&&getComputedStyle(drawer).boxShadow!=='none'&&n.getBoundingClientRect().width>0}),'default boundary keeps only shadow and an invisible resize target');
+const h=await handle.boundingBox(),before=await p.evaluate(()=>saves);
 await p.mouse.move(h.x+8,300);await p.mouse.down();await p.mouse.move(h.x+68,300,{steps:5});
 assert.equal(await p.evaluate(()=>saves),before,'drag must not save at every move');await p.mouse.up();assert.equal(await p.evaluate(()=>saves),before+1);
 assert.equal(await p.evaluate(()=>s.splash.drawerWidths.tablet),450);

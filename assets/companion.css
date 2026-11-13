@@ -104,3 +104,8 @@ html.sb-glass-chat #sheld #send_form{position:relative!important;left:auto!impor
 #sb-root .sb-legacy-history{margin:15px 20px;font-size:11px;color:var(--sb-dim)}
 @media(prefers-reduced-motion:reduce){#sb-root .sb-coaster{transition:none}}
 #sb-root.sb-default-bar .sb-cocktail .main-toggle>span{position:static;margin-left:auto;font:13px Georgia,serif}
+/* Default bar boundary: shadow only; keep the existing invisible resize target. */
+#sb-root.sb-default-bar .sb-drawer{border-right:0;box-shadow:9px 0 24px #0c18232b}
+#sb-root.sb-default-bar .sb-drawer .sb-body{border-right:0}
+#sb-root.sb-default-bar .sb-drawer-resize:before,#sb-root.sb-default-bar .sb-drawer-resize:after{display:none;content:none}
+#sb-root.sb-default-bar .sb-drawer-resize:focus-visible{outline:2px solid var(--sb-accent);outline-offset:-4px}
