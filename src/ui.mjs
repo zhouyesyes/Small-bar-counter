@@ -393,7 +393,7 @@ export function createUI(host) {
     const genBtn = (kind, label) => `<button class="sb-gen" data-act="gen" data-kind="${kind}" ${v.busy ? 'disabled' : ''}>${v.busy === kind ? '在写……' : label}</button>`;
     async function generate(kind) {
         if (v.busy) return;
-        const replan=kind==='cocktail-replan';if(replan)kind='cocktail';
+        const replan=kind==='cocktail-replan'||kind==='cocktail'&&!!host.charCfg?.().cocktailPlanPending;if(replan)kind='cocktail';
         // 重新生成此刻：再写一版，几版都留着，左右滑 / 点 ‹ › 换着看（没选中的那几版不算数）
         const redoOf = kind === 'now-redo' ? curNowId() : null;
         if (kind === 'now-redo') kind = 'now';
@@ -401,15 +401,19 @@ export function createUI(host) {
         v.busy = kind; render();
         try {
             const mode=host.cocktailMode?.()||'default';
-            let rule = kind==='cocktail'?cocktailProtocol(mode,cocktailFromState(host.state(),mode),{replan})+'\n只写状态段，不写正文。':MANUAL[kind];
+            let rule = kind==='cocktail'?cocktailProtocol(mode,cocktailFromState(host.state(),mode),{replan,replanRevision:host.charCfg?.().cocktailPlanPending?host.charCfg().cocktailPlanRevision:null})+'\n只写状态段，不写正文。':MANUAL[kind];
             if (['now', 'memo', 'all', 'cocktail'].includes(kind)) rule += '\n' + host.memoNote(redoOf);
             if (['post', 'moments', 'all'].includes(kind)) rule += '\n\n' + RELATION;
+            let parts=null;
             if(kind==='cocktail'&&mode==='adaptive'){
-                const references=await host.statusSources?.();
+                await host.ensureCharacter?.();
+                if(request!==manualRequest||requestMeta!==host.meta())return;
+                parts=await buildParts([]);
+                const references=await host.statusSources?.({world:parts.world});
                 if(request!==manualRequest||requestMeta!==host.meta())return;
                 if(references)rule+='\n\n'+references;
             }
-            const msgs = [{ role: 'system', content: await buildSys('', rule, []) }, { role: 'user', content: '（现在写）' }];
+            const msgs = [{ role: 'system', content: parts?[parts.card,parts.persona,parts.world,parts.status,parts.story,rule].filter(Boolean).join('\n\n'):await buildSys('', rule, []) }, { role: 'user', content: '（现在写）' }];
             if(request!==manualRequest||requestMeta!==host.meta())return;
             const out = String(await host.ask(msgs, `【暂停正文，这一次不写正文】\n${rule}`,kind==='cocktail'?{preserveStatus:true,maxTokens:mode==='adaptive'?4800:2400}:{}) || '');
             let raw = host.extractBlock(out).raw;
@@ -425,7 +429,7 @@ export function createUI(host) {
             }
             if(kind==='cocktail'&&!buildCocktailValid(raw,mode))throw new Error('酒杯数据格式不完整，原记录已保留，请再试一次');
             if (request !== manualRequest || requestMeta !== host.meta()) return;
-            if(replan){const planned=parseCocktail(parseBlock(raw)['酒杯'].at(-1));planned.layoutRevision=(host.state().cocktails?.adaptive?.layoutRevision||0)+1;raw='酒杯: '+JSON.stringify(planned);}
+            if(replan){const planned=parseCocktail(parseBlock(raw)['酒杯'].at(-1));planned.layoutRevision=Math.max((host.state().cocktails?.adaptive?.layoutRevision||0)+1,host.charCfg?.().cocktailPlanPending?host.charCfg().cocktailPlanRevision:0);raw='酒杯: '+JSON.stringify(planned);}
             const id = host.addBlock(raw);
             if (!id) throw new Error('TA没写出来');
             if (redoOf) {

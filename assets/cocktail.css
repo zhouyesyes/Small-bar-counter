@@ -39,3 +39,8 @@ html.sb-bar .sb-helper-dialog>.TH-custom-tailwind[role=dialog]{width:100%;height
 html.sb-bar .sb-helper-dialog>.TH-custom-tailwind[role=dialog]>:first-child{flex-shrink:0}
 html.sb-bar .sb-helper-dialog>.TH-custom-tailwind[role=dialog]>:nth-child(2){min-width:0;min-height:0;flex:1 1 0%}
 html.sb-bar #movingDivs:has(.sb-helper-dialog){z-index:32009!important}
+#sb-root:not(.sb-folio-phone) .sb-drawer:not(.sb-phonemode)>.sb-body>.sb-meta{border-bottom:0}
+#sb-root .sb-cocktail .cup-reference{border-top:1px dotted var(--line);margin-top:14px;padding-top:8px;font-size:11px;color:var(--dim)}
+#sb-root .sb-cocktail .cup-reference>summary{cursor:pointer;padding:5px 0}
+#sb-root .sb-cocktail .cup-reference textarea{display:block;width:100%;min-height:160px;max-height:340px;resize:vertical;margin:8px 0;padding:10px;border:1px solid var(--line);border-radius:6px;background:var(--wash);color:var(--ink);font:11px/1.7 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
+#sb-root .sb-cocktail .reference-actions{display:flex;gap:12px;flex-wrap:wrap}#sb-root .sb-cocktail .reference-actions button{padding:5px 0;border-bottom:1px dotted var(--line);color:var(--accent)}

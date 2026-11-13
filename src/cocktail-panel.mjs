@@ -1,3 +1,4 @@
+import { PASTED_REFERENCE_LIMIT } from './status-sources.mjs';
 import { cocktailFromState, cocktailModules } from './cocktail-state.mjs';
 import { glassSvg, glassGeometry, GARNISHES } from './cocktail-art.mjs';
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -5,7 +6,7 @@ const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
 const pad=v=>String(v).padStart(2,'0');
 const points={1:[[307,220]],2:[[48,220],[307,225]],3:[[48,135],[307,145],[43,300]],4:[[48,135],[307,145],[43,300],[312,321]],5:[[48,110],[307,120],[32,265],[320,275],[165,420]],6:[[48,108],[307,118],[22,244],[330,256],[52,368],[305,380]]};
 export function createCocktailPanel(root,host,{render,generate}) {
- const view={open:false,calendar:false,page:0,month:null,storyMonth:null};
+ const view={open:false,calendar:false,page:0,month:null,storyMonth:null,referenceOpen:false,referenceDraft:null};
  let state=null,modules=[],stage=null,observer=null,popup=null,anchor=null,frame=0,last=0,x=0,y=0,vx=0,vy=0,tx=0,ty=0,drag=null;
  const reduced=matchMedia('(prefers-reduced-motion:reduce)');
  const mode=()=>host.cocktailMode?.()||host.charCfg?.().cocktailMode||'default';
@@ -19,6 +20,11 @@ export function createCocktailPanel(root,host,{render,generate}) {
   if(valid){const first=(new Date(Date.UTC(year,month-1,1)).getUTCDay()+6)%7,count=new Date(Date.UTC(year,month,0)).getUTCDate();days='<span></span>'.repeat(first);for(let day=1;day<=count;day++){const date=`${year}-${pad(month)}-${pad(day)}`,events=state.calendar.events.filter(e=>e.date===date),important=events.find(e=>e.important);days+=`<button type="button" class="day${important?' important':''}${date===state.calendar.date?' today':''}" data-cup-date="${date}" aria-label="${month}月${day}日${events.length?'，'+events.length+'件事':''}" aria-expanded="false"><span class="num">${day}</span>${important?`<small>${esc(important.name)}</small>`:''}</button>`;}}
   return `<details class="calendar" ${view.calendar?'open':''}><summary><div class="binding" aria-hidden="true"><i></i><i></i></div><div class="month-cover"><span class="month-no">${valid?pad(month):'—'}</span><div><div class="cal-kicker">THE MONTHLY TAB</div><div class="month-word">${valid?names[month-1]:'Calendar'}</div><div class="month-zh">本月酒单 · 翻开日历</div></div><span class="month-star" aria-hidden="true">✧</span></div></summary><div class="cal-body">${valid?`<div class="cal-controls"><span>${year} / ${pad(month)} · 剧情月份</span><button type="button" data-cup-month="-1" aria-label="上个月">‹</button><button type="button" data-cup-month="0">剧情当月</button><button type="button" data-cup-month="1" aria-label="下个月">›</button></div><div class="week">${'一二三四五六日'.split('').map(d=>`<span>${d}</span>`).join('')}</div><div class="days">${days}</div>`:'<p class="empty">剧情日期尚未确定。</p>'}</div></details>`;
  }
+ function referenceHtml(){
+  if(mode()!=='adaptive')return '';
+  const config=host.charCfg?.()||{},value=view.referenceDraft??config.cocktailReference??'';
+  return `<details class="cup-reference" ${view.referenceOpen?'open':''}><summary>粘贴状态栏参考${config.cocktailPlanPending?' · 待下轮聊天规划':''}</summary><textarea data-cup-reference maxlength="${PASTED_REFERENCE_LIMIT}" aria-label="状态栏参考内容" placeholder="粘贴世界书条目、状态栏板块或 HTML 模板（最多 12000 字）…">${esc(value)}</textarea><div class="reference-actions"><button type="button" data-cup-reference-next ${config.noAutoStatus||host.cocktailBusy?.()?'disabled':''} title="保存到当前聊天，等正常聊天时由聊天模型规划">交给下轮聊天规划</button><button type="button" data-cup-reference-now ${host.cocktailBusy?.()?'disabled':''} title="使用小吧台当前选定的 API">立即识别</button></div></details>`;
+ }
  function html(){
   state=activeState();modules=cocktailModules(state);view.page=clamp(view.page,0,Math.max(0,Math.ceil(modules.length/6)-1));
   const drink=state.drink,key=drink.cupType||'coupe',colors=drink.colors||['#d6a16c','#a86454'],usage=host.cocktailUsage?.(),visible=modules.slice(view.page*6,view.page*6+6);
@@ -29,7 +35,7 @@ export function createCocktailPanel(root,host,{render,generate}) {
   ${visible.map((m,i)=>{const icon=GARNISHES[m.garnish]||GARNISHES.pick,position=points[visible.length][i],pending=m.id==='gestures'?state.gestures.reminders.filter(r=>!r.done&&!host.meta?.().cocktailDone?.[r.id||r.text]):[];return `<span class="bubble-carrier" style="left:${position[0]/4}%;top:${position[1]/5}%"><button type="button" class="bubble" data-cup-module="${esc(m.id)}" aria-label="${esc(m.title)}" aria-expanded="false" style="--bubble-tone:${icon.color}"><svg viewBox="0 0 32 32" aria-hidden="true">${icon.path}</svg>${pending.length?`<span class="badge">${pending.length}</span>`:''}</button></span>`}).join('')}</div>
   ${modules.length>6?`<div class="group-pager"><button type="button" data-cup-page="-1" aria-label="上一组小料" ${view.page===0?'disabled':''}>‹</button><span>${view.page+1} / ${Math.ceil(modules.length/6)}</span><button type="button" data-cup-page="1" aria-label="下一组小料" ${(view.page+1)*6>=modules.length?'disabled':''}>›</button></div>`:''}
   <section class="tasting-note"><div class="recipe-heading"><span>本次调制</span><span class="recipe-meta">${typeof drink.abv==='number'?'约 '+drink.abv+'%vol · 估算':'— %vol'}</span></div><div class="recipe"><span>基酒</span><p>${esc(drink.base||'尚未记录')}</p><span>辅料</span><p>${esc(drink.mixers?.join('、')||'尚未记录')}</p></div>${drink.introduction?`<p class="drink-story">${esc(drink.introduction)}</p>`:''}<div class="flavor">${[['前味','first'],['中味','middle'],['后味','finish']].map(([label,id])=>`<div><small>${label}</small>${esc(drink.tastes?.[id]||'—')}</div>`).join('')}</div></section>
-  ${calendarHtml()}<div class="cup-tools"><select data-cup-mode aria-label="状态来源"><option value="default" ${mode()==='default'?'selected':''}>吧台默认</option><option value="adaptive" ${mode()==='adaptive'?'selected':''}>角色适配</option></select><button type="button" data-cup-refresh ${host.cocktailBusy?.()?'disabled':''}>${host.cocktailBusy?.()?'调制中…':mode()==='adaptive'&&!state.modules.length?'初始化角色面板':'刷新此刻'}</button>${mode()==='adaptive'&&state.modules.length?`<button type="button" data-cup-replan ${host.cocktailBusy?.()?'disabled':''}>重新规划模块</button>`:''}<button type="button" data-act="nowbook">此刻簿</button></div><div class="ending">a little story, poured for you.</div></div></section>`;
+  ${calendarHtml()}<div class="cup-tools"><select data-cup-mode aria-label="状态来源"><option value="default" ${mode()==='default'?'selected':''}>吧台默认</option><option value="adaptive" ${mode()==='adaptive'?'selected':''}>角色适配</option></select><button type="button" data-cup-refresh ${host.cocktailBusy?.()?'disabled':''}>${host.cocktailBusy?.()?'调制中…':mode()==='adaptive'&&!state.modules.length?'初始化角色面板':'刷新此刻'}</button>${mode()==='adaptive'&&state.modules.length?`<button type="button" data-cup-replan ${host.cocktailBusy?.()?'disabled':''}>重新规划模块</button>`:''}<button type="button" data-act="nowbook">此刻簿</button></div>${referenceHtml()}<div class="ending">a little story, poured for you.</div></div></section>`;
  }
  function close(){if(anchor?.isConnected)anchor.setAttribute('aria-expanded','false');popup?.remove();popup=null;anchor=null}
  function position(){if(!popup||!anchor)return;const a=anchor.getBoundingClientRect(),panel=root.querySelector('.sb-drawer')?.getBoundingClientRect(),w=popup.offsetWidth,h=popup.offsetHeight,left=panel&&panel.right+w+20<innerWidth?panel.right+12:a.left+a.width/2-w/2;popup.style.left=clamp(left,10,Math.max(10,innerWidth-w-10))+'px';popup.style.top=clamp(a.top-25,10,Math.max(10,innerHeight-h-10))+'px'}
@@ -39,10 +45,16 @@ export function createCocktailPanel(root,host,{render,generate}) {
  }
  function dayDistance(from,to){const delta=Math.round((Date.parse(to+'T12:00:00Z')-Date.parse(from+'T12:00:00Z'))/86400000);return delta===0?'就在今天':delta>0?`还有 ${delta} 天`:`已过 ${-delta} 天`;}
  root.addEventListener('click',event=>{
-  const button=event.target.closest('[data-cup-toggle],[data-cup-module],[data-cup-date],[data-cup-month],[data-cup-page],[data-cup-refresh],[data-cup-replan],[data-cup-close]');
+  const button=event.target.closest('[data-cup-toggle],[data-cup-module],[data-cup-date],[data-cup-month],[data-cup-page],[data-cup-refresh],[data-cup-replan],[data-cup-reference-next],[data-cup-reference-now],[data-cup-close]');
   if(!button){if(!event.target.closest('.sb-cocktail-popup'))close();return}event.stopPropagation();
   if(button.hasAttribute('data-cup-close')){const previous=anchor;close();previous?.focus({preventScroll:true});return}
   if(button.hasAttribute('data-cup-toggle')){view.open=!view.open;render();return}
+  if(button.hasAttribute('data-cup-reference-next')||button.hasAttribute('data-cup-reference-now')){
+   const queue=button.hasAttribute('data-cup-reference-next'),value=root.querySelector('[data-cup-reference]')?.value||'';
+   if(host.saveCocktailReference?.(value,{queue})===false)return;
+   view.referenceDraft=value;view.referenceOpen=true;
+   if(queue)render();else generate(true);return;
+  }
   if(button.hasAttribute('data-cup-refresh')){generate(false);return}
   if(button.hasAttribute('data-cup-replan')){generate(true);return}
   if(button.dataset.cupPage){view.page+=Number(button.dataset.cupPage);render();return}
@@ -51,11 +63,16 @@ export function createCocktailPanel(root,host,{render,generate}) {
   if(button.dataset.cupModule){const m=modules.find(m=>m.id===button.dataset.cupModule);if(!m)return;if(!reduced.matches)button.animate([{transform:'scale(1)'},{transform:'scale(.84,1.12)'},{transform:'scale(1.1,.94)'},{transform:'scale(1)'}],{duration:440,easing:'ease-out'});show(button,m.title,moduleHtml(m));}
   else if(button.dataset.cupDate){const events=state.calendar.events.filter(e=>e.date===button.dataset.cupDate);show(button,button.dataset.cupDate,events.length?events.map(e=>`<article class="calendar-event"><small>${esc(e.kind)}</small><h4>${esc(e.name)}</h4><p>${esc(e.text||'')}</p></article>`).join(''):'<p>这一天暂时没有记录。</p>')}
  });
+ root.addEventListener('paste',event=>{
+  const input=event.target;if(!input.matches('[data-cup-reference]'))return;
+  const value=event.clipboardData?.getData('text/plain');if(value&&input.value.length-(input.selectionEnd-input.selectionStart)+value.length>PASTED_REFERENCE_LIMIT){event.preventDefault();host.toast?.('warning','参考内容最多 12000 字，请只粘贴需要识别的状态栏板块');}
+ });
+ root.addEventListener('input',event=>{if(event.target.matches('[data-cup-reference]'))view.referenceDraft=event.target.value});
  root.addEventListener('change',event=>{
   if(event.target.matches('[data-cup-mode]')){host.setCocktailMode?.(event.target.value);view.page=0;render();}
   if(event.target.matches('[data-cup-task]')){const reminders=state.gestures.reminders.filter(r=>!r.done&&!host.meta?.().cocktailDone?.[r.id||r.text]),r=reminders[Number(event.target.dataset.cupTask)];if(r&&host.meta){(host.meta().cocktailDone??={})[r.id||r.text]=true;host.saveMeta?.();host.refreshInject?.();render()}}
  });
- root.addEventListener('toggle',event=>{if(event.target.matches('.sb-cocktail .calendar'))view.calendar=event.target.open;if(event.target.closest('.sb-cocktail-popup'))position()},true);
+ root.addEventListener('toggle',event=>{if(event.target.matches('.sb-cocktail .calendar'))view.calendar=event.target.open;if(event.target.matches('.sb-cocktail .cup-reference'))view.referenceOpen=event.target.open;if(event.target.closest('.sb-cocktail-popup'))position()},true);
  root.addEventListener('keydown',event=>{if(event.key==='Escape'&&popup){const previous=anchor;close();previous?.focus({preventScroll:true})}});
  document.addEventListener('click',event=>{if(popup&&!root.contains(event.target))close()});
  let scrollPositions=new WeakMap();
@@ -70,5 +87,5 @@ export function createCocktailPanel(root,host,{render,generate}) {
  function detach(){observer?.disconnect();observer=null;close();stop();stage=null}
  function mount(){detach();stage=root.querySelector('.sb-cocktail .drink-stage');if(!stage)return;scrollPositions=new WeakMap([[document,scrollY]]);let parent=stage.parentElement;while(parent){scrollPositions.set(parent,parent.scrollTop);parent=parent.parentElement}let width=stage.getBoundingClientRect().width;observer=new ResizeObserver(()=>{const next=stage?.getBoundingClientRect().width||0,delta=next-width,before=width;width=next;if(before<=0||next<=0||!view.open||document.hidden||reduced.matches||Math.abs(delta)<.2)return;vx=clamp(vx+delta*2.2,-180,180);vy=clamp(vy-delta*.35,-90,90);start();position()});observer.observe(stage)}
  window.addEventListener('resize',position);document.addEventListener('visibilitychange',()=>{if(document.hidden)stop()});reduced.addEventListener('change',()=>{if(reduced.matches)stop()});
- return {html,mount,detach,reset(){detach();Object.assign(view,{open:false,calendar:false,page:0,month:null,storyMonth:null})}};
+ return {html,mount,detach,reset(){detach();Object.assign(view,{open:false,calendar:false,page:0,month:null,storyMonth:null,referenceOpen:false,referenceDraft:null})}};
 }

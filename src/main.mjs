@@ -1,5 +1,5 @@
-import { collectStatusSources, formatStatusSources } from './status-sources.mjs';
-import { cocktailFromState, cocktailProtocol, outputUsage } from './cocktail-state.mjs';
+import { collectStatusSources, formatStatusSources, pastedReference } from './status-sources.mjs';
+import { cocktailFromState, cocktailProtocol, outputUsage, parseCocktail } from './cocktail-state.mjs';
 import { artwork, artworkMode, personalProfile, landingArtwork } from './artwork.mjs';
 import { resolveMe } from './profile.mjs';
 import { createAppearanceBridge } from './appearance-api.mjs';
@@ -95,6 +95,7 @@ function absorb(id) {
     (m.extra.small_bar_swipes ??= {})[m.swipe_id ?? 0] = raw;
     if (Array.isArray(m.swipes) && m.swipe_id != null) m.swipes[m.swipe_id] = text;
     applyProfile(raw);
+    acknowledgeCocktailPlan(raw);
     try { c.updateMessageBlock?.(id, m); } catch (e) { console.warn('[小吧台] 刷新这一楼失败', e); }
     return true;
 }
@@ -223,8 +224,16 @@ function addBlock(raw) {
     const m = meta(); m.blocks ??= [];
     const id = newId();
     m.blocks.push({ id, raw, at: Date.now() });
+    acknowledgeCocktailPlan(raw);
     saveMeta(); dirty(); refreshInject();
     return id;
+}
+
+// A queued replan is complete only when this chat returns the requested revision.
+function acknowledgeCocktailPlan(raw){
+    const config=charCfg();if(!config.cocktailPlanPending)return;
+    const planned=parseCocktail(parseBlock(raw)['酒杯']?.at(-1));
+    if(planned?.mode==='adaptive'&&planned.modules.length&&planned.layoutRevision===config.cocktailPlanRevision){config.cocktailPlanPending=false;saveMeta();}
 }
 
 // ---------- 人 ----------
@@ -527,8 +536,13 @@ function refreshInject() {
         const mode=charCfg().cocktailMode==='adaptive'?'adaptive':'default';
         const snapshot=structuredClone(cocktailFromState(state(),mode));
         if(mode==='default')snapshot.gestures.reminders=snapshot.gestures.reminders.filter(r=>!r.done&&!meta().cocktailDone?.[r.id||r.text]);
-        text+='\n\n'+cocktailProtocol(mode,snapshot);
-        if(s.saveMode)text+='\n省一点时酒杯行只更新 scene、emotion，其他字段可省略，程序会保留此前记录。';
+        const pending=mode==='adaptive'&&!!charCfg().cocktailPlanPending;
+        text+='\n\n'+cocktailProtocol(mode,snapshot,{replan:pending,replanRevision:pending?charCfg().cocktailPlanRevision:null});
+        if(mode==='adaptive'&&(pending||!snapshot.modules.length)){
+            const reference=pastedReference(charCfg().cocktailReference||'');
+            if(reference)text+='\n\n'+formatStatusSources(collectStatusSources({pasted:reference}));
+        }
+        if(s.saveMode&&!pending)text+='\n省一点时酒杯行只更新 scene、emotion，其他字段可省略，程序会保留此前记录。';
     }
     // 1 = 放在聊天里（IN_CHAT），深度 0 = 最后面，0 = 系统身份
     c.setExtensionPrompt(INJECT_KEY, text, 1, 0, false, 0);
@@ -570,12 +584,21 @@ const host = {
     charCfg, setCharCfg: f => { f(charCfg()); saveMeta(); refreshInject(); if (settings().barTheme) mountChat(barChatHost); },
     saveImage: saveImageHere, img, dropImage: src => { if (src) delete owners()[src]; return deleteImage(src); }, refreshInject,
     scanImages, dropImages, trimChat, wipeChat, chatBytes,
-    statusSources: async () => {
+    ensureCharacter: async () => { const c=ctx();try { await c.unshallowCharacter?.(c.characterId); } catch { /* Optional host API. */ } },
+    statusSources: async ({world=''}={}) => {
         const c=ctx(),chat=c.chat,characterId=c.characterId;
         try { await c.unshallowCharacter?.(characterId); } catch { /* Some hosts do not lazy-load cards. */ }
         if(ctx().chat!==chat||ctx().characterId!==characterId)return '';
         const rendered=[...document.querySelectorAll('#chat .mes:not([is_user="true"]):not([is_system="true"]) .mes_text')].slice(-3).map(node=>node.textContent||'');
-        return formatStatusSources(collectStatusSources({character:c.characters?.[characterId]||{},messages:chat||[],rendered}));
+        return formatStatusSources(collectStatusSources({character:c.characters?.[characterId]||{},messages:chat||[],rendered,world,pasted:charCfg().cocktailReference||''}));
+    },
+    saveCocktailReference: (value,{queue=false}={}) => {
+        const reference=pastedReference(value);if(reference===null){host.toast('warning','参考内容最多 12000 字，请分段整理后再保存');return false;}
+        const config=charCfg();config.cocktailReference=reference;config.cocktailMode='adaptive';
+        if(queue&&config.noAutoStatus){saveMeta();host.toast('warning','参考已保存；这张卡关闭了自动更新，请先开启，或点立即识别');return false;}
+        config.cocktailPlanPending=queue;
+        if(queue)config.cocktailPlanRevision=Math.max(config.cocktailPlanRevision||0,state().cocktails?.adaptive?.layoutRevision||0)+1;
+        saveMeta();refreshInject();return true;
     },
     cocktailMode: () => charCfg().cocktailMode==='adaptive'?'adaptive':'default',
     setCocktailMode: mode => { charCfg().cocktailMode=mode==='adaptive'?'adaptive':'default';saveMeta();refreshInject(); },
