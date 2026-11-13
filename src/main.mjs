@@ -1,3 +1,4 @@
+import { collectStatusSources, formatStatusSources } from './status-sources.mjs';
 import { cocktailFromState, cocktailProtocol, outputUsage } from './cocktail-state.mjs';
 import { artwork, artworkMode, personalProfile, landingArtwork } from './artwork.mjs';
 import { resolveMe } from './profile.mjs';
@@ -569,6 +570,13 @@ const host = {
     charCfg, setCharCfg: f => { f(charCfg()); saveMeta(); refreshInject(); if (settings().barTheme) mountChat(barChatHost); },
     saveImage: saveImageHere, img, dropImage: src => { if (src) delete owners()[src]; return deleteImage(src); }, refreshInject,
     scanImages, dropImages, trimChat, wipeChat, chatBytes,
+    statusSources: async () => {
+        const c=ctx(),chat=c.chat,characterId=c.characterId;
+        try { await c.unshallowCharacter?.(characterId); } catch { /* Some hosts do not lazy-load cards. */ }
+        if(ctx().chat!==chat||ctx().characterId!==characterId)return '';
+        const rendered=[...document.querySelectorAll('#chat .mes:not([is_user="true"]):not([is_system="true"]) .mes_text')].slice(-3).map(node=>node.textContent||'');
+        return formatStatusSources(collectStatusSources({character:c.characters?.[characterId]||{},messages:chat||[],rendered}));
+    },
     cocktailMode: () => charCfg().cocktailMode==='adaptive'?'adaptive':'default',
     setCocktailMode: mode => { charCfg().cocktailMode=mode==='adaptive'?'adaptive':'default';saveMeta();refreshInject(); },
     cocktailState: () => cocktailFromState(state(),charCfg().cocktailMode==='adaptive'?'adaptive':'default'),

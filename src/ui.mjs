@@ -115,7 +115,7 @@ export function createUI(host) {
     function mount() {
         root = document.createElement('div');
         root.id = 'sb-root';
-        cocktail=createCocktailPanel(root,{...host,cocktailBusy:()=>v.busy==='cocktail'},{render,generate:()=>generate('cocktail')});
+        cocktail=createCocktailPanel(root,{...host,cocktailBusy:()=>v.busy==='cocktail'},{render,generate:replan=>generate(replan?'cocktail-replan':'cocktail')});
         bindDrawerSize(root,{settings:()=>host.settings(),save:()=>host.saveSettings()});
         widePanel.addEventListener('change', () => render());
         document.documentElement.appendChild(root); // 不放进 body：酒馆主题可能给 body 加变形，会把固定定位困住
@@ -289,7 +289,7 @@ export function createUI(host) {
 <div class="${floating ? 'sb-phone sb-float sb-landing' : 'sb-drawer sb-landing'}" role="dialog" aria-label="小吧台主页">
  <div class="sb-body" data-keep="landing">
  <div class="sb-cover ${p.cover?'sb-cover-img':'sb-w-clear'+(theme()==='dark'?' sb-w-night':'')}" style="${p.cover?`background-image:url('${esc(p.cover)}')`:''}">
-  <span class="sb-logo">${(host.settings().barStyle || 'folio') === 'folio' ? '随身匣' : 'SMALL BAR'}</span><button class="sb-x" data-act="${floating ? 'phone-close' : 'close'}" aria-label="关上">×</button>
+  <span class="sb-logo">${(host.settings().barStyle || 'folio') === 'folio' ? '随身匣' : 'Small Bar'}</span><button class="sb-x" data-act="${floating ? 'phone-close' : 'close'}" aria-label="关上">×</button>
   <input type="file" accept="image/*" data-upload="opening-cover" data-bg-picker hidden>
 
  </div>
@@ -321,7 +321,7 @@ export function createUI(host) {
  <div class="sb-minibar"><span class="sb-mininame">${esc(him.name)}</span><button class="sb-x" data-act="close" aria-label="关上">×</button></div>
  <div class="sb-body" data-keep="body">
  <div class="sb-cover ${coverClass()}" style="${coverStyle()}" data-bg-settings tabindex="0" role="button" aria-label="更换背景">
-  <span class="sb-logo">${(host.settings().barStyle || 'folio') === 'folio' ? '随身匣' : 'SMALL BAR'}</span><button class="sb-x" data-act="close" aria-label="关上">×</button>
+  <span class="sb-logo">${(host.settings().barStyle || 'folio') === 'folio' ? '随身匣' : 'Small Bar'}</span><button class="sb-x" data-act="close" aria-label="关上">×</button>
 
  </div>
  <div class="sb-home-identity"><label class="sb-av" style="background-image:url('${esc(him.avatar)}')" title="点一下换头像"><input type="file" accept="image/*" data-upload="him-avatar" hidden></label>
@@ -393,6 +393,7 @@ export function createUI(host) {
     const genBtn = (kind, label) => `<button class="sb-gen" data-act="gen" data-kind="${kind}" ${v.busy ? 'disabled' : ''}>${v.busy === kind ? '在写……' : label}</button>`;
     async function generate(kind) {
         if (v.busy) return;
+        const replan=kind==='cocktail-replan';if(replan)kind='cocktail';
         // 重新生成此刻：再写一版，几版都留着，左右滑 / 点 ‹ › 换着看（没选中的那几版不算数）
         const redoOf = kind === 'now-redo' ? curNowId() : null;
         if (kind === 'now-redo') kind = 'now';
@@ -400,9 +401,14 @@ export function createUI(host) {
         v.busy = kind; render();
         try {
             const mode=host.cocktailMode?.()||'default';
-            let rule = kind==='cocktail'?cocktailProtocol(mode,cocktailFromState(host.state(),mode))+'\n只写状态段，不写正文。':MANUAL[kind];
+            let rule = kind==='cocktail'?cocktailProtocol(mode,cocktailFromState(host.state(),mode),{replan})+'\n只写状态段，不写正文。':MANUAL[kind];
             if (['now', 'memo', 'all', 'cocktail'].includes(kind)) rule += '\n' + host.memoNote(redoOf);
             if (['post', 'moments', 'all'].includes(kind)) rule += '\n\n' + RELATION;
+            if(kind==='cocktail'&&mode==='adaptive'){
+                const references=await host.statusSources?.();
+                if(request!==manualRequest||requestMeta!==host.meta())return;
+                if(references)rule+='\n\n'+references;
+            }
             const msgs = [{ role: 'system', content: await buildSys('', rule, []) }, { role: 'user', content: '（现在写）' }];
             if(request!==manualRequest||requestMeta!==host.meta())return;
             const out = String(await host.ask(msgs, `【暂停正文，这一次不写正文】\n${rule}`,kind==='cocktail'?{preserveStatus:true,maxTokens:mode==='adaptive'?4800:2400}:{}) || '');
@@ -419,6 +425,7 @@ export function createUI(host) {
             }
             if(kind==='cocktail'&&!buildCocktailValid(raw,mode))throw new Error('酒杯数据格式不完整，原记录已保留，请再试一次');
             if (request !== manualRequest || requestMeta !== host.meta()) return;
+            if(replan){const planned=parseCocktail(parseBlock(raw)['酒杯'].at(-1));planned.layoutRevision=(host.state().cocktails?.adaptive?.layoutRevision||0)+1;raw='酒杯: '+JSON.stringify(planned);}
             const id = host.addBlock(raw);
             if (!id) throw new Error('TA没写出来');
             if (redoOf) {

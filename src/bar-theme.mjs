@@ -1,3 +1,4 @@
+import { syncHelperDialogs, restoreHelperDialogs } from './helper-dialogs.mjs';
 import { installTypography } from './typography.mjs';
 // 吧台美化（docs/bar-theme.md 第 1 批）：总开关、酒馆颜色跟小吧台调色走、顶栏九个按钮换成细线小物件
 // 只在 <html> 上挂一个 sb-bar 的类、加一段 <style>；关掉就把这两样拿掉，酒馆原样回来，不动酒馆自己的东西
@@ -82,12 +83,14 @@ export function applyBarTheme(settings, ctx, adapter) {
     const html = document.documentElement;
     let style = document.getElementById('sb-bar-theme');
     if (!settings.barTheme) {
+        restoreHelperDialogs();
         html.classList.remove('sb-bar'); style?.remove(); last = ''; unmountPages(); document.getElementById('sb-bar-fonts')?.remove(); delete html.dataset.sbMode;
         observer?.disconnect(); observer = null; media?.removeEventListener('change', media.sb); media = null;
         return;
     }
     // 先挂类再看深浅：modeFor 看到 sb-bar 就去读酒馆原来的底色
     html.classList.add('sb-bar');
+    syncHelperDialogs();
     // 花体英文标题、斜体英文小字、中文宋体；加载不了时 CSS 里有退路（iPhone 自带的 Snell Roundhand、宋体）
     if (!document.getElementById('sb-bar-fonts')) {
         const link = Object.assign(document.createElement('link'), { id: 'sb-bar-fonts', rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+SC:wght@400;600&display=swap' });
