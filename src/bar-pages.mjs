@@ -1,3 +1,4 @@
+import { layoutWorldEntry, restoreWorldEntries } from './world-entry-layout.mjs';
 import { installTypography } from './typography.mjs';
 import { syncFolioPages, unmountFolioPages } from './folio-theme.mjs';
 // 吧台美化第 2 批：十页（配方本、酒窖、酒单、会员卡、调酒师名单、调酒师主页、工具箱、灯光、窗景、格式），样子见 docs/bar-theme.md
@@ -281,6 +282,7 @@ const PAGES = {
             mirror($('[data-pick="book"]', root), document.getElementById('world_editor_select'));
             // 每一道：状态点、底下一行小字（深度 / 顺序 / 概率 / 点单词）
             for (const e of all) {
+                layoutWorldEntry(e);
                 const off = e.classList.contains('disabledWIEntry') || !!$('.disabledWIEntry', e) || $('.killSwitch', e)?.classList.contains('fa-toggle-off');
                 const state = off ? 'off' : ($('select[name="entryStateSelector"]', e)?.value || 'normal');
                 if (e.dataset.sbState !== state) e.dataset.sbState = state;
@@ -514,6 +516,7 @@ export function mountPages(getContext) {
 }
 
 export function unmountPages() {
+    restoreWorldEntries();
     unmountFolioPages();
     if (!on) return;
     on = false;

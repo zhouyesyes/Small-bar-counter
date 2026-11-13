@@ -1550,3 +1550,43 @@ html.sb-bar #chat .sb-chat-cover[role=button],html.sb-bar #chat .sb-chat-avatar{
     }
     html.sb-bar.sb-panel-docked #sb-root .sb-tabs button { min-height:44px; }
 }
+
+/* Shared expanded world entry editor. Closed folio bookmarks keep their layout. */
+html.sb-bar #world_popup_entries_list .world_entry.sb-entry-layout:has(.inline-drawer-icon.up) {
+    width:100%!important;max-width:100%!important;flex:0 0 100%!important;
+    max-height:none!important;overflow:visible;
+}
+html.sb-bar #world_popup_entries_list .sb-entry-layout .inline-drawer-content { min-width:0; }
+html.sb-bar .sb-entry-common {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:12px 0;border-bottom:1px solid var(--sb-bar-line);}
+html.sb-bar .sb-entry-common > :first-child,
+html.sb-bar .sb-entry-common > :last-child {grid-column:1/-1;}
+html.sb-bar .sb-entry-common > * {min-width:0;flex:none;}
+html.sb-bar .sb-entry-common :is(label,small) {text-align:left;}
+html.sb-bar .sb-entry-common :is(input,select,textarea),
+html.sb-bar .sb-entry-content textarea {
+    background:var(--sb-bar-paper)!important;color:var(--sb-bar-ink)!important;
+    border:1px solid var(--sb-bar-line)!important;border-radius:2px!important;
+    box-shadow:none!important;writing-mode:horizontal-tb!important;
+    width:100%!important;max-width:100%!important;min-width:0;
+}
+html.sb-bar .sb-entry-common :is(input,select) {padding:6px!important;}
+html.sb-bar .sb-entry-common .select2-container {width:100%!important;min-width:0;}
+html.sb-bar .sb-entry-common .select2-selection {background:var(--sb-bar-paper)!important;color:var(--sb-bar-ink)!important;border-color:var(--sb-bar-line)!important;}
+html.sb-bar .sb-entry-common .select2-selection__choice {background:var(--sb-bar-bg)!important;color:var(--sb-bar-ink)!important;}
+html.sb-bar .sb-entry-content {display:block;padding:14px 0;color:var(--sb-bar-accent);}
+html.sb-bar .sb-entry-content textarea[name=content] {display:block!important;min-height:280px!important;height:clamp(280px,38vh,480px);padding:12px;line-height:1.9;resize:vertical;margin-top:8px;}
+html.sb-bar .sb-entry-advanced {border-top:1px solid var(--sb-bar-line);padding:12px 0;}
+html.sb-bar .sb-entry-advanced > summary {cursor:pointer;color:var(--sb-bar-accent);margin-bottom:12px;}
+/* Native TT drawers should use the available chat area on tablets. */
+@media(min-width:768px) {
+    html.sb-bar.sb-panel-docked :is(#WorldInfo,#rm_api_block).drawer-content {
+        left:var(--sb-panel-width)!important;right:0!important;
+        width:calc(100vw - var(--sb-panel-width))!important;max-width:none!important;
+    }
+}
+html.sb-bar #world_popup_entries_list .sb-entry-layout select[name=entryStateSelector] {
+    background:var(--sb-bar-paper)!important;color:var(--sb-bar-ink)!important;
+    border:1px solid var(--sb-bar-line)!important;box-shadow:none!important;
+}
+html.sb-bar[data-sb-mode=dark] .sb-entry-common,
+html.sb-bar[data-sb-mode=dark] .sb-entry-layout select[name=entryStateSelector] {color-scheme:dark;}

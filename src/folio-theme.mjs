@@ -109,6 +109,8 @@ function cellar(root,s) {
     // Never rebuild a reduced URL/key form or override its API/source-dependent sections.
     if(!s.detailsShown){s.detailWasOpen=root.classList.contains('sb-open-detail');root.classList.add('sb-open-detail');s.detailsShown=true;}
     const detail=$('[data-fold="detail"] .sb-plus',root);if(detail)detail.textContent=root.classList.contains('sb-open-detail')?'−':'+';
+    const details=$('#connection_profile_details_content',root);
+    if(details){if(!s.profileView){s.profileView=own('sb-folio-profile-view');s.rail.after(s.profileView);}move(details,s.profileView);s.profileView.hidden=details.classList.contains('hidden');}
     const profile=$('#connection_profiles',root);if(profile&&!s.b.contains(profile)){const block=profile.closest('.wide100p')||profile.parentElement;if(block!==root&&!block.contains(s.rail))move(block,$('.sb-folio-native',s.b));}
     if(!s.actions){s.actions=own('sb-folio-profile-actions');$('.sb-folio-native',s.b).append(s.actions);}
     for(const id of ['create_connection_profile','update_connection_profile','edit_connection_profile','reload_connection_profile','view_connection_profile']){

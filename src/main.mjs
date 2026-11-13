@@ -19,7 +19,7 @@ import { applyBarTheme } from './bar-theme.mjs';
 import { setPersonaSource } from './bar-pages.mjs';
 setPersonaSource(() => personas.user_avatar);
 import { mountChat, unmountChat, activeChat } from './bar-chat.mjs';
-import { saveImage, imageUrl, deleteImage, listImages } from './imgstore.mjs';
+import { configureImageStore, saveImage, imageUrl, deleteImage, listImages } from './imgstore.mjs';
 
 const NS = 'small_bar';          // 扩展设置里的位置
 const META = 'small_bar';        // 每个聊天自己的数据（chat_metadata 里）
@@ -34,6 +34,7 @@ function settings() {
     if (!['folio', 'default'].includes(s.barStyle)) s.barStyle = 'folio';
     seedFolioColors(s);
     s.chars ??= {}; s.me ??= {};
+    configureImageStore(s,saveSettings);
     bindSplashSettings(s,saveSettings);
     return s;
 }
@@ -370,7 +371,7 @@ async function testOwnApi() {
 }
 
 // ---------- 图片 ----------
-// 她传的图只存在这台手机的浏览器里（她 11/9 说的：不要存服务器），见 src/imgstore.mjs
+// Private images now travel with extension settings; see imgstore.mjs.
 const img = src => imageUrl(src, () => { ui.render(); setSplashProfile(me); if (settings().barTheme) mountChat(barChatHost); });
 
 // ---------- 清理数据（她 11/9 要的） ----------

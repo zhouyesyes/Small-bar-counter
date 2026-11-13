@@ -401,3 +401,8 @@ html.sb-folio .sb-folio-appearance-title{font-family:CooperZhengKai,SB-Folio-Bod
 
 html.sb-bar.sb-folio #rm_extensions_block :is(.inline-drawer,details:has(.inline-drawer)){border:1px solid var(--sb-bar-line)!important;border-top-color:var(--sb-bar-accent)!important;padding:14px 13px 12px!important;box-sizing:border-box;border-radius:0}
 html.sb-bar.sb-folio #rm_extensions_block details:has(.inline-drawer) .inline-drawer{border:0!important;padding:0!important;margin:0!important}
+/* Details stay readable outside the narrow native profile card. */
+html.sb-bar.sb-folio .sb-folio-profile-view {width:100%;min-width:0;margin:18px 0;padding:14px;border:1px solid var(--sb-bar-line);writing-mode:horizontal-tb;overflow-wrap:anywhere;}
+html.sb-bar.sb-folio .sb-folio-profile-view[hidden] {display:none!important;}
+html.sb-bar.sb-folio .sb-folio-profile-view ul {margin:0;padding-left:20px;}
+html.sb-bar.sb-folio .sb-folio-profile-view li {padding:4px 0;line-height:1.8;}
