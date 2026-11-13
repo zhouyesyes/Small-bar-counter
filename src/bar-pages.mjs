@@ -1,3 +1,4 @@
+import { syncTabletDrawers, restoreTabletDrawers } from './tablet-drawers.mjs';
 import { layoutWorldEntry, restoreWorldEntries } from './world-entry-layout.mjs';
 import { installTypography } from './typography.mjs';
 import { syncFolioPages, unmountFolioPages } from './folio-theme.mjs';
@@ -475,6 +476,7 @@ function syncAll() {
     }
     lazyImgs(document);
     syncFolioPages();
+    syncTabletDrawers(pageDrawers);
 }
 const soon = () => { clearTimeout(timer); timer = setTimeout(syncAll, 120); };
 
@@ -517,6 +519,7 @@ export function mountPages(getContext) {
 }
 
 export function unmountPages() {
+    restoreTabletDrawers();
     restoreWorldEntries();
     unmountFolioPages();
     if (!on) return;
