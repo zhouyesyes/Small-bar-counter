@@ -1,0 +1,34 @@
+const assert=require('node:assert/strict');const {chromium}=require('playwright');
+(async()=>{
+const b=await chromium.launch({executablePath:'/usr/bin/chromium',args:['--no-sandbox']});const p=await b.newPage({viewport:{width:1024,height:900}});const errors=[];p.on('pageerror',e=>errors.push(e.message));
+await p.goto('http://127.0.0.1:8870/tests/fixtures/folio-runtime.html');await p.waitForFunction(()=>window.ready);
+await p.evaluate(async()=>{
+ setStyle('default');const {createUI}=await import('/src/ui.mjs'),{buildState}=await import('/src/core.mjs');
+ window.st=buildState([]);st.now={where:'码头',wear:'白衬衫',time:'2026年11月20日',weather:'晴'};window.saves=0;
+ window.ui=createUI({settings:()=>s,hasChar:()=>true,era:()=> 'modern',charCfg:()=>({}),state:()=>st,him:()=>({name:'测试角色',avatar:'/assets/opening/dark-avatar.jpg'}),meta:()=>({}),unread:()=>0,saveSettings:()=>saves++,nowChanged(){}});ui.mount();
+});
+assert.equal(await p.locator('#sb-root .sb-post').count(),0);
+assert.equal(await p.locator('#sb-root [data-tab=posts]').innerText(),'此刻');assert.equal(await p.locator('#sb-root [data-tab=now]').count(),0);
+assert(await p.locator('.sb-nowpad').count());
+assert(await p.evaluate(()=>{const a=document.querySelector('.sb-nowpad').getBoundingClientRect(),b=document.querySelector('.sb-music').getBoundingClientRect();return a.bottom<=b.top}));
+assert(await p.locator('#sb-root .sb-meta span').first().evaluate(n=>Math.abs(n.getBoundingClientRect().left-document.querySelector('#sb-root .sb-av').getBoundingClientRect().left)<1));
+await p.evaluate(()=>openLegacy());await p.waitForTimeout(100);
+assert(await p.locator('#sb-splash-settings .sb-custom').evaluate(n=>{const r=n.getBoundingClientRect(),bar=document.querySelector('#sb-root .sb-drawer').getBoundingClientRect();return r.width>500&&r.height<innerHeight&&r.left>bar.right&&r.right<innerWidth}));
+const input=p.locator('[data-drawer-width]');await input.fill('390');await input.press('Tab');
+assert.equal(await p.locator('#sb-root .sb-drawer').evaluate(n=>Math.round(n.getBoundingClientRect().width)),390);
+await p.locator('#sb-splash-settings [data-close]').click();
+const handle=p.locator('[data-drawer-resize]');const h=await handle.boundingBox(),before=await p.evaluate(()=>saves);
+await p.mouse.move(h.x+8,300);await p.mouse.down();await p.mouse.move(h.x+68,300,{steps:5});
+assert.equal(await p.evaluate(()=>saves),before,'drag must not save at every move');await p.mouse.up();assert.equal(await p.evaluate(()=>saves),before+1);
+assert.equal(await p.evaluate(()=>s.splash.drawerWidths.tablet),450);
+const saved=await p.evaluate(()=>saves);const grip=await handle.boundingBox();
+await p.evaluate(()=>document.addEventListener('pointerdown',e=>window.lastPointer=e.pointerId,{once:true,capture:true}));await p.mouse.move(grip.x+8,300);await p.mouse.down();await p.mouse.move(grip.x-42,300);await p.evaluate(()=>document.querySelector('#sb-root').dispatchEvent(new PointerEvent('pointercancel',{pointerId:lastPointer,bubbles:true})));await p.mouse.up();
+assert.equal(await p.evaluate(()=>s.splash.drawerWidths.tablet),450,'cancelled drag restores preference');assert.equal(await p.evaluate(()=>saves),saved,'cancelled drag must not save');
+await p.evaluate(()=>openLegacy());assert.equal(await input.inputValue(),'450');await p.locator('#sb-splash-settings [data-close]').click();
+await p.setViewportSize({width:390,height:844});await p.waitForTimeout(150);await p.evaluate(()=>ui.open());
+await handle.focus();await p.keyboard.press('End');assert.equal(await p.locator('#sb-root .sb-drawer').evaluate(n=>Math.round(n.getBoundingClientRect().width)),342);
+assert.equal(await p.evaluate(()=>s.splash.drawerWidths.tablet),450);
+assert(await p.evaluate(()=>{const n=document.createElement('div');n.className='sb-float';document.querySelector('#sb-root').append(n);const width=n.getBoundingClientRect().width;n.remove();return width<innerWidth-30}),'floating phone stays smaller than screen');
+await p.setViewportSize({width:1024,height:900});await p.waitForTimeout(150);assert.equal(await p.locator('#sb-root .sb-drawer').evaluate(n=>Math.round(n.getBoundingClientRect().width)),450);
+assert.deepEqual(errors,[]);console.log('Default Now landing, header alignment, large tablet modal, numeric/drag width sync, save-on-release, independent mobile/tablet sizes passed.');await b.close();
+})().catch(e=>{console.error(e);process.exit(1)});

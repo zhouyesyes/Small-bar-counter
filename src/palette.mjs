@@ -27,9 +27,9 @@ export function modeFor(settings = {}) {
 export function applyPalette(el, settings, mode = modeFor(settings)) {
     const p = palette(mode, settings.splash?.colors?.[mode]);
     el.dataset.mode = mode;
-    const width = Number(settings.splash?.pageWidth);
-    if (Number.isFinite(width) && width >= 60 && width <= 100) el.style.setProperty('--sb-page-width', `min(600px, ${width}vw)`);
-    else el.style.removeProperty('--sb-page-width');
+    // Drawer sizing has its own per-device pixel preference; old percentages
+    // must not make the floating phone span the entire viewport.
+    el.style.removeProperty('--sb-page-width');
     el.style.setProperty('--sb-card', mix(p.bg, mode === 'dark' ? '#000000' : '#ffffff', mode === 'dark' ? .16 : .5));
     for (const [k, v] of Object.entries(p)) el.style.setProperty('--sb-' + k, v);
     return p;

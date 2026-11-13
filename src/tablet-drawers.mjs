@@ -47,7 +47,7 @@ const schedule=()=>{if(!frame)frame=requestAnimationFrame(fit);};
 let listening=false,rootObserver,resizeObserver;
 export function syncTabletDrawers(drawers) {
     if(!listening){
-        listening=true;window.addEventListener('resize',schedule);window.visualViewport?.addEventListener('resize',schedule);
+        listening=true;window.addEventListener('resize',schedule);window.addEventListener('small-bar-drawer-size',schedule);window.visualViewport?.addEventListener('resize',schedule);
         rootObserver=new MutationObserver(schedule);rootObserver.observe(document.documentElement,{attributes:true,attributeFilter:['class']});
         resizeObserver=new ResizeObserver(schedule);const shell=document.querySelector('#sheld');if(shell)resizeObserver.observe(shell);
         media.addEventListener('change',schedule);
@@ -61,6 +61,6 @@ export function syncTabletDrawers(drawers) {
 export function restoreTabletDrawers() {
     cancelAnimationFrame(frame);frame=0;
     rootObserver?.disconnect();resizeObserver?.disconnect();
-    window.removeEventListener('resize',schedule);window.visualViewport?.removeEventListener('resize',schedule);media.removeEventListener('change',schedule);listening=false;
+    window.removeEventListener('resize',schedule);window.removeEventListener('small-bar-drawer-size',schedule);window.visualViewport?.removeEventListener('resize',schedule);media.removeEventListener('change',schedule);listening=false;
     for(const [node,state] of records){state.observer.disconnect();if(state.fitted)restore(node,state);}records.clear();
 }

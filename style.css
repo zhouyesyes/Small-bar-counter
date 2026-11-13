@@ -29,7 +29,7 @@
 #sb-root.sb-anim .sb-phone{animation:sb-up .22s ease-out}
 
 /* 抽屉 */
-#sb-root .sb-drawer{position:absolute;top:0;left:0;height:100%;width:var(--sb-page-width,min(330px,86vw));background:var(--sb-bg);border-right:1px solid var(--sb-line);display:flex;flex-direction:column;pointer-events:auto;touch-action:pan-y;overscroll-behavior:contain;padding-bottom:env(safe-area-inset-bottom)}
+#sb-root .sb-drawer{position:absolute;top:0;left:0;height:100%;width:var(--sb-drawer-width,var(--sb-page-width,min(330px,86vw)));background:var(--sb-bg);border-right:1px solid var(--sb-line);display:flex;flex-direction:column;pointer-events:auto;touch-action:pan-y;overscroll-behavior:contain;padding-bottom:env(safe-area-inset-bottom)}
 #sb-root .sb-cover{height:128px;flex:0 0 auto;position:relative;background:#999 center/cover no-repeat;transition:height .2s}
 #sb-root .sb-logo{position:absolute;top:calc(14px + env(safe-area-inset-top));left:16px;color:#fff;font-size:calc(11px * var(--fontScale,1));letter-spacing:.32em;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.3)}
 #sb-root .sb-x{position:absolute;top:calc(10px + env(safe-area-inset-top));right:12px;width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,.35);color:#fff;font-size:calc(16px * var(--fontScale,1))}
@@ -1605,3 +1605,12 @@ html.sb-bar[data-sb-mode=dark] .sb-entry-layout select[name=entryStateSelector] 
         box-sizing:border-box;overflow-y:auto;border-radius:0!important;
     }
 }
+
+/* Drawer width uses CSS pixels on both phone and tablet; drag stays outside content. */
+#sb-root .sb-drawer-resize{position:absolute;top:0;bottom:0;left:calc(var(--sb-drawer-width) - 8px);width:16px;z-index:20;pointer-events:auto;touch-action:none;cursor:ew-resize;user-select:none}
+#sb-root .sb-drawer-resize:after{content:'';position:absolute;left:7px;top:0;bottom:0;width:1px;background:var(--sb-line)}
+#sb-root .sb-drawer-resize:is(:hover,:focus-visible,.is-dragging):after{width:3px;background:var(--sb-accent)}
+/* Original bar only: longer header and metadata aligned with the avatar's left edge. */
+#sb-root:not(.sb-folio-phone) .sb-drawer:not(.sb-phonemode)>.sb-body>.sb-cover{aspect-ratio:1.85;height:auto}
+#sb-root:not(.sb-folio-phone) .sb-drawer .sb-meta{text-align:left;padding:8px 22px 14px}
+#sb-root:not(.sb-folio-phone) .sb-drawer .sb-meta span{padding:0}

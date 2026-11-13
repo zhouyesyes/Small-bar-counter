@@ -1,3 +1,4 @@
+import { drawerLimits, drawerWidth, setDrawerWidth, notifyDrawerSize } from './drawer-size.mjs';
 import { installTypography } from './typography.mjs';
 import { artwork, artworkMode, personalProfile, landingArtwork } from './artwork.mjs';
 import { applyPalette, defaults } from './palette.mjs';
@@ -71,7 +72,15 @@ function paintImages() {
     });
 }
 function persist() { try { localStorage.setItem(KEY, JSON.stringify({ enabled: settings.enabled, theme: settings.theme, splash: cfg() })); } catch {} save(); }
+function syncDrawerWidthControls() {
+    const input=panel?.querySelector('[data-drawer-width]');if(!input)return;
+    const limits=drawerLimits();input.min=limits.min;input.max=limits.max;input.value=drawerWidth(settings);
+    panel.querySelector('[data-width-device]').textContent=limits.key==='tablet'?'平板抽屉宽度':'手机抽屉宽度';
+}
+window.addEventListener('small-bar-drawer-size',syncDrawerWidthControls);
+window.addEventListener('resize',syncDrawerWidthControls);
 function syncAppearancePanel() {
+    syncDrawerWidthControls();
     if (!panel?.isConnected) return;
     for (const button of panel.querySelectorAll('.sb-color-launch')) {
         const color = readAppearanceColors(settings, button.dataset.mode)[button.dataset.color];
@@ -229,12 +238,12 @@ export function openSplashSettings() {
     panel.innerHTML = `<style>${styles}</style><div class="sb-custom"><header><b>SMALL BAR / APPEARANCE</b><button data-close aria-label="Close settings">×</button></header>
     <label>显示开场<input type="checkbox" data-key="enabled" ${s.enabled !== false ? 'checked' : ''}></label>
     <label>美化明暗<select data-theme>${['auto','light','dark'].map(x=>`<option ${settings.theme === x ? 'selected' : ''}>${x}</option>`).join('')}</select></label>
-    <label>小吧台宽度<select data-key="pageWidth" aria-label="小吧台宽度"><option value="" ${!s.pageWidth ? 'selected' : ''}>默认</option>${[60,65,70,75,80,85,90,95,100].map(width=>`<option value="${width}" ${Number(s.pageWidth) === width ? 'selected' : ''}>${width}%</option>`).join('')}</select></label>
+    <label><span data-width-device>抽屉宽度</span><span class="sb-width-input"><input type="number" data-drawer-width aria-label="抽屉宽度（像素）" step="1" value="${drawerWidth(settings)}"> px</span></label><p>拖动抽屉与聊天之间的分隔线也能调宽。手机与平板分别记住，修改后自动保存。</p>
     ${['light','dark'].map(mode => `<fieldset class="sb-palette-line"><legend>${mode === 'light' ? '日间配色' : '夜间配色'}</legend>${['bg','accent'].map(key => { const color = s.colors[mode]?.[key] || defaults[mode][key]; return `<div class="sb-color-setting"><span>${key === 'bg' ? '背景色' : '辅助色'}</span><button type="button" class="sb-color-launch" data-mode="${mode}" data-color="${key}" data-value="${esc(color)}" aria-label="调整${mode === 'light' ? '日间' : '夜间'}${key === 'bg' ? '背景色' : '辅助色'}"><span style="background:${esc(color)}"></span><code>${esc(color.toUpperCase())}</code></button></div>`; }).join('')}</fieldset>`).join('')}
     <fieldset><legend>卡片文字 · CARD DETAILS</legend><p>修改后自动保存，下次打开也会保留。</p>
     ${[['quote','头像旁的小字','a quiet seat, kept for you'],['table','座位 · SEAT','by the window'],['order','酒单 · DRINK','the usual'],['date','日期 · DATE（留空用今天）',''],['signature','底部署名 · SIGNED, WITH LOVE','yesyes']].map(([key,label,value])=>`<label>${label}<input type="text" data-key="${key}" maxlength="${key === 'quote' ? 120 : 60}" value="${esc(s[key] ?? value)}"></label>`).join('')}</fieldset>
     ${['light','dark'].map(mode => `<fieldset class="sb-image-settings"><legend>${mode === 'light' ? '日间图片' : '夜间图片'}</legend>${[['cover','横图'],['avatar','头像']].map(([key,label])=>`<label><span>${label}</span><img data-image-preview="${key}" data-mode="${mode}" alt="当前${label}"><input type="file" accept="image/*" data-upload="${key}" data-image-mode="${mode}"></label><button data-clear="${key}" data-image-mode="${mode}">恢复默认${label}</button>`).join('')}</fieldset>`).join('')}
-    <p class="sb-upload-status" role="status"></p><p>照片保存在这台设备的浏览器。卡片上的 keep my tab open 会立即保存当前署名；修改署名后，再勾选即可重新保存。</p><button data-preview>Preview opening</button></div>`;
+    <p class="sb-upload-status" role="status"></p><p>私人照片随酒馆扩展设置保存，不进入仓库。卡片上的 keep my tab open 会立即保存当前署名；修改署名后，再勾选即可重新保存。</p><button data-preview>Preview opening</button></div>`;
     document.documentElement.appendChild(panel); applyPalette(panel, settings);syncAppearancePanel();
     let closeColorPicker;
     const close = () => { closeColorPicker?.(); panel.remove(); panel = null; if (focus?.isConnected) focus.focus({preventScroll:true}); };
@@ -269,7 +278,8 @@ export function openSplashSettings() {
             try { const { cropImage } = await import('./crop.mjs'); const data = await cropImage(t.files[0], { ratio: t.dataset.upload === 'avatar' ? 1 : 2.25, round: t.dataset.upload === 'avatar' }); if (data) { ((s.images ??= {})[t.dataset.imageMode] ??= {})[t.dataset.upload] = await saveImage(data); } status.textContent = data ? 'Photo saved.' : ''; }
             catch (err) { status.textContent = 'Could not save photo. Please try another image.'; console.warn('[Small Bar] Photo', err); }
             finally { t.disabled = false; t.value = ''; }
-        } else if (t.hasAttribute('data-theme')) settings.theme = t.value;
+        } else if (t.matches('[data-drawer-width]')) { setDrawerWidth(settings,t.value);notifyDrawerSize(); }
+        else if (t.hasAttribute('data-theme')) settings.theme = t.value;
         else if (t.dataset.key) s[t.dataset.key] = t.type === 'checkbox' ? t.checked : t.value;
         persist(); paint();syncAppearancePanel(); if (panel) applyPalette(panel, settings);
         window.dispatchEvent(new Event('small-bar-appearance'));
@@ -404,4 +414,15 @@ const styles = `
 #sb-splash-settings [data-image-preview=avatar]{width:30px;height:30px;border-radius:50%;justify-self:center}
 #sb-splash-settings .sb-image-settings input{max-width:100%!important;width:100%;font-size:10px}
 #sb-splash-settings .sb-image-settings [data-clear]{margin:0 0 5px 38px;font-size:10px}
+
+#sb-splash-settings .sb-width-input{display:flex;align-items:center;gap:8px;white-space:nowrap}
+#sb-splash-settings .sb-width-input input{width:96px;max-width:96px}
+@media(min-width:768px){
+ #sb-splash-settings{inset:0;left:0;padding:24px;align-items:center;overflow:hidden;background:rgba(0,0,0,.24)}
+ html.sb-panel-docked #sb-splash-settings{left:var(--sb-panel-width,0px)}
+ #sb-splash-settings .sb-custom{width:min(760px,100%);max-height:82dvh;margin:auto;padding:22px 26px;background:var(--sb-bg);border:1px solid var(--sb-line);border-radius:14px;overflow-y:auto;overscroll-behavior:contain;box-shadow:0 14px 56px rgba(0,0,0,.22)}
+ #sb-splash-settings .sb-custom>header{position:sticky;top:-22px;z-index:2;background:var(--sb-bg);padding:12px 0;border-bottom:1px solid var(--sb-line)}
+ #sb-splash-settings .sb-image-settings label{grid-template-columns:40px 90px minmax(0,1fr)}
+ #sb-splash-settings [data-image-preview]{width:90px;height:48px}
+}
 `;

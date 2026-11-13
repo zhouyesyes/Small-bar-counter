@@ -1,3 +1,4 @@
+import { bindDrawerSize, applyDrawerSize } from './drawer-size.mjs';
 import { installTypography } from './typography.mjs';
 import { updateLyrics, invalidateLyricsLayout } from './music-lyrics.mjs';
 import { bindMusicCovers } from './music-cover.mjs';
@@ -110,6 +111,7 @@ export function createUI(host) {
     function mount() {
         root = document.createElement('div');
         root.id = 'sb-root';
+        bindDrawerSize(root,{settings:()=>host.settings(),save:()=>host.saveSettings()});
         widePanel.addEventListener('change', () => render());
         document.documentElement.appendChild(root); // 不放进 body：酒馆主题可能给 body 加变形，会把固定定位困住
         root.addEventListener('click', onClick);
@@ -221,6 +223,7 @@ export function createUI(host) {
         const docked = !!s.enabled && widePanel.matches && document.documentElement.classList.contains('sb-bar');
         document.documentElement.classList.toggle('sb-panel-docked', docked);
         applyPalette(root, s, theme());
+        applyDrawerSize(root,s);
         const era = host.hasChar() ? host.era() : 'modern';
         const wasOpen = root.dataset.open || '';
         const drawerVisible = v.drawer || docked;
@@ -232,11 +235,13 @@ export function createUI(host) {
         const keepScroll = [...root.querySelectorAll('[data-keep]')].map(el => [el.dataset.keep, el.scrollTop]);
         const html = (s.cat !== false && !drawerVisible && !v.phone ? `<button class="sb-cat" style="top:${Number(s.catTop) || 46}%" aria-label="打开小吧台（上下拖可以挪位置）"></button>` : '')
             + (drawerVisible ? (host.hasChar() ? drawerHtml(era) : landingHtml(false)) : '')
-            + (v.phone ? (host.hasChar() ? floatHtml(era) : landingHtml(true)) : '');
+            + (v.phone ? (host.hasChar() ? floatHtml(era) : landingHtml(true)) : '')
+            + (drawerVisible ? '<div class="sb-drawer-resize" data-drawer-resize role="separator" aria-label="调整小吧台宽度" aria-orientation="vertical" tabindex="0"></div>' : '');
         if (html === lastHtml) return; // 什么都没变：不重画，进新聊天时不来回闪
         lastHtml = html;
         lyricView = root.querySelector('.sb-lyr') || lyricView;
         root.innerHTML = html;
+        applyDrawerSize(root,s);
         const lyricSlot = root.querySelector('.sb-lyr');
         if (lyricSlot && lyricView) { lyricSlot.replaceWith(lyricView); invalidateLyricsLayout(lyricView); }
         bindMusicCovers(root, coverTracks, coverList, resolveCover, () => host.saveSettings());
@@ -291,10 +296,12 @@ export function createUI(host) {
         const st = host.state(), him = host.him(), n = st.now;
         const labels = ERA[era].tabs;
         let body = '';
-        if (v.tab === 'posts') body = postsHtml(st, him) + musicHtml(st);
+        const original = host.settings().barStyle === 'default';
+        if (original && v.tab === 'now') v.tab = 'posts';
+        if (v.tab === 'posts') body = (original ? (v.nowBook ? nowBookHtml() : nowHtml(st)) : postsHtml(st, him)) + musicHtml(st);
         if (v.tab === 'now') body = v.nowBook ? nowBookHtml() : nowHtml(st);
         if (v.tab === 'diary') body = v.diaryId ? diaryOneHtml(st, him) : diaryListHtml(st);
-        const tabsNav = `<nav class="sb-tabs">${TAB_KEYS.map((k, i) => `<button data-act="tab" data-tab="${k}" class="${v.tab === k ? 'on' : ''}">${labels[i]}${k === 'phone' && host.unread() ? ` <b class="sb-badge">${host.unread()}</b>` : ''}</button>`).join('')}</nav>`;
+        const tabsNav = `<nav class="sb-tabs">${TAB_KEYS.filter(k=>!original||k!=='now').map(k => { const i=TAB_KEYS.indexOf(k); return `<button data-act="tab" data-tab="${k}" class="${v.tab === k ? 'on' : ''}">${original && k === 'posts' ? '此刻' : labels[i]}${k === 'phone' && host.unread() ? ` <b class="sb-badge">${host.unread()}</b>` : ''}</button>`; }).join('')}</nav>`;
         // 小手机那一格：手机直接嵌在抽屉里（不另外弹出来）
         if (v.tab === 'phone') return `<div class="sb-shade" data-act="close"></div>
 <div class="sb-drawer sb-phonemode" role="dialog" aria-label="小吧台">
