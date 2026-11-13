@@ -287,6 +287,7 @@ export function createPlayer({ load, save, onChange, onStatus = () => {} }) {
         const s = st();
         if (i != null) { s.idx = Math.max(0, Math.min(s.list.length - 1, i)); save(); }
         const t = cur(); if (!t) return;
+        media.prepare();
         playing = t; swapped = false;
         let src;
         onStatus(t.src === 'qq' ? '正在问 QQ 音乐要播放地址…' : '正在连网易云…');
@@ -376,8 +377,12 @@ export function createPlayer({ load, save, onChange, onStatus = () => {} }) {
     audio.addEventListener('error', () => { clearTimeout(dog); if (audio.src) fallback(); });
     audio.addEventListener('play', () => onChange?.('state'));
     audio.addEventListener('pause', () => onChange?.('state'));
-    const resume = () => audio.src && playing ? audio.play().catch(e => { if (e?.name === 'NotAllowedError') onChange?.('error','点一下播放键继续'); }) : play();
-    attachMediaSession(audio,{track:()=>playing,play:resume,next:()=>next(false),prev});
+    const resume = () => {
+        if (!audio.src || !playing) return play();
+        media.prepare();
+        return audio.play().catch(e => { if (e?.name === 'NotAllowedError') onChange?.('error','点一下播放键继续'); });
+    };
+    const media = attachMediaSession(audio,{track:()=>playing,play:resume,next:()=>next(false),prev});
     document.addEventListener('visibilitychange', () => {
         clearTimeout(dog);
         if (!document.hidden && !audio.paused && audio.readyState < 2) watch();
