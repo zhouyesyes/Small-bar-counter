@@ -47,6 +47,7 @@ const svg = k => `<svg viewBox="0 0 24 24">${ICON[k]}</svg>`;
 
 export function createUI(host) {
     installTypography();
+    const widePanel = matchMedia('(min-width: 768px)');
     const v = { drawer: false, tab: 'posts', diaryId: '', phone: false, view: 'home', plus: false, momentsN: 10, xN: 10, busy: false, flip: false, menuFor: '', edit: null };
     let root, catBlink = 0, lastHtml = '', lyricView = null, lyricFrame = 0, lyricTickAt = 0;
     // 音乐：歌单存在扩展设置里（不跟聊天走）；播放器不随界面重画
@@ -108,6 +109,7 @@ export function createUI(host) {
     function mount() {
         root = document.createElement('div');
         root.id = 'sb-root';
+        widePanel.addEventListener('change', () => render());
         document.documentElement.appendChild(root); // 不放进 body：酒馆主题可能给 body 加变形，会把固定定位困住
         root.addEventListener('click', onClick);
         root.addEventListener('keydown', onKey);
@@ -215,17 +217,20 @@ export function createUI(host) {
     function render() {
         if (!root) return;
         const s = host.settings();
+        const docked = !!s.enabled && widePanel.matches && document.documentElement.classList.contains('sb-bar');
+        document.documentElement.classList.toggle('sb-panel-docked', docked);
         applyPalette(root, s, theme());
         const era = host.hasChar() ? host.era() : 'modern';
         const wasOpen = root.dataset.open || '';
-        const nowOpen = (v.drawer ? 'd' : '') + (v.phone ? 'p' : '');
+        const drawerVisible = v.drawer || docked;
+        const nowOpen = (drawerVisible ? 'd' : '') + (v.phone ? 'p' : '');
         root.dataset.open = nowOpen;
         const cls = `sb-${theme()} sb-era-${era}` + ((s.barStyle || 'folio') === 'folio' ? ' sb-folio-phone' : '') + (nowOpen && nowOpen !== wasOpen ? ' sb-anim' : '');
-        if (root.className !== cls) { root.className = cls; lastHtml = ''; }
+        if (root.className !== cls) { root.className = cls; lastHtml = null; }
         if (!s.enabled) { root.innerHTML = ''; lastHtml = ''; return; }
         const keepScroll = [...root.querySelectorAll('[data-keep]')].map(el => [el.dataset.keep, el.scrollTop]);
-        const html = (s.cat !== false && !v.drawer && !v.phone ? `<button class="sb-cat" style="top:${Number(s.catTop) || 46}%" aria-label="打开小吧台（上下拖可以挪位置）"></button>` : '')
-            + (v.drawer ? (host.hasChar() ? drawerHtml(era) : landingHtml(false)) : '')
+        const html = (s.cat !== false && !drawerVisible && !v.phone ? `<button class="sb-cat" style="top:${Number(s.catTop) || 46}%" aria-label="打开小吧台（上下拖可以挪位置）"></button>` : '')
+            + (drawerVisible ? (host.hasChar() ? drawerHtml(era) : landingHtml(false)) : '')
             + (v.phone ? (host.hasChar() ? floatHtml(era) : landingHtml(true)) : '');
         if (html === lastHtml) return; // 什么都没变：不重画，进新聊天时不来回闪
         lastHtml = html;
@@ -1596,7 +1601,7 @@ export function createUI(host) {
             render();
         },
         reset: ({ keepOpen = false } = {}) => { if (!keepOpen) { v.drawer = false; v.phone = false; } v.tab = 'posts'; v.view = 'home'; v.diaryId = ''; v.edit = null; v.menuFor = ''; v.busy = false; render(); },
-        isOpen: () => v.drawer || v.phone,
+        isOpen: () => v.drawer || v.phone || document.documentElement.classList.contains('sb-panel-docked'),
     };
 }
 

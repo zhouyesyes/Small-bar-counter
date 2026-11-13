@@ -1523,3 +1523,30 @@ html.sb-bar .sb-lounge-head:has(.sb-lounge-glass) .sb-lounge-settings{top:5px;}
 
 #sb-root .sb-float{width:var(--sb-page-width,min(330px,86vw))}
 html.sb-bar #chat .sb-chat-cover[role=button],html.sb-bar #chat .sb-chat-avatar{cursor:pointer}html.sb-bar #chat .sb-chat-cover:focus-visible,html.sb-bar #chat .sb-chat-avatar:focus-visible{outline:1px solid var(--sb-bar-accent);outline-offset:2px}
+
+/* TT 2.4 / tablet: a persistent companion column beside the native chat shell.
+   Keep host nodes in place so native drawers, chat events and extensions survive. */
+@media (min-width:768px) {
+    html.sb-bar.sb-panel-docked { --sb-panel-width:clamp(280px,28vw,340px); }
+    html.sb-bar.sb-panel-docked #sb-root .sb-drawer {
+        width:var(--sb-panel-width);max-width:var(--sb-panel-width);
+        padding-top:env(safe-area-inset-top);animation:none;
+    }
+    html.sb-bar.sb-panel-docked #sb-root .sb-shade,
+    html.sb-bar.sb-panel-docked #sb-root .sb-drawer .sb-x,
+    html.sb-bar.sb-panel-docked #sb-root .sb-minibar { display:none; }
+    html.sb-bar.sb-panel-docked #sb-root .sb-drawer .sb-body { min-height:0;overscroll-behavior:contain; }
+    html.sb-bar.sb-panel-docked #sb-root .sb-drawer .sb-cover { aspect-ratio:2.5; }
+    html.sb-bar.sb-panel-docked #sheld {
+        left:var(--sb-panel-width)!important;right:0!important;
+        width:calc(100% - var(--sb-panel-width))!important;
+        max-width:none!important;min-width:0!important;margin-inline:0!important;
+        transform:none!important;
+    }
+    html.sb-bar.sb-panel-docked :is(#top-bar,#top-settings-holder) {
+        left:var(--sb-panel-width)!important;right:0!important;
+        width:calc(100% - var(--sb-panel-width))!important;
+        max-width:none!important;margin-inline:0!important;transform:none!important;
+    }
+    html.sb-bar.sb-panel-docked #sb-root .sb-tabs button { min-height:44px; }
+}
