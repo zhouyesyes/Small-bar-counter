@@ -1,3 +1,4 @@
+import { cocktailFromState, cocktailProtocol, outputUsage } from './cocktail-state.mjs';
 import { artwork, artworkMode, personalProfile, landingArtwork } from './artwork.mjs';
 import { resolveMe } from './profile.mjs';
 import { createAppearanceBridge } from './appearance-api.mjs';
@@ -73,6 +74,9 @@ function stateWithout(except) {
     for (const g of Object.values(ctx().chatMetadata?.[META]?.nowVer || {})) g.ids.forEach((id, i) => { if (i !== g.pick) off.add(id); });
     const all = [...fromChat, ...extra].map(b => (off.has(b.id) ? { ...b, raw: stripNow(b.raw) } : b));
     const st = buildState(all.sort((a, b) => (a.at || 0) - (b.at || 0)));
+    const done=ctx().chatMetadata?.[META]?.cocktailDone||{};
+    for(const item of st.cocktails.default?.gestures.reminders||[])if(done[item.id||item.text])item.done=true;
+    for(const item of st.memo)if(done[item.id||item.text])item.done=true;
     return st;
 }
 const dirty = () => { cache = null; };
@@ -297,7 +301,8 @@ const helper = () => globalThis.TavernHelper;
 const hasHelper = () => typeof helper()?.generate === 'function';
 const customApi = () => { const o = settings().ownApi || {}; return o.url ? { apiurl: apiBase(o.url), key: o.key, model: o.model, source: 'openai' } : null; };
 
-async function ask(messages, quiet) {
+async function ask(messages, quiet, options = {}) {
+    const maxTokens=options.maxTokens||400;
     const s = settings();
     const c = ctx();
     // 角色卡在「懒加载」时只有名字没有设定（酒馆 1.18 / TauriTavern 都可能）：先补全
@@ -310,35 +315,35 @@ async function ask(messages, quiet) {
         try {
             if (hasHelper()) {
                 const out = await helper().generate({
-                    user_input: '', should_stream: false, preset_name: 'in_use',
+                    user_input: '', should_stream: false, max_tokens: maxTokens, preset_name: 'in_use',
                     injects: [{ role: 'system', position: 'in_chat', depth: 0, should_scan: false, content: quiet }],
                     ...(own ? { custom_api: customApi() } : {}),
                 });
-                return extractBlock(String(out?.content ?? out ?? '')).text;
+                return options.preserveStatus?String(out?.content ?? out ?? ''):extractBlock(String(out?.content ?? out ?? '')).text;
             }
             if (!own && typeof c.generateQuietPrompt === 'function') {
-                const out = await c.generateQuietPrompt({ quietPrompt: quiet, responseLength: 400, removeReasoning: true });
-                return extractBlock(String(out || '')).text;
+                const out = await c.generateQuietPrompt({ quietPrompt: quiet, responseLength: maxTokens, removeReasoning: true });
+                return options.preserveStatus?String(out || ''):extractBlock(String(out || '')).text;
             }
         } finally { refreshInject(); }
     }
     // 自己挑：只发小吧台拼的这几段
     if (own) {
         if (typeof helper()?.generateRaw === 'function') {
-            const out = await helper().generateRaw({ ordered_prompts: messages, should_stream: false, custom_api: customApi() });
+            const out = await helper().generateRaw({ ordered_prompts: messages, should_stream: false, max_tokens:maxTokens, custom_api: customApi() });
             return String(out?.content ?? out ?? '');
         }
-        return await callApi(s.ownApi, messages);
+        return await callApi(s.ownApi, messages, maxTokens);
     }
     if (typeof c.generateRaw !== 'function') throw new Error('这个酒馆版本没有 generateRaw');
     const sys = messages.filter(m => m.role === 'system').map(m => m.content).join('\n\n');
     const rest = messages.filter(m => m.role !== 'system');
-    return await c.generateRaw({ systemPrompt: sys, prompt: rest, responseLength: 400 });
+    return await c.generateRaw({ systemPrompt: sys, prompt: rest, responseLength: maxTokens });
 }
 const apiBase = u => String(u || '').trim().replace(/\/+(chat\/completions|completions|models)\/?$/i, '').replace(/\/+$/, '');
 // 先经酒馆后端转一下（手机上直接请求常被跨域拦）；后端不认（比如 TauriTavern 没有这条路）再直接请求
-async function callApi(conf, messages) {
-    const body = { model: conf.model, messages, stream: false, max_tokens: 400, temperature: 0.9 };
+async function callApi(conf, messages, maxTokens = 400) {
+    const body = { model: conf.model, messages, stream: false, max_tokens: maxTokens, temperature: 0.9 };
     let res = null;
     try {
         res = await fetch('/api/backends/chat-completions/generate', {
@@ -516,7 +521,14 @@ function refreshInject() {
     ].filter(Boolean).join('\n');
     const events = phoneEvents(Number(s.storyPhoneN ?? 2));
     const evNote = events ? `手机上最近发生的（从早到晚）：\n${events}\n正文里可以自然地带一笔（看了眼手机、想起那条朋友圈、顺手回一句），也可以不提，看剧情合不合适，别硬塞。` : '';
-    const text = buildInjection({ prompt: s.prompt, coverTags: tags, state: state(), wechatTail: tail, myComments, waiting, wxNote: [wxNote, myM && `{{user}} 最近发的朋友圈（你刷得到）：\n${myM}`, evNote].filter(Boolean).join('\n\n'), saveMode: s.saveMode, channel: era() === 'modern' ? '在手机上的聊天' : '的书信往来' });
+    let text = buildInjection({ prompt: s.prompt, coverTags: tags, state: state(), wechatTail: tail, myComments, waiting, wxNote: [wxNote, myM && `{{user}} 最近发的朋友圈（你刷得到）：\n${myM}`, evNote].filter(Boolean).join('\n\n'), saveMode: s.saveMode, channel: era() === 'modern' ? '在手机上的聊天' : '的书信往来' });
+    if (s.barStyle === 'default') {
+        const mode=charCfg().cocktailMode==='adaptive'?'adaptive':'default';
+        const snapshot=structuredClone(cocktailFromState(state(),mode));
+        if(mode==='default')snapshot.gestures.reminders=snapshot.gestures.reminders.filter(r=>!r.done&&!meta().cocktailDone?.[r.id||r.text]);
+        text+='\n\n'+cocktailProtocol(mode,snapshot);
+        if(s.saveMode)text+='\n省一点时酒杯行只更新 scene、emotion，其他字段可省略，程序会保留此前记录。';
+    }
     // 1 = 放在聊天里（IN_CHAT），深度 0 = 最后面，0 = 系统身份
     c.setExtensionPrompt(INJECT_KEY, text, 1, 0, false, 0);
 }
@@ -525,6 +537,23 @@ function hasChar() { const c = ctx(); return c.characterId != null && c.characte
 let lastAssistantAvatar='';
 function assistantAvatar(){if(!activeChat(ctx()))lastAssistantAvatar=document.querySelector('#chat .mes:not([is_user=true]):not([is_system=true]) .mesAvatarWrapper .avatar img')?.getAttribute('src')||lastAssistantAvatar;return lastAssistantAvatar;}
 setAssistantAvatarSource(assistantAvatar);
+
+// Read the selected reply only. Cached estimates never become a fake exact count.
+const usageCache=new WeakMap();
+function lastReply(){const chat=ctx().chat||[];for(let i=chat.length-1;i>=0;i--){const m=chat[i];if(!m.is_user&&!m.is_system&&typeof m.mes==='string')return m;}return null;}
+function replyUsageKey(m){return `${m.swipe_id??0}|${m.mes}|${m.extra?.small_bar||''}`;}
+function latestCocktailUsage(){const message=lastReply();if(!message)return null;const native=outputUsage(message);if(native)return native;const cached=usageCache.get(message);return cached?.key===replyUsageKey(message)?cached.value:null;}
+async function updateCocktailUsage(){
+    if(settings().barStyle!=='default')return;
+    const message=lastReply();if(!message)return;const key=replyUsageKey(message),cached=usageCache.get(message);
+    const exact=outputUsage(message);if(exact){usageCache.set(message,{key,value:exact});return;}
+    if(cached?.key===key)return;
+    const entry={key,value:null};usageCache.set(message,entry);
+    const c=ctx(),chat=c.chat,source=message.mes+(message.extra?.small_bar?'\n<!--SB\n'+message.extra.small_bar+'\nSB-->':'');
+    if(typeof c.getTokenCountAsync!=='function')return;
+    try {const tokens=await c.getTokenCountAsync(source);if(ctx().chat!==chat||replyUsageKey(message)!==key||usageCache.get(message)!==entry)return;if(Number.isInteger(tokens)&&tokens>=0){entry.value={tokens,estimated:true};ui.render();}}
+    catch { /* Unknown usage stays a dash; never use prompt or total tokens. */ }
+}
 
 // ---------- 接起来 ----------
 const host = {
@@ -540,6 +569,10 @@ const host = {
     charCfg, setCharCfg: f => { f(charCfg()); saveMeta(); refreshInject(); if (settings().barTheme) mountChat(barChatHost); },
     saveImage: saveImageHere, img, dropImage: src => { if (src) delete owners()[src]; return deleteImage(src); }, refreshInject,
     scanImages, dropImages, trimChat, wipeChat, chatBytes,
+    cocktailMode: () => charCfg().cocktailMode==='adaptive'?'adaptive':'default',
+    setCocktailMode: mode => { charCfg().cocktailMode=mode==='adaptive'?'adaptive':'default';saveMeta();refreshInject(); },
+    cocktailState: () => cocktailFromState(state(),charCfg().cocktailMode==='adaptive'?'adaptive':'default'),
+    cocktailUsage: () => latestCocktailUsage(),
     meta, saveMeta, state, unread, markRead, wechat, addWechat, patchWechat, deleteWechat, takeLastRound, restoreRound, repliesFor,
     ...xHost,
     saveSettings,
@@ -586,7 +619,7 @@ function applyAppearance() {
     if (toggle) toggle.checked = !!settings().barTheme;
 }
 
-function refresh() { dirty(); clearTimeout(refreshTimer); refreshTimer = setTimeout(() => { dirty(); refreshInject(); ui.render(); applyAppearance(); }, 120); }
+function refresh() { dirty(); clearTimeout(refreshTimer); refreshTimer = setTimeout(() => { dirty(); updateCocktailUsage(); refreshInject(); ui.render(); applyAppearance(); }, 120); }
 
 // 扩展页里的一小块设置：两个开关分开管（小猫抽屉、吧台美化）、打开按钮（小猫关了也能从这里进）
 function settingsPanel() {

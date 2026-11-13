@@ -9,7 +9,7 @@ assert.ok(raw.includes('时间'));
 assert.equal(extractBlock('没有状态').raw, '');
 assert.equal(extractBlock('正文<smallbar>天气: 晴</smallbar>').raw, '天气: 晴');
 assert.equal(extractBlock('正文\n<!--SB\n天气: 晴').text, '正文'); // 没写结尾也能剪掉
-assert.deepEqual(parseBlock('天气：晴\n- 动态: a\n动态: b\n无关的一行\n备忘: 无').动态, ['a', 'b']);
+assert.deepEqual(parseBlock('天气：晴\n- 动态: a\n动态: b\n无关的一行\n备忘: 无').动态, ['a', 'b\n无关的一行']); // 未知行属于多段动态正文
 
 const st = buildState([{ id: 'a', raw, at: 1 }, { id: 'b', raw: '时间: 11.09 02:00\n完成: 修伞\n回复: 嗯', at: 2 }]);
 assert.equal(st.now.where, '巷口');

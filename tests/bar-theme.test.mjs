@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { palette, contrast } from '../src/palette.mjs';
-import { hostColors, barCss, ICONS } from '../src/bar-theme.mjs';
+// bar-pages imports the tablet media query; these pure color tests do not mount a DOM.
+globalThis.matchMedia ??= () => ({ matches: false, addEventListener() {}, removeEventListener() {} });
+const { hostColors, barCss, ICONS } = await import('../src/bar-theme.mjs');
 
 test('吧台美化的颜色从小吧台两套默认色算出来，正文看得清', () => {
     for (const mode of ['light', 'dark']) {

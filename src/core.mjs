@@ -1,3 +1,4 @@
+import { parseCocktail } from './cocktail-state.mjs';
 // 小吧台的数据部分（纯逻辑，不碰页面和酒馆，方便用 node 测）
 // 他每轮正文最后附一段状态：<!--SB ... SB-->（网页上看不见），也认 <smallbar>...</smallbar>
 // 扩展收到后把这段从正文里剪掉，存进这一楼的 extra.small_bar，所以删楼、重新生成、换一页回复都会自动跟着变
@@ -19,8 +20,8 @@ export function extractBlock(mes) {
 // 认得的名字才算新的一项；别的行（日记、动态写了好几段，正文里有「他说：」这种）接在上一项后面
 export const KEYS = new Set(['时间', '天气', '在哪', '地点', '穿着', '想要', '心声', '心声背面', '背面', '签名', '音乐', '在听', '备忘', '备忘+', '备忘✓', '完成',
     '动态', '朋友圈', '朋友圈评论', '朋友圈点赞', '评论', '点赞', '回复', '日记', 'X', '推特', '推文', '微博', '热搜', '照片', 'X网名', 'X账号', 'X签名',
-    '微信', '消息', '好友申请', '微信拉黑', '微信解除拉黑', '通过好友申请', '背景']);
-const LONG = new Set(['日记', '动态', 'X', '推特', '微博']); // 能写好几段的
+    '微信', '消息', '好友申请', '微信拉黑', '微信解除拉黑', '通过好友申请', '背景', '酒杯']);
+const LONG = new Set(['日记', '动态', 'X', '推特', '微博', '酒杯']); // 能写好几段的
 export function parseBlock(raw) {
     const out = {};
     let last = null; // 上一项：{ key, i }，后面的散行接上去
@@ -56,20 +57,54 @@ const pics = v => (v || '').replace(/^(照片|图片|图)\s*[:：]?/, '').split(
 // msgs: [{ id, raw, at }]，id 是这一楼稳定的编号（发出时间 + 第几页回复），at 是这一楼的时间（毫秒，排先后用）
 export function buildState(msgs) {
     const st = {
-        now: {}, nowLog: [], posts: [], moments: [], diary: [], memo: [], music: null, xposts: [], xfeed: [], weibo: [], hot: [], photos: [], freq: [], blockedMe: false, wechat: [], npcComments: [], replies: [], cover: '',
+        cocktails: {}, now: {}, nowLog: [], posts: [], moments: [], diary: [], memo: [], music: null, xposts: [], xfeed: [], weibo: [], hot: [], photos: [], freq: [], blockedMe: false, wechat: [], npcComments: [], replies: [], cover: '',
         likes: {}, // 谁点了赞：帖子 id → [名字]（TA按关系写的，界面不自己猜）
     };
     for (const { id, raw, at = 0 } of msgs) {
         if (!raw) continue;
         const b = parseBlock(raw);
         const n = st.now;
+        for (const payload of b['酒杯'] || []) {
+            const fresh = parseCocktail(payload);
+            if (!fresh) continue;
+            const candidate = st.cocktails[fresh.mode] ? parseCocktail(payload, st.cocktails[fresh.mode]) : fresh;
+            if (!candidate) continue;
+            candidate.sourceId = id;
+            st.cocktails[candidate.mode] = candidate;
+            if (candidate.mode === 'default') {
+                const pairs = { time: candidate.scene.storyDate, weather: candidate.scene.weather, where: candidate.scene.location,
+                    wear: candidate.gestures.clothing, want: candidate.emotion.want,
+                    voice: candidate.emotion.bottomWords?.[0], voiceBack: candidate.emotion.bottomWords?.[1] };
+                for (const [key, value] of Object.entries(pairs)) if (value !== undefined) n[key] = value || '';
+                if (Object.hasOwn(candidate.emotion, 'bottomWords')) { n.voice = candidate.emotion.bottomWords[0] || ''; n.voiceBack = candidate.emotion.bottomWords[1] || ''; }
+                // Reuse the same reminders in the existing phone memo screen.
+                const reminders = candidate.gestures.reminders;
+                for (const old of st.memo) if (old.cocktail && !reminders.some(r => r.text === old.text)) old.done = true;
+                for (const reminder of reminders) {
+                    const previous = st.memo.find(m => m.text === reminder.text);
+                    if (previous) Object.assign(previous, reminder, { cocktail: true });
+                    else st.memo.push({ ...reminder, cocktail: true });
+                }
+            }
+        }
+
         for (const [k, keys] of Object.entries({
             time: ['时间'], weather: ['天气'], where: ['在哪', '地点'], wear: ['穿着'], want: ['想要'],
             voice: ['心声'], voiceBack: ['心声背面', '背面'], sign: ['签名'],
         })) { const v = one(b, ...keys); if (v) n[k] = v; }
+        // Text-only phone updates also refresh matching fields on the new default panel.
+        const currentCup = st.cocktails.default;
+        if (currentCup) {
+            const links = [['时间','scene','storyDate'],['天气','scene','weather'],['在哪','scene','location'],['地点','scene','location'],['穿着','gestures','clothing'],['想要','emotion','want']];
+            for (const [legacy, group, key] of links) if (b[legacy]?.length) currentCup[group][key] = one(b,legacy);
+            if (b['心声']?.length || b['心声背面']?.length || b['背面']?.length) {
+                const words = currentCup.emotion.bottomWords || [];
+                currentCup.emotion.bottomWords = [one(b,'心声') || words[0] || '', one(b,'心声背面','背面') || words[1] || ''];
+            }
+        }
         // 此刻的本子：每一轮的此刻都记一页（以前的也能翻）
         const memoAdd = many(b, '备忘', '备忘+'), memoDone = many(b, '备忘✓', '完成');
-        if (['时间', '在哪', '地点', '穿着', '想要', '心声'].some(k => b[k]?.length) || memoAdd.length || memoDone.length) st.nowLog.push({ id, at, ...n, memoAdd, memoDone });
+        if (['时间', '在哪', '地点', '穿着', '想要', '心声', '酒杯'].some(k => b[k]?.length) || memoAdd.length || memoDone.length) st.nowLog.push({ id, at, ...n, memoAdd, memoDone });
         const cov = one(b, '背景'); if (cov) st.cover = cov;
         many(b, '动态').forEach((v, i) => {
             const [text, p, place] = split(v);
@@ -140,15 +175,26 @@ export function buildState(msgs) {
         const i = st.memo.findIndex(x => x.done);
         st.memo.splice(i >= 0 ? i : 0, 1);
     }
+    if (st.cocktails.default) {
+        const reminders = st.cocktails.default.gestures.reminders;
+        for (const memo of st.memo) {
+            const target = reminders.find(r => r.text === memo.text);
+            if (target) target.done = memo.done;
+            else if (!memo.done) reminders.push({ id: memo.id || memo.text, text: memo.text, date: null, done: false });
+        }
+    }
     return st;
 }
 
 // 此刻那几项：重新生成此刻时，没被选中的那一版要把这些剪掉（别的照留，比如正文那一楼里的动态）
-export const NOW_KEYS = ['时间', '天气', '在哪', '地点', '穿着', '想要', '心声', '心声背面', '背面', '备忘', '备忘+', '备忘✓', '完成'];
+export const NOW_KEYS = ['酒杯', '时间', '天气', '在哪', '地点', '穿着', '想要', '心声', '心声背面', '背面', '备忘', '备忘+', '备忘✓', '完成'];
 export function stripNow(raw) {
+    let removing = false;
     return String(raw || '').split(/\r?\n/).filter(line => {
-        const m = line.trim().match(/^[-*·\s]*([^:：]{1,8})\s*[:：]/);
-        return !(m && NOW_KEYS.includes(m[1].trim()));
+        const match = line.trim().match(/^[-*·\s]*([^:：]{1,8})\s*[:：]/);
+        const key = match?.[1].trim();
+        if (key && KEYS.has(key)) removing = NOW_KEYS.includes(key);
+        return !removing;
     }).join('\n');
 }
 

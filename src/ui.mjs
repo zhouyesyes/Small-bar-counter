@@ -1,3 +1,5 @@
+import { createCocktailPanel } from './cocktail-panel.mjs';
+import { cocktailProtocol, cocktailFromState, parseCocktail } from './cocktail-state.mjs';
 import { bindDrawerSize, applyDrawerSize } from './drawer-size.mjs';
 import { installTypography } from './typography.mjs';
 import { updateLyrics, invalidateLyricsLayout } from './music-lyrics.mjs';
@@ -15,6 +17,7 @@ import { PHONE_RULES, LETTER_RULES, PHONE_STATUS, MANUAL, RELATION } from './pro
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const nl = s => esc(s).replace(/\n/g, '<br>');
+const buildCocktailValid=(raw,mode)=>{const payload=parseBlock(raw)['酒杯']?.at(-1);const state=parseCocktail(payload);return !!state&&!!state.drink.name&&!!state.drink.cupType&&state.mode===mode&&(mode!=='adaptive'||state.modules.length>0)};
 const wait = ms => new Promise(r => setTimeout(r, ms));
 
 // 不同时代：同一套功能，换名字和字体
@@ -50,6 +53,7 @@ export function createUI(host) {
     installTypography();
     const widePanel = matchMedia('(min-width: 768px)');
     const v = { drawer: false, tab: 'posts', diaryId: '', phone: false, view: 'home', plus: false, momentsN: 10, xN: 10, busy: false, flip: false, menuFor: '', edit: null };
+    let cocktail, manualRequest=0;
     let root, catBlink = 0, lastHtml = '', lyricView = null, lyricFrame = 0, lyricTickAt = 0;
     // 音乐：歌单存在扩展设置里（不跟聊天走）；播放器不随界面重画
     function musicState() {
@@ -111,6 +115,7 @@ export function createUI(host) {
     function mount() {
         root = document.createElement('div');
         root.id = 'sb-root';
+        cocktail=createCocktailPanel(root,{...host,cocktailBusy:()=>v.busy==='cocktail'},{render,generate:()=>generate('cocktail')});
         bindDrawerSize(root,{settings:()=>host.settings(),save:()=>host.saveSettings()});
         widePanel.addEventListener('change', () => render());
         document.documentElement.appendChild(root); // 不放进 body：酒馆主题可能给 body 加变形，会把固定定位困住
@@ -173,7 +178,7 @@ export function createUI(host) {
         root.addEventListener('pointercancel', endDrag);
         // 此刻那一页左右滑：换版本（重新生成过才有）
         let sw = null;
-        root.addEventListener('pointerdown', e => { if (e.target.closest?.('.sb-nowpad') && !e.target.closest('button')) sw = { x: e.clientX, y: e.clientY, id: e.pointerId }; });
+        root.addEventListener('pointerdown', e => { if (e.target.closest?.('.sb-nowpad') && !e.target.closest('.sb-cocktail') && !e.target.closest('button')) sw = { x: e.clientX, y: e.clientY, id: e.pointerId }; });
         root.addEventListener('pointerup', e => {
             if (!sw || e.pointerId !== sw.id) return;
             const dx = e.clientX - sw.x, dy = e.clientY - sw.y; sw = null;
@@ -231,7 +236,7 @@ export function createUI(host) {
         root.dataset.open = nowOpen;
         const cls = `sb-${theme()} sb-era-${era}` + ((s.barStyle || 'folio') === 'folio' ? ' sb-folio-phone' : '') + (nowOpen && nowOpen !== wasOpen ? ' sb-anim' : '');
         if (root.className !== cls) { root.className = cls; lastHtml = null; }
-        if (!s.enabled) { root.innerHTML = ''; lastHtml = ''; return; }
+        if (!s.enabled) { cocktail?.detach(); root.innerHTML = ''; lastHtml = ''; return; }
         const keepScroll = [...root.querySelectorAll('[data-keep]')].map(el => [el.dataset.keep, el.scrollTop]);
         const html = (s.cat !== false && !drawerVisible && !v.phone ? `<button class="sb-cat" style="top:${Number(s.catTop) || 46}%" aria-label="打开小吧台（上下拖可以挪位置）"></button>` : '')
             + (drawerVisible ? (host.hasChar() ? drawerHtml(era) : landingHtml(false)) : '')
@@ -240,6 +245,7 @@ export function createUI(host) {
         if (html === lastHtml) return; // 什么都没变：不重画，进新聊天时不来回闪
         lastHtml = html;
         lyricView = root.querySelector('.sb-lyr') || lyricView;
+        cocktail?.detach();
         root.innerHTML = html;
         applyDrawerSize(root,s);
         const lyricSlot = root.querySelector('.sb-lyr');
@@ -254,6 +260,7 @@ export function createUI(host) {
         const msgs = root.querySelector('.sb-msgs'); if (msgs && v.stick) { msgs.scrollTop = msgs.scrollHeight; }
         v.stick = false;
         if (v.phone && v.view === 'set-reply') countTokens();
+        cocktail?.mount();
         tickMusic(); syncMusicAnimation();
     }
 
@@ -389,24 +396,29 @@ export function createUI(host) {
         // 重新生成此刻：再写一版，几版都留着，左右滑 / 点 ‹ › 换着看（没选中的那几版不算数）
         const redoOf = kind === 'now-redo' ? curNowId() : null;
         if (kind === 'now-redo') kind = 'now';
+        const requestMeta=host.meta(), request=++manualRequest;
         v.busy = kind; render();
         try {
-            let rule = MANUAL[kind];
-            if (['now', 'memo', 'all'].includes(kind)) rule += '\n' + host.memoNote(redoOf);
+            const mode=host.cocktailMode?.()||'default';
+            let rule = kind==='cocktail'?cocktailProtocol(mode,cocktailFromState(host.state(),mode))+'\n只写状态段，不写正文。':MANUAL[kind];
+            if (['now', 'memo', 'all', 'cocktail'].includes(kind)) rule += '\n' + host.memoNote(redoOf);
             if (['post', 'moments', 'all'].includes(kind)) rule += '\n\n' + RELATION;
             const msgs = [{ role: 'system', content: await buildSys('', rule, []) }, { role: 'user', content: '（现在写）' }];
-            const out = String(await host.ask(msgs, `【暂停正文，这一次不写正文】\n${rule}`) || '');
+            if(request!==manualRequest||requestMeta!==host.meta())return;
+            const out = String(await host.ask(msgs, `【暂停正文，这一次不写正文】\n${rule}`,kind==='cocktail'?{preserveStatus:true,maxTokens:mode==='adaptive'?4800:2400}:{}) || '');
             let raw = host.extractBlock(out).raw;
             if (!raw && /[:：]/.test(out)) raw = out; // 没包 <!--SB 也认
             // 要的东西真写了才算：以前状态段里只写了时间之类，也说「写好了」，其实日记没有
-            const want = { diary: ['日记'], post: ['动态'], x: ['X', '推特'], xfeed: ['推文'], moments: ['朋友圈'], weibo: ['微博', '热搜'], photos: ['照片'] }[kind];
+            const want = { cocktail: ['酒杯'], diary: ['日记'], post: ['动态'], x: ['X', '推特'], xfeed: ['推文'], moments: ['朋友圈'], weibo: ['微博', '热搜'], photos: ['照片'] }[kind];
             const got = k => want.some(w => parseBlock(k)[w]?.length);
             if (want && !got(raw)) {
                 // 日记没按格式（直接写成一段文字）：整段当日记收下
                 const prose = host.extractBlock(out).text.replace(/<[^>]+>/g, '').trim();
                 if (kind === 'diary' && prose.length > 20) raw = (raw ? raw + '\n' : '') + '日记:\n' + prose;
-                else throw new Error(`TA回了，但没按格式写${{ diary: '日记', post: '动态', x: 'X', xfeed: '推文', moments: '朋友圈', weibo: '微博', photos: '照片' }[kind]}，再点一次试试`);
+                else throw new Error(`TA回了，但没按格式写${{ diary: '日记', post: '动态', x: 'X', xfeed: '推文', moments: '朋友圈', weibo: '微博', photos: '照片', cocktail: '酒杯状态' }[kind]}，再点一次试试`);
             }
+            if(kind==='cocktail'&&!buildCocktailValid(raw,mode))throw new Error('酒杯数据格式不完整，原记录已保留，请再试一次');
+            if (request !== manualRequest || requestMeta !== host.meta()) return;
             const id = host.addBlock(raw);
             if (!id) throw new Error('TA没写出来');
             if (redoOf) {
@@ -417,8 +429,8 @@ export function createUI(host) {
                 host.nowChanged();
             }
             host.toast('success', '写好了');
-        } catch (err) { host.toast('error', '没写成：' + (err?.message || err)); }
-        finally { v.busy = false; render(); }
+        } catch (err) { if(request!==manualRequest||requestMeta!==host.meta())return;host.toast('error', '没写成：' + (err?.message || err)); }
+        finally { if(request===manualRequest){v.busy = false; render();} }
     }
     function postsHtml(st, him) {
         const hidden = host.meta().hidden || {};
@@ -505,6 +517,7 @@ export function createUI(host) {
         g.pick = i; v.flip = false; host.nowChanged(); render();
     }
     function nowHtml(st) {
+        if(host.settings().barStyle === 'default') return cocktail.html();
         const n = st.now;
         const row = (k, val, extra = '') => val ? `<div class="sb-k">${k}</div><div>${extra}${esc(val)}</div>` : '';
         const has = n.where || n.wear || n.want || n.voice;
@@ -928,6 +941,7 @@ export function createUI(host) {
  <div class="sb-sh">TA</div><div class="sb-sgrp">
 
   ${row('提示词', s.prompt ? '改过' : '默认', 'set-prompt')}
+  <label class="sb-srow"><span>原版此刻的状态来源</span><select data-cset="cocktailMode"><option value="default" ${c.cocktailMode!=='adaptive'?'selected':''}>吧台默认</option><option value="adaptive" ${c.cocktailMode==='adaptive'?'selected':''}>角色适配</option></select></label>
   <label class="sb-srow"><span>回复时不自动更新状态<small>只对这张卡：正文后不再让TA写状态段，小手机回消息也不顺带更新。多角色、群像卡打开这个；手动点按钮生成照常能用</small></span><input type="checkbox" class="sb-tg" data-cset="noAutoStatus" ${c.noAutoStatus ? 'checked' : ''}></label>
  </div>
  <div class="sb-sh">外观</div><div class="sb-sgrp">
@@ -1608,7 +1622,7 @@ export function createUI(host) {
             else { v.drawer = true; v.tab = 'phone'; v.phone = false; }
             render();
         },
-        reset: ({ keepOpen = false } = {}) => { if (!keepOpen) { v.drawer = false; v.phone = false; } v.tab = 'posts'; v.view = 'home'; v.diaryId = ''; v.edit = null; v.menuFor = ''; v.busy = false; render(); },
+        reset: ({ keepOpen = false } = {}) => { manualRequest++;cocktail?.reset(); if (!keepOpen) { v.drawer = false; v.phone = false; } v.tab = 'posts'; v.view = 'home'; v.diaryId = ''; v.edit = null; v.menuFor = ''; v.busy = false; render(); },
         isOpen: () => v.drawer || v.phone || document.documentElement.classList.contains('sb-panel-docked'),
     };
 }
