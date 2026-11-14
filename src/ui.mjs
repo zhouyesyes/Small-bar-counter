@@ -15,7 +15,7 @@ import { catSvg } from './cat.mjs';
 import { cropImage } from './crop.mjs';
 import { createPlayer, searchSongs, coverUrl, coverList, resolveCover } from './music.mjs';
 import { weatherTone, parsePhoneReply, parseBlock, pickKey } from './core.mjs';
-import { PHONE_RULES, LETTER_RULES, PHONE_STATUS, MANUAL, RELATION } from './prompt.mjs';
+import { PHONE_RULES, LETTER_RULES, PHONE_STATUS, MANUAL, RELATION, onlinePersonaBlock } from './prompt.mjs';
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const nl = s => esc(s).replace(/\n/g, '<br>');
@@ -154,6 +154,8 @@ export function createUI(host) {
             if (t.matches?.('[data-mseek]')) { player.seek(Number(t.value) / 1000); tickMusic(); return; }
             if (t.matches?.('[data-mtext]')) { v.mdraft = t.value; return; }
             if (t.matches?.('[data-mpics]')) { v.mpicsDraft = t.value; return; }
+            // 线上人设搜条目：只藏不匹配的行，不重画（输入框不丢焦点）
+            if (t.matches?.('[data-online-q]')) { v.onlineQ = t.value; const q = t.value.trim().toLowerCase(); root.querySelectorAll('[data-act=online-pick]').forEach(r => { r.hidden = !!q && !r.dataset.hay.includes(q); }); root.querySelectorAll('.sb-online-list').forEach(g => { const any = [...g.children].some(r => !r.hidden); g.hidden = !any; if (g.previousElementSibling) g.previousElementSibling.hidden = !any; }); return; }
             if (!t.matches?.('[data-cin]')) return;
             t.style.height = 'auto'; t.style.height = Math.min(140, t.scrollHeight) + 'px';
             (v.cdraft ??= {})[t.dataset.cin] = t.value;
@@ -449,7 +451,7 @@ export function createUI(host) {
                 if(request!==manualRequest||requestMeta!==host.meta())return;
                 if(references)rule+='\n\n'+references;
             }
-            const msgs = [{ role: 'system', content: parts?[parts.card,parts.persona,parts.world,parts.status,parts.story,rule].filter(Boolean).join('\n\n'):await buildSys('', rule, []) }, { role: 'user', content: '（现在写）' }];
+            const msgs = [{ role: 'system', content: parts?[parts.card,parts.persona,parts.world,parts.status,parts.story,rule].filter(Boolean).join('\n\n'):await buildSys('', rule, [], { online: ['post', 'x', 'xprofile'].includes(kind) }) }, { role: 'user', content: '（现在写）' }];
             if(request!==manualRequest||requestMeta!==host.meta())return;
             const out = String(await host.ask(msgs, `【暂停正文，这一次不写正文】\n${rule}`,kind==='cocktail'?{preserveStatus:true,maxTokens:mode==='adaptive'?4800:2400}:{}) || '');
             let raw = host.extractBlock(out).raw;
@@ -643,7 +645,7 @@ export function createUI(host) {
         const views = {
             home: homeHtml, 'wx-chat': wxChatHtml, 'wx-contacts': wxContactsHtml, 'wx-moments': wxMomentsHtml, 'wx-me': wxMeHtml,
             x: xHtml, 'x-dm': xDmHtml, weibo: weiboHtml, diary: pDiaryHtml, 'diary-detail': pDiaryDetailHtml, memo: pMemoHtml, photos: pPhotosHtml, music: pMusicHtml,
-            settings: setHtml, 'set-cover': setCoverHtml, 'set-him': setHimHtml, 'set-me': setMeHtml, 'set-prompt': setPromptHtml, 'set-api': setApiHtml, 'set-reply': setReplyHtml, 'set-when': setWhenHtml, 'set-clean': setCleanHtml,
+            settings: setHtml, 'set-cover': setCoverHtml, 'set-him': setHimHtml, 'set-me': setMeHtml, 'set-prompt': setPromptHtml, 'set-api': setApiHtml, 'set-reply': setReplyHtml, 'set-online': setOnlineHtml, 'set-when': setWhenHtml, 'set-clean': setCleanHtml,
         };
         return views;
     }
@@ -887,7 +889,7 @@ export function createUI(host) {
         const log = host.xdm().filter(m => m.type !== 'note').slice(-40).map(m => `${m.from === 'me' ? acc.name : '你'}：${m.text}`).join('\n');
         try {
             const out = String(await host.ask([
-                { role: 'system', content: await buildSys('', rules, host.xdm().slice(-6).map(m => m.text || '')) },
+                { role: 'system', content: await buildSys('', rules, host.xdm().slice(-6).map(m => m.text || ''), { online: true }) },
                 { role: 'user', content: log },
             ], `【暂停正文，这一次不写正文】\n${rules}\n\n私信记录：\n${log}\n\n现在只写你回的私信。`) || '');
             if (/\[拉黑\]/.test(out)) { host.addXdm({ type: 'note', text: '你已被对方拉黑' }); host.setXBlocked(true); }
@@ -1007,7 +1009,7 @@ export function createUI(host) {
   ${!c.noAutoStatus && !s.saveMode ? `<label class="sb-srow"><span>正文里提几件手机上的事<small>最近的微信、你的朋友圈、留言，TA看情况在正文里提一笔；0 就是不提</small></span><input type="number" min="0" max="10" class="sb-num" data-set="storyPhoneN" value="${Number(s.storyPhoneN ?? 2)}"></label>` : ''}
   ${row('提示词', s.promptNow || s.promptPhone || s.prompt ? '改过' : '默认', 'set-prompt')}
  </div>
- <div class="sb-sh">${Wd().wechat}里回消息</div><div class="sb-sgrp">${row('用哪个 API', apiName, 'set-api')}${row('TA什么时候回', s.phoneWhen === 'next' ? '下一轮正文顺带回' : '马上回', 'set-when')}${s.phoneWhen === 'next' ? '' : row('回消息时带哪些资料', host.replyMode() === 'full' ? '整套' : '自己挑', 'set-reply')}</div>
+ <div class="sb-sh">${Wd().wechat}里回消息</div><div class="sb-sgrp">${row('用哪个 API', apiName, 'set-api')}${row('TA什么时候回', s.phoneWhen === 'next' ? '下一轮正文顺带回' : '马上回', 'set-when')}${s.phoneWhen === 'next' ? '' : row('回消息时带哪些资料', host.replyMode() === 'full' ? '整套' : '自己挑', 'set-reply')}${row('线上人设', c.online?.source === 'world' ? (c.online.title || '世界书条目') : c.online?.source === 'text' && c.online.text ? '自己写的' : '没指定', 'set-online')}</div>
  <div class="sb-sh">其他</div><div class="sb-sgrp">
   ${toggle('小猫入口', 'cat', s.cat !== false, '抽屉关着时，屏幕边上那只点了能打开小吧台的小猫')}
   ${s.cat !== false ? `<label class="sb-srow"><span>小猫高度<small>离屏幕顶上的百分比</small></span><input type="number" min="10" max="85" class="sb-num" data-set="catTop" value="${Number(s.catTop) || 46}"></label>` : ''}
@@ -1093,6 +1095,24 @@ export function createUI(host) {
   <button class="sb-lgo" data-act="own-test" ${v.busy ? 'disabled' : ''}>测一下、拉模型列表</button>
   <div class="sb-hint">密钥只存在你酒馆的设置里，只发给你填的这个地址。</div>
  </div>` : ''}
+</div>`;
+    }
+    // 线上人设：挑一条世界书（每次回消息现读原文），或者自己写；只对这张卡
+    function setOnlineHtml() {
+        const o = host.charCfg().online || {}, src = o.source || 'none';
+        if (src === 'world' && !v.onlineEntries && !v.onlineLoading) { v.onlineLoading = true; host.worldEntries().then(list => { v.onlineEntries = list; v.onlineLoading = false; render(); }).catch(() => { v.onlineEntries = []; v.onlineLoading = false; render(); }); }
+        const q = String(v.onlineQ || '').trim().toLowerCase();
+        const list = (v.onlineEntries || []).filter(e => !q || (e.title + e.keys + e.content + e.book).toLowerCase().includes(q));
+        const books = [...new Set(list.map(e => e.book))];
+        const picked = e => src === 'world' && o.book === e.book && String(o.uid) === String(e.uid);
+        const seg = (k, n) => `<button data-act="online-src" data-src="${k}" class="${src === k ? 'on' : ''}">${n}</button>`;
+        return `${head('线上人设')}<div class="sb-list">
+ <div class="sb-hint">TA在手机、X、朋友圈里和你来往时用的人设和口吻。指定后，每次回消息都把这段原文紧挨着小手机规矩放（离生成最近，最优先），整套、自己挑两种模式都生效。只对这张卡。</div>
+ <div class="sb-seg">${seg('none', '不指定')}${seg('world', '世界书里挑')}${seg('text', '自己写')}</div>
+ ${src === 'world' ? `<div class="sb-msearch"><input data-online-q placeholder="搜条目名、关键词或内容" value="${esc(v.onlineQ || '')}"></div>
+  ${v.onlineLoading && !v.onlineEntries ? '<div class="sb-empty sm">正在读世界书…</div>' : !list.length ? `<div class="sb-empty sm">${q ? '没搜到' : '这个聊天没有绑定世界书，或书里没有条目。挑不出来就选「自己写」。'}</div>` : books.map(b => `<div class="sb-sh">${esc(b)}</div><div class="sb-sgrp sb-online-list">${list.filter(e => e.book === b).map(e => `<button class="sb-srow${picked(e) ? ' on' : ''}" data-act="online-pick" data-book="${esc(e.book)}" data-uid="${esc(e.uid)}" data-hay="${esc((e.title + ' ' + e.keys + ' ' + e.content + ' ' + e.book).toLowerCase())}"><span>${esc(e.title)}${e.constant ? ' <small class="sb-tagc">常驻</small>' : ''}${e.disable ? ' <small class="sb-tagc">关着</small>' : ''}<small>${esc(e.content.slice(0, 60))}${e.content.length > 60 ? '…' : ''}</small></span><span class="sb-sv">${picked(e) ? '✓' : ''}</span></button>`).join('')}</div>`).join('')}
+  ${src === 'world' && o.book ? `<div class="sb-hint">已选：${esc(o.book)} · ${esc(o.title || '')}。书里改了这条，下次回消息自动用新的。</div>` : ''}` : ''}
+ ${src === 'text' ? `<textarea class="sb-prompt" data-online-text placeholder="比如：在微信上话很少，爱用句号；回消息慢，偶尔发语音；网名叫……">${esc(o.text || '')}</textarea><div class="sb-hint">改完点别处就保存。</div>` : ''}
 </div>`;
     }
     function setWhenHtml() {
@@ -1359,7 +1379,7 @@ export function createUI(host) {
                 if (v.view === 'wx-moments') v.momentsN = 10;
                 break;
             case 'phone-back': {
-                const back = { 'diary-detail': 'diary', 'set-when': 'settings', 'wx-chat': 'wx-contacts', 'x-dm': 'x', 'set-reply': 'settings', 'set-cover': 'settings', 'set-him': 'settings', 'set-me': 'settings', 'set-prompt': 'settings', 'set-api': 'settings', 'set-clean': 'settings' }[v.view];
+                const back = { 'diary-detail': 'diary', 'set-when': 'settings', 'wx-chat': 'wx-contacts', 'x-dm': 'x', 'set-reply': 'settings', 'set-online': 'settings', 'set-cover': 'settings', 'set-him': 'settings', 'set-me': 'settings', 'set-prompt': 'settings', 'set-api': 'settings', 'set-clean': 'settings' }[v.view];
                 v.view = back || 'home'; v.plus = false; v.menuFor = ''; v.edit = null; break;
             }
             case 'phone-close':
@@ -1407,6 +1427,11 @@ export function createUI(host) {
             }
             case 'mdel': host.deleteWechat(b.dataset.id); v.menuFor = ''; break;
             case 'mcancel': v.menuFor = ''; break;
+            case 'online-src': { const src = b.dataset.src; host.setCharCfg(c => { c.online = { ...(c.online || {}), source: src }; }); if (src === 'world') v.onlineEntries = null; break; }
+            case 'online-pick': {
+                const e = (v.onlineEntries || []).find(x => x.book === b.dataset.book && String(x.uid) === b.dataset.uid); if (!e) return;
+                host.setCharCfg(c => { c.online = { ...(c.online || {}), source: 'world', book: e.book, uid: e.uid, title: e.title, cached: e.content }; }); break;
+            }
             case 'wx-manage': v.wxManage = !v.wxManage; v.menuFor = ''; v.edit = null; v.plus = false; break;
             case 'wx-del-round': { // TA最近一轮：最后一条你的消息之后，TA连着回的那几条
                 const list = host.wechat().filter(m => m.type !== 'note'); let i = list.length; while (i > 0 && list[i - 1].from !== 'me') i--;
@@ -1453,6 +1478,7 @@ export function createUI(host) {
         // 反过来存的开关：界面上「开」= 设置里是 false（比如「这张卡正文后写状态」对应 noAutoStatus）
         if (t.dataset.csetOff) host.setCharCfg(c => { c[t.dataset.csetOff] = !t.checked; });
         else if (t.dataset.ctx) host.setSettings(s => { s.ctx = { ...host.replyCtx(), [t.dataset.ctx]: t.type === 'checkbox' ? t.checked : Number(t.value) }; });
+        else if (t.matches?.('[data-online-text]')) host.setCharCfg(c => { c.online = { ...(c.online || {}), source: 'text', text: t.value.trim() }; });
         else if (t.dataset.own) host.setSettings(s => { s.ownApi = { ...(s.ownApi || {}), [t.dataset.own]: t.value.trim() }; });
         else if (t.dataset.cset) host.setCharCfg(c => { c[t.dataset.cset] = t.type === 'checkbox' ? t.checked : t.value; });
         else if (t.dataset.him != null) host.setCharCfg(c => { c.him = { ...(c.him || {}), [t.dataset.him]: t.value.trim() }; });
@@ -1567,9 +1593,11 @@ export function createUI(host) {
             story: story ? `最近发生的事（正文）：\n${story}` : '',
         };
     }
-    async function buildSys(intro, rules, scan = []) {
+    // online：手机、X、朋友圈这些线上的回复，把她指定的线上人设紧挨着规矩放
+    async function buildSys(intro, rules, scan = [], { online = false } = {}) {
         const p = await buildParts(scan);
-        return [p.card, p.persona, p.world, intro, p.status, p.story, rules].filter(Boolean).join('\n\n');
+        const persona = online ? onlinePersonaBlock(await host.onlinePersona?.()) : '';
+        return [p.card, p.persona, p.world, intro, p.status, p.story, persona, rules].filter(Boolean).join('\n\n');
     }
     // 设置页上算一下：小手机回一次，大概带多少 tokens
     async function countTokens() {
@@ -1591,7 +1619,7 @@ export function createUI(host) {
         const sys = await buildSys(
             host.era() === 'modern' ? `现在你们在手机上聊天，对方在你手机里叫「${me.name}」。` : `现在你们在书信往来，对方署名「${me.name}」。`,
             (host.era() === 'modern' ? PHONE_RULES : LETTER_RULES) + (host.settings().saveMode || host.charCfg().noAutoStatus ? '' : '\n' + PHONE_STATUS),
-            list.slice(-6).map(m => m.text || ''));
+            list.slice(-6).map(m => m.text || ''), { online: true });
         const msgs = [{ role: 'system', content: sys }];
         for (const m of list) {
             const txt = m.type === 'voice' ? `[语音]${m.text}` : m.type === 'pic' ? `[图片]${m.text}` : m.type === 'sticker' ? `[表情]${m.text}` : m.type === 'money' ? `[转账]${m.amount}｜${m.text || ''}${m.status === 'taken' ? '（已收下）' : m.status === 'back' ? '（已退回）' : ''}` : m.text;
@@ -1631,7 +1659,7 @@ export function createUI(host) {
         const rule = `${me}刚发了一条朋友圈：「${post.text}」${post.pics.length ? `（配图：${post.pics.join('、')}）` : ''}。按剧情里的关系，写谁会在下面互动：熟到能开口的写评论（0～4 条，可以有你${him.cardName}自己，用「${him.name}」这个名字），口吻各像各的；只想点个赞的写进点赞；不会互动的就不写。\n${RELATION}\n只写一段 <!--SB … SB-->，评论每条一行「评论: 名字｜内容」，点赞一行「点赞: 名字、名字」。不要写别的。`;
         v.busy = 'react'; render();
         try {
-            const msgs = [{ role: 'system', content: await buildSys('', rule, [post.text]) }, { role: 'user', content: '（现在写）' }];
+            const msgs = [{ role: 'system', content: await buildSys('', rule, [post.text], { online: true }) }, { role: 'user', content: '（现在写）' }];
             const out = String(await host.ask(msgs, `【暂停正文，这一次不写正文】\n${rule}`) || '');
             const raw = host.extractBlock(out).raw || out;
             const meta = host.meta(); const list = (meta.comments ??= {})[post.id] ??= [];
@@ -1672,7 +1700,7 @@ export function createUI(host) {
         v.busy = true; render();
         try {
             const msgs = [
-                { role: 'system', content: await buildSys(scene, ask + ' 只写回复的那一句话，短一点，像朋友圈回复，不要引号和名字。', [post.text, ...commentList(post).map(c => c.text)]) },
+                { role: 'system', content: await buildSys(scene, ask + ' 只写回复的那一句话，短一点，像朋友圈回复，不要引号和名字。', [post.text, ...commentList(post).map(c => c.text)], { online: true }) },
                 { role: 'user', content: '（她在等回复）' },
             ];
             const text = await host.ask(msgs, `【暂停正文，这一次不写正文】\n${scene}\n\n${ask} 只写那一句话，短一点，不要引号和名字。`);

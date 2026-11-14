@@ -289,13 +289,44 @@ async function worldTriggered(texts) {
     } catch (e) { console.warn('[小吧台] 读世界书失败', e); return ''; }
 }
 // 整本都带：角色绑的书、额外的书、这个聊天的书、全局选中的书，所有开着的条目
+// 这个聊天用得到的书：角色绑的书、额外的书、这个聊天的书、全局选中的书
+function boundBookNames() {
+    const c = ctx();
+    const ch = c.characters?.[c.characterId] || {}, d = ch.data || ch;
+    const extra = (wi.world_info?.charLore || []).find(x => x.name === ch.avatar)?.extraBooks || [];
+    return [...new Set([d.extensions?.world, ...extra, c.chatMetadata?.world_info, ...(wi.selected_world_info || [])].filter(x => typeof x === 'string' && x))];
+}
+// 线上人设可以挑的条目：每本书里所有有内容的条目（关着的也列出来，挑中了照样用原文）
+async function worldEntries() {
+    const c = ctx(), load = c.loadWorldInfo || wi.loadWorldInfo;
+    if (typeof load !== 'function') return [];
+    const out = [];
+    for (const book of boundBookNames()) {
+        try {
+            const data = await load(book);
+            for (const e of Object.values(data?.entries || {})) {
+                if (!String(e?.content || '').trim()) continue;
+                const keys = Array.isArray(e.key) ? e.key.filter(Boolean).join('、') : '';
+                out.push({ book, uid: e.uid, title: String(e.comment || '').trim() || keys || String(e.content).trim().slice(0, 24), keys, content: String(e.content).trim(), constant: !!e.constant, disable: !!e.disable });
+            }
+        } catch (err) { console.warn('[小吧台] 读世界书失败', book, err); }
+    }
+    return out;
+}
+// 这张卡的线上人设原文：挑的世界书条目（每次现读，书改了跟着变）或自己写的
+async function onlinePersona() {
+    const o = charCfg().online || {};
+    if (o.source === 'text') return String(o.text || '').trim();
+    if (o.source !== 'world' || !o.book) return '';
+    const c = ctx(), load = c.loadWorldInfo || wi.loadWorldInfo;
+    try { const data = await load?.(o.book); const e = Object.values(data?.entries || {}).find(x => String(x.uid) === String(o.uid)); return String(e?.content || o.cached || '').trim(); }
+    catch { return String(o.cached || '').trim(); }
+}
 async function worldBooksWhole() {
     const c = ctx();
     const load = c.loadWorldInfo || wi.loadWorldInfo;
     if (typeof load !== 'function') return '';
-    const ch = c.characters?.[c.characterId] || {}, d = ch.data || ch;
-    const extra = (wi.world_info?.charLore || []).find(x => x.name === ch.avatar)?.extraBooks || [];
-    const names = [...new Set([d.extensions?.world, ...extra, c.chatMetadata?.world_info, ...(wi.selected_world_info || [])].filter(x => typeof x === 'string' && x))];
+    const names = boundBookNames();
     const out = [];
     for (const name of names) {
         try {
@@ -607,7 +638,7 @@ const host = {
     meta, saveMeta, state, unread, markRead, wechat, addWechat, patchWechat, deleteWechat, takeLastRound, restoreRound, repliesFor,
     ...xHost,
     saveSettings,
-    replyMode, replyCtx, worldInfo, testOwnApi, hasHelper, addBlock, extractBlock,
+    replyMode, replyCtx, worldInfo, worldEntries, onlinePersona, testOwnApi, hasHelper, addBlock, extractBlock,
     // 此刻换一版：meta.nowVer 改完以后要重算
     nowChanged: () => { saveMeta(); dirty(); refreshInject(); },
     // 把一句话放进酒馆的输入框（接在已经写的后面），她改了再发

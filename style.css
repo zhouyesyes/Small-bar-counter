@@ -1684,3 +1684,8 @@ html.sb-bar[data-sb-mode=dark] #completion_prompt_manager_popup {color-scheme:da
 #sb-root .sb-phone .sb-b.u{color:var(--sb-bg)}
 #sb-root .sb-mrow .sb-b.c,#sb-root .sb-mrow .sb-b.u{color:#111}
 #sb-root.sb-dark .sb-mrow .sb-b.c{color:#e5e5e5}
+/* 线上人设 picker */
+#sb-root .sb-online-list .sb-srow{text-align:left}
+#sb-root .sb-online-list .sb-srow.on{background:color-mix(in srgb,var(--sb-accent) 10%,transparent)}
+#sb-root .sb-online-list small.sb-tagc{display:inline;margin-left:4px;padding:0 5px;border:1px solid var(--sb-line);border-radius:8px;font-size:calc(10px * var(--fontScale,1))}
+#sb-root .sb-online-list [hidden],#sb-root .sb-list>[hidden]{display:none!important}

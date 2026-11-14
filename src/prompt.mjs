@@ -74,6 +74,7 @@ export function promptParts(settings = {}) {
 
 export const LETTER_RULES = `你们在书信往来。回一封信：几句话就好，一行一句，口吻合乎你们所处的年代。
 不要写动作描写、不要写旁白、不要加引号，不用写抬头和落款（会自动加）。
+世界书或设定里如果有你在线上、书信里的人设和口吻，聊天时以那个为准，优先于正文里的形象。
 需要时可以单独占一行：
 [图片]随信附上的东西或画
 [转账]数目｜附言`;
@@ -98,6 +99,7 @@ export const MANUAL = {
 
 export const PHONE_RULES = `你在用手机和对方聊天。像真人发消息一样：短句，一行一条，可以连发几条（2～5 条）。
 不要写动作描写、不要写旁白、不要加引号和名字前缀。
+世界书或设定里如果有你在线上、手机、网络上的人设和口吻，聊天时以那个为准，优先于正文里的形象。
 需要时可以用这些格式单独占一行：
 [语音]说的话
 [图片]照片里拍的是什么
@@ -132,3 +134,6 @@ export function buildInjection({ prompt, promptNow, promptPhone, coverTags, stat
 export function mustWrite({ cocktail = false, saveMode = false } = {}) {
     return `\n\n【本轮状态段必须有】时间、在哪、心声、选曲${cocktail ? '、酒杯' : ''}${saveMode ? '；小手机内容这一轮不写' : '；小手机内容按剧情可有可无'}。`;
 }
+
+// 她指定的线上人设：紧挨着小手机规矩放，离生成最近
+export const onlinePersonaBlock = text => text ? `【你的线上人设（在手机、网上来往时以这个为准，优先于正文里的形象和其他设定）】\n${text}` : '';
