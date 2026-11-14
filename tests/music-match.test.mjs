@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {matchingSong,rankSongs} from '../src/music.mjs';
+const original={id:'original',title:'告白气球',artist:'周杰伦'},cover={id:'cover',title:'告白气球（Cover 周杰伦）',artist:'一颗柠檬'},fakeArtist={id:'fake',title:'告白气球',artist:'一颗柠檬'},live={title:'告白气球（Live）',artist:'周杰伦'};
+assert.equal(matchingSong([cover,fakeArtist,live,original],'告白气球','周杰伦'),original);
+assert.equal(matchingSong([cover,original],'柠檬气球','周杰伦'),null,'wrong song names never fall back to search result #1');
+assert.equal(matchingSong([cover,fakeArtist,live],'告白气球','周杰伦'),null,'no original means no silent replacement');
+assert.equal(matchingSong([fakeArtist,original],'告白气球'),null,'unknown artist and multiple recordings are ambiguous');
+assert.equal(matchingSong([live],'告白气球（Live）','周杰伦'),live,'explicit versions remain selectable');
+assert.equal(matchingSong([{title:'夜曲（Demo）',artist:'周杰伦'}],'夜曲','周杰伦'),null);
+assert.equal(matchingSong([{title:'Ｈｅｌｌｏ',artist:'Adele'}],'Hello','adele')?.artist,'Adele');
+assert(matchingSong([{title:'千里之外',artist:'周杰伦 / 费玉清'}],'千里之外','周杰伦'));
+assert.equal(matchingSong([{title:'夜曲',artist:'周杰'}],'夜曲','周杰伦'),null,'partial artist names are not identity');
+assert.equal(rankSongs([cover,original],'告白气球 周杰伦')[0],original);
+console.log('PASS: exact song/artist/version selection, cover and demo rejection, ambiguous artists and Unicode normalization.');

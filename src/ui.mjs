@@ -15,7 +15,7 @@ import { openSplashSettings } from './splash.mjs';
 // 只管画和点，数据和酒馆那边都从 host 拿（见 index.js），方便以后换酒馆版本
 import { catSvg } from './cat.mjs';
 import { cropImage } from './crop.mjs';
-import { createPlayer, searchSongs, coverUrl, coverList, resolveCover } from './music.mjs';
+import { createPlayer, searchSongs, matchingSong, qqTwin, coverUrl, coverList, resolveCover } from './music.mjs';
 import { weatherTone, parsePhoneReply, parseBlock, pickKey } from './core.mjs';
 import { PHONE_RULES, LETTER_RULES, PHONE_STATUS, MANUAL, RELATION, onlinePersonaBlock } from './prompt.mjs';
 
@@ -66,10 +66,18 @@ export function createUI(host) {
         let meta; try { meta = host.meta?.(); } catch { meta = null; } if (!meta) return [];
         const cache = (meta.musicPicks ??= {});
         let picks; try { picks = host.state?.()?.picks; } catch { picks = null; }
-        return (picks || []).map(p => {
+        return (picks || []).filter(p=>!meta.musicPickHidden?.[p.key]).map(p => {
+            if(cache[p.key]&&!cache[p.key].pending&&!matchingSong([cache[p.key]],p.title,p.artist))delete cache[p.key];
             const t = (cache[p.key] ??= { id: 'pick:' + p.key, pending: true, title: p.title, artist: p.artist });
             t.pickKey = p.key; t.why = p.why; return t;
         });
+    }
+    function removeChatPick(key){
+        if(!key)return;
+        const m=musicState(),list=m.list,index=list.findIndex(t=>t.pickKey===key),active=player.current()?.pickKey===key;
+        const metadata=host.meta();(metadata.musicPickHidden??={})[key]=true;delete metadata.musicPicks?.[key];
+        if(m.active===CHAT_LIST){if(index>=0&&index<m.idx)m.idx--;m.idx=Math.max(0,Math.min(m.idx,m.list.length-1));}
+        host.saveMeta();host.saveSettings();v.songContext=null;if(active)player.stop();
     }
     // 往歌单里加歌、改名、删歌单都只对自己建的歌单：正在看本聊天选曲时先切回自己的歌单
     function realList(m = musicState()) { if (m.active === CHAT_LIST) { m.active = Object.keys(m.lists)[0]; m.idx = 0; } return m; }
@@ -86,9 +94,12 @@ export function createUI(host) {
         load: musicState,
         save: () => { host.saveSettings(); if (player?.current()?.pickKey) host.saveMeta(); },
         resolve: async t => {
-            const found = await searchSongs([t.title, t.artist].filter(Boolean).join(' '));
-            const hit = found.find(x => pickKey(x.title, x.artist) === t.pickKey) || found.find(x => pickKey(x.title, '') === pickKey(t.title, '')) || found[0];
-            if (!hit) throw new Error(`没搜到《${t.title}》`);
+            const targetMeta=host.meta(), query=[t.title,t.artist].filter(Boolean).join(' ');
+            const found = await searchSongs(query);
+            if(t.pickKey&&(host.meta()!==targetMeta||targetMeta.musicPickHidden?.[t.pickKey]))throw new Error('这条选曲已删除或已切换聊天');
+            const hit = matchingSong(found,t.title,t.artist) || await qqTwin(t).catch(()=>null);
+            if(t.pickKey&&(host.meta()!==targetMeta||targetMeta.musicPickHidden?.[t.pickKey]))throw new Error('这条选曲已删除或已切换聊天');
+            if (!hit) {v.mq=query;v.mres=found;v.mpage=1;throw new Error(`没找到《${t.title}》${t.artist?' · '+t.artist:''}的准确版本，请手动搜索选择；不会自动播放相似歌曲或翻唱`);}
             Object.assign(t, hit); delete t.pending; if (t.pickKey) host.saveMeta(); else host.saveSettings();
         },
         onChange: (kind, msg) => {
@@ -513,7 +524,7 @@ export function createUI(host) {
     const mi = k => `<span class="sb-mi">${MI[k]}</span>`;
     function musicHtml(st) {
         const m = st.music, t = player.current(), list = host.settings().music?.list || [], mode = host.settings().music?.mode || 'all';
-        const ms = musicState(), names = Object.keys(ms.lists), chat = pickTracks(), onChat = ms.active === CHAT_LIST, pick = st.pick;
+        const ms = musicState(), names = Object.keys(ms.lists), chat = pickTracks(), onChat = ms.active === CHAT_LIST, pick = st.pick&&!host.meta().musicPickHidden?.[st.pick.key]?st.pick:null;
         return `<section class="sb-music${ms.compact ? ' is-mini' : ''}"><div class="sb-player-main${player.playing()?' is-playing':''}">
  <button class="sb-cap sb-music-toggle" data-act="music-compact" aria-expanded="${!ms.compact}" title="展开或收起音乐面板">${host.settings().barStyle==='default'?'吧台今日选曲':`${t?'now playing':'music'} · ${Wd().music}`}<span class="sb-music-caret" aria-hidden="true">${ms.compact ? '⌄' : '⌃'}</span></button>
  ${t ? `<div class="sb-mstate"><span class="sb-mstxt" role="status">${esc(v.mstate || '')}</span> <button class="sb-link" data-act="mskip">换个来源</button></div>` : ''}
@@ -526,9 +537,9 @@ export function createUI(host) {
  ${host.settings().barStyle==='default'?'<div class="sb-record-note" aria-hidden="true"><span>SIDE A</span><i></i><span>33⅓ RPM</span></div>':''}
  <div class="sb-mctl"><button data-act="mmode" title="${{ all: '列表循环', one: '单曲循环', shuffle: '随机' }[mode]}">${mi(mode)}</button><button data-act="mprev" aria-label="上一首">${mi('prev')}</button><button class="sb-mplay" data-act="mtoggle" aria-label="播放">${mi(player.playing() ? 'pause' : 'play')}</button><button data-act="mnext" aria-label="下一首">${mi('next')}</button><button data-act="mlist" class="${v.mlist ? 'on' : ''}" aria-label="歌单">${mi('list')}</button></div>
 
- ${pick ? `<button class="sb-mpick${t?.pickKey === pick.key ? ' on' : ''}" data-act="mpick" data-key="${esc(pick.key)}" aria-label="播放本轮选曲《${esc(pick.title)}》"><small>本轮选曲</small><b>《${esc(pick.title)}》${pick.artist ? `<span> · ${esc(pick.artist)}</span>` : ''}</b>${pick.why ? `<em>${esc(pick.why)}</em>` : ''}<i aria-hidden="true">${t?.pickKey === pick.key && player.playing() ? '♪ 正在放' : '▶ 放这首'}</i></button>` : ''}
+ ${pick ? `<div class="sb-mpick-wrap"><button class="sb-mpick${t?.pickKey === pick.key ? ' on' : ''}" data-act="mpick" data-key="${esc(pick.key)}" aria-label="播放本轮选曲《${esc(pick.title)}》"><small>本轮选曲</small><b>《${esc(pick.title)}》${pick.artist ? `<span> · ${esc(pick.artist)}</span>` : ''}</b>${pick.why ? `<em>${esc(pick.why)}</em>` : ''}<i aria-hidden="true">${t?.pickKey === pick.key && player.playing() ? '♪ 正在放' : '▶ 放这首'}</i></button><button class="sb-mpick-delete" data-act="mpick-delete" data-key="${esc(pick.key)}" aria-label="删除本轮选曲《${esc(pick.title)}》" title="删除这首选曲">×</button></div>` : ''}
  </div><div class="sb-music-extras" ${ms.compact ? 'hidden' : ''}>
- ${v.mlist !== false ? `<div class="sb-mres sb-queue"><div class="sb-cap sb-row" style="margin:6px 0"><span>${esc(ms.active)} · ${list.length} 首</span><span>${onChat ? '<small>AI 每轮按剧情选的，只在这个聊天里</small>' : `<button class="sb-link" data-act="mpl-rename">改名</button>${names.length > 1 ? ' <button class="sb-link" data-act="mpl-del">删掉这个歌单</button>' : ''}`}</span></div><div class="sb-queue-scroll" data-keep="music-queue">${list.map((r, i) => `<div class="sb-mrow2${t && r.id === t.id ? ' on' : ''}">${coverImg(r, 'sb-mthumb')}<span data-act="mplayat" data-i="${i}"><b>${esc(r.title)}</b><small>${esc(r.artist)}${onChat && r.why ? ' · ' + esc(r.why) : ''}</small></span><button data-act="msong-menu" data-i="${i}" aria-label="管理这首歌">⋯</button>${onChat ? '' : `<button data-act="mdelsong" data-i="${i}">×</button>`}</div>`).join('') || `<div class="sb-empty sm">${onChat ? '这个聊天还没有选曲，下一轮回复后会出现' : '还没有歌'}</div>`}</div></div>` : ''}
+ ${v.mlist !== false ? `<div class="sb-mres sb-queue"><div class="sb-cap sb-row" style="margin:6px 0"><span>${esc(ms.active)} · ${list.length} 首</span><span>${onChat ? '<small>AI 每轮按剧情选的，只在这个聊天里</small>' : `<button class="sb-link" data-act="mpl-rename">改名</button>${names.length > 1 ? ' <button class="sb-link" data-act="mpl-del">删掉这个歌单</button>' : ''}`}</span></div><div class="sb-queue-scroll" data-keep="music-queue">${list.map((r, i) => `<div class="sb-mrow2${t && r.id === t.id ? ' on' : ''}">${coverImg(r, 'sb-mthumb')}<span data-act="mplayat" data-i="${i}"><b>${esc(r.title)}</b><small>${esc(r.artist)}${onChat && r.why ? ' · ' + esc(r.why) : ''}</small></span><button data-act="msong-menu" data-i="${i}" aria-label="管理这首歌">⋯</button><button data-act="mdelsong" data-i="${i}" aria-label="删除《${esc(r.title)}》" title="从歌单删除">×</button></div>`).join('') || `<div class="sb-empty sm">${onChat ? '这个聊天还没有选曲，下一轮回复后会出现' : '还没有歌'}</div>`}</div></div>` : ''}
  <div class="sb-plists">${chat.length || onChat ? `<button data-act="mpl" data-n="${CHAT_LIST}" class="sb-chat-plist${onChat ? ' on' : ''}">${CHAT_LIST} <small>${chat.length}</small></button>` : ''}${names.map(n => `<button data-act="mpl" data-n="${esc(n)}" class="${n === ms.active ? 'on' : ''}">${esc(n)} <small>${ms.lists[n].length}</small></button>`).join('')}<button data-act="mpl-new" class="add">＋ 新建歌单</button></div>
  ${m?.title ? `<button class="sb-mhis" data-act="mhis">${Wd().listen}《${esc(m.title)}》${m.artist ? ' · ' + esc(m.artist) : ''} · 放这首</button>` : ''}
  <div class="sb-msearch"><input data-msearch placeholder="搜歌名、歌手，或贴网易云链接" enterkeyhint="search" value="${esc(v.mq || '')}"><button data-act="msearch">${v.msearching ? '…' : '搜'}</button></div>
@@ -549,6 +560,7 @@ export function createUI(host) {
                 const exists = m.lists[name].some(t=>t.id===ctx.track.id && (t.src||'netease')===(ctx.track.src||'netease'));
                 return `<button data-act="msong-destination" data-name="${esc(name)}" ${exists && ctx.mode === 'copy' ? 'disabled' : ''}>${esc(name)}<span>${exists ? '✓ 已添加' : '＋'}</span></button>`;
             }).join('') || '<p>先新建另一个歌单，再来选择。</p>'}</div>`);
+        if(!ctx.mode){const remove=document.createElement('button');remove.dataset.act='msong-delete';remove.textContent='从歌单删除';pop.appendChild(remove);}
         root.appendChild(pop);
         const width = Math.min(228, window.innerWidth - 24); pop.style.width = width + 'px';
         pop.style.left = Math.max(12, Math.min(ctx.rect.right - width, window.innerWidth - width - 12)) + 'px';
@@ -1277,10 +1289,11 @@ export function createUI(host) {
             }
             case 'xfill-no': host.setCharCfg(c => { c.xAsked = true; }); break;
             case 'mpl': { v.songMenu = null; const m = musicState(); m.active = b.dataset.n; m.idx = 0; v.mlist = true; host.saveSettings(); break; }
+            case 'mpick-delete': {removeChatPick(b.dataset.key);break;}
             case 'mpick': {
                 const m = musicState(), i = pickTracks().findIndex(t => t.pickKey === b.dataset.key); if (i < 0) return;
                 const t = player.current();
-                if (t?.pickKey === b.dataset.key && player.audio.src) { await player.toggle(); return; }
+                if (t === pickTracks()[i] && !t.pending && player.audio.src) { await player.toggle(); return; }
                 m.active = CHAT_LIST; v.mlist = true; host.saveSettings(); await player.play(i); return;
             }
             case 'mpl-new': {
@@ -1318,6 +1331,12 @@ export function createUI(host) {
                 v.songContext = {index, source:m.active, track:m.list[index], rect:b.getBoundingClientRect()};
                 songPopover(); return;
             }
+            case 'msong-delete': {
+                const context=v.songContext;if(!context)return;
+                if(context.source===CHAT_LIST)removeChatPick(context.track.pickKey);
+                else {const m=musicState();if(m.active!==context.source)return;const index=m.list.indexOf(context.track);if(index>=0)player.remove(index);}
+                v.songContext=null;break;
+            }
             case 'msong-close': root.querySelector('.sb-song-pop')?.remove(); v.songContext = null; return;
             case 'msong-mode': v.songContext.mode = b.dataset.mode; songPopover(); return;
             case 'msong-back': delete v.songContext.mode; songPopover(); return;
@@ -1333,10 +1352,10 @@ export function createUI(host) {
                 const moved = ctx.mode === 'move'; v.songContext = null; host.saveSettings(); host.toast('success', `${moved ? '已移到' : '已加入'}「${target}」`); break;
             }
             case 'mplayat': player.play(Number(b.dataset.i)); return;
-            case 'mdelsong': player.remove(Number(b.dataset.i)); return;
-            case 'mhis': { // TA在听的那首：搜歌名 + 歌手，放第一首
+            case 'mdelsong': {const m=musicState();if(m.active===CHAT_LIST){removeChatPick(m.list[Number(b.dataset.i)]?.pickKey);break;}player.remove(Number(b.dataset.i));return;}
+            case 'mhis': { // TA在听的那首也须核对歌名、歌手与版本
                 const m = host.state().music; if (!m?.title) return;
-                try { const r = await searchSongs([m.title, m.artist].filter(Boolean).join(' ')); if (!r.length) throw new Error('没搜到这首'); realList(); player.add(r[0], true); }
+                try { const r = await searchSongs([m.title, m.artist].filter(Boolean).join(' ')); const hit=matchingSong(r,m.title,m.artist);if(!hit)throw new Error('没有找到准确版本，请手动搜索选择');realList();player.add(hit,true); }
                 catch (err) { host.toast('error', err?.message || '搜不了'); }
                 return;
             }

@@ -1691,3 +1691,10 @@ html.sb-bar[data-sb-mode=dark] #completion_prompt_manager_popup {color-scheme:da
 #sb-root .sb-online-list .sb-srow.on{background:color-mix(in srgb,var(--sb-accent) 10%,transparent)}
 #sb-root .sb-online-list small.sb-tagc{display:inline;margin-left:4px;padding:0 5px;border:1px solid var(--sb-line);border-radius:8px;font-size:calc(10px * var(--fontScale,1))}
 #sb-root .sb-online-list [hidden],#sb-root .sb-list>[hidden]{display:none!important}
+/* Per-chat AI picks can be removed without rewriting story replies. */
+#sb-root .sb-mpick-wrap{position:relative}
+#sb-root .sb-mpick-wrap .sb-mpick{padding-right:42px}
+#sb-root .sb-mpick-delete{position:absolute;top:7px;right:5px;width:32px;height:32px;border-radius:50%;color:var(--sb-dim);font-size:22px;line-height:1}
+#sb-root .sb-mpick-delete:hover,#sb-root .sb-mpick-delete:focus-visible{color:#c54556;background:color-mix(in srgb,#c54556 10%,transparent)}
+#sb-root .sb-mpick-wrap{margin-top:12px}
+#sb-root .sb-mpick-wrap .sb-mpick{margin-top:0}

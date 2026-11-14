@@ -78,7 +78,23 @@ export async function searchSongs(q, page = 1) {
     return rankSongs(list, q); // 一页最多 20 首，翻页看更多
 }
 // 搜出来的排个序：歌名正好是搜的那个 > 歌名开头是 > 歌名里有 > 歌手对得上；翻唱、伴奏、DJ、现场这些往后放
-const VARIANT = /cover|翻唱|翻自|伴奏|纯音乐|instrumental|karaoke|\bdj\b|remix|live|现场|版\)|版）|铃声|片段|女声版|男声版|抖音|0\.\d+x|倍速/i;
+const VARIANT = /demo|试听|清唱|剪辑|降调|升调|加速|慢速|cover|翻唱|翻自|伴奏|纯音乐|instrumental|karaoke|\bdj\b|remix|live|现场|版\)|版）|铃声|片段|女声版|男声版|抖音|0\.\d+x|倍速/i;
+// Automatic playback requires the same title, artist and requested version.
+// Search ranking alone is not an identity check: a cover can mention the original singer.
+export function matchingSong(list, title, artist = '') {
+    const clean = value => str(value).normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
+    const base = value => clean(norm(value));
+    const artists = value => str(value).split(/\s*(?:[,，/、;&＆]| feat\.? | ft\.? | featuring )\s*/i).map(base).filter(Boolean);
+    const wanted = artists(artist);
+    const candidates = list.filter(track => {
+        if (!base(title) || base(track.title) !== base(title)) return false;
+        if ((VARIANT.test(title) || VARIANT.test(track.title)) && clean(track.title) !== clean(title)) return false;
+        const actual = artists(track.artist);
+        return wanted.every(name => actual.includes(name));
+    });
+    if(!wanted.length && new Set(candidates.map(t=>artists(t.artist).sort().join('|'))).size>1)return null;
+    return candidates[0] || null;
+}
 export function rankSongs(list, q) {
     const nq = norm(q), words = str(q).split(/\s+/).map(norm).filter(Boolean);
     const score = (t, i) => {
@@ -126,7 +142,7 @@ async function qqUrl(t) {
 // 网易云放不出来：按歌名 + 歌手去 QQ 找同一首
 export async function qqTwin(t) {
     const list = await searchQQ([t.title, t.artist].filter(Boolean).join(' '));
-    return list.find(x => norm(x.title) === norm(t.title) && (!t.artist || !x.artist || norm(x.artist).includes(norm(t.artist).slice(0, 4)) || norm(t.artist).includes(norm(x.artist).slice(0, 4)))) || null;
+    return matchingSong(list, t.title, t.artist);
 }
 async function gdUrl(t) {
     const d = await getJson(GD_API + '?' + new URLSearchParams({ types: 'url', source: 'netease', id: t.id, br: 320 }), 2500);
@@ -293,12 +309,13 @@ export function createPlayer({ load, save, onChange, onStatus = () => {}, resolv
         if (t.pending) {
             if (!resolve) return;
             onStatus(`正在找《${t.title}》…`); onChange?.();
-            try { await resolve(t); } catch (e) { onStatus('没找到这首'); onChange?.('error', e?.message || '没找到这首歌'); return; }
+            try { await resolve(t); } catch (e) { if(playing!==t)return;stop();onStatus('未找到准确版本'); onChange?.('error', e?.message || '没找到这首歌'); return; }
             if (playing !== t) return;
         }
         let src;
         onStatus(t.src === 'qq' ? '正在问 QQ 音乐要播放地址…' : '正在连网易云…');
         try { sources = await sourceList(t); srcIdx = 0; src = sources[0]?.u; } catch (e) { onStatus('拿不到播放地址'); onChange?.('error', e?.message || '拿不到播放地址'); return; }
+        if (playing !== t) return;
         if (!src) { onStatus('拿不到播放地址'); return fallback(); }
         if (t.ok) onStatus('用上次放得出来的那个来源…');
         if (t.src === 'qq') save(); // 问地址时顺便拿到了封面、歌词
@@ -333,7 +350,7 @@ export function createPlayer({ load, save, onChange, onStatus = () => {}, resolv
     audio.addEventListener('pause', () => { if (!audio.ended && audio.currentTime > 0) onStatus('暂停了'); });
     // 放不出来：网易云的歌先去 QQ 找同一首，再不行就提示
     async function fallback() {
-        const t = playing || cur(); if (!t) return;
+        const t = playing; if (!t) return;
         // 先在这首歌的备用来源里一个个换（QR 也是这样，有的节点能放完整的会员歌）
         if (srcIdx + 1 < sources.length) {
             srcIdx++; const entry = sources[srcIdx];
@@ -354,15 +371,15 @@ export function createPlayer({ load, save, onChange, onStatus = () => {}, resolv
             onStatus('QQ 音乐放不了，去网易云找同一首…');
             try {
                 const list = (await searchSongs([t.title, t.artist].filter(Boolean).join(' '))).filter(x => x.src !== 'qq');
-                const twin = list.find(x => norm(x.title) === norm(t.title));
-                if (twin) { sources = await sourceList(twin); srcIdx = 0; if (sources[0]) { twinMode(); audio.src = sources[0].u; audio.dataset.src = sources[0].u; watch(); await audio.play().catch(() => {}); onChange?.('info', 'QQ 音乐放不了，换成网易云的同一首'); return; } }
+                if(playing!==t)return;const twin = matchingSong(list, t.title, t.artist);
+                if (twin) { const alternate=await sourceList(twin);if(playing!==t)return;sources=alternate;srcIdx = 0; if (sources[0]) { twinMode(); audio.src = sources[0].u; audio.dataset.src = sources[0].u; watch(); await audio.play().catch(() => {}); onChange?.('info', 'QQ 音乐放不了，换成网易云的同一首'); return; } }
             } catch { /* 继续往下提示 */ }
         }
         if (t.src !== 'qq') {
             onStatus('网易云放不了，去 QQ 音乐找同一首…');
             try {
                 const twin = await qqTwin(t);
-                if (twin) { twinMode(); const u = await qqUrl(twin); audio.src = u; audio.dataset.src = u; watch(); await audio.play(); onChange?.('info', '网易云放不了，换成 QQ 音乐的同一首'); return; }
+                if (twin) { twinMode(); const u = await qqUrl(twin);if(playing!==t)return; audio.src = u; audio.dataset.src = u; watch(); await audio.play(); onChange?.('info', '网易云放不了，换成 QQ 音乐的同一首'); return; }
             } catch { /* 继续往下提示 */ }
         }
         onStatus('放不了');
@@ -394,8 +411,14 @@ export function createPlayer({ load, save, onChange, onStatus = () => {}, resolv
         clearTimeout(dog);
         if (!document.hidden && !audio.paused && audio.readyState < 2) watch();
     });
+    function stop() {
+        playing=null;confirmedSource='';sources=[];srcIdx=0;lrc=[];lrcFor='';clearTimeout(dog);
+        audio.pause();audio.removeAttribute('src');delete audio.dataset.src;delete audio.dataset.id;delete audio.dataset.tried;audio.load();
+        try { if(navigator.mediaSession)navigator.mediaSession.metadata=null; } catch { /* Optional host API. */ }
+        onStatus('');onChange?.();
+    }
     return {
-        audio, play, next, prev,
+        audio, play, next, prev, stop,
         skipSource: () => { const t = playing || cur(); if (t) { delete t.ok; delete t.okUrl; delete t.okAt; } fallback(); }, // 她手动点「换个来源」：这首记的来源作废，换下一个
         toggle: () => (audio.paused ? resume() : audio.pause()),
         seek: frac => { if (audio.duration) audio.currentTime = audio.duration * frac; },
@@ -407,7 +430,7 @@ export function createPlayer({ load, save, onChange, onStatus = () => {}, resolv
             if (i < 0) { s.list.push(t); i = s.list.length - 1; }
             save(); if (andPlay) play(i); else onChange?.();
         },
-        remove(i) { const s = st(); s.list.splice(i, 1); if (s.idx >= s.list.length) s.idx = 0; save(); onChange?.(); },
+        remove(i) { const s = st();if(!Number.isInteger(i)||!s.list[i])return;const removed=s.list.splice(i,1)[0];if(i<s.idx)s.idx--;s.idx=Math.max(0,Math.min(s.idx,s.list.length-1));if(playing===removed)stop();save();onChange?.(); },
         mode() { const s = st(); s.mode = { all: 'one', one: 'shuffle', shuffle: 'all' }[s.mode || 'all']; save(); onChange?.(); },
     };
 }
