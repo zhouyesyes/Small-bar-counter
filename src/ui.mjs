@@ -736,14 +736,16 @@ export function createUI(host) {
             let t = '';
             if (m.time && m.time !== lastTime) { t = `<div class="sb-time">${esc(m.time)}</div>`; lastTime = m.time; }
             if (m.type === 'note') return t + `<div class="sb-note">${esc(m.text)}</div>`;
-            if (host.era() === 'modern') { const me = m.from === 'me'; return t + `<div class="sb-mrow ${me ? 'u' : 'c'}"><span class="sb-mav" style="background-image:url('${esc(me ? host.me().avatar : him.avatar)}')"></span>${bubble(m)}</div>`; }
-            return t + bubble(m);
+            const del = v.wxManage ? `<button class="sb-mdel" data-act="mdel" data-id="${esc(m.id)}" aria-label="删除这条">×</button>` : '';
+            if (host.era() === 'modern') { const me = m.from === 'me'; return t + `<div class="sb-mrow ${me ? 'u' : 'c'}${v.wxManage ? ' managing' : ''}"><span class="sb-mav" style="background-image:url('${esc(me ? host.me().avatar : him.avatar)}')"></span>${bubble(m)}${del}</div>`; }
+            return t + (del ? `<div class="sb-mrow-letter${m.from === 'me' ? ' u' : ''}">${bubble(m)}${del}</div>` : bubble(m));
         }).join('');
         const blockedMe = host.state().blockedMe, iBlocked = host.meta().wxBlock?.him, req = host.meta().myReq;
         const banner = iBlocked ? `<div class="sb-wxban">你把TA拉黑了，TA发的消息你收不到 <button class="sb-link" data-act="wxblock" data-k="him">解除拉黑</button></div>`
             : blockedMe ? `<div class="sb-wxban">消息已发出，但被对方拒收了。${req?.text && !req.done ? '好友申请已发送，等TA通过' : '<button class="sb-link" data-act="wxreq">发送朋友验证</button>'}</div>` : '';
         const menu = v.menuFor ? `<div class="sb-sheet"><button data-act="minput" data-id="${esc(v.menuFor)}">写进正文</button><button data-act="medit" data-id="${esc(v.menuFor)}">编辑</button><button data-act="mdel" data-id="${esc(v.menuFor)}">删除</button><button data-act="mcancel">取消</button></div>` : '';
-        return `${head(`<span class="sb-pav sm" style="background-image:url('${esc(him.avatar)}')"></span><span><b>${esc(him.remark || him.name)}</b><small>${v.busy ? '对方正在输入…' : Wd().online}</small></span>`, '<button class="sb-phx" data-act="phone-go" data-to="wx-contacts" aria-label="联系人">≡</button>')}
+        return `${head(`<span class="sb-pav sm" style="background-image:url('${esc(him.avatar)}')"></span><span><b>${esc(him.remark || him.name)}</b><small>${v.busy ? '对方正在输入…' : Wd().online}</small></span>`, `<button class="sb-phx sb-phx-text${v.wxManage ? ' on' : ''}" data-act="wx-manage" aria-pressed="${!!v.wxManage}">${v.wxManage ? '完成' : '删除'}</button><button class="sb-phx" data-act="phone-go" data-to="wx-contacts" aria-label="联系人">≡</button>`)}
+ ${v.wxManage ? `<div class="sb-wxmanage"><span>点消息右边的 × 删掉那一条</span>${list.length && list[list.length - 1].from !== 'me' ? '<button data-act="wx-del-round">删掉TA最近一轮</button>' : ''}</div>` : ''}
  <div class="sb-msgs sb-wxchat" data-keep="msgs">${rows || '<div class="sb-empty sm">还没聊过。说点什么吧。</div>'}
   ${banner}
   ${pend ? `<div class="sb-pendnote">待发送 ${pend} 条 · 点 ↑ TA才回</div>` : ''}
@@ -1350,7 +1352,7 @@ export function createUI(host) {
                 else if (v.drawer && host.settings().phoneMode !== 'float') { v.tab = 'phone'; v.phone = false; }
                 else if (v.drawer) { v.drawer = false; v.phone = true; }
                 else v.phone = true;
-                v.plus = false; v.menuFor = ''; v.edit = null;
+                v.plus = false; v.menuFor = ''; v.edit = null; v.wxManage = false;
                 v.prev = v.view; v.view = b.dataset.to;
                 if (v.view === 'wx-chat' || v.view === 'x-dm') { if (v.view === 'wx-chat') host.markRead(); v.stick = true; }
                 v.dmMenu = false;
@@ -1405,6 +1407,13 @@ export function createUI(host) {
             }
             case 'mdel': host.deleteWechat(b.dataset.id); v.menuFor = ''; break;
             case 'mcancel': v.menuFor = ''; break;
+            case 'wx-manage': v.wxManage = !v.wxManage; v.menuFor = ''; v.edit = null; v.plus = false; break;
+            case 'wx-del-round': { // TA最近一轮：最后一条你的消息之后，TA连着回的那几条
+                const list = host.wechat().filter(m => m.type !== 'note'); let i = list.length; while (i > 0 && list[i - 1].from !== 'me') i--;
+                const ids = list.slice(i).map(m => m.id); if (!ids.length) return;
+                if (!await host.confirm(`删掉TA最近一轮的 ${ids.length} 条消息？`)) return;
+                for (const id of ids) host.deleteWechat(id); break;
+            }
             case 'minput': { const m = host.wechat().find(x => x.id === b.dataset.id); v.menuFor = ''; if (m) toInput(msgLine(m)); break; }
             case 'pinput': { const p = allPosts().find(x => x.id === b.dataset.post); v.pmenu = ''; if (p) toInput(postLine(p)); break; }
             case 'cover-mode': host.setCharCfg(c => { c.cover = { ...(c.cover || {}), mode: b.dataset.mode }; }); break;
