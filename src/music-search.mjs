@@ -17,7 +17,7 @@ export function createMusicSearch(providers, {ttl=120000,limit=24}={}) {
             if(!session.load){
                 if(page!==1){await search(query,1,{source});session=sessions.get(key);if(!session?.load)return [];}
                 else {
-                    const names=source==='auto'?['netease','qq','meting']:[source];
+                    const names=source==='auto'?['netease','qq','meting']:source==='netease'?['netease','meting']:[source];
                     for(const name of names){
                         if(!providers[name])continue;
                         try{const result=await providers[name](query);const rows=unique(result.rows||[]);if(!rows.length)continue;session.load=result.load;session.pages.set(1,rows);return rows;}catch{/* Another first-page source may be available. */}

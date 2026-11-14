@@ -24,3 +24,8 @@ test('an explicit new search refreshes the session; paging alone does not',async
  let version=0;const search=createMusicSearch({netease:async()=>({rows:[{id:String(++version)}],load:async()=>[]})});
  assert.equal((await search('歌'))[0].id,'1');assert.equal((await search('歌',1))[0].id,'1');assert.equal((await search('歌',1,{refresh:true}))[0].id,'2');
 });
+
+test('explicit NetEase playback fallback can try Meting, but cannot select QQ again',async()=>{
+ const calls=[];const search=createMusicSearch({netease:async()=>{calls.push('gd');throw Error('offline')},qq:async()=>{calls.push('qq');return {rows:[{id:'qq',src:'qq'}],load:async()=>[]}},meting:async()=>{calls.push('meting');return {rows:[{id:'netease'}],load:async()=>[]}}});
+ assert.equal((await search('读者 胡66',1,{source:'netease'}))[0].id,'netease');assert.deepEqual(calls,['gd','meting']);
+});

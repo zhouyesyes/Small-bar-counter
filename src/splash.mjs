@@ -184,7 +184,7 @@ export function startSplash(force = false) {
     const date = new Date(), stamp = `${date.getFullYear()}.${String(date.getMonth()+1).padStart(2,'0')}.${String(date.getDate()).padStart(2,'0')}`;
     root.dataset.today = stamp;
     root.innerHTML = `<style>${styles}</style><button class="sb-splash-close" aria-label="Close">×</button><button class="sb-splash-edit" aria-label="Customize">Customize</button>
-    <div class="sb-ticket-frame"><section class="sb-ticket"><div class="sb-ticket-head" role="button" tabindex="0" aria-expanded="false" aria-controls="sb-ticket-details" aria-label="Expand your tab"><div class="sb-ticket-cover"><img data-image="cover" alt="" hidden><span>SMALL BAR</span><span>NO.0137</span></div>
+    <div class="sb-ticket-frame"><section class="sb-ticket"><div class="sb-ticket-head" role="button" tabindex="0" aria-expanded="false" aria-controls="sb-ticket-details" aria-label="Expand your tab"><div class="sb-ticket-cover"><img data-image="cover" alt="" hidden><span class="sb-opening-logo">Small Bar</span><span>NO.0137</span></div>
     <div class="sb-ticket-profile"><div class="sb-ticket-avatar"><img data-image="avatar" alt="Your avatar" hidden></div><p data-quote></p><span class="sb-unfold-mark" aria-hidden="true">⌄</span></div></div>
     <div class="sb-ticket-body" id="sb-ticket-details" aria-hidden="true" inert hidden><p class="sb-tab-title">HOUSE TAB</p><dl><div><dt>SEAT</dt><dd data-table></dd></div><div><dt>DRINK</dt><dd data-order></dd></div><div><dt>DATE</dt><dd data-date>${stamp}</dd></div></dl>
     <label class="sb-sign-label">SIGNED, WITH LOVE<span class="sb-sign-field"><span aria-hidden="true">×</span><span class="sb-sign-writing"><input data-signature aria-label="Signature" maxlength="60" autocomplete="nickname"><span data-signature-ink aria-hidden="true"></span></span></span></label><div class="sb-stamp" aria-hidden="true">REGULAR<br>SINCE<br>${date.getFullYear()}</div>
@@ -317,6 +317,8 @@ const styles = `
 #sb-splash .sb-ticket-cover img{object-position:50% 45%}
 #sb-splash .sb-ticket-cover:after{content:'';position:absolute;inset:0;background:linear-gradient(transparent 72%,#00000012);pointer-events:none}
 #sb-splash .sb-ticket-cover span{z-index:1;color:#f7f7f7;background:transparent;padding:0;text-shadow:0 1px 4px #0008}
+/* Match the drawer cover logo's script and visible 42px size, compensating ticket scaling. */
+#sb-splash .sb-ticket-cover .sb-opening-logo{font:400 calc(42px / var(--sb-ticket-scale,1))/1.2 SmallBarHand,'Snell Roundhand',cursive;letter-spacing:.025em;text-transform:none;white-space:nowrap}
 #sb-splash[data-mode=light] .sb-ticket-cover:after{background:linear-gradient(transparent 74%,#ffffff24)}
 #sb-splash .sb-ticket-profile{height:90px;min-height:90px;gap:18px;padding:0 24px 22px;align-items:center;border-bottom-color:color-mix(in srgb,var(--sb-line) 72%,transparent)}
 #sb-splash .sb-ticket-avatar{width:104px;height:104px;margin-top:-26px;border:1px solid #ffffff20;box-shadow:0 6px 12px #0003,inset 0 1px 0 #ffffff44}
