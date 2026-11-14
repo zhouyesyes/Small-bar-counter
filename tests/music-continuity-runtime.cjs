@@ -19,6 +19,7 @@ await p.evaluate(async()=>{
  window.audio=document.querySelector('audio');window.mediaLoads=0;audio.addEventListener('loadstart',()=>mediaLoads++);
 });
 await p.locator('[data-act=mtoggle]').first().click();await p.waitForFunction(()=>audio.currentTime>.3&&!audio.paused);
+const initialRequests=requests;assert(initialRequests>=1);
 const before=await p.evaluate(()=>({time:audio.currentTime,loads:mediaLoads,src:audio.src,saves}));
 await p.evaluate(()=>{for(let i=0;i<20;i++){ui.reset({keepOpen:true});ui.render()}if(document.querySelector('audio')!==audio||!audio.isConnected)throw Error('audio replaced by UI render')});
 await p.waitForTimeout(500);
@@ -28,8 +29,8 @@ await p.evaluate(()=>{window.testHidden=true;Object.defineProperty(document,'hid
 const start=await p.evaluate(()=>audio.currentTime);await p.waitForTimeout(6500);
 assert(await p.evaluate(t=>audio.currentTime>t+5&&!audio.paused,start));
 await p.evaluate(()=>{testHidden=false;document.dispatchEvent(new Event('visibilitychange'));audio.dispatchEvent(new Event('playing'))});
-assert.deepEqual(await p.evaluate(()=>({loads:mediaLoads,src:audio.src,saves})),{loads:before.loads,src:before.src,saves:before.saves});assert.equal(requests,1);
+assert.deepEqual(await p.evaluate(()=>({loads:mediaLoads,src:audio.src,saves})),{loads:before.loads,src:before.src,saves:before.saves});assert.equal(requests,initialRequests);
 assert.equal(await p.evaluate(()=>navigator.mediaSession?.metadata?.title),'Continuity');
-await p.evaluate(()=>audio.pause());const paused=await p.evaluate(()=>audio.currentTime);await p.locator('[data-act=mtoggle]').first().click();await p.waitForTimeout(300);assert(await p.evaluate(t=>audio.currentTime>=t&&!audio.paused,paused));assert.equal(requests,1);
+await p.evaluate(()=>audio.pause());const paused=await p.evaluate(()=>audio.currentTime);await p.locator('[data-act=mtoggle]').first().click();await p.waitForTimeout(300);assert(await p.evaluate(t=>audio.currentTime>=t&&!audio.paused,paused));assert.equal(requests,initialRequests);
 console.log('Image blob cache/reference scan; stable audio across UI resets; visibility callbacks; no reload or repeated settings save; media metadata and pause/resume passed.');await b.close();
 })().catch(e=>{console.error(e);process.exit(1)});

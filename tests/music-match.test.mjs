@@ -1,3 +1,4 @@
+import test from 'node:test';
 import assert from 'node:assert/strict';
 import {matchingSong,rankSongs} from '../src/music.mjs';
 const original={id:'original',title:'告白气球',artist:'周杰伦'},cover={id:'cover',title:'告白气球（Cover 周杰伦）',artist:'一颗柠檬'},fakeArtist={id:'fake',title:'告白气球',artist:'一颗柠檬'},live={title:'告白气球（Live）',artist:'周杰伦'};
@@ -20,3 +21,11 @@ assert.equal(bestSong([original],'柠檬气球','周杰伦'),original,'uncertain
 assert.equal(bestSong([cover,original],'柠檬气球','周杰伦'),original,'prefer the original singer even when the AI misspells the title');
 const recovered=await findSong('Playboy','The Marías',{search:async q=>q.includes('Marías')?[]:[maria],qq:async()=>[]});assert.equal(recovered.track,maria,'retry plain metadata spelling');
 const corrected=await findSong('柠檬气球','周杰伦',{search:async q=>q==='周杰伦'?[original]:[cover],qq:async()=>[]});assert.equal(corrected.track,original,'artist search can recover the official title');
+
+test('automatic counterpart lookup does not substitute a different singer of the same title',async()=>{
+ const {counterpartSong}=await import('../src/music.mjs');
+ const wrong=[{id:'a',title:'读者',artist:'齐修远'},{id:'b',title:'读者',artist:'徐秉龙'}];
+ assert.equal(counterpartSong(wrong,'读者','胡66'),null);
+ const right={id:'hu66',title:'读者',artist:'胡66'};
+ assert.equal(counterpartSong([...wrong,right],'读者','胡66'),right);
+});
