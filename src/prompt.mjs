@@ -7,6 +7,8 @@ export const RELATION = `朋友圈里的互动要合乎真实的人际关系，�
 - 只有熟到能开口的人才评论，口吻合乎彼此的身份和亲疏（对上级客气、对熟人随便、对暧昧的人收着）
 - 朋友圈下面只能看到共同好友的评论，所以一条底下的人通常来自同一个圈子；没有合适的人，就让它冷清着，不要硬凑`;
 
+// 每轮配一首歌：就算她改过提示词也照样带上
+export const PICK_RULE = '选曲: 每轮都在状态段里写一行「选曲: 歌名｜歌手｜一句话说为什么是这首」。选歌时综合考虑：这一轮正文的情节、情绪和氛围；{{char}}的人设（性格、年龄、身份、喜好、出身）；世界书里的时代、地域与世界观（古代、民国、异国、架空等就挑气质相符的，比如古风、老上海、爵士、原声或纯音乐）；{{char}}和 {{user}} 此刻的关系与张力；以及场景里的时间、天气和地点。要的是能把这一刻的气氛衬出来的歌，而不只是歌词字面相关。挑真实存在、在网易云或 QQ 音乐搜得到的歌，写原唱和正式歌名，不要编造，不要写翻唱版、伴奏版。理由用一句话点出它和此刻气氛、人物的关联。这是给 {{user}} 的配乐，不是{{char}}在听的歌（那个写「音乐:」）。';
 export const DEFAULT_PROMPT = `【小吧台】
 每次回复正文写完以后，另起一行，写一段 {{char}} 此刻的状态，用 <!--SB 开头、SB--> 结尾，一行一项，没有的就不写那一行。这段不会显示给 {{user}}，也不要在正文里提到它。
 这段也是 {{char}} 本人：内容要贴合 {{char}} 的性格、口吻、关系和当下剧情，不要写成旁白或客观报告。
@@ -20,6 +22,7 @@ export const DEFAULT_PROMPT = `【小吧台】
 心声背面: 更露骨、不会说出口的那一面
 签名: {{char}}的个性签名（想换才写）
 音乐: 歌名｜歌手｜正在唱的一句歌词（{{char}}在听歌时才写）
+选曲: 歌名｜歌手｜一句话说为什么是这首（每轮都写，按正文、人设、世界观和此刻的气氛挑）
 备忘: {{char}}记下的一件要做的事（偶尔）
 完成: 做完的那件事
 动态: 正文｜照片描述,照片描述｜地点（朋友圈：熟人能看到，体面、生活化的那一面；{{char}}想发时才写，一轮最多 2 条）
@@ -77,7 +80,10 @@ export const PHONE_RULES = `你在用手机和对方聊天。像真人发消息�
 // 每轮注入正文的那一段：规则 + 现在的状态（{{char}}不用每次从头想）+ 她在小手机里新说的话
 export function buildInjection({ prompt, coverTags, state, wechatTail, myComments, waiting, wxNote, saveMode, channel = '手机上的聊天' }) {
     let text = (prompt || DEFAULT_PROMPT).replace('{{背景}}', coverTags?.length ? `背景: 从这几个里挑一个最合适此刻的：${coverTags.join('、')}` : '');
-    if (saveMode) text += '\n（省一点：这一轮只写 时间、天气、在哪、心声 这几项）';
+    text += '\n' + PICK_RULE;
+    if (saveMode) text += '\n（省一点：这一轮只写 时间、天气、在哪、心声、选曲 这几项）';
+    const recent = (state?.picks || []).slice(-8).map(p => `《${p.title}》${p.artist ? p.artist : ''}`);
+    if (recent.length) text += `\n这个聊天里已经选过的歌（尽量换一首，除非剧情就该是这首）：${recent.join('、')}`;
     const n = state?.now || {};
     const cur = [n.time && '时间 ' + n.time, n.weather && '天气 ' + n.weather, n.where && '在 ' + n.where, n.wear && '穿着 ' + n.wear].filter(Boolean).join('，');
     if (cur) text += `\n上一轮的状态：${cur}`;

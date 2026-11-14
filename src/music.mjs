@@ -275,7 +275,7 @@ export function parseLrc(text) {
 export const lineAt = (lrc, sec) => { let cur = -1; for (let i = 0; i < lrc.length; i++) { if (lrc[i].t <= sec + 0.2) cur = i; else break; } return cur; };
 
 // 播放器：一个真的 <audio>，不随界面重画；界面每秒问它一次进度
-export function createPlayer({ load, save, onChange, onStatus = () => {} }) {
+export function createPlayer({ load, save, onChange, onStatus = () => {}, resolve }) {
     const audio = new Audio();
     audio.preload = 'auto';
     let confirmedSource = '';
@@ -289,6 +289,13 @@ export function createPlayer({ load, save, onChange, onStatus = () => {} }) {
         const t = cur(); if (!t) return;
         media.prepare();
         playing = t; swapped = false;
+        // AI 选的歌只有歌名和歌手：第一次放时才去搜，搜到的结果直接写回这首（下次不用再搜）
+        if (t.pending) {
+            if (!resolve) return;
+            onStatus(`正在找《${t.title}》…`); onChange?.();
+            try { await resolve(t); } catch (e) { onStatus('没找到这首'); onChange?.('error', e?.message || '没找到这首歌'); return; }
+            if (playing !== t) return;
+        }
         let src;
         onStatus(t.src === 'qq' ? '正在问 QQ 音乐要播放地址…' : '正在连网易云…');
         try { sources = await sourceList(t); srcIdx = 0; src = sources[0]?.u; } catch (e) { onStatus('拿不到播放地址'); onChange?.('error', e?.message || '拿不到播放地址'); return; }
