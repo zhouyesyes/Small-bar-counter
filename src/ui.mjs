@@ -8,7 +8,7 @@ import { cocktailProtocol, cocktailFromState, parseCocktail, fallbackDrinkName }
 import { bindDrawerSize, applyDrawerSize } from './drawer-size.mjs';
 import { installTypography } from './typography.mjs';
 import { updateLyrics, invalidateLyricsLayout } from './music-lyrics.mjs';
-import { bindMusicCovers } from './music-cover.mjs';
+import { bindMusicCovers, rememberMusicCovers, warmMusicCover } from './music-cover.mjs';
 import { applyPalette, modeFor, phoneModeFor } from './palette.mjs';
 import { profileCover } from './profile.mjs';
 import { openSplashSettings } from './splash.mjs';
@@ -149,7 +149,7 @@ export function createUI(host) {
         onStatus: text => { v.mstate = text; root?.querySelectorAll('.sb-mstxt').forEach(el => { el.textContent = text; }); },
     });
     const coverTracks = new Map();
-    const coverImg = (t, cls) => { const key = `${t.src || 'netease'}:${t.id}`; coverTracks.set(key, t); const url = coverList(t)[0]; return `<img class="${cls}" ${url ? `src="${esc(url)}"` : ''} data-cover-key="${esc(key)}" decoding="async" alt="">`; };
+    const coverImg = (t, cls) => { const key = `${t.src || 'netease'}:${t.id}`; coverTracks.set(key, t); const url = coverList(t)[0]; return `<img class="${cls}" ${url ? `src="${esc(url)}"` : ''} data-cover-key="${esc(key)}" decoding="async" style="visibility:hidden" alt="">`; };
     const fmt = s => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
     const phoneIOS = createPhoneIOS({host,player,coverImg,render});
     // 播放键、主页小卡片：只改这几处
@@ -312,6 +312,7 @@ export function createUI(host) {
     function render() {
         if (!root) return;
         const s = host.settings();
+        warmMusicCover(root, player.current(), coverList);
         const oldCover=host.charCfg?.()?.cover;
         if(oldCover?.mode&&oldCover.mode!=='fixed'&&host.setCharCfg){
             const fixed=profileCover('cover',host.charCfg(),host.state().cover)||oldCover.fixed||'';
@@ -341,6 +342,7 @@ export function createUI(host) {
         lastHtml = html;
         lyricView = root.querySelector('.sb-lyr') || lyricView;
         cocktail?.detach();archive?.detach();
+        rememberMusicCovers(root);
         root.innerHTML = html;
         applyDrawerSize(root,s);
         phoneIOS.afterRender();
