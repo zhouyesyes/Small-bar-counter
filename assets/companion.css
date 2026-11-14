@@ -32,7 +32,7 @@ html.sb-glass-chat #sheld #send_form{position:relative!important;left:auto!impor
 #sb-root.sb-default-bar .sb-track-head .sb-bigcover{position:relative;width:92px!important;height:92px!important;flex:0 0 92px;border:0!important;background:repeating-radial-gradient(circle at center,#262b29 0 1px,#393c37 1px 2px,#262b29 2px 3px);box-shadow:1px 3px 5px #24211c28,inset 0 0 0 1px #fff2;overflow:hidden;animation:sb-record-spin 12s linear infinite paused}
 #sb-root.sb-default-bar .is-record-active .sb-bigcover{animation-play-state:running}
 #sb-root.sb-default-bar .sb-bigcover:before{content:'';position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 35deg,transparent,#ffffff28 18%,transparent 35%,transparent 55%,#ffffff15 72%,transparent);pointer-events:none}
-#sb-root.sb-default-bar .sb-bigcover:not(:has(img)):after{content:'s b';position:absolute;inset:22px;border-radius:50%;display:grid;place-items:center;background:var(--sb-bg);color:var(--sb-accent);font:italic 20px Georgia,serif}
+#sb-root.sb-default-bar .sb-bigcover:not(:has(img)):after{content:'';position:absolute;inset:22px;border-radius:50%;display:grid;place-items:center;background:var(--sb-bg);color:var(--sb-accent);font:italic 20px Georgia,serif}
 #sb-root.sb-default-bar .sb-track-head .sb-bigcover img{position:absolute;inset:14px;width:64px;height:64px;border-radius:50%;border:1px solid color-mix(in srgb,var(--sb-accent) 32%,transparent);object-fit:cover}
 #sb-root.sb-default-bar .sb-track-meta{min-width:0}
 #sb-root.sb-default-bar .sb-track-meta .sb-mt{font-size:17px!important;letter-spacing:.04em;line-height:1.5;overflow-wrap:anywhere}
