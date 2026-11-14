@@ -1,3 +1,4 @@
+import {musicSelectionContext} from './music-selection.mjs';
 import { collectPhoneEvents, primeTimeline, anchorPhoneEvents, decoratePhoneHistory, PHONE_PERSPECTIVE } from './phone-timeline.mjs';
 import { collectStatusSources, formatStatusSources, pastedReference } from './status-sources.mjs';
 import { cocktailFromState, cocktailProtocol, outputUsage, parseCocktail } from './cocktail-state.mjs';
@@ -549,7 +550,7 @@ function refreshInject() {
         m0.wxBlock?.him ? '（{{user}} 在微信上把{{char}}拉黑了：你发的微信她收不到。）' : '',
     ].filter(Boolean).join('\n');
     const parts = promptParts(s);
-    let text = buildInjection({ promptNow: parts.now, promptPhone: parts.phone, coverTags: tags, state: state(), wxNote: memoNote(st0.memo), phoneNote: phoneWx, saveMode: s.saveMode, channel: era() === 'modern' ? '在手机上的聊天' : '的书信往来' });
+    let text = buildInjection({ promptNow: parts.now, promptPhone: parts.phone, coverTags: tags, state: {...state(),picks:state().picks.filter(p=>!meta().musicPickFailures?.[p.key])}, wxNote: memoNote(st0.memo), phoneNote: phoneWx, saveMode: s.saveMode, channel: era() === 'modern' ? '在手机上的聊天' : '的书信往来' });
     text += '\n\n' + PHONE_PERSPECTIVE;
     if (waiting) text += '\n有微信等待本轮回复：只依据聊天历史中已有的手机记录，在状态段里用「微信:」回复，一行一条；没有消息内容时不要猜测。';
     if (s.barStyle === 'default') {
@@ -563,6 +564,7 @@ function refreshInject() {
             if(reference)text+='\n\n'+formatStatusSources(collectStatusSources({pasted:reference}));
         }
     }
+    const musicFeedback=musicSelectionContext(meta(),state().pick);if(musicFeedback)text+='\n\n'+musicFeedback;
     text += mustWrite({ cocktail: s.barStyle === 'default', saveMode: s.saveMode });
     // 1 = 放在聊天里（IN_CHAT），深度 0 = 最后面，0 = 系统身份
     c.setExtensionPrompt(INJECT_KEY, text, 1, 0, false, 0);

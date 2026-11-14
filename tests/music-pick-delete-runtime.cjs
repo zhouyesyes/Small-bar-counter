@@ -30,6 +30,7 @@ await p.locator('.sb-mpick-delete').click();assert.equal(await p.locator('.sb-mp
 // Reproduce the screenshot: an invented title only finds a cover of a different song.
 await p.evaluate(async()=>{chat='a';const {buildState}=await import('/src/core.mjs');chats.a.state=buildState([{id:'wrong',raw:'选曲: 柠檬气球｜周杰伦｜错误的选曲',at:3}]);chats.a.meta.musicPicks[chats.a.state.pick.key]={id:'9002',title:'告白气球（Cover 周杰伦）',artist:'一颗柠檬'};ui.render()});
 assert(await p.evaluate(()=>chats.a.meta.musicPicks[chats.a.state.pick.key].pending),'old wrong cached matches must be revalidated');
+await p.waitForFunction(()=>chats.a.meta.musicPickFailures?.[chats.a.state.pick.key]);assert.match(await p.locator('.sb-mpick small').innerText(),/歌名待确认/);assert(!await p.evaluate(()=>document.querySelector('audio').getAttribute('src')));
 await p.locator('.sb-mpick').click();await p.waitForFunction(()=>toasts.some(t=>t.includes('准确版本')));
 assert(await p.evaluate(()=>document.querySelector('audio').paused&&!document.querySelector('audio').getAttribute('src')),'no automatic cover playback');
 assert.equal(await p.evaluate(()=>Object.values(chats.a.meta.musicPicks)[0].title),'柠檬气球','search candidates cannot rewrite the requested identity');

@@ -1,3 +1,4 @@
+import {createMusicSearch} from './music-search.mjs';
 import { attachMediaSession } from './media-session.mjs';
 // 小吧台的音乐：搜歌、贴网易云链接加歌、歌单、歌词、播放
 // 歌都来自第三方公开的 Meting 接口（参考 QuietRoom 的做法，代码是自己写的）：几个节点一起问，谁先回用谁；
@@ -62,20 +63,24 @@ function trackOf(x, base) {
     return { id, title: str(x.name ?? x.title) || '未命名', artist, cover: /^https?:/.test(str(x.pic ?? x.cover)) ? str(x.pic ?? x.cover) : '', picId: str(x.pic_id), lyricId: str(x.lyric_id), lrc: str(x.lrc ?? x.lyric), base, direct, dur };
 }
 
-export async function searchSongs(q, page = 1) {
-    q = str(q); if (!q) return [];
-    const id = neteaseId(q);
-    if (id) return [await songById(id)].filter(Boolean);
-    // 网易云和 QQ 一起问：网易云先回就用网易云；网易云 4 秒还没回、或者没搜到，用 QQ 的（不用干等）
-    const qq = searchQQ(q, page);
-    const meting = ask({ server: 'netease', type: 'search', id: q, page, limit: 20 }, { timeout: 4000 })
-        .then(({ base, rows }) => rows.map(x => trackOf(x, base)).filter(Boolean));
-    const gd = getJson(GD_API + '?' + new URLSearchParams({ types: 'search', source: 'netease', name: q, count: 20, pages: page }), 4000)
-        .then(d => (Array.isArray(d) ? d : d?.data || []).map(x => trackOf(x)).filter(Boolean));
-    // 两个网易云来源谁先回用谁（另一个也挂了才算没搜到）
-    let list = await Promise.any([meting.then(l => l.length ? l : Promise.reject()), gd.then(l => l.length ? l : Promise.reject())]).catch(() => []);
-    if (!list.length) list = await qq;
-    return rankSongs(list, q); // 一页最多 20 首，翻页看更多
+const pagedSearch=createMusicSearch({
+    netease:async query=>{
+        const load=async page=>{
+            const result=await getJson(GD_API+'?'+new URLSearchParams({types:'search',source:'netease',name:query,count:20,pages:page}),4000);
+            return rowsOf(result).map(x=>trackOf(x)).filter(Boolean);
+        };
+        return {rows:await load(1),load};
+    },
+    qq:async query=>({rows:await searchQQ(query,1),load:page=>searchQQ(query,page)}),
+    meting:async query=>{
+        const {base,rows}=await ask({server:'netease',type:'search',id:query,page:1,limit:20},{timeout:4000});
+        return {rows:rows.map(x=>trackOf(x,base)).filter(Boolean),load:async page=>rowsOf(await getJson(apiUrl(base,{server:'netease',type:'search',id:query,page,offset:(page-1)*20,limit:20}),4000)).map(x=>trackOf(x,base)).filter(Boolean)};
+    },
+});
+export async function searchSongs(q,page=1,options={}) {
+    q=str(q);if(!q)return [];
+    const id=neteaseId(q);if(id)return page===1?[await songById(id)].filter(Boolean):[];
+    return rankSongs(await pagedSearch(q,page,options),q);
 }
 // 搜出来的排个序：歌名正好是搜的那个 > 歌名开头是 > 歌名里有 > 歌手对得上；翻唱、伴奏、DJ、现场这些往后放
 const VARIANT = /demo|试听|清唱|剪辑|降调|升调|加速|慢速|cover|翻唱|翻自|伴奏|纯音乐|instrumental|karaoke|\bdj\b|remix|live|现场|版\)|版）|铃声|片段|女声版|男声版|抖音|0\.\d+x|倍速/i;

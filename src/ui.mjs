@@ -57,7 +57,7 @@ export function createUI(host) {
     installTypography();
     const widePanel = matchMedia('(min-width: 768px)');
     const v = { drawer: false, tab: 'posts', diaryId: '', phone: false, view: 'home', plus: false, momentsN: 10, xN: 10, busy: false, flip: false, menuFor: '', edit: null };
-    let cocktail, archive, manualRequest=0;
+    let cocktail, archive, manualRequest=0, musicSearchRequest=0;
     let root, catBlink = 0, lastHtml = '', lyricView = null, lyricFrame = 0, lyricTickAt = 0;
     // 音乐：歌单存在扩展设置里（不跟聊天走）；播放器不随界面重画
     // 「本聊天选曲」是例外：由这个聊天里 AI 每轮的选曲自动生成，搜到的歌存在聊天自己的数据里，换聊天就换一份
@@ -90,17 +90,38 @@ export function createUI(host) {
         if (!Object.getOwnPropertyDescriptor(m, 'list')) Object.defineProperty(m, 'list', { get() { return this.active === CHAT_LIST ? pickTracks() : this.lists[this.active]; }, enumerable: false, configurable: true });
         return m;
     }
+    const pickChecks=new WeakMap(),failedPickChecks=new WeakSet();
+    function resolveTrack(t){
+        if(pickChecks.has(t))return pickChecks.get(t);
+        const targetMeta=host.meta(),title=t.title,artist=t.artist,query=[title,artist].filter(Boolean).join(' ');
+        const stillHere=()=>!t.pickKey||(host.meta()===targetMeta&&!targetMeta.musicPickHidden?.[t.pickKey]);
+        const work=(async()=>{
+            const found=await searchSongs(query);
+            if(!stillHere())throw new Error('这条选曲已删除或已切换聊天');
+            const hit=matchingSong(found,title,artist)||await qqTwin(t).catch(()=>null);
+            if(!stillHere())throw new Error('这条选曲已删除或已切换聊天');
+            if(!hit){
+                if(t.pickKey){(targetMeta.musicPickFailures??={})[t.pickKey]={title,artist};failedPickChecks.add(t);host.saveMeta();host.refreshInject?.();}
+                const error=new Error(`没找到《${title}》${artist?' · '+artist:''}的准确版本，请手动搜索选择；不会自动播放相似歌曲或翻唱`);
+                error.candidates=found;error.query=query;throw error;
+            }
+            Object.assign(t,hit,{catalogVerified:true});delete t.pending;failedPickChecks.delete(t);
+            if(t.pickKey){delete targetMeta.musicPickFailures?.[t.pickKey];host.saveMeta();host.refreshInject?.();}else host.saveSettings();
+        })();
+        pickChecks.set(t,work);work.catch(()=>{pickChecks.delete(t);});return work;
+    }
+    function checkVisiblePick(){
+        if(!root?.querySelector('.sb-mpick'))return;
+        const pick=host.state().pick,t=pickTracks().find(track=>track.pickKey===pick?.key);
+        if(!t?.pending||pickChecks.has(t)||failedPickChecks.has(t))return;
+        const target=host.meta();
+        resolveTrack(t).catch(()=>{}).finally(()=>{if(host.meta()===target)render();});
+    }
     const player = createPlayer({
         load: musicState,
         save: () => { host.saveSettings(); if (player?.current()?.pickKey) host.saveMeta(); },
         resolve: async t => {
-            const targetMeta=host.meta(), query=[t.title,t.artist].filter(Boolean).join(' ');
-            const found = await searchSongs(query);
-            if(t.pickKey&&(host.meta()!==targetMeta||targetMeta.musicPickHidden?.[t.pickKey]))throw new Error('这条选曲已删除或已切换聊天');
-            const hit = matchingSong(found,t.title,t.artist) || await qqTwin(t).catch(()=>null);
-            if(t.pickKey&&(host.meta()!==targetMeta||targetMeta.musicPickHidden?.[t.pickKey]))throw new Error('这条选曲已删除或已切换聊天');
-            if (!hit) {v.mq=query;v.mres=found;v.mpage=1;throw new Error(`没找到《${t.title}》${t.artist?' · '+t.artist:''}的准确版本，请手动搜索选择；不会自动播放相似歌曲或翻唱`);}
-            Object.assign(t, hit); delete t.pending; if (t.pickKey) host.saveMeta(); else host.saveSettings();
+            try{await resolveTrack(t);}catch(error){if(error.query){musicSearchRequest++;v.msearching=false;v.mq=error.query;v.mqueryDraft=error.query;v.mres=error.candidates;v.mpage=1;}throw error;}
         },
         onChange: (kind, msg) => {
             if (kind === 'error') host.toast('warning', msg); if (kind === 'info') host.toast('info', msg);
@@ -172,6 +193,7 @@ export function createUI(host) {
                 root.querySelectorAll('[data-wxmatch]').forEach(row=>{row.hidden=!row.dataset.wxmatch.toLocaleLowerCase().includes(q);if(!row.hidden)count++;});
                 const empty=root.querySelector('.ios-wx-no-results');if(empty)empty.hidden=count>0;return;
             }
+            if(t.matches?.('[data-msearch]')){v.mqueryDraft=t.value;return;}
             if (t.matches?.('[data-mseek]')) { player.seek(Number(t.value) / 1000); tickMusic(); return; }
             if (t.matches?.('[data-mtext]')) { v.mdraft = t.value; return; }
             if (t.matches?.('[data-mpics]')) { v.mpicsDraft = t.value; return; }
@@ -305,6 +327,7 @@ export function createUI(host) {
         root.innerHTML = html;
         applyDrawerSize(root,s);
         phoneIOS.afterRender();
+        queueMicrotask(checkVisiblePick);
         const lyricSlot = root.querySelector('.sb-lyr');
         if (lyricSlot && lyricView) { lyricSlot.replaceWith(lyricView); invalidateLyricsLayout(lyricView); }
         bindMusicCovers(root, coverTracks, coverList, resolveCover, () => host.saveSettings());
@@ -537,12 +560,12 @@ export function createUI(host) {
  ${host.settings().barStyle==='default'?'<div class="sb-record-note" aria-hidden="true"><span>SIDE A</span><i></i><span>33⅓ RPM</span></div>':''}
  <div class="sb-mctl"><button data-act="mmode" title="${{ all: '列表循环', one: '单曲循环', shuffle: '随机' }[mode]}">${mi(mode)}</button><button data-act="mprev" aria-label="上一首">${mi('prev')}</button><button class="sb-mplay" data-act="mtoggle" aria-label="播放">${mi(player.playing() ? 'pause' : 'play')}</button><button data-act="mnext" aria-label="下一首">${mi('next')}</button><button data-act="mlist" class="${v.mlist ? 'on' : ''}" aria-label="歌单">${mi('list')}</button></div>
 
- ${pick ? `<div class="sb-mpick-wrap"><button class="sb-mpick${t?.pickKey === pick.key ? ' on' : ''}" data-act="mpick" data-key="${esc(pick.key)}" aria-label="播放本轮选曲《${esc(pick.title)}》"><small>本轮选曲</small><b>《${esc(pick.title)}》${pick.artist ? `<span> · ${esc(pick.artist)}</span>` : ''}</b>${pick.why ? `<em>${esc(pick.why)}</em>` : ''}<i aria-hidden="true">${t?.pickKey === pick.key && player.playing() ? '♪ 正在放' : '▶ 放这首'}</i></button><button class="sb-mpick-delete" data-act="mpick-delete" data-key="${esc(pick.key)}" aria-label="删除本轮选曲《${esc(pick.title)}》" title="删除这首选曲">×</button></div>` : ''}
+ ${pick ? `<div class="sb-mpick-wrap"><button class="sb-mpick${t?.pickKey === pick.key ? ' on' : ''}" data-act="mpick" data-key="${esc(pick.key)}" aria-label="播放本轮选曲《${esc(pick.title)}》"><small>本轮选曲${host.meta().musicPickFailures?.[pick.key]?' · 歌名待确认':chat.find(track=>track.pickKey===pick.key)?.pending?' · 正在核对':''}</small><b>《${esc(pick.title)}》${pick.artist ? `<span> · ${esc(pick.artist)}</span>` : ''}</b>${pick.why ? `<em>${esc(pick.why)}</em>` : ''}<i aria-hidden="true">${t?.pickKey === pick.key && player.playing() ? '♪ 正在放' : '▶ 放这首'}</i></button><button class="sb-mpick-delete" data-act="mpick-delete" data-key="${esc(pick.key)}" aria-label="删除本轮选曲《${esc(pick.title)}》" title="删除这首选曲">×</button></div>` : ''}
  </div><div class="sb-music-extras" ${ms.compact ? 'hidden' : ''}>
  ${v.mlist !== false ? `<div class="sb-mres sb-queue"><div class="sb-cap sb-row" style="margin:6px 0"><span>${esc(ms.active)} · ${list.length} 首</span><span>${onChat ? '<small>AI 每轮按剧情选的，只在这个聊天里</small>' : `<button class="sb-link" data-act="mpl-rename">改名</button>${names.length > 1 ? ' <button class="sb-link" data-act="mpl-del">删掉这个歌单</button>' : ''}`}</span></div><div class="sb-queue-scroll" data-keep="music-queue">${list.map((r, i) => `<div class="sb-mrow2${t && r.id === t.id ? ' on' : ''}">${coverImg(r, 'sb-mthumb')}<span data-act="mplayat" data-i="${i}"><b>${esc(r.title)}</b><small>${esc(r.artist)}${onChat && r.why ? ' · ' + esc(r.why) : ''}</small></span><button data-act="msong-menu" data-i="${i}" aria-label="管理这首歌">⋯</button><button data-act="mdelsong" data-i="${i}" aria-label="删除《${esc(r.title)}》" title="从歌单删除">×</button></div>`).join('') || `<div class="sb-empty sm">${onChat ? '这个聊天还没有选曲，下一轮回复后会出现' : '还没有歌'}</div>`}</div></div>` : ''}
  <div class="sb-plists">${chat.length || onChat ? `<button data-act="mpl" data-n="${CHAT_LIST}" class="sb-chat-plist${onChat ? ' on' : ''}">${CHAT_LIST} <small>${chat.length}</small></button>` : ''}${names.map(n => `<button data-act="mpl" data-n="${esc(n)}" class="${n === ms.active ? 'on' : ''}">${esc(n)} <small>${ms.lists[n].length}</small></button>`).join('')}<button data-act="mpl-new" class="add">＋ 新建歌单</button></div>
  ${m?.title ? `<button class="sb-mhis" data-act="mhis">${Wd().listen}《${esc(m.title)}》${m.artist ? ' · ' + esc(m.artist) : ''} · 放这首</button>` : ''}
- <div class="sb-msearch"><input data-msearch placeholder="搜歌名、歌手，或贴网易云链接" enterkeyhint="search" value="${esc(v.mq || '')}"><button data-act="msearch">${v.msearching ? '…' : '搜'}</button></div>
+ <div class="sb-msearch"><select data-music-source aria-label="音乐搜索来源">${[['auto','自动'],['netease','网易云'],['qq','QQ']].map(([key,label])=>`<option value="${key}" ${(v.msource||'auto')===key?'selected':''}>${label}</option>`).join('')}</select><input data-msearch placeholder="搜歌名、歌手，或贴网易云链接" enterkeyhint="search" value="${esc(v.mqueryDraft ?? v.mq ?? '')}"><button data-act="msearch">${v.msearching ? '…' : '搜'}</button></div>
  ${v.mres?.length ? `<div class="sb-mres"><div class="sb-cap sb-row" style="margin:6px 0"><span>搜「${esc(v.mq)}」· 第 ${v.mpage || 1} 页</span><button class="sb-link" data-act="mclose">收起 ×</button></div>${v.mres.map((r, i) => `<div class="sb-mrow2">${coverImg(r, 'sb-mthumb')}<span><b>${esc(r.title)}</b><small>${esc(r.artist)}${r.src === 'qq' ? ' · QQ' : ''}</small></span><button data-act="madd" data-i="${i}" data-play="1">▶</button><button data-act="madd" data-i="${i}">＋</button></div>`).join('')}
   <div class="sb-mpager"><button data-act="mpage" data-d="-1" ${(v.mpage || 1) <= 1 || v.msearching ? 'disabled' : ''}>上一页</button><span>${v.mpage || 1}</span><button data-act="mpage" data-d="1" ${v.msearching ? 'disabled' : ''}>下一页</button><button data-act="mclose">收起</button></div></div>` : ''}
 
@@ -568,16 +591,17 @@ export function createUI(host) {
         pop.style.top = Math.max(12, Math.min(ctx.rect.bottom + 6, window.innerHeight - height - 12)) + 'px';
         pop.querySelector('button:not(:disabled)')?.focus({preventScroll:true});
     }
-    async function musicSearch(q, page = 1) {
-        q = String(q || '').trim(); if (!q) return;
-        v.mq = q; v.msearching = true; render();
-        try {
-            const res = await searchSongs(q, page);
-            if (!res.length) { host.toast('info', page > 1 ? '没有下一页了' : '没搜到'); if (page === 1) v.mres = []; }
-            else { v.mres = res; v.mpage = page; let tm = 0; for (const t of res) resolveCover(t).then(ok => { if (ok && v.mres === res) { clearTimeout(tm); tm = setTimeout(render, 150); } }); } // 封面拿到一批画一次（攒一下再画，不一闪一闪）
-        }
-        catch (err) { host.toast('error', err?.message || '搜不了'); }
-        finally { v.msearching = false; render(); root.querySelector('.sb-mres')?.scrollIntoView({ block: 'nearest' }); }
+    async function musicSearch(q,page=1,refresh=false) {
+        q=String(q||'').trim();if(!q)return;
+        const request=++musicSearchRequest,source=v.msource||'auto';
+        if(q!==v.mq){v.mres=[];v.mpage=1;}
+        v.mq=q;v.mqueryDraft=q;v.msearching=true;render();
+        try{
+            const res=await searchSongs(q,page,{source,refresh});if(request!==musicSearchRequest)return;
+            if(!res.length){host.toast('info',page>1?'没有下一页了':'没搜到');if(page===1)v.mres=[];}
+            else{v.mres=res;v.mpage=page;let timer=0;for(const track of res)resolveCover(track).then(ok=>{if(ok&&request===musicSearchRequest&&v.mres===res){clearTimeout(timer);timer=setTimeout(render,150);}});}
+        }catch(error){if(request===musicSearchRequest)host.toast('error',error?.message||'搜不了');}
+        finally{if(request===musicSearchRequest){v.msearching=false;render();root.querySelector('.sb-msearch')?.scrollIntoView({block:'nearest'});}}
     }
     // 现在显示的这一页此刻是哪一楼的；它有几个版本
     const curNowId = () => host.state().nowLog.slice(-1)[0]?.id || null;
@@ -1315,8 +1339,8 @@ export function createUI(host) {
             }
             case 'mlyric': { const line = player.lyric()[Number(b.dataset.line)]; if (line && Number.isFinite(player.audio.duration) && player.audio.duration > 0) { player.seek(Math.max(0, Math.min(1, line.t / player.audio.duration))); tickMusic(); } return; }
             case 'mseek': { const r = b.getBoundingClientRect(); player.seek((e.clientX - r.left) / r.width); tickMusic(); return; }
-            case 'msearch': await musicSearch(root.querySelector('[data-msearch]')?.value); return;
-            case 'mclose': v.mres = []; v.mpage = 1; break;
+            case 'msearch': await musicSearch(root.querySelector('[data-msearch]')?.value,1,true); return;
+            case 'mclose': musicSearchRequest++;v.msearching=false;v.mres = []; v.mpage = 1; break;
             case 'mpage': await musicSearch(v.mq, Math.max(1, (v.mpage || 1) + Number(b.dataset.d))); return;
             case 'madd': { const t = v.mres?.[Number(b.dataset.i)]; if (t) { realList(); player.add(t, !!b.dataset.play); } if (!b.dataset.play) host.toast('success', '加进歌单了'); return; }
             case 'music-compact': {
@@ -1526,7 +1550,7 @@ export function createUI(host) {
         if (e.key !== 'Enter' || e.isComposing) return;
         const t = e.target;
         if (t.matches?.('[data-wx]')) { e.preventDefault(); queueMine({ type: 'text', text: t.value }); t.value = ''; }
-        if (t.matches?.('[data-msearch]')) { e.preventDefault(); musicSearch(t.value); return; }
+        if (t.matches?.('[data-msearch]')) { e.preventDefault(); musicSearch(t.value,1,true); return; }
         if (t.matches?.('[data-xpost]')) { e.preventDefault(); if (t.value.trim()) { host.addXMine(t.value.trim()); render(); } }
         if (t.matches?.('[data-xdm]')) { e.preventDefault(); if (t.value.trim()) { host.addXdm({ from: 'me', text: t.value.trim(), pending: true }); t.value = ''; v.stick = true; render(); root.querySelector('[data-xdm]')?.focus(); } }
 
@@ -1534,6 +1558,7 @@ export function createUI(host) {
     }
     async function onChange(e) {
         const t = e.target;
+        if(t.matches?.('[data-music-source]')){const query=root.querySelector('[data-msearch]')?.value||v.mq;v.msource=t.value;v.mres=[];v.mpage=1;await musicSearch(query,1,true);render();return;}
         if (t.dataset.set) host.setSettings(s => { s[t.dataset.set] = t.type === 'checkbox' ? t.checked : t.type === 'number' ? Number(t.value) : t.value; });
         // 反过来存的开关：界面上「开」= 设置里是 false（比如「这张卡正文后写状态」对应 noAutoStatus）
         if (t.dataset.csetOff) host.setCharCfg(c => { c[t.dataset.csetOff] = !t.checked; });
@@ -1789,7 +1814,7 @@ export function createUI(host) {
             else { v.drawer = true; v.tab = 'phone'; v.phone = false; }
             render();
         },
-        reset: ({ keepOpen = false, newChat = false } = {}) => { if(newChat)phoneIOS.resetForChat();manualRequest++;cocktail?.reset();archive?.reset(); if (!keepOpen) { v.drawer = false; v.phone = false; } v.tab = 'posts';v.nowBook=false; v.view = 'home'; v.diaryId = ''; v.edit = null; v.menuFor = ''; v.busy = false; render(); },
+        reset: ({ keepOpen = false, newChat = false } = {}) => { if(newChat)phoneIOS.resetForChat();musicSearchRequest++;v.msearching=false;manualRequest++;cocktail?.reset();archive?.reset(); if (!keepOpen) { v.drawer = false; v.phone = false; } v.tab = 'posts';v.nowBook=false; v.view = 'home'; v.diaryId = ''; v.edit = null; v.menuFor = ''; v.busy = false; render(); },
         isOpen: () => v.drawer || v.phone || document.documentElement.classList.contains('sb-panel-docked'),
     };
 }

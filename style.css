@@ -1698,3 +1698,5 @@ html.sb-bar[data-sb-mode=dark] #completion_prompt_manager_popup {color-scheme:da
 #sb-root .sb-mpick-delete:hover,#sb-root .sb-mpick-delete:focus-visible{color:#c54556;background:color-mix(in srgb,#c54556 10%,transparent)}
 #sb-root .sb-mpick-wrap{margin-top:12px}
 #sb-root .sb-mpick-wrap .sb-mpick{margin-top:0}
+#sb-root .sb-msearch [data-music-source]{width:76px;flex:0 0 76px;padding:7px 5px;font-size:12px}
+#sb-root .sb-msearch input{min-width:0}
