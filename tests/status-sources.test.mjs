@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {collectStatusSources,statusExcerpt,formatStatusSources,pastedReference,PASTED_REFERENCE_LIMIT} from '../src/status-sources.mjs';
-import {drinkName,parseCocktail,emptyCocktail,cocktailProtocol} from '../src/cocktail-state.mjs';
+import {drinkName,parseCocktail,emptyCocktail,cocktailProtocol,fallbackDrinkName} from '../src/cocktail-state.mjs';
 const result=collectStatusSources({character:{data:{description:'现代角色',first_mes:'开场正文'.repeat(4000)+'<details><summary>状态栏</summary>精力:72 穿着:外套</details>',mes_example:'状态栏：关系是朋友',extensions:{regex_scripts:[{scriptName:'角色状态',replaceString:'<div class="status">{{stat_data.疲劳}}</div>'},{scriptName:'停用的',disabled:true,replaceString:'状态栏:不该读取'}]}}},messages:[{is_user:true,mes:'状态栏:用户乱写'},{is_user:false,mes:'长正文'.repeat(2000)+'状态栏：精力68，心声：还没说完'}],rendered:['状态栏：当前精力66']});
 assert.ok(result.some(s=>s.label.includes('开场白')&&s.content.includes('精力:72')));assert.ok(result.some(s=>s.label.includes('正则')&&s.content.includes('stat_data.疲劳')));assert.ok(result.some(s=>s.content.includes('精力68')));assert.ok(result.some(s=>s.content.includes('当前精力66')));assert.ok(!result.some(s=>s.content.includes('用户乱写')||s.content.includes('不该读取')));assert.ok(result.reduce((n,s)=>n+s.content.length,0)<=28000);assert.equal(statusExcerpt('没有相关标记的普通叙述'), '');assert.match(formatStatusSources([]),/没有找到/);
 for(const name of ['中文酒名','铃朱','此刻的温柔','宋亭','Take a Seat'])assert.equal(drinkName(name),null);
@@ -16,6 +16,11 @@ assert.ok(worldAndPaste.some(s=>s.label.includes('世界书')&&s.content.include
 assert.equal(worldAndPaste[0].label.startsWith('用户粘贴'),true);assert.match(worldAndPaste[0].content,/项链/);
 assert.equal(pastedReference('x'.repeat(PASTED_REFERENCE_LIMIT+1)),null);assert.equal(pastedReference('  参考  '),'参考');
 assert.match(cocktailProtocol('adaptive',null,{replan:true,replanRevision:5}),/layoutRevision:5/);
+for(const name of ['蜜桃朗姆高球','荔枝气泡','玫瑰金酒特饮'])assert.equal(drinkName(name),name);
+assert.equal(fallbackDrinkName({base:'白朗姆酒',mixers:['水蜜桃利口酒','蔓越莓汁','苏打水'],cupType:'highball'}),'蜜桃朗姆高球');
+assert.ok(drinkName(fallbackDrinkName({})));
+assert.equal(parseCocktail({version:1,mode:'default',drink:{name:'桃色微醺',base:'白朗姆酒',mixers:['水蜜桃利口酒','蔓越莓汁','苏打水'],cupType:'highball'}}).drink.name,'蜜桃朗姆高球');
+assert.ok(parseCocktail({version:1,mode:'default',drink:{cupType:'coupe'}}).drink.name);
 console.log('Card status sources, bounded context, drink-name checks, replan protocol and layout revisions passed.');
 
 const naming=cocktailProtocol('default',null,{recentNames:['烟橙古典','烟橙古典','青梅金汤力']});
