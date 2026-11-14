@@ -178,11 +178,11 @@ function qqAudioUrl(value){
     return /^https?:/i.test(url)?url:'';
 }
 // Ask for a normal web-playable quality, rather than the API's changing highest default.
-async function qqUrl(t) {
+async function qqUrl(t, {standardOnly=false}={}) {
     const identity=str(t.qqMid)||str(t.id),key=/^\d+$/.test(identity)?'id':'mid';
     const standardIdentity=str(t.id)||identity,standardKey=/^\d+$/.test(standardIdentity)?'id':'mid';
     const attempts=[{key,identity,quality:8},{key:standardKey,identity:standardIdentity,quality:4}];
-    for(const attempt of attempts){
+    for(const attempt of standardOnly?attempts.slice(1):attempts){
         const params=new URLSearchParams({[attempt.key]:attempt.identity,quality:attempt.quality,ekey:0});
         if(t.qqType)params.set('type',String(t.qqType));
         try{
@@ -191,11 +191,31 @@ async function qqUrl(t) {
             const url=qqAudioUrl(x?.url);if(!url)continue;
             if(x.cover&&!t.cover)t.cover=x.cover;
             if(x.lyric&&!t.lrc)t.lrc=x.lyric;
-            t.qqQuality=str(x.quality);t.qqPreview=/试听|preview|trial/i.test(t.qqQuality);
+            t.qqRequestedQuality=attempt.quality;t.qqQuality=str(x.quality);t.qqPreview=/试听|preview|trial/i.test(t.qqQuality);
             return url;
         }catch{/* A failed HQ/MID response may still work with the standard numeric-ID request. */}
     }
     throw new Error('QQ 音乐暂时没有返回播放地址');
+}
+// Some QQ CDNs label MP3 bytes as form data. Retry as a locally typed audio Blob
+// only after native playback fails; keep direct streaming as the normal path.
+export async function qqAudioBlob(url, {signal}={}) {
+    const limit=24*1024*1024;
+    const response=await fetch(url,{credentials:'omit',referrerPolicy:'no-referrer',cache:'no-store',signal});
+    if(!response.ok)throw new Error('QQ 音源下载失败');
+    if(Number(response.headers.get('content-length'))>limit){await response.body?.cancel();throw new Error('QQ 音源过大');}
+    const chunks=[];let size=0;
+    if(response.body?.getReader){
+        const reader=response.body.getReader();
+        try{while(true){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>limit)throw new Error('QQ 音源过大');chunks.push(value);}}
+        catch(error){await reader.cancel().catch(()=>{});throw error;}
+        finally{reader.releaseLock();}
+    }else{const bytes=await response.arrayBuffer();if(bytes.byteLength>limit)throw new Error('QQ 音源过大');chunks.push(bytes);}
+    const blob=new Blob(chunks),head=new Uint8Array(await blob.slice(0,16).arrayBuffer());
+    const tag=(start,length)=>String.fromCharCode(...head.slice(start,start+length));
+    const type=tag(0,3)==='ID3'||(head[0]===255&&(head[1]&224)===224)?'audio/mpeg':tag(0,4)==='RIFF'&&tag(8,4)==='WAVE'?'audio/wav':tag(4,4)==='ftyp'?'audio/mp4':tag(0,4)==='OggS'?'audio/ogg':'';
+    if(!type)throw new Error('QQ 返回的内容不是可识别的音频');
+    return new Blob([blob],{type});
 }
 // 网易云放不出来：按歌名 + 歌手去 QQ 找同一首
 export async function qqTwin(t) {
@@ -220,6 +240,7 @@ export async function sourceList(t) {
             list.push({ k: 'qq', u: qqAudioUrl(t.okUrl) });
             list.push({ k: 'qq', get: () => qqUrl(t) });
         } else await add('qq', () => qqUrl(t));
+        list.push({k:'qq',get:()=>{if(t.qqRequestedQuality===4)throw new Error('标准音质已尝试');return qqUrl(t,{standardOnly:true});}});
     } else {
         const bases = [...new Set([t.base, ...MUSIC_APIS].filter(Boolean))];
         const savedMeting = t.ok?.startsWith('m:');
@@ -353,6 +374,9 @@ export function createPlayer({ load, save, onChange, onStatus = () => {}, resolv
     const audio = new Audio();
     audio.preload = 'auto';
     let confirmedSource = '',sourcePlatform='',sourcePreview=false;
+    let playRevision=0,fallbackJob=null,fallbackRevision=-1,blobUrl='',blobController,recoveryFailed=false,resolving=false,sourceTrack=null;
+    const blobTried=new Set();
+    const releaseBlob=()=>{blobController?.abort();blobController=null;if(blobUrl)URL.revokeObjectURL(blobUrl);blobUrl='';};
     let lrc = [], lrcFor = '', sources = [], srcIdx = 0, playing = null, swapped = false; // swapped：换成了另一个平台的同一首（这时不记来源）
     const twinMode = platform => { swapped = true;sourcePlatform=platform; }; // playing：真正在响的那首（切歌单不影响它）
     const st = () => load(); // { list: [], idx, mode }
@@ -361,27 +385,29 @@ export function createPlayer({ load, save, onChange, onStatus = () => {}, resolv
         const s = st();
         if (i != null) { s.idx = Math.max(0, Math.min(s.list.length - 1, i)); save(); }
         const t = cur(); if (!t) return;
+        const revision=++playRevision;clearTimeout(dog);releaseBlob();blobTried.clear();
+        delete audio.dataset.tried;delete audio.dataset.src;recoveryFailed=false;resolving=true;sources=[];srcIdx=0;sourceTrack=t;
         media.prepare();
         playing = t; swapped = false;
         // AI 选的歌只有歌名和歌手：第一次放时才去搜，搜到的结果直接写回这首（下次不用再搜）
         if (t.pending) {
             if (!resolve) return;
             onStatus(`正在找《${t.title}》…`); onChange?.();
-            try { await resolve(t); } catch (e) { if(playing!==t)return;stop();onStatus('暂时没搜到歌曲'); onChange?.('error', e?.message || '没找到这首歌'); return; }
-            if (playing !== t) return;
+            try { await resolve(t); } catch (e) { if(playing!==t||revision!==playRevision)return;stop();onStatus('暂时没搜到歌曲'); onChange?.('error', e?.message || '没找到这首歌'); return; }
+            if (playing !== t || revision !== playRevision) return;
         }
         let src;sourcePlatform=t.src==='qq'?'qq':'netease';sourcePreview=false;
         onStatus(t.src === 'qq' ? '正在问 QQ 音乐要播放地址…' : '正在连网易云…');
-        try { sources = await sourceList(t); srcIdx = 0; src = sources[0]?.u; } catch (e) { onStatus('拿不到播放地址'); onChange?.('error', e?.message || '拿不到播放地址'); return; }
-        if (playing !== t) return;
-        sourcePreview=sourcePlatform==='qq'&&!!t.qqPreview;
+        try { const candidates=await sourceList(t);if(playing!==t||revision!==playRevision)return;sources=candidates;srcIdx = 0;src = sources[0]?.u; } catch (e) { onStatus('拿不到播放地址'); onChange?.('error', e?.message || '拿不到播放地址'); return; }
+        if (playing !== t || revision !== playRevision) return;
+        resolving=false;sourcePreview=sourcePlatform==='qq'&&!!t.qqPreview;
         if (!src) { onStatus('拿不到播放地址'); return fallback(); }
         if (t.ok) onStatus('用上次放得出来的那个来源…');
         if (t.src === 'qq') save(); // 问地址时顺便拿到了封面、歌词
         if (audio.dataset.src !== src) { audio.src = src; audio.dataset.src = src; audio.dataset.id = t.id; audio.dataset.tried = ''; }
         watch();
         // 放不了时 <audio> 自己会发 error，由那边换来源；这里只管被浏览器拦下自动播放的情况
-        try { await audio.play(); } catch (e) { if (e?.name === 'NotAllowedError') onChange?.('error', '点一下播放键继续'); }
+        try { await audio.play(); } catch (e) { if (e?.name === 'NotAllowedError') {clearTimeout(dog);onStatus('点播放键继续');onChange?.('error', '点一下播放键继续');} }
         if (!t.cover) resolveCover(t).then(ok => { if (ok) { save(); onChange?.(); } });
         const key = (t.src || 'n') + ':' + t.id;
         if (lrcFor !== key || !lrc.length) { lrcFor = key; lrc = []; lyricOf(t).then(l => { if (lrcFor === key) { lrc = l; onChange?.('state'); } }); }
@@ -409,40 +435,74 @@ export function createPlayer({ load, save, onChange, onStatus = () => {}, resolv
     audio.addEventListener('pause', () => { if (!audio.ended && audio.currentTime > 0) onStatus('暂停了'); });
     // 放不出来：网易云的歌先去 QQ 找同一首，再不行就提示
     async function fallback() {
-        const t = playing; if (!t) return;
-        // 先在这首歌的备用来源里一个个换（QR 也是这样，有的节点能放完整的会员歌）
-        if (srcIdx + 1 < sources.length) {
-            srcIdx++; const entry = sources[srcIdx];
-            let u = entry.u;
-            if (!u && entry.get) {
-                try { u = await entry.get(); entry.u = u; } catch { return fallback(); }
-                if (playing !== t) return;
+        const t=playing,revision=playRevision;if(!t)return;
+        if(fallbackJob&&fallbackRevision===revision)return fallbackJob;
+        fallbackRevision=revision;
+        const current=()=>playing===t&&playRevision===revision;
+        const startAudio=async()=>{
+            watch();
+            try{await audio.play();return true;}
+            catch(error){
+                if(error?.name==='NotAllowedError'){clearTimeout(dog);onStatus('点播放键继续');onChange?.('error','点一下播放键继续');return true;}
+                clearTimeout(dog);return false;
             }
-            if (!u) return fallback();
-            onStatus(`换一个来源试试（${srcIdx + 1} / ${sources.length}）…`);
-            audio.src = u; audio.dataset.src = u; watch();
-            try { await audio.play(); } catch { /* 出错会再进来 */ }
-            return;
-        }
-        if (audio.dataset.tried) { onStatus('放不了'); onChange?.('error', '这首放不了（可能是会员歌或接口不通）'); return; }
-        audio.dataset.tried = '1';
-        if (t.src === 'qq') {
-            onStatus('QQ 音乐放不了，去网易云找同一首…');
-            try {
-                const list = await searchSongs([t.title, t.artist].filter(Boolean).join(' '),1,{source:'netease'});
-                if(playing!==t)return;const twin = bestSong(list.filter(track=>norm(track.title)===norm(t.title)),t.title,t.artist);
-                if (twin) { const alternate=await sourceList(twin);if(playing!==t)return;sources=alternate;srcIdx = 0; if (sources[0]) { twinMode('netease');sourcePreview=false;audio.dataset.id=twin.id; audio.src = sources[0].u; audio.dataset.src = sources[0].u; watch(); await audio.play().catch(() => {}); onChange?.('info', 'QQ 音乐放不了，换成网易云的同一首'); return; } }
-            } catch { /* 继续往下提示 */ }
-        }
-        if (t.src !== 'qq') {
-            onStatus('网易云放不了，去 QQ 音乐找同一首…');
-            try {
-                const twin = await qqTwin(t);
-                if (twin) { const u = await qqUrl(twin);if(playing!==t)return;twinMode('qq');sourcePreview=!!twin.qqPreview;audio.dataset.id=twin.id; audio.src = u; audio.dataset.src = u; watch(); await audio.play(); onChange?.('info', '网易云放不了，换成 QQ 音乐的同一首'); return; }
-            } catch { /* 继续往下提示 */ }
-        }
-        onStatus('放不了');
-        onChange?.('error', '这首放不了（可能是会员歌或接口不通）');
+        };
+        const work=(async()=>{
+            while(current()){
+                const mediaUrl=audio.dataset.src;
+                if(sourcePlatform==='qq'&&/^https?:/.test(mediaUrl||'')&&!blobTried.has(mediaUrl)){
+                    blobTried.add(mediaUrl);onStatus('正在兼容 QQ 音源格式…');
+                    const controller=new AbortController();blobController=controller;
+                    const timer=setTimeout(()=>controller.abort(),12000);
+                    let blob;
+                    try{blob=await qqAudioBlob(mediaUrl,{signal:controller.signal});}catch{/* Try standard quality or a different source below. */}
+                    finally{clearTimeout(timer);if(blobController===controller)blobController=null;}
+                    if(!current())return;
+                    if(blob){
+                        if(blobUrl)URL.revokeObjectURL(blobUrl);blobUrl=URL.createObjectURL(blob);
+                        audio.src=blobUrl; // dataset.src retains the renewable remote URL for the playback cache.
+                        if(await startAudio())return;
+                    }
+                }
+                if(srcIdx+1<sources.length){
+                    const entry=sources[++srcIdx];let url=entry.u;
+                    try{if(!url&&entry.get){url=await entry.get();entry.u=url;}}catch{continue;}
+                    if(!current())return;if(!url)continue;
+                    releaseBlob();if(sourcePlatform==='qq')sourcePreview=!!sourceTrack?.qqPreview;
+                    onStatus(`换一个来源试试（${srcIdx+1} / ${sources.length}）…`);
+                    audio.src=url;audio.dataset.src=url;
+                    if(await startAudio())return;continue;
+                }
+                if(audio.dataset.tried)break;
+                audio.dataset.tried='1';
+                try{
+                    if(t.src==='qq'){
+                        onStatus('QQ 音乐放不了，去网易云找同一首…');
+                        const list=await searchSongs([t.title,t.artist].filter(Boolean).join(' '),1,{source:'netease'});
+                        if(!current())return;
+                        const twin=bestSong(list.filter(track=>norm(track.title)===norm(t.title)),t.title,t.artist);
+                        if(twin){
+                            const alternate=await sourceList(twin);if(!current())return;
+                            if(alternate[0]?.u){sources=alternate;srcIdx=0;releaseBlob();sourceTrack=twin;twinMode('netease');sourcePreview=false;
+                                audio.dataset.id=twin.id;audio.src=sources[0].u;audio.dataset.src=sources[0].u;
+                                if(await startAudio()){onChange?.('info','QQ 音乐放不了，换成网易云的同一首');return;}continue;}
+                        }
+                    }else{
+                        onStatus('网易云放不了，去 QQ 音乐找同一首…');
+                        const twin=await qqTwin(t);if(!current())return;
+                        if(twin){const alternate=await sourceList(twin);if(!current())return;
+                            if(alternate[0]?.u){sources=alternate;srcIdx=0;releaseBlob();sourceTrack=twin;twinMode('qq');sourcePreview=!!twin.qqPreview;
+                                audio.dataset.id=twin.id;audio.src=sources[0].u;audio.dataset.src=sources[0].u;
+                                if(await startAudio()){onChange?.('info','网易云放不了，换成 QQ 音乐的同一首');return;}continue;}
+                        }
+                    }
+                }catch{/* Report failure after all candidates are exhausted. */}
+                break;
+            }
+            if(current()){recoveryFailed=true;onStatus('放不了');onChange?.('error','音源暂时不可用，点播放可重新取地址，或换个来源试试');}
+        })();
+        fallbackJob=work;
+        try{await work;}finally{if(fallbackRevision===revision)fallbackJob=null;}
     }
     let dog = 0;
     function watch() {
@@ -457,11 +517,11 @@ export function createPlayer({ load, save, onChange, onStatus = () => {}, resolv
         if (t && k && !swapped && sourceKey !== confirmedSource) { confirmedSource = sourceKey; t.ok = k; t.okUrl = audio.dataset.src; t.okAt = Date.now(); save(); } // 记住这首用哪个来源放得出来
     });
     audio.addEventListener('pause', () => clearTimeout(dog));
-    audio.addEventListener('error', () => { clearTimeout(dog); if (audio.src) fallback(); });
+    audio.addEventListener('error', () => { clearTimeout(dog); if (audio.src&&!resolving) fallback(); });
     audio.addEventListener('play', () => onChange?.('state'));
     audio.addEventListener('pause', () => onChange?.('state'));
     const resume = () => {
-        if (!audio.src || !playing) return play();
+        if (recoveryFailed || audio.error || !audio.src || !playing) return play();
         media.prepare();
         return audio.play().catch(e => { if (e?.name === 'NotAllowedError') onChange?.('error','点一下播放键继续'); });
     };
@@ -471,7 +531,7 @@ export function createPlayer({ load, save, onChange, onStatus = () => {}, resolv
         if (!document.hidden && !audio.paused && audio.readyState < 2) watch();
     });
     function stop() {
-        playing=null;confirmedSource='';sourcePlatform='';sourcePreview=false;sources=[];srcIdx=0;lrc=[];lrcFor='';clearTimeout(dog);
+        playRevision++;releaseBlob();blobTried.clear();resolving=false;recoveryFailed=false;sourceTrack=null;playing=null;confirmedSource='';sourcePlatform='';sourcePreview=false;sources=[];srcIdx=0;lrc=[];lrcFor='';clearTimeout(dog);
         audio.pause();audio.removeAttribute('src');delete audio.dataset.src;delete audio.dataset.id;delete audio.dataset.tried;audio.load();
         try { if(navigator.mediaSession)navigator.mediaSession.metadata=null; } catch { /* Optional host API. */ }
         onStatus('');onChange?.();

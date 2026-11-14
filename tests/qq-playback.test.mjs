@@ -23,3 +23,20 @@ test('QQ business-error 503 on HQ/MID falls back to a standard numeric-ID reques
  const saved=globalThis.fetch,requests=[];globalThis.fetch=async url=>{const params=new URL(url).searchParams;requests.push(Object.fromEntries(params));return {ok:true,json:async()=>requests.length===1?{code:503,message:'系统运行错误！'}:{code:200,data:{url:'http://ws.stream.qqmusic.qq.com/RS02test.mp3',quality:'音乐试听'}}}};
  try{const track={id:'217489311',qqMid:'002bwTQA3GABMN',src:'qq'};const rows=await sourceList(track);assert.equal(requests[0].mid,'002bwTQA3GABMN');assert.equal(requests[0].quality,'8');assert.equal(requests[1].id,'217489311');assert.equal(requests[1].quality,'4');assert.equal(rows[0].u,'https://ws.stream.qqmusic.qq.com/RS02test.mp3');assert.equal(track.qqPreview,true);}finally{globalThis.fetch=saved;}
 });
+
+test('a returned HQ URL does not suppress the lazy standard-quality playback retry',async()=>{
+ const saved=globalThis.fetch,requests=[];
+ globalThis.fetch=async url=>{const q=new URL(url).searchParams;requests.push(q.get('quality'));return{ok:true,json:async()=>({data:{url:'https://ws.stream.qqmusic.qq.com/'+q.get('quality')+'.mp3',quality:q.get('quality')==='4'?'音乐试听':'HQ高音质'}})}};
+ try{const rows=await sourceList({id:'123',src:'qq'});assert.deepEqual(requests,['8']);assert.equal(rows.length,2);assert.equal(await rows[1].get(),'https://ws.stream.qqmusic.qq.com/4.mp3');assert.deepEqual(requests,['8','4']);}finally{globalThis.fetch=saved;}
+});
+test('QQ compatibility download identifies audio bytes despite a form-data MIME header',async()=>{
+ const {qqAudioBlob}=await import('../src/music.mjs');const saved=globalThis.fetch;
+ globalThis.fetch=async()=>new Response(new Uint8Array([73,68,51,3,0,0,0,0,0,0]),{headers:{'Content-Type':'application/x-www-form-urlencoded'}});
+ try{const blob=await qqAudioBlob('https://example.com/audio');assert.equal(blob.type,'audio/mpeg');assert.equal(blob.size,10);}finally{globalThis.fetch=saved;}
+});
+test('QQ compatibility download rejects non-audio replies and oversized bodies',async()=>{
+ const {qqAudioBlob}=await import('../src/music.mjs');const saved=globalThis.fetch;
+ try{globalThis.fetch=async()=>new Response('<html>error</html>');await assert.rejects(qqAudioBlob('https://example.com/error'),/不是可识别的音频/);
+ globalThis.fetch=async()=>new Response('small',{headers:{'Content-Length':String(25*1024*1024)}});await assert.rejects(qqAudioBlob('https://example.com/large'),/过大/);
+ }finally{globalThis.fetch=saved;}
+});
