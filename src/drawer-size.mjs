@@ -33,7 +33,8 @@ export function applyDrawerSize(root,settings) {
     if(drawer){drawer.style.width=`${width}px`;drawer.style.maxWidth=`${width}px`;}
     const handle=root.querySelector('[data-drawer-resize]'),limits=drawerLimits();
     if(handle){
-        const bounds=root.getBoundingClientRect(),edge=drawer?.getBoundingClientRect().right ?? bounds.left+width;
+        const bounds=root.getBoundingClientRect(),moving=drawer?.getAnimations?.().some(animation=>animation.playState==='running');
+        const edge=drawer?(moving?bounds.left+drawer.offsetLeft+drawer.offsetWidth:drawer.getBoundingClientRect().right):bounds.left+width;
         const visible=window.visualViewport;
         const right=Math.min(bounds.right,(visible?.offsetLeft||0)+(visible?.width||innerWidth));
         handle.style.left=`${Math.max((visible?.offsetLeft||0)+4,Math.min(edge-8,right-20))-bounds.left}px`;
@@ -42,6 +43,8 @@ export function applyDrawerSize(root,settings) {
 }
 export function bindDrawerSize(root,{settings,save}) {
     const update=()=>applyDrawerSize(root,settings());
+    // The drawer may still be translated offscreen during its entrance transition.
+    for(const type of ['transitionend','animationend'])root.addEventListener(type,event=>{if(event.target.matches?.('.sb-drawer'))update();});
     window.addEventListener('resize',update);window.visualViewport?.addEventListener('resize',update);window.visualViewport?.addEventListener('scroll',update);window.addEventListener('small-bar-drawer-size',update);
     let drag;
     root.addEventListener('pointerdown',e=>{

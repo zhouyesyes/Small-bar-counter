@@ -1,0 +1,135 @@
+#sb-root .sb-phone.ios-shell{--ios-label:#fff;--ios-blue:#007aff;--ios-fallback-wallpaper:linear-gradient(155deg,#809fb7,#b9cbd9 65%,#e4eaf0);background:var(--sb-bg);isolation:isolate;overflow:hidden;animation:none;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif}
+#sb-root.sb-dark .sb-phone.ios-shell{--ios-fallback-wallpaper:linear-gradient(155deg,#111b28,#344456 70%,#182331)}
+#sb-root .sb-phone.ios-shell.sb-float{width:min(360px,calc(100vw - 24px));height:min(778px,calc(100dvh - 52px));border:5px solid #282e36;border-radius:47px;box-shadow:0 0 0 1px #7c8791,0 18px 50px #142c4430}
+#sb-root .sb-phone.ios-shell.sb-inline{width:100%;height:auto;flex:1;min-height:0;border:0;border-radius:0;box-shadow:none}
+#sb-root .ios-surface{display:flex;flex-direction:column;flex:1;min-height:0;width:100%;overflow:hidden}
+#sb-root .ios-surface[inert]{pointer-events:none}
+
+#sb-root .ios-shell *{font-family:inherit;letter-spacing:normal}#sb-root .ios-shell .sb-grip{display:none}#sb-root .ios-shell:before{content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(155deg,#42759428,#d4e1e61a),var(--ios-wallpaper,var(--ios-fallback-wallpaper)) 45% 50%/cover;pointer-events:none}#sb-root.sb-dark .ios-shell:before{background-image:linear-gradient(155deg,#13283633,#718c9d1a),var(--ios-wallpaper,var(--ios-fallback-wallpaper))}
+#sb-root .ios-status{position:relative;display:flex;justify-content:space-between;align-items:center;flex:0 0 49px;padding:6px 23px 0;color:var(--sb-fg);z-index:10;font-size:13px;font-weight:600;background:var(--sb-bg)}#sb-root .ios-shell.is-home .ios-status{color:#fff;background:transparent}#sb-root .ios-island{position:absolute;left:50%;top:10px;transform:translateX(-50%);width:97px;height:27px;border-radius:20px;background:#080a0b;box-shadow:inset 0 1px 2px #ffffff13}#sb-root .ios-island:after{content:'';position:absolute;width:7px;height:7px;border-radius:50%;right:11px;top:10px;background:#101d2a;box-shadow:inset 0 0 2px #326084}.ios-system-icons{display:flex;gap:4px;align-items:center}.ios-system-icons svg{width:16px;height:16px;fill:currentColor}.ios-system-icons .ios-battery{width:23px}
+#sb-root .ios-shell .sb-home{background:none;padding:7px 0 0;position:relative}#sb-root .ios-home-label{color:#ffffffb5;font-size:10px;font-weight:500;padding:8px 21px 15px;letter-spacing:.02em}#sb-root .ios-widget-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px;padding:0 17px;margin-bottom:12px}#sb-root .ios-widget{height:143px;border-radius:23px;overflow:hidden;position:relative;text-align:left;border:1px solid #ffffff38;box-shadow:0 3px 8px #182e3c12}#sb-root .ios-weather{padding:14px 14px;color:white;background:linear-gradient(150deg,#467eabeb,#a9c9d0d9);backdrop-filter:blur(12px)}#sb-root .ios-weather b{font-size:12px;font-weight:500;display:block}#sb-root .ios-weather strong{font-size:39px;font-weight:300;line-height:1.2;display:block;letter-spacing:-.04em}#sb-root .ios-weather small{color:#fff;font-size:11px;line-height:1.6}#sb-root .ios-weather svg{width:24px;height:24px;position:absolute;right:13px;top:35px;fill:#fff8}#sb-root .ios-photo-widget{background:linear-gradient(0deg,#263c5270,transparent 70%),var(--ios-wallpaper,var(--ios-fallback-wallpaper)) center/cover}#sb-root .ios-photo-widget span{position:absolute;bottom:13px;left:14px;color:#fff;font-size:13px;font-weight:600}#sb-root .ios-photo-widget small{position:absolute;left:14px;top:13px;color:#fff8;font-size:9px;font-weight:700;letter-spacing:.1em}
+#sb-root .ios-shell .sb-apps{padding:14px 15px 0;gap:22px 0}#sb-root .ios-shell .sb-app{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0;transition:transform .16s cubic-bezier(.2,.8,.2,1)}#sb-root .ios-shell .sb-app:active{transform:scale(.88)}#sb-root .ios-shell .sb-ai{display:grid;place-items:center;width:58px;height:58px;border-radius:15px;border:0;box-shadow:0 3px 9px #142c4626,inset 0 0 0 .5px #ffffff45;overflow:visible;color:white;position:relative}#sb-root .ios-shell .sb-ai svg{width:42px;height:42px;display:block}#sb-root .ios-shell .sb-an{font-size:10px;color:#fff;text-shadow:0 1px 3px #152f4899;white-space:nowrap}#sb-root .ios-shell .sb-ab{position:absolute;right:-5px;top:-7px;background:#ff3b30;color:#fff;border:0;min-width:19px;height:19px;border-radius:12px;display:grid;place-items:center;font:11px/1 system-ui;box-shadow:0 1px 2px #0002}
+#sb-root .ios-shell [data-to=x] .sb-ai{background:linear-gradient(145deg,#1e2022,#030303)}#sb-root .ios-shell [data-to=weibo] .sb-ai{background:linear-gradient(145deg,#ffb049,#ff523c)}#sb-root .ios-shell [data-to=diary] .sb-ai{background:linear-gradient(145deg,#c2a483,#967b60)}#sb-root .ios-shell [data-to=memo] .sb-ai{background:linear-gradient(#ffcf4a 0 25%,#f7f7f7 25%);color:#bbb}#sb-root .ios-shell [data-to=photos] .sb-ai{background:#fff}#sb-root .ios-shell [data-to=wx-contacts] .sb-ai{background:linear-gradient(#69df74,#13b93c)}#sb-root .ios-shell [data-to=music] .sb-ai{background:linear-gradient(#fc6c8c,#f33355)}#sb-root .ios-shell [data-to=settings] .sb-ai{background:linear-gradient(#c9ccd0,#999ea4)}
+#sb-root .ios-shell .sb-dock{margin:auto 15px 6px;padding:13px 10px 12px;border-radius:29px;border:1px solid #ffffff38;background:#f4f8fa35;backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);box-shadow:inset 0 1px 0 #ffffff38}#sb-root .ios-shell .sb-dock .sb-an{display:none}#sb-root .ios-shell .sb-dock .sb-app{gap:0}#sb-root .ios-shell .sb-hbar{flex:0 0 5px;height:5px;width:110px;border-radius:5px;margin:8px auto 10px;background:var(--sb-fg);opacity:1;z-index:11}#sb-root .ios-shell.is-home .ios-surface>.sb-hbar{background:white}#sb-root .ios-home-search{display:flex;align-items:center;justify-content:center;color:#fff9;gap:5px;margin:31px auto 10px;font-size:10px;flex:0 0 auto}#sb-root .ios-home-search i{display:block;width:5px;height:5px;border-radius:50%;background:#fff}#sb-root .ios-home-search i+i{opacity:.4}
+#sb-root .ios-shell .sb-ph{min-height:49px;border-bottom:1px solid color-mix(in srgb,var(--sb-fg) 10%,transparent);padding:8px 15px;background:var(--sb-bg)}#sb-root .ios-shell .sb-bk{color:var(--ios-blue);font-size:32px;line-height:1;padding:0 5px 4px 0}#sb-root .ios-shell .sb-phx{color:var(--ios-blue);font-size:22px}#sb-root .ios-shell .sb-pht{font-size:16px;font-weight:600}#sb-root .ios-shell .sb-list,#sb-root .ios-shell .sb-slist{background:var(--sb-bg);padding:15px 16px}#sb-root .ios-shell .sb-dold{padding:17px 0;font-size:15px;border-bottom:1px solid var(--sb-line)}#sb-root .ios-shell .sb-dold>span:first-child{color:var(--sb-dim);font-size:11px}#sb-root .ios-shell .sb-diary{padding:2px 0}#sb-root .ios-shell .sb-dday{color:var(--sb-dim);font-size:11px;text-align:center;margin:8px 0 21px}#sb-root .ios-shell .sb-dtitle{font-size:27px;font-weight:700;line-height:1.4;margin-bottom:20px}#sb-root .ios-shell .sb-dtext{font-size:15px;line-height:1.9}#sb-root .ios-shell .sb-dsign{font-size:12px;margin-top:24px;color:var(--sb-dim)}#sb-root .ios-shell .sb-dacts{display:flex;gap:15px;flex-wrap:wrap;padding-top:17px;font-size:11px;color:var(--ios-blue);border-top:1px solid var(--sb-line)}#sb-root .ios-shell .sb-sgrp{border:0;border-radius:12px;background:var(--sb-soft);padding:0 10px}#sb-root .ios-shell .sb-srow{padding:14px 0;font-size:13px}#sb-root .ios-shell .sb-sh{margin:22px 8px 9px;font-size:11px}
+#sb-root .ios-lock{position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;color:white;padding:18px 18px 16px;outline:none;background:linear-gradient(180deg,#18354d24,#354d6622),var(--ios-wallpaper,var(--ios-fallback-wallpaper)) 45% center/cover;touch-action:none;cursor:pointer;user-select:none}#sb-root.sb-dark .ios-lock{background-image:linear-gradient(180deg,#0c20331a,#0c20334d),var(--ios-wallpaper,var(--ios-fallback-wallpaper))}#sb-root .ios-lock-top{width:100%;display:flex;justify-content:space-between;padding:0 9px;color:#fff;font-size:11px;height:49px;align-items:flex-start}#sb-root .ios-lock .ios-island{top:10px}#sb-root .ios-padlock{width:15px;height:18px;margin:17px 0 8px;fill:none;stroke:#fff;stroke-width:1.8}#sb-root .ios-lock-date{font-size:17px;font-weight:500;margin:5px 0 0}#sb-root .ios-lock-clock{font-size:87px;font-weight:600;line-height:1.15;letter-spacing:-.055em;margin:0;text-shadow:0 1px 15px #325a7b15;font-variant-numeric:tabular-nums}#sb-root .ios-lock-owner{color:#ffffffa6;font-size:11px;margin-top:6px}#sb-root .ios-notification{width:100%;padding:13px 15px;margin-top:42px;text-align:left;border-radius:23px;background:#e5edf18f;border:1px solid #ffffff4d;box-shadow:0 6px 15px #12334a12;backdrop-filter:blur(22px) saturate(1.3);-webkit-backdrop-filter:blur(22px) saturate(1.3);color:#24343f}#sb-root .ios-notification .notification-head{display:flex;align-items:center;gap:7px;margin-bottom:8px;font-size:10px;color:#3c515f}#sb-root .notification-head time{margin-left:auto;font-size:10px;color:#597180}#sb-root .notification-head>span:first-child{width:19px;height:19px;border-radius:5px;background:#30c453;display:grid;place-items:center}#sb-root .notification-head svg{width:15px;height:15px}#sb-root .ios-notification b{font-size:13px;font-weight:600;display:block}#sb-root .ios-notification p{font-size:12px;margin:3px 0 0;line-height:1.6}#sb-root .ios-lock-bottom{display:flex;justify-content:space-between;align-items:center;width:100%;margin-top:auto;padding:0 18px 15px}#sb-root .ios-lock-bottom button{width:43px;height:43px;border-radius:50%;background:#14304738;backdrop-filter:blur(15px);color:white;display:grid;place-items:center;border:1px solid #ffffff18}#sb-root .ios-lock-bottom button svg{width:22px;height:22px}#sb-root .ios-lock-bottom button.on{background:#ffffffbb;color:#24343f}#sb-root .ios-unlock-label{font-size:11px;color:#ffffffce;margin-bottom:13px}#sb-root .ios-lock-indicator{height:5px;width:110px;background:#fff;border-radius:10px;flex:none}#sb-root .ios-shell.is-locked>.ios-status{visibility:hidden}
+
+@media(prefers-reduced-motion:reduce){#sb-root .ios-shell .sb-app{transition:none}}
+/* Reference update: fine lock clock, quiet top widgets, player near the bottom. */
+#sb-root .ios-shell .sb-ai:has(.ios-app-art){background:none!important;box-shadow:0 2px 7px #1931442b;overflow:visible}
+#sb-root .ios-shell .sb-ai .ios-app-art{display:block;width:100%;height:100%;border-radius:inherit;object-fit:cover}
+#sb-root .ios-lock{background:linear-gradient(180deg,#9ba8bb 0%,#b8c3d5 42%,#e6eaf2 79%,#f9fafc 100%)}
+#sb-root.sb-dark .ios-lock{background:linear-gradient(180deg,#02060b38,#02060b25),var(--ios-wallpaper,var(--ios-fallback-wallpaper)) center/cover}
+#sb-root .ios-lock-top{height:44px;padding-top:2px;font-size:12px;font-weight:600}
+#sb-root .ios-padlock{margin:13px 0 8px;width:14px;height:18px}
+#sb-root .ios-lock-date{margin-top:4px;font-size:18px;font-weight:500}
+#sb-root .ios-lock-clock{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue","Open Sans",sans-serif!important;font-size:104px;font-weight:300;line-height:1.11;letter-spacing:-.075em;text-shadow:none;padding-right:8px}
+#sb-root .ios-lock-mini{align-self:flex-start;text-align:left;margin:19px 0 0 4px;padding:10px 13px;min-width:142px;border-radius:15px;background:#ffffff09;border:1px solid #ffffff06;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:#fff9}
+#sb-root .ios-lock-mini>span{font-size:11px;font-weight:500}#sb-root .ios-lock-mini>p{font-size:11px;margin:2px 0 0;color:#ffffffbc}
+#sb-root .ios-lock-player-slot{width:100%;margin-top:auto;margin-bottom:21px;padding-top:20px}
+#sb-root .ios-lock-player{--player-bg:#f4f5f6bf;--player-ink:#111;--player-dim:#6b6b73;width:100%;padding:13px 14px 11px;border:1px solid #ffffff36;border-radius:25px;background:var(--player-bg);color:var(--player-ink);backdrop-filter:blur(22px) saturate(1.4);-webkit-backdrop-filter:blur(22px) saturate(1.4);box-shadow:0 6px 22px #192a3a0a;cursor:default}
+#sb-root.sb-dark .ios-lock-player{--player-bg:#2b303cce;--player-ink:#f4f5f9;--player-dim:#b8bdc6;border-color:#ffffff13}
+#sb-root .ios-player-track{display:flex;align-items:center;gap:10px;margin-bottom:13px}
+#sb-root .ios-player-track>button:first-child{width:44px;height:44px;flex:none;border-radius:9px;overflow:hidden}
+#sb-root .ios-player-track img{display:block;object-fit:cover;width:100%;height:100%}
+#sb-root .ios-player-track>div{min-width:0;flex:1}#sb-root .ios-player-track strong{display:block;font-size:13px;line-height:1.5;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:var(--player-ink)}
+#sb-root .ios-player-track small{font-size:11px;color:var(--player-dim);line-height:1.6}
+#sb-root .ios-player-more{font-size:23px!important;line-height:1;width:28px;height:28px;color:var(--player-dim)}
+#sb-root .ios-lock-player input[type=range]{display:block;appearance:none;-webkit-appearance:none;width:100%;max-width:100%;padding:0;border:0;border-radius:5px;height:4px;min-height:4px;margin:0;background:linear-gradient(to right,var(--player-dim) var(--progress,43%),color-mix(in srgb,var(--player-ink) 16%,transparent) var(--progress,43%));cursor:pointer;touch-action:pan-y}
+#sb-root .ios-lock-player input[type=range]::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:4px;height:4px;border-radius:50%;background:var(--player-dim);border:0}
+#sb-root .ios-lock-player input[type=range]::-moz-range-thumb{width:4px;height:4px;border-radius:50%;background:var(--player-dim);border:0}
+#sb-root .ios-lock-player input[type=range]:focus-visible{outline:2px solid #007aff;outline-offset:5px}
+#sb-root .ios-player-times{display:flex;justify-content:space-between;margin-top:5px;color:var(--player-dim);font-size:9px;font-variant-numeric:tabular-nums}
+#sb-root .ios-player-buttons{display:flex;justify-content:center;align-items:center;gap:44px;height:55px;margin:0 0 3px}
+#sb-root .ios-player-buttons>button{display:grid;place-items:center;width:38px;height:43px;transition:transform .14s ease;color:var(--player-ink)}
+#sb-root .ios-player-buttons>button:active{transform:scale(.84)}
+#sb-root .ios-control-svg{display:block;width:25px;height:25px;fill:currentColor;stroke:none}
+#sb-root .ios-player-buttons [data-ios-play] .ios-control-svg{width:33px;height:33px}
+#sb-root .ios-player-volume{display:flex;align-items:center;gap:9px;color:var(--player-dim)}
+#sb-root .ios-player-volume .ios-control-svg{width:15px;height:15px;flex:none}
+#sb-root .ios-player-volume input[type=range]{height:3px;min-height:3px;background:linear-gradient(to right,var(--player-dim) var(--progress,65%),color-mix(in srgb,var(--player-ink) 13%,transparent) var(--progress,65%))}
+#sb-root .ios-player-volume input[type=range]::-webkit-slider-thumb{width:3px;height:3px}
+#sb-root .ios-lock-bottom{padding:0 13px 19px;gap:5px}
+#sb-root .ios-lock-bottom button{width:42px;height:42px;background:#00000030;border:0}
+#sb-root .ios-lock-bottom .ios-control-svg{width:23px;height:23px;fill:currentColor;stroke:none}
+#sb-root .ios-focus-name{font-size:10px;white-space:nowrap;color:#fff;text-shadow:0 1px 6px #000,0 0 5px #000;background:#0000001a;padding:3px 6px;border-radius:14px}
+#sb-root .ios-lock .ios-unlock-label{display:none}
+#sb-root .ios-lock-bottom button.on{background:#fff;color:#242c38}
+/* Journal keeps the existing diary records, entry actions and back navigation. */
+#sb-root .ios-journal-page{--journal-accent:#8159cf;--journal-card:#fff;--journal-bg:#f2f1f6}
+#sb-root.sb-dark .ios-journal-page{--journal-accent:#b69bea;--journal-card:#242329;--journal-bg:#17161c}
+#sb-root .ios-journal-page .ios-status,#sb-root .ios-journal-page .sb-ph{background:var(--journal-bg)}
+#sb-root .ios-journal-page .sb-ph{border:0}
+#sb-root .ios-journal-page .sb-ph .sb-bk,#sb-root .ios-journal-page .sb-ph .sb-gen,#sb-root .ios-journal-page .sb-ph .sb-phx{color:var(--journal-accent)}
+#sb-root .ios-journal-page .sb-list{background:var(--journal-bg);padding:0 15px 18px}
+#sb-root .ios-journal-heading{padding:6px 3px 21px}
+#sb-root .ios-journal-heading>span{font-size:9px;font-weight:600;letter-spacing:.15em;color:var(--journal-accent)}
+#sb-root .ios-journal-heading h2{font-size:32px;font-weight:700;line-height:1.4;margin:2px 0 6px}
+#sb-root .ios-journal-heading>p{font-size:11px;line-height:1.8;color:var(--sb-dim);margin:0}
+#sb-root .ios-journal-page .sb-dold.ios-journal-card{display:block;width:100%;margin:0 0 16px;padding:0;border:0;border-radius:18px;background:var(--journal-card);text-align:left;overflow:hidden;box-shadow:0 3px 12px #24203507}
+#sb-root .ios-journal-cover{height:126px;position:relative;background:linear-gradient(0deg,#2737486b,transparent 80%),var(--ios-wallpaper,var(--ios-fallback-wallpaper)) 50% 43%/cover}
+#sb-root .ios-journal-cover>span{position:absolute;bottom:13px;left:16px;color:#fff;font-size:12px}
+#sb-root .ios-journal-card-body{padding:14px 15px 12px}
+#sb-root .ios-journal-card-body time{font-size:9px;color:var(--sb-dim)}
+#sb-root .ios-journal-card-body h3{font-size:17px;font-weight:600;line-height:1.5;margin:7px 0}
+#sb-root .ios-journal-card-body>p{font-size:12px;line-height:1.8;color:var(--sb-fg);margin:0 0 16px;opacity:.7}
+#sb-root .ios-journal-footer{display:flex;justify-content:space-between;align-items:center;border-top:1px solid color-mix(in srgb,var(--sb-fg) 7%,transparent);padding-top:10px;font-size:9px;color:var(--sb-dim)}
+#sb-root .ios-journal-footer i{font-size:16px;font-style:normal;color:var(--journal-accent)}
+#sb-root .ios-journal-detail .sb-list{padding:0 20px 18px;background:var(--journal-card)}
+#sb-root .ios-journal-detail .sb-dtitle{font-size:27px;line-height:1.5}
+#sb-root .ios-journal-detail .sb-dtext{font-size:15px;line-height:2}
+#sb-root .ios-journal-detail .sb-dacts{color:var(--journal-accent)}
+#sb-root .ios-music-page .sb-list{padding:16px 17px}
+#sb-root .ios-music-heading{margin:0 0 24px}
+#sb-root .ios-music-heading>img{width:43px;height:43px;border-radius:12px;float:right}
+#sb-root .ios-music-heading>h2{font-size:30px;font-weight:700;margin:0}
+#sb-root .ios-music-heading>p{font-size:12px;color:var(--sb-dim);margin:8px 0}
+#sb-root .ios-music-page .ios-lock-player{background:var(--sb-soft);backdrop-filter:none;padding:16px 14px}
+#sb-root .ios-music-page .ios-player-track>button:first-child{width:62px;height:62px}
+#sb-root .ios-demo-songs{margin-top:24px}
+#sb-root .ios-demo-songs>button{display:flex;align-items:center;gap:12px;min-height:54px;width:100%;border-bottom:1px solid var(--sb-line);text-align:left;font-size:12px}
+#sb-root .ios-demo-songs>button>span{font-size:10px;color:var(--sb-dim)}
+#sb-root .ios-demo-songs>button>b{font-weight:500;flex:1}
+#sb-root .ios-demo-songs>button>small{font-size:10px}
+@media(max-height:760px){#sb-root .ios-lock-clock{font-size:88px}#sb-root .ios-lock-mini{margin-top:11px;padding:7px 11px}#sb-root .ios-lock-player-slot{padding-top:12px;margin-bottom:13px}#sb-root .ios-lock-bottom{padding-bottom:12px}}
+#sb-root .ios-lock-bottom{margin-top:0}
+#sb-root .sb-phone.ios-shell,#sb-root .sb-phone.ios-shell :is(button,input,textarea,p,span,small,strong,b,h2,h3,h4,time,figcaption){font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue","Noto Sans CJK SC","Microsoft YaHei",sans-serif!important}
+#sb-root .ios-journal-page .ios-journal-cover>span{color:#fff!important}
+#sb-root .ios-journal-page:not(.ios-journal-detail) .sb-ph .sb-pht{visibility:hidden}
+#sb-root .ios-journal-page .ios-journal-heading>span{display:none}
+#sb-root .ios-journal-page .sb-ph .sb-gen{border:0;border-radius:0;background:none;padding:3px 0;color:var(--journal-accent)!important;font-size:13px}
+#sb-root .ios-lock-player .ios-player-more{width:24px;min-width:24px;height:28px;flex:0 0 24px;overflow:hidden;display:grid;place-items:center}
+#sb-root .ios-player-more .ios-control-svg{width:19px;height:19px}
+#sb-root .sb-phone.ios-shell,#sb-root .sb-phone.ios-shell :is(button,input,textarea,p,span,small,strong,b,h2,h3,h4,time,figcaption){font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue","PingFang SC","Hiragino Sans GB","Noto Sans SC","Noto Sans CJK SC","Microsoft YaHei",sans-serif!important}
+
+/* Live presentation: scoped to the modern default phone, no preview canvas styles. */
+#sb-root .ios-shell .sb-an{display:none!important}
+#sb-root .ios-shell.sb-float>.sb-grip{display:flex;position:absolute;inset:0 60px auto;height:13px;z-index:35;margin:0;background:transparent}
+#sb-root .ios-shell.sb-float>.sb-grip i{width:30px;height:3px;opacity:.35}
+#sb-root .ios-phone-close{position:absolute;right:17px;top:51px;z-index:31;display:grid;place-items:center;width:27px;height:27px;border-radius:50%;background:#ffffff20;font-size:20px;color:#fff}
+#sb-root .ios-shell.is-locked .ios-phone-close{top:46px;right:13px;background:#0000000a;color:#fff9}
+#sb-root .ios-shell .ios-home-label{display:flex;align-items:center;justify-content:space-between;padding-right:55px;min-height:37px}
+#sb-root .ios-shell .ios-home-label>button{font-size:18px;min-width:30px;min-height:27px;color:#fff}
+#sb-root .ios-weather>b{max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+#sb-root .ios-weather .ios-weather-word{font-size:26px;line-height:1.5;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;padding-right:2px}
+#sb-root .ios-weather small{max-height:35px;overflow:hidden}
+#sb-root .ios-shell .ios-lock{background-image:linear-gradient(180deg,#18354d12,#0000),var(--ios-wallpaper,linear-gradient(180deg,#9ba8bb,#c7d0df 55%,#f9fafc));background-position:center;background-size:cover}
+#sb-root.sb-dark .ios-shell .ios-lock{background-image:linear-gradient(180deg,#0b162233,#10172622),var(--ios-wallpaper,linear-gradient(180deg,#121a28,#394858))}
+#sb-root .ios-shell button.ios-lock-clock{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue","Open Sans",sans-serif!important;font-size:clamp(60px,27vw,104px);font-weight:300;line-height:1.11;letter-spacing:-.075em;color:#fff;max-width:100%;flex:none}
+#sb-root .ios-lock-mini p{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;max-width:200px;overflow:hidden}
+#sb-root .ios-lock-player input:disabled{opacity:.35;cursor:default}
+#sb-root .ios-shell .ios-player-buttons button{min-width:38px;min-height:43px}
+#sb-root .ios-screen-light{position:absolute;inset:0;z-index:45;background:#fff;display:flex;align-items:flex-end;justify-content:center;padding-bottom:35px;color:#333}
+#sb-root .ios-screen-light button{padding:12px 20px;border:1px solid #ddd;border-radius:24px;font-size:12px;background:#fff}
+#sb-root .ios-lock-indicator{border:0;padding:0;margin:0 auto;background:#fff;min-height:5px}
+#sb-root .ios-shell .sb-hbar{min-height:5px}
+#sb-root .ios-shell .sb-home{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain}
+#sb-root .ios-shell .sb-dock{flex-shrink:0}
+#sb-root .ios-shell .ios-lock .ios-lock-date{flex:none}
+#sb-root .ios-shell.sb-inline .ios-lock-clock{font-size:clamp(58px,22vw,96px)}
+#sb-root .ios-shell .ios-lock-bottom [data-act=phone-light] .ios-control-svg{transform:rotate(-45deg)}
+#sb-root .ios-shell .ios-journal-card-body>p{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+#sb-root .ios-shell .sb-ai .sb-ab{font-family:-apple-system,BlinkMacSystemFont,sans-serif!important}
+@media(max-height:700px){#sb-root .ios-shell .ios-lock{padding-top:12px;padding-bottom:10px}#sb-root .ios-shell .ios-padlock{margin-top:3px;margin-bottom:4px}#sb-root .ios-shell button.ios-lock-clock{font-size:75px}#sb-root .ios-shell .ios-lock-mini{margin-top:6px;padding:5px 10px}#sb-root .ios-shell .ios-lock-player-slot{padding-top:8px;margin-bottom:8px}#sb-root .ios-shell .ios-lock-bottom{padding-bottom:10px}}
+/* The old phone entrance transform conflicts with the new frame and viewport clamp. */
+#sb-root .sb-phone.ios-shell{animation:none!important}

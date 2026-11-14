@@ -1,0 +1,48 @@
+import assert from 'node:assert/strict';
+import {collectPhoneEvents,primeTimeline,anchorPhoneEvents,decoratePhoneHistory,TIMELINE_KEY,formatPhoneTimeline} from '../src/phone-timeline.mjs';
+const meta={wechat:[{id:'old',at:1,from:'him',text:'旧消息'}]};
+assert(primeTimeline(meta,collectPhoneEvents(meta)));
+const story=[{is_user:true,mes:'之前的剧情'}];
+meta.wechat.push({id:'new',at:5,from:'me',text:'手机上约好九点见',pending:true});
+meta.xdm={anon:[{id:'dm',at:7,from:'me',text:'匿名私信'}]};
+meta.myMoments=[{id:'moment',at:6,text:'仅自己可见',isPrivate:true}];
+assert(!collectPhoneEvents(meta).some(e=>e.key==='wx:new'),'unsent drafts never leave phone');
+meta.wechat.at(-1).pending=false;
+const msg={is_user:true,mes:'我走进房间'};story.push(msg);
+assert(anchorPhoneEvents(meta,msg,collectPhoneEvents(meta)));
+assert.deepEqual(msg.extra[TIMELINE_KEY].events.map(e=>e.key),['wx:new','mine:moment','xdm:anon:dm']);
+assert(!anchorPhoneEvents(meta,msg,collectPhoneEvents(meta)),'regeneration does not recapture');
+const saved=JSON.stringify(story),prompt=story.map((m,index)=>({...m,index}));
+decoratePhoneHistory(prompt,story);decoratePhoneHistory(prompt,story);
+assert.equal(JSON.stringify(story),saved,'story text remains untouched');
+assert.equal((prompt[1].mes.match(/\[小吧台·本条剧情发送前/g)||[]).length,1);
+assert.match(prompt[1].mes,/仅用户自己/);assert.match(prompt[1].mes,/不能据此认出用户线下身份/);
+const next={is_user:true,mes:'继续说话'};story.push(next);
+assert(!anchorPhoneEvents(meta,next,collectPhoneEvents(meta)),'later turns have no repeated tail');
+const truncated=[{...next,index:2}];decoratePhoneHistory(truncated,story);
+assert.equal(truncated[0].mes,'继续说话','history trimming removes old phone context naturally');
+meta.wechat.push({id:'later',at:10,text:'新一轮消息',from:'him'});
+const newer={is_user:true,mes:'第二天'};story.push(newer);
+assert(anchorPhoneEvents(meta,newer,collectPhoneEvents(meta)));
+assert.deepEqual(newer.extra[TIMELINE_KEY].events.map(e=>e.key),['wx:later']);
+const imported=JSON.parse(JSON.stringify({meta,story}));
+assert(!primeTimeline(imported.meta,collectPhoneEvents(imported.meta)));
+assert(!anchorPhoneEvents(imported.meta,{is_user:true,mes:'导入后'},collectPhoneEvents(imported.meta)),'export/import preserves watermark');
+assert.match(formatPhoneTimeline(imported.story[1].extra[TIMELINE_KEY]),/手机上约好九点见/);
+assert(!anchorPhoneEvents(meta,{is_user:false,mes:'手机API输出'},collectPhoneEvents(meta)));
+meta.wechat.push({id:'disabled',at:11,text:'关闭期间',from:'him'});
+assert(!anchorPhoneEvents(meta,{is_user:true,mes:'关闭'},collectPhoneEvents(meta),false));
+assert(!anchorPhoneEvents(meta,{is_user:true,mes:'重新开启'},collectPhoneEvents(meta)));
+const all=collectPhoneEvents({wechat:[{id:'rejected',from:'me',text:'拒收',rejected:true}],comments:{p:[{id:'c',at:12,who:'friend',text:'留言'}]}},{moments:[{id:'p',who:'用户朋友',text:'动态',at:3}],weibo:[{id:'wb',text:'微博',at:4}]});
+assert.equal(all.length,4);assert.match(all.find(e=>e.key==='wx:rejected').audience,/对方未收到/);
+assert.match(all.find(e=>e.key==='comment:p:c').audience,/关系不明不共享/);
+assert(!formatPhoneTimeline({events:[]}));
+console.log('PASS: one-shot chronological batches, drafts, private visibility, anonymous X identity, regeneration, natural history trimming, export/import, opt-out, phone-only feeds.');
+
+// Host indices are filtered history positions, not source chat indices.
+const filtered=[{is_user:true,index:0,mes:'无手机记录'}, {...msg,index:1}];
+decoratePhoneHistory(filtered,[msg]);
+assert.equal(filtered[0].mes,'无手机记录');assert.match(filtered[1].mes,/手机上约好九点见/);
+const direct=[msg];decoratePhoneHistory(direct);assert.equal(msg.mes,'我走进房间');
+
+const thread=collectPhoneEvents({comments:{old:[{id:'reply',text:'评论内容',who:'me'}]}},{},{posts:[{id:'old',text:'之前剧情里生成的动态'}]});assert.match(thread[0].text,/之前剧情里生成的动态/);

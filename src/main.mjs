@@ -1,3 +1,4 @@
+import { collectPhoneEvents, primeTimeline, anchorPhoneEvents, decoratePhoneHistory, PHONE_PERSPECTIVE } from './phone-timeline.mjs';
 import { collectStatusSources, formatStatusSources, pastedReference } from './status-sources.mjs';
 import { cocktailFromState, cocktailProtocol, outputUsage, parseCocktail } from './cocktail-state.mjs';
 import { artwork, artworkMode, personalProfile, landingArtwork } from './artwork.mjs';
@@ -513,44 +514,32 @@ function wipeChat() {
 const chatBytes = () => JSON.stringify(ctx().chatMetadata?.[META] || {}).length;
 
 
-// ---------- 正文里带上手机里最近的事（她 11/9 选的 C：条数她定，0 = 不带） ----------
-// 只挑TA知道的：微信 / 书信往来、她发的朋友圈、她和TA的动态下面的留言
-function phoneEvents(n) {
-    if (!(n > 0)) return '';
-    const H = '{{char}}', U = '{{user}}', who = w => (w === 'me' ? U : w === 'him' ? H : w);
-    const word = era() === 'modern' ? '微信' : '信';
-    const kind = { voice: '语音', pic: '图片', sticker: '表情', money: '转账' };
-    const out = [];
-    for (const m of wechat()) if (m.type !== 'note' && !m.pending) out.push({ at: m.at || 0, t: `${word}　${m.from === 'me' ? U : H}：${m.type === 'text' ? m.text : `[${kind[m.type] || m.type}]${m.text || ''}${m.amount ? ' ¥' + m.amount : ''}`}` });
-    for (const p of meta().myMoments || []) out.push({ at: p.at || 0, t: `${U} 发了朋友圈：${p.text}${p.pics?.length ? `（配图：${p.pics.join('、')}）` : ''}` });
-    const st = state(), posts = new Map([...st.posts.map(p => [p.id, H]), ...(meta().myMoments || []).map(p => [p.id, U]), ...st.moments.map(p => [p.id, p.who])]);
-    for (const [id, list] of Object.entries(meta().comments || {})) {
-        const owner = posts.get(id); if (!owner) continue;
-        for (const c of list) out.push({ at: c.at || 0, t: `${owner}的朋友圈下面，${who(c.who)}${c.to ? ' 回复 ' + who(c.to) : ''}：${c.text}` });
-    }
-    return out.sort((a, b) => a.at - b.at).slice(-n).map(x => '- ' + x.t).join('\n');
+// Only off-story phone generations are collected here; story-generated status already lives in history.
+function timelineEvents() {
+    return collectPhoneEvents(meta(), buildState((meta().blocks || []).map(b => ({ id: b.id, raw: b.raw, at: b.at }))), state());
 }
+function primePhoneTimeline() {
+    if (hasChar() && meta().phoneTimeline?.version !== 1) { primeTimeline(meta(), timelineEvents()); saveMeta(); }
+}
+// Host passes copied history before token budgeting. Never mutate displayed story text.
+globalThis.smallBarPhoneTimeline = (chat) => {
+    if (settings().enabled && hasChar()) decoratePhoneHistory(chat);
+};
 
 // ---------- 注入提示词 ----------
 function refreshInject() {
     const c = ctx(), s = settings();
     if (!c.setExtensionPrompt) return;
     if (!s.enabled || !hasChar()) { c.setExtensionPrompt(INJECT_KEY, '', 1, 0); return; }
+    primePhoneTimeline();
     // 这张卡关了「回复时自动更新状态」（多角色、群像卡）：正文后不再让TA写状态段
     if (charCfg().noAutoStatus) { c.setExtensionPrompt(INJECT_KEY, '', 1, 0); return; }
     const cover = charCfg().cover;
     const tags = cover?.mode === 'pick' ? (cover.images || []).map(x => x.tag).filter(Boolean) : [];
-    const N = Number(s.wxMemory ?? 50);
-    const tail = N > 0 ? wechat().filter(m => !m.pending && m.type !== 'note').slice(-Math.min(N, 30)).map(m => `${m.from === 'me' ? '{{user}}' : '{{char}}'}：${m.type === 'text' ? m.text : `[${{ voice: '语音', pic: '图片', sticker: '表情', money: '转账' }[m.type]}]${m.text || ''}${m.amount ? ' ¥' + m.amount : ''}`}`).join('\n') : '';
-    // 她自己发的朋友圈：TA刷得到
-    const myM = (meta().myMoments || []).slice(-2).map(p => `- ${p.text}${p.pics?.length ? `（配图：${p.pics.join('、')}）` : ''}`).join('\n');
-    const mc = meta().comments || {};
-    // 只带还没被回的：那条动态下最后一句是她说的
-    const myComments = Object.values(mc).filter(list => list.length && list[list.length - 1].who === 'me').map(list => '- ' + list[list.length - 1].text).slice(-3).join('\n');
     // 「下一轮正文顺带回」：她发了还没回的手机消息
     const list = wechat().filter(m => m.type !== 'note'); // 连正文里TA顺带回的一起看：TA回过了就不再催
     let k = list.length; while (k > 0 && list[k - 1].from === 'me') k--;
-    const waiting = list.slice(k).filter(m => m.waiting && !m.pending).map(m => '- ' + (m.type === 'text' ? m.text : `[${m.type}]${m.text || ''}`)).join('\n');
+    const waiting = list.slice(k).some(m => m.waiting && !m.pending && !m.rejected);
     // 微信的拉黑和好友申请，让TA知道
     const m0 = meta(), st0 = state();
     if (!st0.blockedMe && m0.myReq && !m0.myReq.done) m0.myReq.done = true; // TA通过了（或者没拉黑了），这份申请就算完了
@@ -559,10 +548,10 @@ function refreshInject() {
         st0.blockedMe && m0.myReq?.text && !m0.myReq.done ? `{{user}} 被拉黑后给你发了微信好友申请，验证消息：「${m0.myReq.text}」。如果你愿意通过，在状态段里写「通过好友申请: 是」；不想通过就不写。` : '',
         m0.wxBlock?.him ? '（{{user}} 在微信上把{{char}}拉黑了：你发的微信她收不到。）' : '',
     ].filter(Boolean).join('\n');
-    const events = phoneEvents(Number(s.storyPhoneN ?? 2));
-    const evNote = events ? `手机上最近发生的（从早到晚）：\n${events}\n正文里可以自然地带一笔（看了眼手机、想起那条朋友圈、顺手回一句），也可以不提，看剧情合不合适，别硬塞。` : '';
     const parts = promptParts(s);
-    let text = buildInjection({ promptNow: parts.now, promptPhone: parts.phone, coverTags: tags, state: state(), wechatTail: tail, myComments, waiting, wxNote: memoNote(st0.memo), phoneNote: [phoneWx, myM && `{{user}} 最近发的朋友圈（你刷得到）：\n${myM}`, evNote].filter(Boolean).join('\n\n'), saveMode: s.saveMode, channel: era() === 'modern' ? '在手机上的聊天' : '的书信往来' });
+    let text = buildInjection({ promptNow: parts.now, promptPhone: parts.phone, coverTags: tags, state: state(), wxNote: memoNote(st0.memo), phoneNote: phoneWx, saveMode: s.saveMode, channel: era() === 'modern' ? '在手机上的聊天' : '的书信往来' });
+    text += '\n\n' + PHONE_PERSPECTIVE;
+    if (waiting) text += '\n有微信等待本轮回复：只依据聊天历史中已有的手机记录，在状态段里用「微信:」回复，一行一条；没有消息内容时不要猜测。';
     if (s.barStyle === 'default') {
         const mode=charCfg().cocktailMode==='adaptive'?'adaptive':'default';
         const snapshot=structuredClone(cocktailFromState(state(),mode));
@@ -789,7 +778,7 @@ jQuery(() => {
     for(const type of new Set([T.SETTINGS_LOADED,T.EXTENSION_SETTINGS_LOADED].filter(Boolean)))on(type,()=>{dirty();applyAppearance();ui.render();settingsPanel();});
     // 关掉小吧台（扩展面板里那个勾）时什么都不做：不读楼层、不算状态、不重画（重新打开时会补读一遍）
     const onIfEnabled = (type, f) => on(type, (...a) => { if (settings().enabled) f(...a); });
-    onIfEnabled(T.CHAT_CHANGED, () => { ui.reset({ keepOpen: true }); absorbAll(); refresh(); claimImages(); setSplashProfile(me); });
+    on(T.CHAT_CHANGED, () => { if(!settings().enabled){ui.resetPhoneLock();return;}ui.reset({ keepOpen: true, newChat: true }); absorbAll(); primePhoneTimeline(); refresh(); claimImages(); setSplashProfile(me); });
     onIfEnabled(T.PERSONA_CHANGED, () => { setSplashProfile(me); refresh(); });
     onIfEnabled(T.PERSONA_UPDATED, () => { setSplashProfile(me); refresh(); });
     on(T.CHAT_DELETED, name => { onChatGone(name); });
@@ -800,9 +789,15 @@ jQuery(() => {
     onIfEnabled(T.MESSAGE_EDITED, id => { if (absorb(Number(id))) ctx().saveChat?.(); refresh(); });
     onIfEnabled(T.MESSAGE_DELETED, () => refresh());
     onIfEnabled(T.MESSAGE_UPDATED, () => refresh());
+    onIfEnabled(T.MESSAGE_SENT, id => {
+        if (!hasChar()) return;
+        const message = ctx().chat?.[Number(id)];
+        if (anchorPhoneEvents(meta(), message, timelineEvents(), settings().phoneTimelineEnabled ?? Number(settings().storyPhoneN ?? 2) > 0)) ctx().saveChat?.();
+        saveMeta();
+    });
     // 生成前再算一次注入（她在小手机里刚说的话要带上）
     onIfEnabled(T.GENERATION_STARTED, () => { dirty(); refreshInject(); });
-    absorbAll(); refresh();
+    absorbAll(); primePhoneTimeline(); refresh();
 });
 
 

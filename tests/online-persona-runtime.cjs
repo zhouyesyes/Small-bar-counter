@@ -12,6 +12,7 @@ await p.evaluate(async()=>{setStyle('default');showChat();const {createUI}=await
   replyCtx:()=>({card:true,persona:true,world:true,status:true,story:0}),replyMode:()=>'pick',storyTail:()=>'',charCard:()=>'设定',worldInfo:async()=>'',worldEntries:async()=>entries,onlinePersona:online,
   ask:async(msgs)=>{asks.push(msgs[0].content);return '好。'},extractBlock:t=>({text:t,raw:''}),addBlock(){},memoNote:()=>'',markRead(){},unread:()=>0,img:x=>x,saveSettings(){},nowChanged(){},toast:(k,m)=>console.log('TOAST',k,m),confirm:async()=>true,guessedEra:()=>'modern',countTokens:async()=>0});
  ui.mount();ui.openPhone();});
+if(await p.locator('.ios-lock').count())await p.locator('.ios-lock-clock').click();
 await p.locator('[data-to=settings]').first().click();
 assert.match(await p.locator('[data-to=set-online]').innerText(),/线上人设[\s\S]*没指定/);
 await p.locator('[data-to=set-online]').click();await p.locator('[data-act=online-src][data-src=world]').click();

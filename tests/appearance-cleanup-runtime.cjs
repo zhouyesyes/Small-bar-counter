@@ -24,6 +24,7 @@ const{chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
  await p.locator('[data-act=home-field][data-key=table]').click();
  if(!await p.evaluate(()=>s.splash.table==='新座位'))throw Error('inline field did not save canonical global profile');
  await p.evaluate(()=>{hasRole=true;cleanUI.render()});
+ if(await p.locator('.ios-lock').count())await p.locator('.ios-lock-clock').click();
  await p.locator('#sb-root [data-to=settings]').click();
  if(await p.locator('#sb-root [data-set=barStyle],#sb-root [data-set=barTheme],#sb-root [data-act=splash-settings]').count())throw Error('duplicate phone appearance controls remain');
  await p.locator('#sb-root [data-set=phoneTheme]').selectOption('dark');

@@ -11,7 +11,8 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
         const host={settings:()=>({...s,phoneMode:'float'}),hasChar:()=>true,era:()=> 'modern',guessedEra:()=> 'modern',charCfg:()=>phoneConfig,state:()=>st,meta:()=>meta,him:()=>({name:'故人',avatar:'/assets/opening/dark-avatar.jpg',xavatar:''}),me:()=>({name:'我',avatar:'/assets/opening/light-avatar.jpg'}),img:x=>x,unread:()=>0,replyMode:()=> 'pick',replyCtx:()=>({}),markRead(){},toast(type,message){throw Error(message)},wechat:()=>[],xAccount:()=>account,xAccounts:()=>[account],xMine:()=>[],xBlocked:()=>false,xIBlocked:()=>false};
         window.phoneUI=createUI(host);phoneUI.mount();phoneUI.openPhone();
     });
-    await p.locator('#sb-root [data-to="wx-contacts"]').click();
+    if(await p.locator('.ios-lock').count())await p.locator('.ios-lock-clock').click();
+await p.locator('#sb-root [data-to="wx-contacts"]').click();
     await p.locator('#sb-root [data-to="wx-moments"]').click();
     await p.evaluate(()=>{
         const cover=document.querySelector('#sb-root .sb-wcover');

@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {phoneStoryScene} from '../src/phone-ios.mjs';
+assert.deepEqual(phoneStoryScene(),{clock:'--:--',date:'剧情日期待记录',weather:'',location:''});
+assert.equal(phoneStoryScene({now:{time:'2026年11月20日 9:05'}}).date,'11月20日 星期五');
+assert.equal(phoneStoryScene({now:{time:'2026年11月20日 9:05'}}).clock,'09:05');
+const scene=phoneStoryScene({now:{time:'旧剧情 10:00',weather:'旧天气'}},{calendar:{date:'2026-11-22'},scene:{storyTime:'22:45',weather:'小雨',location:'旧街'}});
+assert.deepEqual(scene,{clock:'22:45',date:'11月22日 星期日',weather:'小雨',location:'旧街'});
+assert.equal(phoneStoryScene({now:{time:'2026-02-30 25:99'}}).clock,'--:--');
+assert.equal(phoneStoryScene({now:{time:'2026-02-30 25:99'}}).date,'剧情日期待记录');
+console.log('Phone story clock/date prefer current story state and never invent device time or invalid dates.');
+assert.equal(phoneStoryScene({now:{where:'旧街酒吧'}}).location,'旧街酒吧');

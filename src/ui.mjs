@@ -1,3 +1,4 @@
+import { createPhoneIOS } from './phone-ios.mjs';
 import {createCocktailHistory} from './cocktail-history.mjs';
 import {glassControlsHtml,bindGlassControls} from './glass.mjs';
 import { createCocktailPanel } from './cocktail-panel.mjs';
@@ -100,6 +101,7 @@ export function createUI(host) {
     const coverTracks = new Map();
     const coverImg = (t, cls) => { const key = `${t.src || 'netease'}:${t.id}`; coverTracks.set(key, t); const url = coverList(t)[0]; return `<img class="${cls}" ${url ? `src="${esc(url)}"` : ''} data-cover-key="${esc(key)}" decoding="async" alt="">`; };
     const fmt = s => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+    const phoneIOS = createPhoneIOS({host,player,coverImg,render});
     // 播放键、主页小卡片：只改这几处
     function patchMusic() {
         if (!root) return;
@@ -114,6 +116,7 @@ export function createUI(host) {
         // 主页小卡片：放到哪句显示哪句
         const wl = root?.querySelector('.sb-wlyr');
         if (wl) { const i = player.line(); if (wl.dataset.i !== String(i)) { wl.dataset.i = i; wl.textContent = player.lyric()[i]?.text || ''; } }
+        phoneIOS.sync();
         const a = player.audio, box = root?.querySelector('.sb-music'); if (!box) return;
         const bar = box.querySelector('[data-mseek]'); if (bar) { const ratio = Number.isFinite(a.duration) && a.duration > 0 ? Math.max(0, Math.min(1, a.currentTime / a.duration)) : 0; const value = Math.round(ratio * 1000); if (Number(bar.value) !== value) bar.value = value; const fill = (ratio * 100).toFixed(2) + '%'; if (bar.style.getPropertyValue('--sb-progress') !== fill) bar.style.setProperty('--sb-progress', fill); }
         const t = box.querySelector('.sb-mtime'); if (t) { const value = `${fmt(a.currentTime)} / ${fmt(a.duration)}`; if (t.textContent !== value) t.textContent = value; }
@@ -145,6 +148,7 @@ export function createUI(host) {
         widePanel.addEventListener('change', () => render());
         document.documentElement.appendChild(root); // 不放进 body：酒馆主题可能给 body 加变形，会把固定定位困住
         root.addEventListener('click', onClick);
+        phoneIOS.bind(root);
         root.addEventListener('keydown', onKey);
         root.addEventListener('keydown', e => { if (e.key === 'Escape') root.querySelector('.sb-song-pop')?.remove(); });
         root.addEventListener('change', onChange);
@@ -172,7 +176,7 @@ export function createUI(host) {
         root.addEventListener('pointermove', e => {
             if (!pd || e.pointerId !== pd.id) return;
             const W = root.clientWidth, H = root.clientHeight, w = pd.ph.offsetWidth, h = pd.ph.offsetHeight;
-            const x = Math.max(4 - w * 0.6, Math.min(W - w * 0.4, e.clientX - pd.dx)), y = Math.max(0, Math.min(H - 60, e.clientY - pd.dy));
+            const ios=pd.ph.classList.contains('ios-shell'),x = ios?Math.max(4,Math.min(W-w-4,e.clientX-pd.dx)):Math.max(4-w*.6,Math.min(W-w*.4,e.clientX-pd.dx)),y=ios?Math.max(4,Math.min(H-h-4,e.clientY-pd.dy)):Math.max(0,Math.min(H-60,e.clientY-pd.dy));
             Object.assign(pd.ph.style, { left: x + 'px', top: y + 'px', transform: 'none', bottom: 'auto' });
             pd.x = Math.round(x); pd.y = Math.round(y); e.preventDefault();
         });
@@ -283,6 +287,7 @@ export function createUI(host) {
         cocktail?.detach();archive?.detach();
         root.innerHTML = html;
         applyDrawerSize(root,s);
+        phoneIOS.afterRender();
         const lyricSlot = root.querySelector('.sb-lyr');
         if (lyricSlot && lyricView) { lyricSlot.replaceWith(lyricView); invalidateLyricsLayout(lyricView); }
         bindMusicCovers(root, coverTracks, coverList, resolveCover, () => host.saveSettings());
@@ -348,12 +353,12 @@ export function createUI(host) {
         if (v.tab === 'diary') body = v.diaryId ? diaryOneHtml(st, him) : diaryListHtml(st);
         const tabsNav = `<nav class="sb-tabs">${TAB_KEYS.filter(k=>k!=='diary'&&(!original||k!=='now')).map(k => { const i=TAB_KEYS.indexOf(k); return `<button data-act="tab" data-tab="${k}" class="${v.tab === k ? 'on' : ''}">${original && k === 'posts' ? '此刻' : labels[i]}${k === 'phone' && host.unread() ? ` <b class="sb-badge">${host.unread()}</b>` : ''}</button>`; }).join('')}</nav>`;
         // 小手机那一格：手机直接嵌在抽屉里（不另外弹出来）
-        if (v.tab === 'phone') return `<div class="sb-shade" data-act="close"></div>
+        if (v.tab === 'phone') { const phoneContent=phoneInner(era);return `<div class="sb-shade" data-act="close"></div>
 <div class="sb-drawer sb-phonemode" role="dialog" aria-label="小吧台">
  <div class="sb-pmhead"><span class="sb-mininame">${esc(him.name)}</span><button class="sb-x" data-act="close" aria-label="关上">×</button></div>
- <div class="sb-phone sb-inline${era !== 'modern' ? ' sb-letterbox' : ''}">${phoneInner(era)}</div>
+ <div class="sb-phone sb-inline${era !== 'modern' ? ' sb-letterbox' : ''}${phoneIOS.classes(v.view)}" style="${phoneIOS.active(era)?esc(phoneIOS.wallpaper()):''}">${phoneContent}</div>
  ${tabsNav}
-</div>`;
+</div>`;}
         return `<div class="sb-shade" data-act="close"></div>
 <div class="sb-drawer${v.mini ? ' sb-mini' : ''}" role="dialog" aria-label="小吧台">
  <div class="sb-minibar"><span class="sb-mininame">${esc(him.name)}</span><button class="sb-x" data-act="close" aria-label="关上">×</button></div>
@@ -655,13 +660,14 @@ export function createUI(host) {
         const letters = era !== 'modern' && v.view === 'wx-chat';
         const inner = letters ? letterHtml(era) : (views[v.view] || homeHtml)(era);
         const bar = v.view !== 'home' ? '<button class="sb-hbar" data-act="phone-go" data-to="home" aria-label="回主页"></button>' : '<div class="sb-hbar idle"></div>';
-        return inner + bar;
+        return phoneIOS.active(era)?phoneIOS.screen(v.view,inner,bar):inner+bar;
     }
     // 浮在屏幕上的小手机（从酒馆魔杖菜单「酒吧小手机」打开）：不挡聊天、不点外面也不会关，只有 × 关；按住顶上那条能拖着走
     function floatHtml(era) {
         const pos = host.settings().phonePos || {};
-        const style = pos.x != null ? `left:${pos.x}px;top:${pos.y}px;transform:none;bottom:auto` : '';
-        return `<div class="sb-phone sb-float${era !== 'modern' ? ' sb-letterbox' : ''}" role="dialog" aria-label="${WORDS[era].phone}" style="${style}"><div class="sb-grip" title="按住拖动"><i></i></div>${phoneInner(era)}</div>`;
+        const style = (pos.x != null ? `left:${pos.x}px;top:${pos.y}px;transform:none;bottom:auto;` : '')+(phoneIOS.active(era)?phoneIOS.wallpaper():'');
+        const content=phoneInner(era);
+        return `<div class="sb-phone sb-float${era !== 'modern' ? ' sb-letterbox' : ''}${phoneIOS.classes(v.view)}" role="dialog" aria-label="${WORDS[era].phone}" style="${esc(style)}"><div class="sb-grip" title="按住拖动"><i></i></div>${content}</div>`;
     }
     // ---------- 古风 / 民国：不用小手机，换成书信 ----------
     const LETTER = {
@@ -702,6 +708,7 @@ export function createUI(host) {
 
     const Wd = () => WORDS[host.hasChar() ? host.era() : 'modern'] || WORDS.modern;
     function homeHtml(era) {
+        if(phoneIOS.active(era))return phoneIOS.home();
         const st = host.state(), n = st.now;
         const clock = (n.time || '').match(/(\d{1,2}[:：]\d{2})/)?.[1]?.replace('：', ':') || '';
         const date = (n.time || '').replace(/\d{1,2}[:：]\d{2}/, '').trim();
@@ -904,12 +911,13 @@ export function createUI(host) {
     function pDiaryHtml(era) {
         const st = host.state(), hidden = host.meta().hidden || {};
         const list = st.diary.filter(d => !hidden[d.id]).reverse();
+        if(phoneIOS.active())return phoneIOS.journal(list,head('手记',genBtn('diary','写一篇')));
         return `${head(Wd().diary, genBtn('diary', '写一篇'))}<div class="sb-list">${list.length ? list.map(d => `<button class="sb-dold" data-act="diary-open" data-id="${esc(d.id)}"><span>${esc(d.time)}</span><span>${esc(d.title || d.text.slice(0, 12))}</span></button>`).join('') : '<div class="sb-empty">还没有</div>'}</div>`;
     }
     function pDiaryDetailHtml() {
         const d=host.state().diary.find(d=>d.id===v.diaryId&&!host.meta().hidden?.[d.id]);
         if(!d){v.view='diary';v.diaryId='';return pDiaryHtml();}
-        return `${head(Wd().diary)}<div class="sb-list">${diaryBody(d,true)}</div>`;
+        return `${head(phoneIOS.active()?'手记':Wd().diary)}<div class="sb-list">${diaryBody(d,true)}</div>`;
     }
     function pMemoHtml() {
         const st = host.state();
@@ -1006,7 +1014,7 @@ export function createUI(host) {
   <label class="sb-srow"><span>正文之后正常写<small>关掉后正文后什么都不写（多角色、群像卡用）；手动点按钮生成照常能用</small></span><input type="checkbox" class="sb-tg" data-cset-off="noAutoStatus" ${c.noAutoStatus ? '' : 'checked'}></label>
   ${c.noAutoStatus ? '' : toggle('只写此刻和选曲（省一点）', 'saveMode', s.saveMode, s.saveMode ? '开着：正文后只写此刻（吧台状态栏）和本轮选曲；朋友圈、日记、X、微博这些小手机内容不写；小手机回消息也不顺带更新' : '关着：此刻和选曲每轮都写；朋友圈、日记、X、微博这些按剧情偶尔写')}
   ${original && !c.noAutoStatus ? `<label class="sb-srow"><span>吧台状态栏的分类<small>吧台默认：固定四类；角色适配：照角色卡自带的状态栏来分</small></span><select data-cset="cocktailMode"><option value="default" ${c.cocktailMode!=='adaptive'?'selected':''}>吧台默认</option><option value="adaptive" ${c.cocktailMode==='adaptive'?'selected':''}>角色适配</option></select></label>` : ''}
-  ${!c.noAutoStatus && !s.saveMode ? `<label class="sb-srow"><span>正文里提几件手机上的事<small>最近的微信、你的朋友圈、留言，TA看情况在正文里提一笔；0 就是不提</small></span><input type="number" min="0" max="10" class="sb-num" data-set="storyPhoneN" value="${Number(s.storyPhoneN ?? 2)}"></label>` : ''}
+  ${toggle('手机活动按时间带进剧情', 'phoneTimelineEnabled', s.phoneTimelineEnabled ?? Number(s.storyPhoneN ?? 2) > 0, '手机新消息与动态固定在下一条剧情消息之前，后续不再反复追加；私聊和动态按各自可见范围处理。')}
   ${row('提示词', s.promptNow || s.promptPhone || s.prompt ? '改过' : '默认', 'set-prompt')}
  </div>
  <div class="sb-sh">${Wd().wechat}里回消息</div><div class="sb-sgrp">${row('用哪个 API', apiName, 'set-api')}${row('TA什么时候回', s.phoneWhen === 'next' ? '下一轮正文顺带回' : '马上回', 'set-when')}${s.phoneWhen === 'next' ? '' : row('回消息时带哪些资料', host.replyMode() === 'full' ? '整套' : '自己挑', 'set-reply')}${row('线上人设', c.online?.source === 'world' ? (c.online.title || '世界书条目') : c.online?.source === 'text' && c.online.text ? '自己写的' : '没指定', 'set-online')}</div>
@@ -1144,6 +1152,18 @@ export function createUI(host) {
     }
 
     // ---------- 点 ----------
+    function goPhone(to) {
+        v.drawer = true; v.tab = 'phone'; v.phone = false;
+        v.plus = false; v.menuFor = ''; v.edit = null; v.wxManage = false;
+        v.prev = v.view; v.view = to;
+        if (to === 'wx-chat' || to === 'x-dm') {
+            if (to === 'wx-chat') host.markRead();
+            v.stick = true;
+        }
+        v.dmMenu = false;
+        if (to === 'wx-moments') v.momentsN = 10;
+    }
+
     async function onClick(e) {
         const bg = e.target.closest('[data-bg-target],[data-bg-settings]');
         if (bg && root.contains(bg) && !e.target.closest('button,input,label,a,[data-act]')) {
@@ -1173,6 +1193,10 @@ export function createUI(host) {
                 host.setHomeProfile({ [key]: value }); break;
             }
 
+            case 'phone-unlock': phoneIOS.unlock();return;
+            case 'phone-light': phoneIOS.toggleLight();return;
+            case 'phone-ios-open': phoneIOS.unlockForNavigation(); // Continue through the existing app routing.
+            case 'phone-go': phoneIOS.rememberSource(b);goPhone(b.dataset.to);break;
             case 'open': v.drawer = true; break;
             case 'close': v.drawer = false; v.diaryId = ''; v.mini = false; break;
             case 'tab':
@@ -1367,17 +1391,6 @@ export function createUI(host) {
             case 'dhide':
                 if (!await host.confirm('删掉这篇？（只是在小吧台里不显示，正文不动）')) return;
                 meta.hidden ??= {}; meta.hidden[b.dataset.id] = true; host.saveMeta(); v.diaryId = ''; break;
-            case 'phone-go':
-                if (b.closest('.sb-float')) v.phone = true;
-                else if (v.drawer && host.settings().phoneMode !== 'float') { v.tab = 'phone'; v.phone = false; }
-                else if (v.drawer) { v.drawer = false; v.phone = true; }
-                else v.phone = true;
-                v.plus = false; v.menuFor = ''; v.edit = null; v.wxManage = false;
-                v.prev = v.view; v.view = b.dataset.to;
-                if (v.view === 'wx-chat' || v.view === 'x-dm') { if (v.view === 'wx-chat') host.markRead(); v.stick = true; }
-                v.dmMenu = false;
-                if (v.view === 'wx-moments') v.momentsN = 10;
-                break;
             case 'phone-back': {
                 const back = { 'diary-detail': 'diary', 'set-when': 'settings', 'wx-chat': 'wx-contacts', 'x-dm': 'x', 'set-reply': 'settings', 'set-online': 'settings', 'set-cover': 'settings', 'set-him': 'settings', 'set-me': 'settings', 'set-prompt': 'settings', 'set-api': 'settings', 'set-clean': 'settings' }[v.view];
                 v.view = back || 'home'; v.plus = false; v.menuFor = ''; v.edit = null; break;
@@ -1715,6 +1728,7 @@ export function createUI(host) {
 
     return {
         mount, render,
+        resetPhoneLock: () => phoneIOS.resetForChat(),
         open: () => { v.drawer = true; render(); },
         // 魔杖菜单「酒吧小手机」：照设置，浮窗就浮出来，抽屉就打开抽屉的小手机那格
         openPhone: () => {
@@ -1723,7 +1737,7 @@ export function createUI(host) {
             else { v.drawer = true; v.tab = 'phone'; v.phone = false; }
             render();
         },
-        reset: ({ keepOpen = false } = {}) => { manualRequest++;cocktail?.reset();archive?.reset(); if (!keepOpen) { v.drawer = false; v.phone = false; } v.tab = 'posts';v.nowBook=false; v.view = 'home'; v.diaryId = ''; v.edit = null; v.menuFor = ''; v.busy = false; render(); },
+        reset: ({ keepOpen = false, newChat = false } = {}) => { if(newChat)phoneIOS.resetForChat();manualRequest++;cocktail?.reset();archive?.reset(); if (!keepOpen) { v.drawer = false; v.phone = false; } v.tab = 'posts';v.nowBook=false; v.view = 'home'; v.diaryId = ''; v.edit = null; v.menuFor = ''; v.busy = false; render(); },
         isOpen: () => v.drawer || v.phone || document.documentElement.classList.contains('sb-panel-docked'),
     };
 }

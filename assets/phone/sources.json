@@ -1,0 +1,58 @@
+[
+  {
+    "key": "notes",
+    "name": "Notes",
+    "page": "https://apps.apple.com/us/app/notes/id1110145109?uo=4",
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/e8/53/65/e853659a-0888-7264-743e-0e3875d1505f/notesCalistoga-0-0-1x_U007epad-0-1-85-220.png/128x128bb.webp",
+    "bytes": 3912
+  },
+  {
+    "key": "weibo",
+    "name": "微博",
+    "page": "https://apps.apple.com/us/app/%E5%BE%AE%E5%8D%9A/id350962117?uo=4",
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/74/c8/b8/74c8b88a-e890-03f9-77cd-0be0c356f485/WeiboAppIcon-0-0-1x_U007epad-0-1-0-85-220.png/128x128bb.webp",
+    "bytes": 4930
+  },
+  {
+    "key": "wechat",
+    "name": "WeChat",
+    "page": "https://apps.apple.com/us/app/wechat/id414478124?uo=4",
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/84/6b/3a/846b3ab8-9dea-e3e5-861e-f6ecaa0b3387/AppIcon-0-0-1x_U007epad-0-1-0-sRGB-0-0-85-220.png/128x128bb.webp",
+    "bytes": 4374
+  },
+  {
+    "key": "photos",
+    "name": "Photos",
+    "page": "https://apps.apple.com/us/app/photos/id1584215428?uo=4",
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/72/6e/79/726e7943-4a7d-091d-3c55-1d46477cdf08/photosCalistoga-0-0-1x_U007epad-0-1-0-85-220.png/128x128bb.webp",
+    "bytes": 4636
+  },
+  {
+    "key": "journal",
+    "name": "Journal",
+    "page": "https://apps.apple.com/us/app/journal/id6447391597?uo=4",
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/21/ac/78/21ac7835-8a35-8137-b912-890e3d7f1043/journalCalistoga-0-0-1x_U007epad-0-1-85-220.png/128x128bb.webp",
+    "bytes": 4584
+  },
+  {
+    "key": "x",
+    "name": "X",
+    "page": "https://apps.apple.com/us/app/x/id333903271?uo=4",
+    "artwork": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/70/88/88/708888e7-81a4-8a4a-52d7-9a901a1725ff/ProductionAppIcon-0-0-1x_U007emarketing-0-8-0-0-0-85-220.png/128x128bb.webp",
+    "bytes": 4338
+  },
+  {
+    "key": "settings",
+    "name": "Settings",
+    "page": "https://support.apple.com/guide/iphone/find-settings-iph079e1fe9d/ios",
+    "artwork": "https://ipcdn-web.apple.com/assets/v2/web/6bf7600d-97cb-4cef-be76-bd595ccc9a62",
+    "bytes": 8150
+  },
+  {
+    "key": "music-ios18",
+    "name": "Music (iOS 18 guide)",
+    "page": "https://support.apple.com/guide/iphone/iph0138fb328/18.0/ios/18.0",
+    "artwork": "https://help.apple.com/assets/683A54F5227CBBDB98051B96/683A54FC545676DF600F97D4/en_US/9e29cf26909e272b8b1bf33fa81ca592.png",
+    "bytes": 1807
+  }
+]

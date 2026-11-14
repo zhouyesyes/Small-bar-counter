@@ -1,5 +1,6 @@
 @import url('./assets/cocktail.css');
 @import url('./assets/companion.css');
+@import url('./assets/phone-ios.css');
 /* 小吧台：黑白极简。颜色都在这几个变量里，浅色 / 深色两套 */
 #sb-root{--sb-bg:#fff;--sb-fg:#111;--sb-dim:#8a8a8a;--sb-line:#e6e6e6;--sb-soft:#f5f5f5;--sb-shade:rgba(0,0,0,.28);--sb-font:-apple-system,"Helvetica Neue","PingFang SC","Microsoft YaHei",sans-serif;--sb-serif:"Songti SC","Noto Serif CJK SC","Source Han Serif SC",serif;
     /* 挂在 <html> 上，铺满屏幕；里面的东西都相对它定位。酒馆主题给 body 加了变形 / 滤镜时，挂在 body 里的固定定位会被困在 body 里（第一版就是这样跑到左上角、抽屉变透明的） */
