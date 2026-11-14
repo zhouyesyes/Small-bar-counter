@@ -1,3 +1,4 @@
+import { isPickHidden } from './music-selection.mjs';
 import { PHONE_PERSPECTIVE } from './phone-timeline.mjs';
 import { createPhoneIOS } from './phone-ios.mjs';
 import {createCocktailHistory} from './cocktail-history.mjs';
@@ -70,7 +71,7 @@ export function createUI(host) {
         let meta; try { meta = host.meta?.(); } catch { meta = null; } if (!meta) return [];
         const cache = (meta.musicPicks ??= {});
         let picks; try { picks = host.state?.()?.picks; } catch { picks = null; }
-        return (picks || []).filter(p=>!meta.musicPickHidden?.[p.key]).map(p => {
+        return (picks || []).filter(p=>!isPickHidden(meta,p)).map(p => {
             // Keep resolved playable IDs, even when the AI originally wrote a different name.
             const t = (cache[p.key] ??= { id: 'pick:' + p.key, pending: true, title: p.title, artist: p.artist });
             t.pickKey = p.key; t.why = p.why; return t;
@@ -79,7 +80,8 @@ export function createUI(host) {
     function removeChatPick(key){
         if(!key)return;
         const m=musicState(),list=m.list,index=list.findIndex(t=>t.pickKey===key),active=player.current()?.pickKey===key;
-        const metadata=host.meta();(metadata.musicPickHidden??={})[key]=true;delete metadata.musicPicks?.[key];
+        const metadata=host.meta(),pick=host.state().picks.find(p=>p.key===key);if(!pick)return;
+        (metadata.musicPickHidden??={})[key]={msg:pick.msg};delete metadata.musicPicks?.[key];
         if(m.active===CHAT_LIST){if(index>=0&&index<m.idx)m.idx--;m.idx=Math.max(0,Math.min(m.idx,m.list.length-1));}
         host.saveMeta();host.saveSettings();v.songContext=null;if(active)player.stop();
     }
@@ -107,7 +109,7 @@ export function createUI(host) {
     function resolveTrack(t){
         if(pickChecks.has(t))return pickChecks.get(t);
         const targetMeta=host.meta(),title=t.title,artist=t.artist,query=[title,artist].filter(Boolean).join(' ');
-        const stillHere=()=>!t.pickKey||(host.meta()===targetMeta&&!targetMeta.musicPickHidden?.[t.pickKey]);
+        const stillHere=()=>!t.pickKey||(host.meta()===targetMeta&&targetMeta.musicPicks?.[t.pickKey]===t);
         const work=(async()=>{
             const {track:hit,candidates:found,exact}=await findSong(title,artist);
             if(!stillHere())throw new Error('这条选曲已删除或已切换聊天');
@@ -565,7 +567,7 @@ export function createUI(host) {
     const mi = k => `<span class="sb-mi">${MI[k]}</span>`;
     function musicHtml(st) {
         const ms = musicState(), m = st.music, t = player.current(), list = ms.list || [], mode = ms.mode;
-        const names = [ms.defaultList, ...Object.keys(ms.lists).filter(n => n !== ms.defaultList)], chat = pickTracks(), onChat = ms.active === CHAT_LIST, pick = st.pick&&!host.meta().musicPickHidden?.[st.pick.key]?st.pick:null, picked=pick&&chat.find(track=>track.pickKey===pick.key),pickTitle=picked&&!picked.pending?picked.title:pick?.title,pickArtist=picked&&!picked.pending?picked.artist:pick?.artist,replyPick=host.hasChar()?host.replyPickStatus?.():null;
+        const names = [ms.defaultList, ...Object.keys(ms.lists).filter(n => n !== ms.defaultList)], chat = pickTracks(), onChat = ms.active === CHAT_LIST, pick = st.pick&&!isPickHidden(host.meta(),st.pick)?st.pick:null, picked=pick&&chat.find(track=>track.pickKey===pick.key),pickTitle=picked&&!picked.pending?picked.title:pick?.title,pickArtist=picked&&!picked.pending?picked.artist:pick?.artist,replyPick=host.hasChar()?host.replyPickStatus?.():null;
         return `<section class="sb-music${ms.compact ? ' is-mini' : ''}"><div class="sb-player-main${player.playing()?' is-playing':''}">
  <button class="sb-cap sb-music-toggle" data-act="music-compact" aria-expanded="${!ms.compact}" title="展开或收起音乐面板">${host.settings().barStyle==='default'?'吧台今日选曲':`${t?'now playing':'music'} · ${Wd().music}`}<span class="sb-music-caret" aria-hidden="true">${ms.compact ? '⌄' : '⌃'}</span></button>
  ${t ? `<div class="sb-mstate"><span class="sb-mstxt" role="status">${esc(v.mstate || '')}</span> <button class="sb-link" data-act="mskip">换个来源</button></div>` : ''}
@@ -578,8 +580,8 @@ export function createUI(host) {
  ${host.settings().barStyle==='default'?'<div class="sb-record-note" aria-hidden="true"><span>SIDE A</span><i></i><span>33⅓ RPM</span></div>':''}
  <div class="sb-mctl"><button data-act="mmode" title="${{ all: '列表循环', one: '单曲循环', shuffle: '随机' }[mode]}">${mi(mode)}</button><button data-act="mprev" aria-label="上一首">${mi('prev')}</button><button class="sb-mplay" data-act="mtoggle" aria-label="播放">${mi(player.playing() ? 'pause' : 'play')}</button><button data-act="mnext" aria-label="下一首">${mi('next')}</button><button data-act="mlist" class="${v.mlist ? 'on' : ''}" aria-label="歌单">${mi('list')}</button></div>
 
- ${pick ? `<div class="sb-mpick-wrap"><button class="sb-mpick${t?.pickKey === pick.key ? ' on' : ''}" data-act="mpick" data-key="${esc(pick.key)}" aria-label="播放本轮选曲《${esc(pickTitle)}》"><small>${replyPick&&!replyPick.hasPick?'上次选曲':'本轮选曲'}${picked?.pending?(failedPickChecks.has(picked)?' · 暂未搜到':' · 正在找歌'):host.meta().musicPickCorrections?.[pick.key]?' · 按搜索结果':''}</small><b>《${esc(pickTitle)}》${pickArtist ? `<span> · ${esc(pickArtist)}</span>` : ''}</b>${pick.why ? `<em>${esc(pick.why)}</em>` : ''}<i aria-hidden="true">${t?.pickKey === pick.key && player.playing() ? '♪ 正在放' : '▶ 放这首'}</i></button><button class="sb-mpick-delete" data-act="mpick-delete" data-key="${esc(pick.key)}" aria-label="删除本轮选曲《${esc(pickTitle)}》" title="删除这首选曲">×</button></div>` : ''}
- ${replyPick?.missing?`<div class="sb-pick-missing"><span>这轮回复还没有选歌</span>${genBtn('pick','补选这轮')}</div>`:''}
+ ${pick ? `<div class="sb-mpick-wrap"><button class="sb-mpick${t?.pickKey === pick.key ? ' on' : ''}" data-act="mpick" data-key="${esc(pick.key)}" aria-label="播放本轮选曲《${esc(pickTitle)}》"><small>${replyPick&&!replyPick.hasPick?'上次选曲':`本轮选曲${pick.selections>1?' · 再次选中':''}`}${picked?.pending?(failedPickChecks.has(picked)?' · 暂未搜到':' · 正在找歌'):host.meta().musicPickCorrections?.[pick.key]?' · 按搜索结果':''}</small><b>《${esc(pickTitle)}》${pickArtist ? `<span> · ${esc(pickArtist)}</span>` : ''}</b>${pick.why ? `<em>${esc(pick.why)}</em>` : ''}<i aria-hidden="true">${t?.pickKey === pick.key && player.playing() ? '♪ 正在放' : '▶ 放这首'}</i></button><button class="sb-mpick-delete" data-act="mpick-delete" data-key="${esc(pick.key)}" aria-label="删除本轮选曲《${esc(pickTitle)}》" title="删除这首选曲">×</button></div>` : ''}
+ ${replyPick?.missing?`<div class="sb-pick-missing"><span>本轮未收到选曲${pick?' · 上方保留上一首':''}</span>${genBtn('pick','补选这轮')}</div>`:''}
  </div><div class="sb-music-extras" ${ms.compact ? 'hidden' : ''}>
  ${v.mlist !== false ? `<div class="sb-mres sb-queue"><div class="sb-cap sb-row" style="margin:6px 0"><span>${esc(listLabel(ms.active))} · ${list.length} 首</span><span>${onChat ? '<small>随这一席的故事，慢慢添歌</small>' : `<button class="sb-link" data-act="mpl-rename">改名</button>${ms.active !== ms.defaultList ? ' <button class="sb-link" data-act="mpl-del">删掉这个歌单</button>' : ''}`}</span></div><div class="sb-queue-scroll" data-keep="music-queue">${list.map((r, i) => `<div class="sb-mrow2${t && r.id === t.id ? ' on' : ''}">${coverImg(r, 'sb-mthumb')}<span data-act="mplayat" data-i="${i}"><b>${esc(r.title)}</b><small>${esc(r.artist)}${onChat && r.why ? ' · ' + esc(r.why) : ''}</small></span><button data-act="msong-menu" data-i="${i}" aria-label="管理这首歌">⋯</button><button data-act="mdelsong" data-i="${i}" aria-label="删除《${esc(r.title)}》" title="从歌单删除">×</button></div>`).join('') || `<div class="sb-empty sm">${onChat ? '这个聊天还没有选曲，下一轮回复后会出现' : '还没有歌'}</div>`}</div></div>` : ''}
  <div class="sb-plists">${chat.length ? `<button data-act="mpl" data-n="${CHAT_LIST}" class="sb-chat-plist${onChat ? ' on' : ''}">${CHAT_LIST_LABEL} <small>${chat.length}</small></button>` : ''}${names.map(n => `<button data-act="mpl" data-n="${esc(n)}" class="${n === ms.active ? 'on' : ''}">${esc(n)} <small>${ms.lists[n].length}</small></button>`).join('')}<button data-act="mpl-new" class="add">＋ 新建歌单</button></div>

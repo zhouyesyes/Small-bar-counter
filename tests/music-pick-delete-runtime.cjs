@@ -24,6 +24,11 @@ assert.equal(await p.locator('.sb-mpick').count(),0);assert.equal(await p.locato
 assert(await p.evaluate(()=>document.querySelector('audio').paused&&!document.querySelector('audio').getAttribute('src')));
 assert.equal(await p.evaluate(()=>chats.a.state.picks.length),1,'deleting a pick does not edit story records');
 await p.evaluate(()=>{ui.reset();ui.open()});assert.equal(await p.locator('.sb-mpick').count(),0,'deleted picks stay deleted across render/reset');
+// A later reply can select a previously deleted song again; it stays deduplicated.
+await p.evaluate(async()=>{const {buildState}=await import('/src/core.mjs');chats.a.state=buildState([{id:'1',raw:'选曲: 夜曲｜周杰伦｜雨还没停',at:1},{id:'2',raw:'选曲: 夜曲｜周杰伦｜雨停了，仍想听这一首',at:2}]);ui.render()});
+assert.equal(await p.locator('.sb-mpick').count(),1);assert.match(await p.locator('.sb-mpick').innerText(),/再次选中[\s\S]*雨停了/);
+assert.equal(await p.locator('.sb-queue .sb-mrow2').count(),1);
+await p.locator('.sb-mpick-delete').click();assert.equal(await p.locator('.sb-mpick').count(),0);
 // The same song in a different chat stays available.
 await p.evaluate(async()=>{const {buildState}=await import('/src/core.mjs');chats.b.state=buildState([{id:'b',raw:'选曲: 夜曲｜周杰伦｜另一段剧情',at:2}]);chat='b';ui.render()});assert.equal(await p.locator('.sb-mpick').count(),1);
 await p.locator('.sb-mpick-delete').click();assert.equal(await p.locator('.sb-mpick').count(),0);assert(await p.evaluate(()=>chats.a.meta.musicPickHidden&&chats.b.meta.musicPickHidden));

@@ -173,7 +173,7 @@ export function buildState(msgs, {history=true}={}) {
             const key = pickKey(title, artist);
             if (title && key) {
                 const old = st.picks.find(x => x.key === key);
-                if (old) Object.assign(old, { why: why || old.why, msg: id, at });
+                if (old) Object.assign(old, { why: why || old.why, msg: id, at, selections: (old.selections || 1) + 1 });
                 else st.picks.push({ key, title, artist: artist || '', why: why || '', msg: id, at });
                 st.pick = st.picks.find(x => x.key === key);
             }
