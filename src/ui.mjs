@@ -1,7 +1,7 @@
 import {createCocktailHistory} from './cocktail-history.mjs';
 import {glassControlsHtml,bindGlassControls} from './glass.mjs';
 import { createCocktailPanel } from './cocktail-panel.mjs';
-import { cocktailProtocol, cocktailFromState, parseCocktail } from './cocktail-state.mjs';
+import { cocktailProtocol, cocktailFromState, parseCocktail, fallbackDrinkName } from './cocktail-state.mjs';
 import { bindDrawerSize, applyDrawerSize } from './drawer-size.mjs';
 import { installTypography } from './typography.mjs';
 import { updateLyrics, invalidateLyricsLayout } from './music-lyrics.mjs';
@@ -343,7 +343,7 @@ export function createUI(host) {
  <div class="sb-home-words"><div class="sb-name">${esc(him.name)}</div>
  ${him.handle ? `<div class="sb-handle">${esc(him.handle)}</div>` : ''}
  ${him.sign || n.sign ? `<div class="sb-sign">${esc(him.sign || n.sign)}</div>` : ''}</div></div>
- ${original?`<div class="sb-wine-bridge"><span>ON THE HOUSE</span><i></i><b>${esc(host.cocktailState?.().drink?.name||'为此刻留一杯')}</b></div>`:`<div class="sb-meta">${[n.time,n.weather].filter(Boolean).map(x=>`<span>${esc(x)}</span>`).join('')||'还没有状态 · 等TA下一次回复'}</div>`}
+ ${original?`<div class="sb-wine-bridge"><span>ON THE HOUSE</span><i></i><b>${esc(host.cocktailState?.().drink?.name||fallbackDrinkName(host.cocktailState?.().drink))}</b></div>`:`<div class="sb-meta">${[n.time,n.weather].filter(Boolean).map(x=>`<span>${esc(x)}</span>`).join('')||'还没有状态 · 等TA下一次回复'}</div>`}
  ${body}</div>
  ${tabsNav}
 </div>`;

@@ -5,9 +5,28 @@ const text = value => typeof value === 'string' ? value.trim().slice(0,1200) : n
 const list = value => Array.isArray(value) ? value.filter(v=>typeof v==='string').slice(0,24).map(text).filter(Boolean) : [];
 const date = value => { if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(value))return null;const d=new Date(value+'T12:00:00Z');return Number.isFinite(+d)&&d.toISOString().slice(0,10)===value?value:null; };
 // Require a recognisable drink family rather than a field placeholder or prose title.
+const FAMILY=/(?:马[天丁]尼|曼哈顿|菲[士兹]|酸酒|莫吉托|莫希托|柯林斯|金汤[力尼]|古典|内格罗尼|尼格罗尼|代基里|贝里尼|桑格利亚|司令|朱莉普|茱莉普|特调|特饮|玛格丽[特塔]|血腥玛丽|冰茶|龙舌兰日出|红粉佳人|蓝色夏威夷|自由古巴|螺丝刀|白俄罗斯|黑俄罗斯|大都会|边车|教父|教母|高球|嗨棒|气泡酒|气泡|汽酒|斯[普波]瑞兹|骡子|霸克|潘趣|宾治|酷乐|托迪|热饮|蛋酒|奶酒|冰沙|弗拉佩|鸡尾酒|长饮|短饮|热红酒|香槟|起泡酒|烧酒|梅酒|清酒|啤酒|调酒|拿铁|咖啡|特制|帕洛玛|帕罗玛|白兰地|威士忌|朗姆|伏特加|雪莉|苦艾|一杯)$/;
 export function drinkName(value) {
- const name=text(value);if(!name||name.length>24||/[A-Za-z\n\r{}<>]/.test(name))return null;
- return /(?:马[天丁]尼|曼哈顿|菲[士兹]|酸酒|莫吉托|莫希托|柯林斯|金汤[力尼]|古典|内格罗尼|尼格罗尼|代基里|贝里尼|桑格利亚|司令|朱莉普|特调|玛格丽[特塔]|血腥玛丽|冰茶|龙舌兰日出|红粉佳人|蓝色夏威夷|自由古巴|螺丝刀|白俄罗斯|黑俄罗斯|大都会|边车|教父|教母|薄荷茱莉普)$/.test(name)?name:null;
+ const name=text(value);if(!name||name.length<2||name.length>24||/[A-Za-z\n\r{}<>]/.test(name))return null;
+ if(/^(?:中文)?酒名$|^酒品名?$|^饮品名?$|尚待|未命名/.test(name))return null;
+ return FAMILY.test(name)?name:null;
+}
+// Always produce a drinkable name from the recipe so the glass is never left unnamed.
+const FLAVORS=[['水蜜桃','蜜桃'],['蜜桃','蜜桃'],['桃','蜜桃'],['蔓越莓','莓果'],['草莓','草莓'],['覆盆子','莓果'],['黑莓','莓果'],['蓝莓','蓝莓'],['莓','莓果'],['樱桃','樱桃'],['青梅','青梅'],['梅','青梅'],['荔枝','荔枝'],['芒果','芒果'],['菠萝','菠萝'],['凤梨','菠萝'],['百香果','百香果'],['西柚','西柚'],['葡萄柚','西柚'],['血橙','血橙'],['橙','香橙'],['青柠','青柠'],['柠檬','柠檬'],['薄荷','薄荷'],['桂花','桂花'],['玫瑰','玫瑰'],['接骨木','接骨木'],['姜','姜味'],['咖啡','咖啡'],['可可','可可'],['巧克力','可可'],['椰','椰香'],['蜂蜜','蜂蜜'],['抹茶','抹茶'],['乌龙','乌龙'],['茶','茶香'],['奶油','奶油'],['肉桂','肉桂'],['苹果','苹果'],['葡萄','葡萄'],['西瓜','西瓜'],['烟熏','烟熏']];
+const BASES=[['朗姆','朗姆'],['金酒','金酒'],['杜松','金酒'],['伏特加','伏特加'],['龙舌兰','龙舌兰'],['威士忌','威士忌'],['波本','波本'],['白兰地','白兰地'],['干邑','干邑'],['清酒','清酒'],['烧酒','烧酒'],['梅酒','梅酒'],['香槟','香槟'],['起泡','起泡'],['红酒','红酒'],['葡萄酒','葡萄酒'],['啤酒','啤酒'],['利口酒','利口']];
+export function fallbackDrinkName(drink={}) {
+ const base=String(drink?.base||''),mixers=(Array.isArray(drink?.mixers)?drink.mixers:[]).join('、'),all=base+'、'+mixers;
+ const flavor=FLAVORS.find(([k])=>mixers.includes(k))?.[1]||FLAVORS.find(([k])=>base.includes(k))?.[1]||'';
+ const spirit=BASES.find(([k])=>base.includes(k))?.[1]||'';
+ const fizzy=/苏打|汤力|姜汁汽水|气泡水|可乐|雪碧/.test(all);
+ let family='特调';
+ if(drink?.cupType==='highball'&&fizzy)family='高球';
+ else if(drink?.cupType==='flute'||/香槟|起泡/.test(base))family='气泡特调';
+ else if(spirit==='金酒'&&/汤力/.test(all))family='金汤力';
+ else if(/柠檬汁|青柠汁/.test(mixers)&&/蛋白|糖浆/.test(mixers))family='酸酒';
+ const head=(flavor&&spirit&&flavor!==spirit?flavor+spirit:flavor||spirit)||'吧台';
+ const name=(head+family).slice(0,12);
+ return drinkName(name)||'吧台招牌特调';
 }
 export function emptyCocktail(mode='default') { return {version:1,mode,scene:{},emotion:{},gestures:{belongings:[],reminders:[]},murmur:{thoughts:[]},drink:{},calendar:{date:null,events:[]},modules:[]}; }
 export function parseCocktail(value,previous) {
@@ -25,7 +44,7 @@ export function parseCocktail(value,previous) {
   }
   if(plain(value.murmur)&&Object.hasOwn(value.murmur,'thoughts'))result.murmur.thoughts=list(value.murmur.thoughts).slice(0,6);
   if(plain(value.drink)){
-   const d=value.drink;if(Object.hasOwn(d,'name')){const name=drinkName(d.name);if(name)result.drink.name=name;}for(const key of ['base','introduction'])if(Object.hasOwn(d,key))result.drink[key]=text(d[key]);
+   const d=value.drink,named=Object.hasOwn(d,'name')?drinkName(d.name):null;if(named)result.drink.name=named;for(const key of ['base','introduction'])if(Object.hasOwn(d,key))result.drink[key]=text(d[key]);
    if(CUP_TYPES.includes(d.cupType))result.drink.cupType=d.cupType;
    if(Array.isArray(d.colors)&&d.colors.length===2&&d.colors.every(c=>/^#[0-9a-f]{6}$/i.test(c)))result.drink.colors=d.colors;
    if(Array.isArray(d.mixers))result.drink.mixers=list(d.mixers);
@@ -33,6 +52,8 @@ export function parseCocktail(value,previous) {
    // AI recipe ABV is always an estimate, not a measured fact.
    result.drink.abvEstimated=true;
    if(plain(d.tastes)){result.drink.tastes??={};for(const key of ['first','middle','finish'])if(Object.hasOwn(d.tastes,key))result.drink.tastes[key]=text(d.tastes[key]);}
+   // A rejected or missing name never leaves the glass blank: rename from this round's recipe when it changed.
+   if(!named&&(!result.drink.name||Object.hasOwn(d,'base')||Object.hasOwn(d,'mixers')))result.drink.name=fallbackDrinkName(result.drink);
   }
   if(plain(value.calendar)){
    if(Object.hasOwn(value.calendar,'date'))result.calendar.date=date(value.calendar.date);
@@ -81,7 +102,7 @@ const FORMAT='在原本的 <!--SB … SB--> 状态段中，额外写一行「酒
 export function cocktailProtocol(mode='default',snapshot=null,{replan=false,replanRevision=null,recentNames=[]}={}) {
  const schema=mode==='adaptive'?`mode="adaptive"。${replan?'这是重新规划：旧模块只是参考，不是必须沿用的模板；先从角色自带状态栏重建分组。':'已有模块时沿用稳定 id、标题和分组；首次则从角色自带状态栏规划。'} 优先阅读提供的状态栏资料：板块与字段结构先参考用户粘贴的版本，再参考世界书中的状态栏规则、原卡示例/开场白与正则展示模板；当前数值以最近真实剧情和实际状态栏为准。粘贴模板的示例数值、示例人物与示例时间不自动当成当前事实。按这些依据，列全原卡正在使用的状态字段，保留含义、数值单位、对象、隐藏/公开权限及特殊项目，再按内容归类进气泡和子分类。标题可以用酒吧主题，字段名要看得懂，不能只换好听的名字丢掉原字段。只有原卡没有的且有剧情依据的项目才补充；不要直接照搬默认四类凑模板。每组用酒吧主题短名，但保持原含义；不默认套用经营金钱字段。modules=[{id:"稳定英文ID",title:"酒吧主题名称",garnish:"mint/strawberry/ice/lemon/cherry/orange/rosemary/pick",sections:[{title:"子分类",items:[{label:"名称",value:"文字值"}]}]}]。不识别或执行未知脚本，不宣称接管外部变量更新，不删除原状态栏。`:
  `mode="default"。直接使用吧台自己的结构，不分析角色卡状态栏结构：scene={storyDate,storyTime,weather,location,action}；emotion={visibleMood,innerMood,changes,want,bottomWords:["杯底的话","背面"]}；gestures={clothing,gesture,belongings:["物件"],reminders:[{id:"稳定ID",text:"备忘/约定",date:"YYYY-MM-DD或null",done:false}]}；murmur={thoughts:["1至3条碎碎念"]}。`;
- return `【酒杯状态面板】${FORMAT}\n${schema}${Number.isSafeInteger(replanRevision)?`\n本次规划请求版本为 ${replanRevision}，返回的酒杯 JSON 必须带 layoutRevision:${replanRevision}；不要沿用旧版本号。`: ''}\n两种模式都包含 drink={name:"中文酒名",cupType:"martini/coupe/flute/wine/highball/rocks之一",colors:["#六位色","#六位色"],base:"基酒",mixers:["辅料"],abv:估算酒精度数字,tastes:{first:"前味",middle:"中味",finish:"后味"},introduction:"结合场景的简短配方与口味介绍"}；calendar={date:"剧情的YYYY-MM-DD或null",events:[{date:"YYYY-MM-DD",name:"简短事件名",kind:"已发生/有约定/固定日期",text:"当天详情",important:true}]}。酒名必须是2至12字左右的中文酒品名，先按基酒、辅料、酸甜苦与调制方式选定合适的经典酒型，再加一两个风味修饰，例如“青梅金汤力”“烟橙古典”“莓果酸酒”“樱桃曼哈顿”。不要照抄示例酒名。为当前场景重新调制，并在配方有变化时使用与之匹配的新酒名；不要只是换杯型却沿用旧名。配方、酒精度和杯型必须与这个酒型相符；自创配方可用“某风味特调”。禁止照抄“中文酒名”“酒名”等字段说明，禁止用角色名、章节名、心情句子或散文标题充当酒名。大日历仅标重要事件，详情保留普通事件；进入下个剧情月时更新 date。保留仍有效的已知事件，不虚构未来剧情，不用系统日期代替剧情日期。\n每轮给出当前模式的完整快照；无依据的字段用null或空数组。约定与倒计时放备忘，完成后不再放有效清单；不新增偶然事件、独立纸条或长期习惯。心声不能作为玩家已知事实泄露给正文。不要生成 usage/token 数，程序会写。${recentNames.length?'\n近期已用酒名（仅作避重参考，不是候选名单）：'+JSON.stringify([...new Set(recentNames)].slice(-10))+'。本次优先选择尚未使用、又符合当前配方的酒名；不为凑不同名字而编造剧情。':''}${snapshot?'\n上一份有效记录（仅作连续性参考，按本轮剧情更新）：'+JSON.stringify(snapshot):''}`;
+ return `【酒杯状态面板】${FORMAT}\n${schema}${Number.isSafeInteger(replanRevision)?`\n本次规划请求版本为 ${replanRevision}，返回的酒杯 JSON 必须带 layoutRevision:${replanRevision}；不要沿用旧版本号。`: ''}\n两种模式都包含 drink={name:"中文酒名",cupType:"martini/coupe/flute/wine/highball/rocks之一",colors:["#六位色","#六位色"],base:"基酒",mixers:["辅料"],abv:估算酒精度数字,tastes:{first:"前味",middle:"中味",finish:"后味"},introduction:"结合场景的简短配方与口味介绍"}；calendar={date:"剧情的YYYY-MM-DD或null",events:[{date:"YYYY-MM-DD",name:"简短事件名",kind:"已发生/有约定/固定日期",text:"当天详情",important:true}]}。酒名必须是2至12字左右的中文酒品名，先按基酒、辅料、酸甜苦与调制方式选定合适的经典酒型，再加一两个风味修饰，例如“青梅金汤力”“烟橙古典”“莓果酸酒”“樱桃曼哈顿”“蜜桃朗姆高球”。酒名必须以酒型结尾（如高球、气泡、特调、酸酒、马天尼等），否则程序会按配方自动改名。不要照抄示例酒名。为当前场景重新调制，并在配方有变化时使用与之匹配的新酒名；不要只是换杯型却沿用旧名。配方、酒精度和杯型必须与这个酒型相符；自创配方可用“某风味特调”。禁止照抄“中文酒名”“酒名”等字段说明，禁止用角色名、章节名、心情句子或散文标题充当酒名。大日历仅标重要事件，详情保留普通事件；进入下个剧情月时更新 date。保留仍有效的已知事件，不虚构未来剧情，不用系统日期代替剧情日期。\n每轮给出当前模式的完整快照；无依据的字段用null或空数组。约定与倒计时放备忘，完成后不再放有效清单；不新增偶然事件、独立纸条或长期习惯。心声不能作为玩家已知事实泄露给正文。不要生成 usage/token 数，程序会写。${recentNames.length?'\n近期已用酒名（仅作避重参考，不是候选名单）：'+JSON.stringify([...new Set(recentNames)].slice(-10))+'。本次优先选择尚未使用、又符合当前配方的酒名；不为凑不同名字而编造剧情。':''}${snapshot?'\n上一份有效记录（仅作连续性参考，按本轮剧情更新）：'+JSON.stringify(snapshot):''}`;
 }
 export function outputUsage(message) {
  const selected=message?.swipe_info?.[message?.swipe_id??0];
