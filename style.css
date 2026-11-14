@@ -923,7 +923,7 @@ html.sb-bar #rm_print_characters_block .entity_block .avatar { border: 0 !import
 html.sb-bar #rm_print_characters_block .character_select_container { flex: 1; min-width: 0; width: auto; }
 html.sb-bar #rm_print_characters_block .entity_block .avatar img { width: 54px; height: 54px; border-radius: 6px; object-fit: cover; box-shadow: none; border: 0; }
 html.sb-bar #rm_print_characters_block .ch_name { color: var(--sb-bar-ink); font-size: calc(16px * var(--fontScale,1)); font-weight: 500; }
-html.sb-bar #rm_print_characters_block .is_fav .ch_name::after { content: '★ 常点'; font-size: calc(11.5px * var(--fontScale,1)); font-weight: 400; border: 1px solid var(--sb-bar-ink); padding: 0 5px; margin-left: 8px; vertical-align: 2px; }
+html.sb-bar #rm_print_characters_block .is_fav .ch_name::after { content: '★ 常点'; display: inline-block; white-space: nowrap; overflow-wrap: normal; word-break: normal; line-height: 1.5; font-size: calc(11.5px * var(--fontScale,1)); font-weight: 400; border: 1px solid var(--sb-bar-ink); padding: 0 5px; margin-left: 8px; vertical-align: 2px; }
 html.sb-bar #rm_print_characters_block .ch_fav_icon { display: none !important; }
 html.sb-bar #rm_print_characters_block .ch_additional_info { font: calc(12px * var(--fontScale,1)) var(--sb-f-italic); color: var(--sb-bar-sub); }
 html.sb-bar #rm_print_characters_block .ch_description { font-style: italic; color: var(--sb-bar-sub); font-size: calc(13.5px * var(--fontScale,1)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
