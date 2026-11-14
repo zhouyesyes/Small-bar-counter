@@ -20,7 +20,7 @@ export function extractBlock(mes) {
 // 认得的名字才算新的一项；别的行（日记、动态写了好几段，正文里有「他说：」这种）接在上一项后面
 export const KEYS = new Set(['时间', '天气', '在哪', '地点', '穿着', '想要', '心声', '心声背面', '背面', '签名', '音乐', '在听', '备忘', '备忘+', '备忘✓', '完成',
     '动态', '朋友圈', '朋友圈评论', '朋友圈点赞', '评论', '点赞', '回复', '日记', 'X', '推特', '推文', '微博', '热搜', '照片', 'X网名', 'X账号', 'X签名',
-    '微信', '消息', '好友申请', '微信拉黑', '微信解除拉黑', '通过好友申请', '背景', '酒杯']);
+    '微信', '消息', '好友申请', '微信拉黑', '微信解除拉黑', '通过好友申请', '背景', '酒杯', '选曲', '配乐']);
 const LONG = new Set(['日记', '动态', 'X', '推特', '微博', '酒杯']); // 能写好几段的
 export function parseBlock(raw) {
     const out = {};
@@ -55,9 +55,14 @@ const pics = v => (v || '').replace(/^(照片|图片|图)\s*[:：]?/, '').split(
 
 // 把整段聊天（只看他的楼）里的状态段按顺序叠起来，得到现在的样子
 // msgs: [{ id, raw, at }]，id 是这一楼稳定的编号（发出时间 + 第几页回复），at 是这一楼的时间（毫秒，排先后用）
+// 歌名 + 歌手认同一首：去掉括号里的版本说明、空格和标点
+export function pickKey(title, artist) {
+    const n = v => String(v ?? '').toLowerCase().replace(/[(（\[《][^)）\]》]*[)）\]》]/g, '').replace(/[\s·,，/&、'"“”‘’!！?？.。-]/g, '');
+    const t = n(title); return t ? t + '|' + n(artist) : '';
+}
 export function buildState(msgs, {history=true}={}) {
     const st = {
-        cocktails: {}, cocktailLog: [], now: {}, nowLog: [], posts: [], moments: [], diary: [], memo: [], music: null, xposts: [], xfeed: [], weibo: [], hot: [], photos: [], freq: [], blockedMe: false, wechat: [], npcComments: [], replies: [], cover: '',
+        cocktails: {}, cocktailLog: [], now: {}, nowLog: [], posts: [], moments: [], diary: [], memo: [], music: null, picks: [], pick: null, xposts: [], xfeed: [], weibo: [], hot: [], photos: [], freq: [], blockedMe: false, wechat: [], npcComments: [], replies: [], cover: '',
         likes: {}, // 谁点了赞：帖子 id → [名字]（TA按关系写的，界面不自己猜）
     };
     const historyIndex=new Map();
@@ -161,6 +166,18 @@ export function buildState(msgs, {history=true}={}) {
         });
         const mu = one(b, '音乐', '在听');
         if (mu) { const [title, artist, lyric] = split(mu); st.music = { title, artist: artist || '', lyric: lyric || '' }; }
+        // 每轮按正文挑的一首歌：同一首在这个聊天里只记一次（按第一次出现的顺序），理由和楼层换成最近的
+        const pick = one(b, '选曲', '配乐');
+        if (pick) {
+            const [title, artist, why] = split(pick);
+            const key = pickKey(title, artist);
+            if (title && key) {
+                const old = st.picks.find(x => x.key === key);
+                if (old) Object.assign(old, { why: why || old.why, msg: id, at });
+                else st.picks.push({ key, title, artist: artist || '', why: why || '', msg: id, at });
+                st.pick = st.picks.find(x => x.key === key);
+            }
+        }
         many(b, 'X', '推特').forEach((v, i) => st.xposts.push({ id: id + '#x' + i, text: split(v)[0], pics: pics(split(v)[1]), time: n.time || '', at }));
         // X 首页上这个世界里各种人的帖子：「推文: 网名｜@账号｜正文｜照片描述」
         many(b, '推文').forEach((v, i) => {
