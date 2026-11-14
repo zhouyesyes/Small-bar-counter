@@ -537,7 +537,7 @@ function refreshInject() {
         const snapshot=structuredClone(cocktailFromState(state(),mode));
         if(mode==='default')snapshot.gestures.reminders=snapshot.gestures.reminders.filter(r=>!r.done&&!meta().cocktailDone?.[r.id||r.text]);
         const pending=mode==='adaptive'&&!!charCfg().cocktailPlanPending;
-        text+='\n\n'+cocktailProtocol(mode,snapshot,{replan:pending,replanRevision:pending?charCfg().cocktailPlanRevision:null});
+        text+='\n\n'+cocktailProtocol(mode,snapshot,{recentNames:(state().cocktailLog||[]).filter(r=>r.mode===mode).slice(-10).map(r=>r.drink.name),replan:pending,replanRevision:pending?charCfg().cocktailPlanRevision:null});
         if(mode==='adaptive'&&(pending||!snapshot.modules.length)){
             const reference=pastedReference(charCfg().cocktailReference||'');
             if(reference)text+='\n\n'+formatStatusSources(collectStatusSources({pasted:reference}));

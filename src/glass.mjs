@@ -15,7 +15,7 @@ export function applyChatGlass(settings){
  if(typeof document==='undefined')return;
  const html=document.documentElement,value=glassSettings(settings),active=!!settings.barTheme&&settings.barStyle==='default'&&value.enabled;
  html.classList.toggle('sb-glass-chat',active);
- const vars={'--sb-glass-opacity':String((100-value.transparency)/100),'--sb-glass-blur':`${value.blur}px`,'--sb-glass-width':`${value.width}%`,'--sb-glass-radius':value.width===100?'0px':'17px','--sb-glass-edge':value.width===100?'0px':'12px'};
+ const vars={'--sb-glass-opacity':String((100-value.transparency)/100),'--sb-glass-blur':`${value.blur}px`,'--sb-glass-width':`${value.width}%`,'--sb-glass-radius':value.width===100?'0px':'17px','--sb-glass-edge':'0px'};
  for(const [key,v]of Object.entries(vars))if(active){if(html.style.getPropertyValue(key)!==v)html.style.setProperty(key,v);}else if(html.style.getPropertyValue(key))html.style.removeProperty(key);
 }
 export function glassControlsHtml(settings){

@@ -17,3 +17,8 @@ assert.equal(worldAndPaste[0].label.startsWith('用户粘贴'),true);assert.matc
 assert.equal(pastedReference('x'.repeat(PASTED_REFERENCE_LIMIT+1)),null);assert.equal(pastedReference('  参考  '),'参考');
 assert.match(cocktailProtocol('adaptive',null,{replan:true,replanRevision:5}),/layoutRevision:5/);
 console.log('Card status sources, bounded context, drink-name checks, replan protocol and layout revisions passed.');
+
+const naming=cocktailProtocol('default',null,{recentNames:['烟橙古典','烟橙古典','青梅金汤力']});
+assert.match(naming,/近期已用酒名/);assert.match(naming,/优先选择尚未使用/);
+assert.ok(naming.includes(JSON.stringify(['烟橙古典','青梅金汤力'])));
+assert.match(naming,/不要照抄示例酒名/);

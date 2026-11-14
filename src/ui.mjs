@@ -231,6 +231,12 @@ export function createUI(host) {
     function render() {
         if (!root) return;
         const s = host.settings();
+        const oldCover=host.charCfg?.()?.cover;
+        if(oldCover?.mode&&oldCover.mode!=='fixed'&&host.setCharCfg){
+            const fixed=profileCover('cover',host.charCfg(),host.state().cover)||oldCover.fixed||'';
+            host.setCharCfg(c=>{c.cover={...(c.cover||{}),mode:'fixed',fixed};});
+        }
+        if(v.tab==='diary'){v.tab='phone';v.view=v.diaryId?'diary-detail':'diary';}
         const docked = !!s.enabled && widePanel.matches && document.documentElement.classList.contains('sb-bar');
         document.documentElement.classList.toggle('sb-panel-docked', docked);
         applyPalette(root, s, theme());
@@ -271,14 +277,17 @@ export function createUI(host) {
     }
 
     // ---------- 头图 ----------
+    function fixedCover() {
+        const cover=host.charCfg().cover||{};
+        if(cover.mode==='fixed')return cover.fixed||'';
+        return profileCover('cover',host.charCfg(),host.state().cover)||cover.fixed||'';
+    }
     function coverStyle() {
-        const source=profileCover('cover',host.charCfg(),host.state().cover);
+        const source=fixedCover();
         return source ? `background-image:url('${host.img(source)}')` : '';
     }
     function coverClass() {
-        if(profileCover('cover',host.charCfg(),host.state().cover))return 'sb-cover-img';
-        const { night, kind } = weatherTone(host.state().now.weather, host.state().now.time);
-        return `sb-w-${kind}${night ? ' sb-w-night' : ''}`;
+        return fixedCover()?'sb-cover-img':'';
     }
 
     // ---------- 抽屉 ----------
@@ -314,7 +323,7 @@ export function createUI(host) {
         if (v.tab === 'posts') body = original ? (v.nowBook ? nowBookHtml() : nowHtml(st)+musicHtml(st)+archive.entryHtml()) : postsHtml(st,him)+musicHtml(st);
         if (v.tab === 'now') body = v.nowBook ? nowBookHtml() : nowHtml(st);
         if (v.tab === 'diary') body = v.diaryId ? diaryOneHtml(st, him) : diaryListHtml(st);
-        const tabsNav = `<nav class="sb-tabs">${TAB_KEYS.filter(k=>!original||k!=='now').map(k => { const i=TAB_KEYS.indexOf(k); return `<button data-act="tab" data-tab="${k}" class="${v.tab === k ? 'on' : ''}">${original && k === 'posts' ? '此刻' : labels[i]}${k === 'phone' && host.unread() ? ` <b class="sb-badge">${host.unread()}</b>` : ''}</button>`; }).join('')}</nav>`;
+        const tabsNav = `<nav class="sb-tabs">${TAB_KEYS.filter(k=>k!=='diary'&&(!original||k!=='now')).map(k => { const i=TAB_KEYS.indexOf(k); return `<button data-act="tab" data-tab="${k}" class="${v.tab === k ? 'on' : ''}">${original && k === 'posts' ? '此刻' : labels[i]}${k === 'phone' && host.unread() ? ` <b class="sb-badge">${host.unread()}</b>` : ''}</button>`; }).join('')}</nav>`;
         // 小手机那一格：手机直接嵌在抽屉里（不另外弹出来）
         if (v.tab === 'phone') return `<div class="sb-shade" data-act="close"></div>
 <div class="sb-drawer sb-phonemode" role="dialog" aria-label="小吧台">
@@ -407,7 +416,7 @@ export function createUI(host) {
         v.busy = kind; render();
         try {
             const mode=host.cocktailMode?.()||'default';
-            let rule = kind==='cocktail'?cocktailProtocol(mode,cocktailFromState(host.state(),mode),{replan,replanRevision:host.charCfg?.().cocktailPlanPending?host.charCfg().cocktailPlanRevision:null})+'\n只写状态段，不写正文。':MANUAL[kind];
+            let rule = kind==='cocktail'?cocktailProtocol(mode,cocktailFromState(host.state(),mode),{recentNames:(host.state().cocktailLog||[]).filter(r=>r.mode===mode).slice(-10).map(r=>r.drink.name),replan,replanRevision:host.charCfg?.().cocktailPlanPending?host.charCfg().cocktailPlanRevision:null})+'\n只写状态段，不写正文。':MANUAL[kind];
             if (['now', 'memo', 'all', 'cocktail'].includes(kind)) rule += '\n' + host.memoNote(redoOf);
             if (['post', 'moments', 'all'].includes(kind)) rule += '\n\n' + RELATION;
             let parts=null;
@@ -611,7 +620,7 @@ export function createUI(host) {
     function phoneHtml(era) {
         const views = {
             home: homeHtml, 'wx-chat': wxChatHtml, 'wx-contacts': wxContactsHtml, 'wx-moments': wxMomentsHtml, 'wx-me': wxMeHtml,
-            x: xHtml, 'x-dm': xDmHtml, weibo: weiboHtml, diary: pDiaryHtml, memo: pMemoHtml, photos: pPhotosHtml, music: pMusicHtml,
+            x: xHtml, 'x-dm': xDmHtml, weibo: weiboHtml, diary: pDiaryHtml, 'diary-detail': pDiaryDetailHtml, memo: pMemoHtml, photos: pPhotosHtml, music: pMusicHtml,
             settings: setHtml, 'set-cover': setCoverHtml, 'set-him': setHimHtml, 'set-me': setMeHtml, 'set-prompt': setPromptHtml, 'set-api': setApiHtml, 'set-reply': setReplyHtml, 'set-when': setWhenHtml, 'set-clean': setCleanHtml,
         };
         return views;
@@ -871,6 +880,11 @@ export function createUI(host) {
         const list = st.diary.filter(d => !hidden[d.id]).reverse();
         return `${head(Wd().diary, genBtn('diary', '写一篇'))}<div class="sb-list">${list.length ? list.map(d => `<button class="sb-dold" data-act="diary-open" data-id="${esc(d.id)}"><span>${esc(d.time)}</span><span>${esc(d.title || d.text.slice(0, 12))}</span></button>`).join('') : '<div class="sb-empty">还没有</div>'}</div>`;
     }
+    function pDiaryDetailHtml() {
+        const d=host.state().diary.find(d=>d.id===v.diaryId&&!host.meta().hidden?.[d.id]);
+        if(!d){v.view='diary';v.diaryId='';return pDiaryHtml();}
+        return `${head(Wd().diary)}<div class="sb-list">${diaryBody(d,true)}</div>`;
+    }
     function pMemoHtml() {
         const st = host.state();
         return `${head(Wd().memo, genBtn('memo', '整理'))}<div class="sb-list">${st.memo.length ? st.memo.map(m => `<div class="sb-memo${m.done ? ' done' : ''}"><span class="sb-ck">${m.done ? '✓' : ''}</span>${esc(m.text)}</div>`).join('') : '<div class="sb-empty">TA还没记要做的事</div>'}</div>`;
@@ -954,7 +968,7 @@ export function createUI(host) {
     }
     function setHtml() {
         const s = host.settings(), c = host.charCfg();
-        const modeName = { weather: '跟天气', fixed: '固定一张', pick: 'TA来挑' }[c.cover?.mode || 'weather'];
+        const modeName = '固定一张';
         const eraName = { auto: '自动 · ' + ({ modern: '现代', minguo: '民国', ancient: '古风' }[host.guessedEra()]), modern: '现代', minguo: '民国', ancient: '古风' }[c.era || 'auto'];
         const apiName = s.api === 'own' ? (s.ownApi?.model || '自己填的') : '跟正文';
         return `${head(Wd().set)}<div class="sb-slist">
@@ -979,17 +993,8 @@ export function createUI(host) {
 </div>`;
     }
     function setCoverHtml() {
-        const c = host.charCfg().cover || { mode: 'weather' };
-        const mode = c.mode || 'weather';
-        const hint = { weather: '不用传图：按剧情里的天气和时间，换黑白灰的背景', fixed: '传一张，一直用它', pick: '每张写个标签，TA按剧情挑一张；挑不到就留着上一张' }[mode];
-        const imgs = c.images || [];
-        return `${head(esc(host.him().name) + '的背景')}<div class="sb-list">
- <div class="sb-seg">${[['weather', '跟天气'], ['fixed', '固定一张'], ['pick', 'TA来挑']].map(([k, n]) => `<button data-act="cover-mode" data-mode="${k}" class="${mode === k ? 'on' : ''}">${n}</button>`).join('')}</div>
- <div class="sb-hint">${hint}</div>
- ${mode === 'fixed' ? `<div class="sb-thumbs"><label class="sb-th ${c.fixed ? '' : 'add'}" style="${c.fixed ? `background-image:url('${host.img(c.fixed)}')` : ''}">${c.fixed ? '' : '+'}<input type="file" accept="image/*" data-upload="fixed" hidden></label></div>${c.fixed ? '<button class="sb-link" data-act="cover-clear">去掉这张</button>' : ''}` : ''}
- ${mode === 'pick' ? `<div class="sb-thumbs">${imgs.map((x, i) => `<div><div class="sb-th${host.state().cover && x.tag && (host.state().cover.includes(x.tag) || x.tag.includes(host.state().cover)) ? ' on' : ''}" style="background-image:url('${host.img(x.src)}')"><button class="sb-thx" data-act="cover-del" data-i="${i}" aria-label="删掉">×</button></div><input class="sb-tag" data-tag="${i}" value="${esc(x.tag)}" placeholder="写个标签"></div>`).join('')}
-  <div><label class="sb-th add">+<input type="file" accept="image/*" data-upload="pick" hidden></label><div class="sb-tag dim">加一张</div></div></div>` : ''}
-</div>`;
+        const source=fixedCover();
+        return `${head(esc(host.him().name)+'的头图')}<div class="sb-list"><div class="sb-hint">选择一张图片作为头图，上传后可以随时替换。</div><div class="sb-thumbs"><label class="sb-th ${source?'':'add'}" style="${source?`background-image:url('${host.img(source)}')`:''}">${source?'':'+'}<input type="file" accept="image/*" data-upload="fixed" hidden></label></div>${source?'<button class="sb-link" data-act="cover-clear">去掉这张</button>':''}</div>`;
     }
     const field = (label, key, val, ph = '') => `<label class="sb-fld"><span>${label}</span><input data-him="${key}" value="${esc(val || '')}" placeholder="${esc(ph)}"></label>`;
     // 资料汇总：按平台分组，点哪格改哪格（和各个页面上点了改是同一份）
@@ -1249,7 +1254,7 @@ export function createUI(host) {
             case 'bookflip': v.bookFlip ??= {}; v.bookFlip[b.dataset.id] = !v.bookFlip[b.dataset.id]; break;
             case 'bookmore': v.bookN = (v.bookN || 20) + 20; break;
             case 'diary': v.diaryId = b.dataset.id; break;
-            case 'diary-open': v.phone = false; v.drawer = true; v.tab = 'diary'; v.diaryId = b.dataset.id; break;
+            case 'diary-open': v.view = 'diary-detail'; v.diaryId = b.dataset.id; break;
             case 'like': meta.likes ??= {}; meta.likes[b.dataset.post] = !meta.likes[b.dataset.post]; v.pmenu = ''; host.saveMeta(); break;
             case 'ask-reply': await askReply(b.dataset.post); return;
             case 'cmenu': v.cmenu = v.cmenu === b.dataset.id ? '' : b.dataset.id; break;
@@ -1319,7 +1324,7 @@ export function createUI(host) {
                 if (v.view === 'wx-moments') v.momentsN = 10;
                 break;
             case 'phone-back': {
-                const back = { 'set-when': 'settings', 'wx-chat': 'wx-contacts', 'x-dm': 'x', 'set-reply': 'settings', 'set-cover': 'settings', 'set-him': 'settings', 'set-me': 'settings', 'set-prompt': 'settings', 'set-api': 'settings', 'set-clean': 'settings' }[v.view];
+                const back = { 'diary-detail': 'diary', 'set-when': 'settings', 'wx-chat': 'wx-contacts', 'x-dm': 'x', 'set-reply': 'settings', 'set-cover': 'settings', 'set-him': 'settings', 'set-me': 'settings', 'set-prompt': 'settings', 'set-api': 'settings', 'set-clean': 'settings' }[v.view];
                 v.view = back || 'home'; v.plus = false; v.menuFor = ''; v.edit = null; break;
             }
             case 'phone-close':
@@ -1370,7 +1375,7 @@ export function createUI(host) {
             case 'minput': { const m = host.wechat().find(x => x.id === b.dataset.id); v.menuFor = ''; if (m) toInput(msgLine(m)); break; }
             case 'pinput': { const p = allPosts().find(x => x.id === b.dataset.post); v.pmenu = ''; if (p) toInput(postLine(p)); break; }
             case 'cover-mode': host.setCharCfg(c => { c.cover = { ...(c.cover || {}), mode: b.dataset.mode }; }); break;
-            case 'cover-clear': host.dropImage(host.charCfg().cover?.fixed); host.setCharCfg(c => { c.cover.fixed = ''; }); break;
+            case 'cover-clear': host.dropImage(host.charCfg().cover?.fixed); host.setCharCfg(c => { c.cover = {...(c.cover||{}),mode:'fixed',fixed:''}; }); break;
             case 'cover-del': host.dropImage(host.charCfg().cover?.images?.[Number(b.dataset.i)]?.src); host.setCharCfg(c => { c.cover.images.splice(Number(b.dataset.i), 1); }); break;
             case 'him-xavatar-clear': host.dropImage(host.charCfg().him?.xavatar); host.setCharCfg(c => { c.him = { ...(c.him || {}), xavatar: '' }; }); break;
             case 'cover-x-clear': host.dropImage(host.charCfg().coverX); host.setCharCfg(c => { c.coverX = ''; }); break;

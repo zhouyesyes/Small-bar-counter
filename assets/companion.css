@@ -1,6 +1,7 @@
+@import url('./fonts/calendar-hand/font.css');
 /* Default bar surfaces. Native chat messages and folio layout are not replaced. */
 html.sb-glass-chat #sheld,html.sb-glass-chat #form_sheld{background:transparent!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
-html.sb-glass-chat #sheld #chat:is(.sb-reading,.sb-lounge){box-sizing:border-box;width:min(100%,max(240px,var(--sb-glass-width)))!important;max-width:none!important;min-height:0;margin-inline:auto!important;margin-top:var(--sb-glass-edge);background:color-mix(in srgb,var(--sb-bar-bg) calc(var(--sb-glass-opacity)*100%),transparent)!important;border:1px solid color-mix(in srgb,var(--sb-bar-accent) 20%,transparent);border-bottom:0;border-radius:var(--sb-glass-radius) var(--sb-glass-radius) 0 0;box-shadow:0 8px 28px #14202c18;backdrop-filter:blur(var(--sb-glass-blur)) saturate(.9);-webkit-backdrop-filter:blur(var(--sb-glass-blur)) saturate(.9)}
+html.sb-glass-chat #sheld #chat:is(.sb-reading,.sb-lounge){box-sizing:border-box;width:min(100%,max(240px,var(--sb-glass-width)))!important;max-width:none!important;min-height:0;margin-inline:auto!important;margin-top:0!important;background:color-mix(in srgb,var(--sb-bar-bg) calc(var(--sb-glass-opacity)*100%),transparent)!important;border:1px solid color-mix(in srgb,var(--sb-bar-accent) 20%,transparent);border-bottom:0;border-radius:var(--sb-glass-radius) var(--sb-glass-radius) 0 0;box-shadow:0 8px 28px #14202c18;backdrop-filter:blur(var(--sb-glass-blur)) saturate(.9);-webkit-backdrop-filter:blur(var(--sb-glass-blur)) saturate(.9)}
 html.sb-glass-chat #sheld #send_form{position:relative!important;left:auto!important;right:auto!important;bottom:auto!important;transform:none!important;flex-shrink:0;box-sizing:border-box;width:min(100%,max(240px,var(--sb-glass-width)))!important;max-width:none!important;margin-inline:auto!important;background:color-mix(in srgb,var(--sb-bar-bg) calc(var(--sb-glass-opacity)*100%),transparent)!important;border:1px solid color-mix(in srgb,var(--sb-bar-accent) 20%,transparent);border-top:1px solid var(--sb-bar-line);border-radius:0 0 var(--sb-glass-radius) var(--sb-glass-radius);box-shadow:0 12px 28px #14202c12;backdrop-filter:blur(var(--sb-glass-blur)) saturate(.9);-webkit-backdrop-filter:blur(var(--sb-glass-blur)) saturate(.9)}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){html.sb-glass-chat #sheld #chat,html.sb-glass-chat #sheld #send_form{background:var(--sb-bar-bg)!important}}
 #sb-root.sb-default-bar .sb-drawer{border-right:1px solid color-mix(in srgb,var(--sb-accent) 28%,transparent);box-shadow:10px 0 25px #14202c1b,inset -3px 0 0 color-mix(in srgb,var(--sb-accent) 5%,transparent)}
@@ -28,18 +29,18 @@ html.sb-glass-chat #sheld #send_form{position:relative!important;left:auto!impor
 #sb-root.sb-default-bar .sb-player-main{position:relative;padding:0 16px 9px;border:1px solid color-mix(in srgb,var(--sb-accent) 25%,transparent);border-radius:5px;background:var(--sb-card);box-shadow:0 4px 14px #40302609;overflow:hidden}
 #sb-root.sb-default-bar .sb-player-main>.sb-cap{margin:0 -16px;padding:13px 16px 11px;border-bottom:1px solid color-mix(in srgb,var(--sb-accent) 25%,transparent);background:transparent;font-size:12px!important;letter-spacing:.12em;color:var(--sb-fg)}
 #sb-root.sb-default-bar .sb-track-head{position:relative;gap:16px;margin:18px 0 16px}
-#sb-root.sb-default-bar .sb-track-head .sb-bigcover{position:relative;width:108px!important;height:108px!important;flex:0 0 108px;border:0!important;background:repeating-radial-gradient(circle at center,#262b29 0 1px,#393c37 1px 2px,#262b29 2px 3px);box-shadow:1px 3px 5px #24211c28,inset 0 0 0 1px #fff2;overflow:hidden;animation:sb-record-spin 12s linear infinite paused}
+#sb-root.sb-default-bar .sb-track-head .sb-bigcover{position:relative;width:92px!important;height:92px!important;flex:0 0 92px;border:0!important;background:repeating-radial-gradient(circle at center,#262b29 0 1px,#393c37 1px 2px,#262b29 2px 3px);box-shadow:1px 3px 5px #24211c28,inset 0 0 0 1px #fff2;overflow:hidden;animation:sb-record-spin 12s linear infinite paused}
 #sb-root.sb-default-bar .is-record-active .sb-bigcover{animation-play-state:running}
 #sb-root.sb-default-bar .sb-bigcover:before{content:'';position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 35deg,transparent,#ffffff28 18%,transparent 35%,transparent 55%,#ffffff15 72%,transparent);pointer-events:none}
 #sb-root.sb-default-bar .sb-bigcover:not(:has(img)):after{content:'s b';position:absolute;inset:22px;border-radius:50%;display:grid;place-items:center;background:var(--sb-bg);color:var(--sb-accent);font:italic 20px Georgia,serif}
-#sb-root.sb-default-bar .sb-track-head .sb-bigcover img{position:absolute;inset:17px;width:74px;height:74px;border-radius:50%;border:1px solid color-mix(in srgb,var(--sb-accent) 32%,transparent);object-fit:cover}
+#sb-root.sb-default-bar .sb-track-head .sb-bigcover img{position:absolute;inset:14px;width:64px;height:64px;border-radius:50%;border:1px solid color-mix(in srgb,var(--sb-accent) 32%,transparent);object-fit:cover}
 #sb-root.sb-default-bar .sb-track-meta{min-width:0}
 #sb-root.sb-default-bar .sb-track-meta .sb-mt{font-size:17px!important;letter-spacing:.04em;line-height:1.5;overflow-wrap:anywhere}
 #sb-root.sb-default-bar .sb-track-meta .sb-ma{font-size:10px!important;line-height:1.8;margin-top:5px}
 #sb-root .sb-record-note{display:flex;align-items:center;gap:10px;margin:10px 0 13px;color:var(--sb-dim)}
 #sb-root .sb-record-note span{font:7px Georgia,serif;letter-spacing:.16em}
 #sb-root .sb-record-note i{flex:1;height:1px;background:color-mix(in srgb,var(--sb-accent) 25%,transparent)}
-#sb-root .sb-tone-arm{position:absolute;left:88px;top:-3px;width:33px;height:83px;z-index:2;pointer-events:none;transform-origin:21px 10px;transform:rotate(0);color:color-mix(in srgb,var(--sb-accent) 65%,var(--sb-fg));transition:transform .38s cubic-bezier(.2,.7,.3,1)}
+#sb-root .sb-tone-arm{position:absolute;left:72px;top:-3px;width:33px;height:83px;z-index:2;pointer-events:none;transform-origin:21px 10px;transform:rotate(0);color:color-mix(in srgb,var(--sb-accent) 65%,var(--sb-fg));transition:transform .38s cubic-bezier(.2,.7,.3,1)}
 #sb-root .is-playing .sb-tone-arm{transform:rotate(24deg)}
 @keyframes sb-record-spin{to{transform:rotate(360deg)}}
 /* All appearance entry points use the same saved controls. */
@@ -51,7 +52,7 @@ html.sb-glass-chat #sheld #send_form{position:relative!important;left:auto!impor
 :is(#sb-root,#sb-splash-settings,html.sb-bar) .sb-glass-controls input[type=range]{display:block;width:100%!important;max-width:100%!important;min-width:0;height:26px;margin:7px 0 0;padding:0;border:0;accent-color:var(--sb-accent,var(--sb-bar-accent));background:transparent;cursor:ew-resize;touch-action:pan-y}
 :where(#sb-root,#sb-splash-settings,html.sb-bar) .sb-glass-controls .sb-glass-switch{display:flex;align-items:center;justify-content:space-between;margin:4px 0 10px;font-size:12px}
 :where(#sb-root,#sb-splash-settings,html.sb-bar) .sb-glass-controls p{font-size:10px;line-height:1.8;color:inherit;opacity:.7;margin:9px 0 0}
-@media(max-width:355px){#sb-root.sb-default-bar .sb-track-head{gap:12px}#sb-root.sb-default-bar .sb-track-head .sb-bigcover{width:94px!important;height:94px!important;flex-basis:94px}#sb-root.sb-default-bar .sb-track-head .sb-bigcover img{inset:14px;width:66px;height:66px}#sb-root .sb-tone-arm{left:73px}}
+@media(max-width:355px){#sb-root.sb-default-bar .sb-track-head{gap:12px}#sb-root.sb-default-bar .sb-track-head .sb-bigcover{width:84px!important;height:84px!important;flex-basis:84px}#sb-root.sb-default-bar .sb-track-head .sb-bigcover img{inset:13px;width:58px;height:58px}#sb-root .sb-tone-arm{left:64px}}
 @media(prefers-reduced-motion:reduce){#sb-root.sb-default-bar .sb-bigcover{animation:none!important}#sb-root .sb-tone-arm{transition:none}}
 #sb-root .sb-coaster-entry{padding:4px 21px 25px;color:var(--sb-fg)}
 #sb-root .sb-coaster-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 16px}
@@ -109,3 +110,20 @@ html.sb-glass-chat #sheld #send_form{position:relative!important;left:auto!impor
 #sb-root.sb-default-bar .sb-drawer .sb-body{border-right:0}
 #sb-root.sb-default-bar .sb-drawer-resize:before,#sb-root.sb-default-bar .sb-drawer-resize:after{display:none;content:none}
 #sb-root.sb-default-bar .sb-drawer-resize:focus-visible{outline:2px solid var(--sb-accent);outline-offset:-4px}
+
+/* Fill the available chat height, while retaining the chosen horizontal width. */
+html.sb-glass-chat #sheld{padding-block:0!important}
+html.sb-glass-chat #form_sheld,html.sb-glass-chat #sheld #send_form{margin-block:0!important}
+
+#sb-root .sb-calendar-panel .cal-pencil{display:block;width:100%;height:12px;margin:8px 0 -9px;color:var(--sb-accent);opacity:.55;pointer-events:none}
+#sb-root .sb-calendar-panel .cal-pencil path{fill:none;stroke:currentColor;stroke-width:.8;stroke-linecap:round}
+
+/* Handwriting is limited to calendar annotations; month/date/weekday typography stays intact. */
+#sb-root.sb-default-bar .sb-calendar-panel .calendar[open] .day small,
+#sb-root.sb-default-bar .sb-calendar-popup .calendar-event :is(small,h4,p),
+#sb-root.sb-default-bar .sb-calendar-popup>.pop-content>p{font-family:SmallBarCalendarHand,var(--sb-serif)!important;font-weight:400}
+#sb-root.sb-default-bar .sb-calendar-panel .calendar[open] .day small{font-size:9px}
+#sb-root.sb-default-bar .sb-calendar-popup .calendar-event p,
+#sb-root.sb-default-bar .sb-calendar-popup>.pop-content>p{font-size:15px;line-height:1.9}
+#sb-root.sb-default-bar .sb-calendar-popup .calendar-event h4{font-size:18px;line-height:1.6}
+#sb-root.sb-default-bar .sb-calendar-popup .calendar-event small{font-size:12px}
