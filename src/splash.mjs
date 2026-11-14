@@ -7,7 +7,11 @@ import { readAppearanceColors, updateAppearanceColors, createAppearancePreview }
 import { openColorPicker } from './color-picker.mjs';
 import { imageUrl, saveImage } from './imgstore.mjs';
 const KEY = 'small_bar_splash_v1';
-const ticketLayouts = new WeakMap();
+let ticketObserver, ticketFrame = 0;
+function scheduleTicket() {
+    if (ticketFrame || !root) return;
+    ticketFrame = requestAnimationFrame(() => { ticketFrame = 0; scaleTicket(); });
+}
 function ticketShape(height) {
     const y = 291, r = 12;
     const path = `M22 0H426Q448 0 448 22V${y-r}A${r} ${r} 0 0 0 448 ${y+r}V${height-22}Q448 ${height} 426 ${height}H22Q0 ${height} 0 ${height-22}V${y+r}A${r} ${r} 0 0 0 0 ${y-r}V22Q0 0 22 0Z`;
@@ -15,22 +19,22 @@ function ticketShape(height) {
 }
 function scaleTicket() {
     const frame = root?.querySelector('.sb-ticket-frame'); if (!frame) return;
-    const ticket = frame.querySelector('.sb-ticket'), details = ticket.querySelector('.sb-ticket-body');
-    const scale = frame.getBoundingClientRect().width / 448;
-    root.style.setProperty('--sb-ticket-scale', scale);
-    let layout = ticketLayouts.get(ticket);
-    if (!layout || layout.scale !== scale) {
-        const style = getComputedStyle(ticket), hidden = details.hidden;
-        const border = (parseFloat(style.borderTopWidth) || 0) + (parseFloat(style.borderBottomWidth) || 0);
-        const measure = () => [...ticket.children].reduce((total, section) => total + (section.hidden || section.namespaceURI === 'http://www.w3.org/2000/svg' ? 0 : section.offsetHeight), border);
-        details.hidden = false; const open = measure();
-        details.hidden = true; const closed = measure(); details.hidden = hidden;
-        layout = {scale, open, closed, openShape:ticketShape(open), closedShape:ticketShape(closed)};
-        ticketLayouts.set(ticket, layout);
-    }
-    const height = details.hidden ? layout.closed : layout.open;
-    const shape = details.hidden ? layout.closedShape : layout.openShape;
-    ticket.style.height = `${height}px`; frame.style.height = `${height * scale}px`;
+    const ticket = frame.querySelector('.sb-ticket');
+    if (frame.hidden) return;
+    const width = frame.getBoundingClientRect().width;
+    // Do not cache a zero-size startup measurement or derive infinite text sizes from it.
+    if (!Number.isFinite(width) || width <= 0) return;
+    const scale = width / 448;
+    if (root.style.getPropertyValue('--sb-ticket-scale') !== String(scale)) root.style.setProperty('--sb-ticket-scale', scale);
+    const style = getComputedStyle(ticket);
+    const border = (parseFloat(style.borderTopWidth) || 0) + (parseFloat(style.borderBottomWidth) || 0);
+    const head = ticket.querySelector('.sb-ticket-head'), actions = ticket.querySelector('.sb-ticket-actions');
+    if (!head.offsetHeight || !actions.offsetHeight) return;
+    // Measure the visible receipt every time: fonts and host startup styles can change its height.
+    const height = [...ticket.children].reduce((total, section) => total + (section.hidden || section.namespaceURI === 'http://www.w3.org/2000/svg' ? 0 : section.offsetHeight), border);
+    const shape = ticketShape(height);
+    if (ticket.style.height !== `${height}px`) ticket.style.height = `${height}px`;
+    if (frame.style.height !== `${height * scale}px`) frame.style.height = `${height * scale}px`;
     // Geometry is drawn directly: no asynchronously rasterized mask image to swap.
     let outline = ticket.querySelector('.sb-ticket-outline');
     if (!outline) {
@@ -44,7 +48,10 @@ function scaleTicket() {
         outline.firstElementChild.setAttribute('d',shape.path);
     }
 }
-window.addEventListener('resize', scaleTicket);
+window.addEventListener('resize', scheduleTicket);
+window.visualViewport?.addEventListener('resize', scheduleTicket);
+document.fonts?.addEventListener('loadingdone', scheduleTicket);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) scheduleTicket(); });
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let settings = {}, save = () => {}, root, panel, ready = false, failed = false, entered = false, stage = 0;
 let previousFocus, unlockTimer, observer, appReadyCleanup, needsMount = false, hostDone = false, replaying = false, replayFrame = 0;
@@ -98,6 +105,7 @@ if (typeof window !== 'undefined') window.addEventListener('small-bar-appearance
 function image(src, node) { const update = () => { const url = imageUrl(src, update); if (url && node.isConnected) { node.src = url; node.hidden = false; } }; update(); }
 function dismiss() {
     clearTimeout(unlockTimer); cancelAnimationFrame(replayFrame); replaying = false; observer?.disconnect(); appReadyCleanup?.();
+    ticketObserver?.disconnect(); ticketObserver = null; cancelAnimationFrame(ticketFrame); ticketFrame = 0;
     root?.remove(); root = null;
     if (!panel?.isConnected && previousFocus?.isConnected) previousFocus.focus();
 }
@@ -120,7 +128,6 @@ function paint() {
     root.querySelector('[data-order]').textContent = cfg().order ?? 'the usual';
     root.querySelector('[data-date]').textContent = cfg().date || root.dataset.today;
     paintImages();
-    ticketLayouts.delete(root.querySelector('.sb-ticket'));
     scaleTicket();
     progress(stage);
 }
@@ -192,7 +199,12 @@ export function startSplash(force = false) {
     <section class="sb-pouring" hidden><svg viewBox="0 0 48 80" aria-hidden="true"><defs><clipPath id="sb-glass-clip"><path d="M9 8H39V20C39 40 9 40 9 20Z"/></clipPath></defs><g clip-path="url(#sb-glass-clip)"><rect class="sb-wine" x="8" y="8" width="32" height="30"/></g><path d="M9 8H39V20C39 40 9 40 9 20ZM24 36V70M15 70H33" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/></svg><div><p data-status aria-live="polite">pouring your usual</p><small data-percent></small><div class="sb-progress" role="progressbar" aria-label="Small Bar startup stages" aria-valuemin="0" aria-valuemax="100"><i></i></div><small class="sb-progress-note">preparing small bar</small></div></section>`;
     document.documentElement.appendChild(root); paint();
     const mounted = root;
-    document.fonts?.ready.then(() => { if (root === mounted) { ticketLayouts.delete(root.querySelector('.sb-ticket')); scaleTicket(); } });
+    ticketObserver?.disconnect();
+    ticketObserver = new ResizeObserver(scheduleTicket);
+    for (const node of root.querySelectorAll('.sb-ticket-frame,.sb-ticket-head,.sb-ticket-body,.sb-ticket-actions')) ticketObserver.observe(node);
+    root.addEventListener('load', scheduleTicket, true);
+    document.fonts?.ready.then(() => { if (root === mounted) scheduleTicket(); });
+    scheduleTicket();
     root.querySelector('.sb-splash-close').onclick = dismiss;
     root.querySelector('.sb-pass').onclick = enterPouring;
     root.querySelector('.sb-splash-edit').onclick = openSplashSettings;
