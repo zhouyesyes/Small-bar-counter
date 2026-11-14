@@ -15,7 +15,7 @@ import * as personas from '../../../../personas.js';
 // 世界书：全局选中的书在 world-info.js 里；整个模块导入，按名字取
 import * as wi from '../../../../world-info.js';
 import { extractBlock, buildState, guessEra, parseBlock, stripNow } from './core.mjs';
-import { DEFAULT_PROMPT, buildInjection } from './prompt.mjs';
+import { DEFAULT_PROMPT, NOW_PROMPT, PHONE_PROMPT, buildInjection, promptParts, mustWrite } from './prompt.mjs';
 import { createUI } from './ui.mjs';
 import { applyBarTheme } from './bar-theme.mjs';
 import { setPersonaSource } from './bar-pages.mjs';
@@ -523,15 +523,15 @@ function refreshInject() {
     // 微信的拉黑和好友申请，让TA知道
     const m0 = meta(), st0 = state();
     if (!st0.blockedMe && m0.myReq && !m0.myReq.done) m0.myReq.done = true; // TA通过了（或者没拉黑了），这份申请就算完了
-    const wxNote = [
+    const phoneWx = [
         st0.blockedMe ? '（{{char}}现在在微信上把 {{user}} 拉黑了：{{user}} 发的微信你收不到。）' : '',
         st0.blockedMe && m0.myReq?.text && !m0.myReq.done ? `{{user}} 被拉黑后给你发了微信好友申请，验证消息：「${m0.myReq.text}」。如果你愿意通过，在状态段里写「通过好友申请: 是」；不想通过就不写。` : '',
         m0.wxBlock?.him ? '（{{user}} 在微信上把{{char}}拉黑了：你发的微信她收不到。）' : '',
-        memoNote(st0.memo),
     ].filter(Boolean).join('\n');
     const events = phoneEvents(Number(s.storyPhoneN ?? 2));
     const evNote = events ? `手机上最近发生的（从早到晚）：\n${events}\n正文里可以自然地带一笔（看了眼手机、想起那条朋友圈、顺手回一句），也可以不提，看剧情合不合适，别硬塞。` : '';
-    let text = buildInjection({ prompt: s.prompt, coverTags: tags, state: state(), wechatTail: tail, myComments, waiting, wxNote: [wxNote, myM && `{{user}} 最近发的朋友圈（你刷得到）：\n${myM}`, evNote].filter(Boolean).join('\n\n'), saveMode: s.saveMode, channel: era() === 'modern' ? '在手机上的聊天' : '的书信往来' });
+    const parts = promptParts(s);
+    let text = buildInjection({ promptNow: parts.now, promptPhone: parts.phone, coverTags: tags, state: state(), wechatTail: tail, myComments, waiting, wxNote: memoNote(st0.memo), phoneNote: [phoneWx, myM && `{{user}} 最近发的朋友圈（你刷得到）：\n${myM}`, evNote].filter(Boolean).join('\n\n'), saveMode: s.saveMode, channel: era() === 'modern' ? '在手机上的聊天' : '的书信往来' });
     if (s.barStyle === 'default') {
         const mode=charCfg().cocktailMode==='adaptive'?'adaptive':'default';
         const snapshot=structuredClone(cocktailFromState(state(),mode));
@@ -542,8 +542,8 @@ function refreshInject() {
             const reference=pastedReference(charCfg().cocktailReference||'');
             if(reference)text+='\n\n'+formatStatusSources(collectStatusSources({pasted:reference}));
         }
-        if(s.saveMode&&!pending)text+='\n省一点时酒杯行只更新 scene、emotion，其他字段可省略，程序会保留此前记录。';
     }
+    text += mustWrite({ cocktail: s.barStyle === 'default', saveMode: s.saveMode });
     // 1 = 放在聊天里（IN_CHAT），深度 0 = 最后面，0 = 系统身份
     c.setExtensionPrompt(INJECT_KEY, text, 1, 0, false, 0);
 }
@@ -621,6 +621,8 @@ const host = {
     him, me, charCard, era, guessedEra, storyTail, ask, hasChar,
     countTokens: async t => { if (!t) return 0; const c = ctx(); try { if (c.getTokenCountAsync) return await c.getTokenCountAsync(t); } catch { /* 算不了就估 */ } return Math.ceil(t.length / 1.6); },
     defaultPrompt: () => DEFAULT_PROMPT,
+    defaultPromptParts: () => ({ now: NOW_PROMPT, phone: PHONE_PROMPT }),
+    promptParts: () => promptParts(settings()),
     toast: (kind, msg) => globalThis.toastr?.[kind]?.(msg, '小吧台'),
     confirm: async text => { const c = ctx(); return c.callGenericPopup ? !!await c.callGenericPopup(text, c.POPUP_TYPE.CONFIRM) : confirm(text); },
     prompt: async (title, value) => { const c = ctx(); if (c.callGenericPopup) { const r = await c.callGenericPopup(title, c.POPUP_TYPE.INPUT, value); return r === false || r == null ? null : String(r); } return prompt(title, value); },

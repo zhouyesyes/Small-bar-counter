@@ -256,6 +256,8 @@ export function createUI(host) {
             host.setCharCfg(c=>{c.cover={...(c.cover||{}),mode:'fixed',fixed};});
         }
         if(v.tab==='diary'){v.tab='phone';v.view=v.diaryId?'diary-detail':'diary';}
+        // 小手机只在抽屉那一格里打开（平板上吧台常驻时也一样），不再浮出单独的窗口
+        if(v.phone){v.phone=false;v.drawer=true;v.tab='phone';v.view||='home';}
         const docked = !!s.enabled && widePanel.matches && document.documentElement.classList.contains('sb-bar');
         document.documentElement.classList.toggle('sb-panel-docked', docked);
         applyPalette(root, s, theme());
@@ -991,25 +993,25 @@ export function createUI(host) {
         const modeName = '固定一张';
         const eraName = { auto: '自动 · ' + ({ modern: '现代', minguo: '民国', ancient: '古风' }[host.guessedEra()]), modern: '现代', minguo: '民国', ancient: '古风' }[c.era || 'auto'];
         const apiName = s.api === 'own' ? (s.ownApi?.model || '自己填的') : '跟正文';
+        const original = (s.barStyle || 'folio') === 'default';
         return `${head(Wd().set)}<div class="sb-slist">
- <div class="sb-sh">资料（各个平台上显示的，都在这里改）</div><div class="sb-sgrp">${row('TA的资料', host.him().name, 'set-him')}${row('我的资料', host.me().name, 'set-me')}</div>
- <div class="sb-sh">主页</div><div class="sb-sgrp">${row('抽屉的头图', modeName, 'set-cover')}</div>
- <div class="sb-sh">API</div><div class="sb-sgrp">${row('小手机用哪个', apiName, 'set-api')}${row('TA什么时候回', host.settings().phoneWhen === 'next' ? '下一轮正文顺带回' : '马上回', 'set-when')}${row('回复时带什么', host.replyMode() === 'full' ? '整套（预设 + 世界书 + 剧情）' : '自己挑', 'set-reply')}${toggle('省一点', 'saveMode', s.saveMode, '正文只顺带写时间、天气、在哪、心声；小手机回消息时不顺带更新动态、日记、此刻')}
-  <label class="sb-srow"><span>正文带几件手机里的事<small>最近的微信、你的朋友圈、留言，TA看情况在正文里提一笔；0 就是不带</small></span><input type="number" min="0" max="10" class="sb-num" data-set="storyPhoneN" value="${Number(s.storyPhoneN ?? 2)}"></label></div>
- <div class="sb-sh">TA</div><div class="sb-sgrp">
-
-  ${row('提示词', s.prompt ? '改过' : '默认', 'set-prompt')}
-  <label class="sb-srow"><span>原版此刻的状态来源</span><select data-cset="cocktailMode"><option value="default" ${c.cocktailMode!=='adaptive'?'selected':''}>吧台默认</option><option value="adaptive" ${c.cocktailMode==='adaptive'?'selected':''}>角色适配</option></select></label>
-  <label class="sb-srow"><span>回复时不自动更新状态<small>只对这张卡：正文后不再让TA写状态段，小手机回消息也不顺带更新。多角色、群像卡打开这个；手动点按钮生成照常能用</small></span><input type="checkbox" class="sb-tg" data-cset="noAutoStatus" ${c.noAutoStatus ? 'checked' : ''}></label>
+ <div class="sb-sh">资料与样子</div><div class="sb-sgrp">${row('TA的资料', host.him().name, 'set-him')}${row('我的资料', host.me().name, 'set-me')}${row('抽屉的头图', modeName, 'set-cover')}
+  <label class="sb-srow"><span>美化时代<small>决定是小手机、民国信匣还是古风书匣</small></span><select data-cset="era">${[['auto', eraName.startsWith('自动') ? eraName : '自动'], ['modern', '现代'], ['minguo', '民国'], ['ancient', '古风']].map(([k, n]) => `<option value="${k}" ${(c.era || 'auto') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+  <label class="sb-srow"><span>明暗模式</span><select data-set="phoneTheme">${[['auto','跟美化'],['light','浅'],['dark','深']].map(([k,n])=>`<option value="${k}" ${(s.phoneTheme||'auto')===k?'selected':''}>${n}</option>`).join('')}</select></label></div>
+ <div class="sb-sh">正文后TA写什么</div><div class="sb-sgrp">
+  <label class="sb-srow"><span>这张卡正文后写状态<small>关掉后正文后什么都不写（多角色、群像卡用）；手动点按钮生成照常能用</small></span><input type="checkbox" class="sb-tg" data-cset-off="noAutoStatus" ${c.noAutoStatus ? '' : 'checked'}></label>
+  ${c.noAutoStatus ? '' : toggle('只写此刻和选曲（省一点）', 'saveMode', s.saveMode, s.saveMode ? '开着：正文后只写此刻（吧台状态栏）和本轮选曲；朋友圈、日记、X、微博这些小手机内容不写；小手机回消息也不顺带更新' : '关着：此刻和选曲每轮都写；朋友圈、日记、X、微博这些按剧情偶尔写')}
+  ${original && !c.noAutoStatus ? `<label class="sb-srow"><span>吧台状态栏的分类<small>吧台默认：固定四类；角色适配：照角色卡自带的状态栏来分</small></span><select data-cset="cocktailMode"><option value="default" ${c.cocktailMode!=='adaptive'?'selected':''}>吧台默认</option><option value="adaptive" ${c.cocktailMode==='adaptive'?'selected':''}>角色适配</option></select></label>` : ''}
+  ${!c.noAutoStatus && !s.saveMode ? `<label class="sb-srow"><span>正文里提几件手机上的事<small>最近的微信、你的朋友圈、留言，TA看情况在正文里提一笔；0 就是不提</small></span><input type="number" min="0" max="10" class="sb-num" data-set="storyPhoneN" value="${Number(s.storyPhoneN ?? 2)}"></label>` : ''}
+  ${row('提示词', s.promptNow || s.promptPhone || s.prompt ? '改过' : '默认', 'set-prompt')}
  </div>
- <div class="sb-sh">外观</div><div class="sb-sgrp">
-  <label class="sb-srow"><span>美化时代</span><select data-cset="era">${[['auto', eraName.startsWith('自动') ? eraName : '自动'], ['modern', '现代'], ['minguo', '民国'], ['ancient', '古风']].map(([k, n]) => `<option value="${k}" ${(c.era || 'auto') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
-  <label class="sb-srow"><span>明暗模式</span><select data-set="phoneTheme">${[['auto','跟美化'],['light','浅'],['dark','深']].map(([k,n])=>`<option value="${k}" ${(s.phoneTheme||'auto')===k?'selected':''}>${n}</option>`).join('')}</select></label>
- ${glassControlsHtml(s)}</div><div class="sb-sh">其他</div><div class="sb-sgrp">
-  <label class="sb-srow"><span>小手机怎么打开<small>抽屉里：嵌在抽屉那一格；浮窗：浮在聊天上，能拖，只有 × 关</small></span><select data-set="phoneMode">${[['drawer', '抽屉里'], ['float', '浮窗']].map(([k, n]) => `<option value="${k}" ${(s.phoneMode || 'drawer') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
-  ${toggle('小猫入口', 'cat', s.cat !== false)}
-  <label class="sb-srow"><span>小猫高度<small>离屏幕顶上的百分比</small></span><input type="number" min="10" max="85" class="sb-num" data-set="catTop" value="${Number(s.catTop) || 46}"></label>
- </div> <div class="sb-sh">数据</div><div class="sb-sgrp">${row('清理数据', '图片、这个聊天的记录', 'set-clean')}</div>
+ <div class="sb-sh">${Wd().wechat}里回消息</div><div class="sb-sgrp">${row('用哪个 API', apiName, 'set-api')}${row('TA什么时候回', s.phoneWhen === 'next' ? '下一轮正文顺带回' : '马上回', 'set-when')}${s.phoneWhen === 'next' ? '' : row('回消息时带哪些资料', host.replyMode() === 'full' ? '整套' : '自己挑', 'set-reply')}</div>
+ <div class="sb-sh">其他</div><div class="sb-sgrp">
+  ${toggle('小猫入口', 'cat', s.cat !== false, '抽屉关着时，屏幕边上那只点了能打开小吧台的小猫')}
+  ${s.cat !== false ? `<label class="sb-srow"><span>小猫高度<small>离屏幕顶上的百分比</small></span><input type="number" min="10" max="85" class="sb-num" data-set="catTop" value="${Number(s.catTop) || 46}"></label>` : ''}
+  ${row('清理数据', '图片、这个聊天的记录', 'set-clean')}
+ </div>
+ <div class="sb-hint">聊天区毛玻璃在 酒馆 UI → 小吧台·共用美化 里调。</div>
 </div>`;
     }
     function setCoverHtml() {
@@ -1067,10 +1069,13 @@ export function createUI(host) {
 </div>`;
     }
     function setPromptHtml() {
-        const s = host.settings();
+        const p = host.promptParts(), d = host.defaultPromptParts(), save = host.settings().saveMode;
         return `${head('提示词', '<button class="sb-phx" data-act="prompt-reset">默认</button>')}<div class="sb-list">
- <div class="sb-hint">每轮会把这段加进正文的提示词里，让TA顺带写状态。改了马上生效；点右上「默认」换回来。</div>
- <textarea class="sb-prompt" data-prompt>${esc(s.prompt || host.defaultPrompt())}</textarea></div>`;
+ <div class="sb-hint">分两段加进正文的提示词里，改了马上生效；点右上「默认」两段都换回来。</div>
+ <div class="sb-sh">此刻 · 每轮都写</div><div class="sb-hint">吧台状态栏（时间、在哪、心声……）和本轮选曲。选曲的详细规则程序会自动补上。</div>
+ <textarea class="sb-prompt" data-prompt="now">${esc(p.now || d.now)}</textarea>
+ <div class="sb-sh">小手机 · ${save ? '现在开着省一点，这段不会发' : '按剧情偶尔写'}</div><div class="sb-hint">朋友圈、日记、X、微博、微信……开了「只写此刻和选曲（省一点）」时整段不发。</div>
+ <textarea class="sb-prompt" data-prompt="phone">${esc(p.phone || d.phone)}</textarea></div>`;
     }
     function setApiHtml() {
         const s = host.settings(), o = s.ownApi || {};
@@ -1409,7 +1414,7 @@ export function createUI(host) {
             case 'cover-x-clear': host.dropImage(host.charCfg().coverX); host.setCharCfg(c => { c.coverX = ''; }); break;
             case 'cover-wx-clear': host.dropImage(host.charCfg().coverWx); host.setCharCfg(c => { c.coverWx = ''; }); break;
             case 'him-avatar-clear': host.setCharCfg(c => { c.him = { ...(c.him || {}), avatar: '' }; }); break;
-            case 'prompt-reset': host.setSettings(s => { s.prompt = ''; }); break;
+            case 'prompt-reset': host.setSettings(s => { s.prompt = ''; delete s.promptNow; delete s.promptPhone; }); break;
             case 'api': host.setSettings(s => { s.api = b.dataset.id; }); if (b.dataset.id !== 'own') v.view = 'settings'; break;
             case 'when': host.setSettings(s => { s.phoneWhen = b.dataset.w; }); v.view = 'settings'; break;
             case 'rmode': host.setSettings(s => { s.replyMode = b.dataset.mode; }); break;
@@ -1436,8 +1441,8 @@ export function createUI(host) {
     async function onChange(e) {
         const t = e.target;
         if (t.dataset.set) host.setSettings(s => { s[t.dataset.set] = t.type === 'checkbox' ? t.checked : t.type === 'number' ? Number(t.value) : t.value; });
-        // 切了小手机的开法：正开着的小手机马上挪过去
-        if (t.dataset.set === 'phoneMode') { if (t.value === 'float') { v.phone = true; v.drawer = false; } else { v.phone = false; v.drawer = true; v.tab = 'phone'; } }
+        // 反过来存的开关：界面上「开」= 设置里是 false（比如「这张卡正文后写状态」对应 noAutoStatus）
+        if (t.dataset.csetOff) host.setCharCfg(c => { c[t.dataset.csetOff] = !t.checked; });
         else if (t.dataset.ctx) host.setSettings(s => { s.ctx = { ...host.replyCtx(), [t.dataset.ctx]: t.type === 'checkbox' ? t.checked : Number(t.value) }; });
         else if (t.dataset.own) host.setSettings(s => { s.ownApi = { ...(s.ownApi || {}), [t.dataset.own]: t.value.trim() }; });
         else if (t.dataset.cset) host.setCharCfg(c => { c[t.dataset.cset] = t.type === 'checkbox' ? t.checked : t.value; });
@@ -1445,7 +1450,9 @@ export function createUI(host) {
         else if (t.dataset.acc != null) { host.setXAccountField(t.dataset.acc, t.value.trim().replace(t.dataset.acc === 'handle' ? /^@/ : /^$/, '')); }
         else if (t.dataset.me != null) host.setMeProfile({ [t.dataset.me]: t.value.trim() });
         else if (t.dataset.tag != null) host.setCharCfg(c => { c.cover.images[Number(t.dataset.tag)].tag = t.value.trim(); });
-        else if (t.dataset.prompt != null) host.setSettings(s => { s.prompt = t.value.trim() === host.defaultPrompt().trim() ? '' : t.value; });
+        else if (t.dataset.prompt != null) { const key = t.dataset.prompt === 'phone' ? 'phone' : 'now', d = host.defaultPromptParts(), cur = host.promptParts();
+            // 第一次改：把旧的整段拆好的两段都存下来，以后只认这两段
+            host.setSettings(s => { s.promptNow = cur.now.trim() === d.now.trim() ? '' : cur.now; s.promptPhone = cur.phone.trim() === d.phone.trim() ? '' : cur.phone; const val = t.value.trim() === d[key].trim() ? '' : t.value; if (key === 'now') s.promptNow = val; else s.promptPhone = val; s.prompt = ''; }); }
         else if (t.dataset.upload && t.files?.[0]) {
             const kind = t.dataset.upload, file = t.files[0];
             t.value = ''; // 同一张图还能再选一次

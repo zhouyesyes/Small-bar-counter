@@ -28,11 +28,11 @@ const{chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
  if(await p.locator('#sb-root [data-set=barStyle],#sb-root [data-set=barTheme],#sb-root [data-act=splash-settings]').count())throw Error('duplicate phone appearance controls remain');
  await p.locator('#sb-root [data-set=phoneTheme]').selectOption('dark');
  if(!await p.evaluate(()=>s.theme==='light'&&s.phoneTheme==='dark'&&document.querySelector('#sb-root').dataset.mode==='dark'&&document.documentElement.dataset.sbMode==='light'))throw Error('phone mode changed global appearance');
- const toggle=p.locator('#sb-root [data-cset=noAutoStatus]'),off=await toggle.evaluate(n=>getComputedStyle(n).backgroundColor);await toggle.check();
+ const toggle=p.locator('#sb-root [data-cset-off=noAutoStatus]'),on=await toggle.evaluate(n=>getComputedStyle(n).backgroundColor);if(!await toggle.isChecked())throw Error('status writing should default on');await toggle.uncheck();if(!await p.evaluate(()=>phoneConfig.noAutoStatus===true))throw Error('inverted toggle did not save');const off=on;
  if(await toggle.evaluate(n=>getComputedStyle(n).backgroundColor)===off)throw Error('enabled toggle has no distinct color');
- if(!await p.locator('#sb-root [data-cset=era]').evaluate(n=>n.closest('.sb-sgrp').previousElementSibling.textContent==='外观'&&n.closest('label').textContent.includes('美化时代')))throw Error('era belongs under appearance');
+ if(await p.locator('#sb-root [data-set=phoneMode],#sb-root .sb-slist .sb-glass-controls').count())throw Error('floating mode or chat glass controls still in phone settings');
+ if(!await p.locator('#sb-root [data-cset=era]').evaluate(n=>n.closest('.sb-sgrp').previousElementSibling.textContent==='资料与样子'&&n.closest('label').textContent.includes('美化时代')))throw Error('era belongs under appearance');
  await p.evaluate(()=>phoneConfig.cover={mode:'fixed',fixed:'/assets/opening/dark-cover.jpg'});
- await p.locator('#sb-root [data-set=phoneMode]').selectOption('drawer');
  if(!await p.locator('#sb-root .sb-pmhead').evaluate(n=>getComputedStyle(n).backgroundImage==='none'))throw Error('companion header still repeats character cover');
  await p.evaluate(()=>{cleanUI.destroy?.();document.querySelector('#sb-root')?.remove()});
  // Existing native assistant content stays intact, and uses the landing day/night artwork.
