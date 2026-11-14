@@ -14,7 +14,7 @@ export const QQ_API = 'https://api.vkeys.cn/v2/music/tencent';
 export const GD_API = 'https://music-api.gdstudio.xyz/api.php';
 
 const str = v => String(v ?? '').trim();
-const norm = s => str(s).toLowerCase().replace(/\([^)]*\)|（[^）]*）|\[[^\]]*\]/g, '').replace(/[\s·,，/&、]/g, '');
+const norm = s => str(s).normalize('NFKD').replace(/\p{M}/gu,'').toLowerCase().replace(/\([^)]*\)|（[^）]*）|\[[^\]]*\]/g, '').replace(/[\s·,，/&、]/g, '');
 // 网易云：纯数字 ID，或者分享出来的链接
 export function neteaseId(raw) {
     const s = str(raw);
@@ -44,23 +44,27 @@ async function ask(params, { timeout = 12000 } = {}) {
 }
 function rowsOf(d) {
     if (Array.isArray(d)) return d;
-    return [d?.data, d?.result, d?.list, d?.data?.list, d?.result?.songs, d?.songs].find(Array.isArray) || [];
+    return [d?.data, d?.result, d?.list, d?.data?.list, d?.result?.songs, d?.songs, d?.data?.songs, d?.data?.song?.list].find(Array.isArray) || [];
 }
 function idOf(x) {
-    const direct = x?.id ?? x?.songid ?? x?.songId ?? x?.mid;
+    const direct = x?.id ?? x?.songid ?? x?.songId ?? x?.mid ?? x?.songmid;
     if (direct != null && str(direct)) return str(direct);
     const m = String(x?.url || '').match(/[?&](?:id|songid|mid)=([^&#]+)/i);
     return m ? decodeURIComponent(m[1]) : '';
 }
+function artistText(value){
+    if(Array.isArray(value))return value.map(artistText).filter(Boolean).join(' / ');
+    return typeof value==='object'&&value?str(value.name??value.title):str(value);
+}
 function trackOf(x, base) {
     const id = idOf(x); if (!id) return null;
-    const artist = Array.isArray(x.artist ?? x.author) ? (x.artist ?? x.author).map(a => (typeof a === 'string' ? a : a?.name || '')).join(' / ') : str(x.artist ?? x.author ?? x.singer);
+    const artist = artistText(x.artist ?? x.artists ?? x.ar ?? x.author ?? x.singer);
     const raw = str(x.url || x.audio);
     const direct = /^https?:\/\//.test(raw) && !/[?&]type=(url|song)\b|\/api(\/|\?)|meting/i.test(raw) ? raw : '';
     let dur = x.time ?? x.duration ?? x.interval ?? 0;
     dur = typeof dur === 'string' && dur.includes(':') ? dur.split(':').reduce((a, n) => a * 60 + (+n || 0), 0) : +dur || 0;
     if (dur > 3600) dur = Math.round(dur / 1000); // 有的接口给的是毫秒
-    return { id, title: str(x.name ?? x.title) || '未命名', artist, cover: /^https?:/.test(str(x.pic ?? x.cover)) ? str(x.pic ?? x.cover) : '', picId: str(x.pic_id), lyricId: str(x.lyric_id), lrc: str(x.lrc ?? x.lyric), base, direct, dur };
+    return { id, title: str(x.name ?? x.title ?? x.songname ?? x.song) || '未命名', artist, cover: /^https?:/.test(str(x.pic ?? x.cover)) ? str(x.pic ?? x.cover) : '', picId: str(x.pic_id), lyricId: str(x.lyric_id), lrc: str(x.lrc ?? x.lyric), base, direct, dur };
 }
 
 const pagedSearch=createMusicSearch({
@@ -87,7 +91,7 @@ const VARIANT = /demo|试听|清唱|剪辑|降调|升调|加速|慢速|cover|翻
 // Automatic playback requires the same title, artist and requested version.
 // Search ranking alone is not an identity check: a cover can mention the original singer.
 export function matchingSong(list, title, artist = '') {
-    const clean = value => str(value).normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
+    const clean = value => str(value).normalize('NFKD').replace(/\p{M}/gu,'').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
     const base = value => clean(norm(value));
     const artists = value => str(value).split(/\s*(?:[,，/、;&＆]| feat\.? | ft\.? | featuring )\s*/i).map(base).filter(Boolean);
     const wanted = artists(artist);
@@ -99,6 +103,38 @@ export function matchingSong(list, title, artist = '') {
     });
     if(!wanted.length && new Set(candidates.map(t=>artists(t.artist).sort().join('|'))).size>1)return null;
     return candidates[0] || null;
+}
+// Prefer the requested recording, but uncertainty is never a playback permission gate.
+export function bestSong(list,title,artist=''){
+    const exact=matchingSong(list,title,artist);if(exact)return exact;
+    const clean=value=>norm(value).replace(/[^\p{L}\p{N}]/gu,'');
+    const wanted=clean(title),performer=clean(artist);
+    const similarity=(a,b)=>{
+        if(!a||!b)return 0;let row=Array.from({length:b.length+1},(_,i)=>i);
+        for(let i=0;i<a.length;i++){const next=[i+1];for(let j=0;j<b.length;j++)next.push(Math.min(next[j]+1,row[j+1]+1,row[j]+(a[i]===b[j]?0:1)));row=next;}
+        return 1-row[b.length]/Math.max(a.length,b.length);
+    };
+    return list.map((track,index)=>{
+        const actual=clean(track.title),singer=clean(track.artist);
+        const sameArtist=performer&&singer&&(singer===performer||singer.includes(performer));
+        return {track,score:similarity(wanted,actual)*80+(actual===wanted?50:0)+(sameArtist?120:0)-(VARIANT.test(track.title)?35:0)-index*.01};
+    }).sort((a,b)=>b.score-a.score)[0]?.track||null;
+}
+// Try normal metadata spellings and independent search sources before declaring an empty search.
+export async function findSong(title,artist='',{search=searchSongs}={}){
+    const query=[title,artist].filter(Boolean).join(' ');let candidates=[];
+    try{candidates=await search(query);}catch{/* Another search source may still work. */}
+    const exact=matchingSong(candidates,title,artist);if(exact)return {track:exact,candidates,query,exact:true};
+    if(artist&&candidates.length&&!matchingSong(candidates,title,artist)){
+        try{const rows=await search(artist);candidates=[...new Map([...candidates,...rows].map(t=>[`${t.src||'netease'}:${t.id}`,t])).values()];}catch{/* Existing results remain playable. */}
+    }
+    if(!candidates.length){
+        const plain=query.normalize('NFKD').replace(/\p{M}/gu,'');
+        const queries=[...(plain!==query?[plain]:[]),title].filter((q,i,a)=>q&&q!==query&&a.indexOf(q)===i);
+        for(const q of queries){try{const rows=await search(q);candidates.push(...rows);}catch{/* Try the next query. */}if(candidates.length)break;}
+    }
+    const track=bestSong(candidates,title,artist);
+    return {track,candidates,query,exact:!!track&&!!matchingSong([track],title,artist)};
 }
 export function rankSongs(list, q) {
     const nq = norm(q), words = str(q).split(/\s+/).map(norm).filter(Boolean);
@@ -127,11 +163,11 @@ async function getJson(url, timeout = 12000) {
 export async function searchQQ(q, page = 1) {
     try {
         const d = await getJson(QQ_API + '?word=' + encodeURIComponent(q) + '&page=' + page + '&num=20');
-        const rows = Array.isArray(d?.data) ? d.data : Array.isArray(d?.data?.list) ? d.data.list : [];
+        const rows = rowsOf(d);
         return rows.slice(0, 20).map(x => {
             const id = str(x.id ?? x.mid ?? x.songmid); if (!id) return null;
-            const artist = Array.isArray(x.singer) ? x.singer.map(a => (typeof a === 'string' ? a : a?.name || '')).join(' / ') : str(x.singer ?? x.artist);
-            return { id, src: 'qq', title: str(x.song ?? x.name ?? x.title) || '未命名', artist, cover: str(x.cover ?? x.pic), lrc: '' };
+            const artist = artistText(x.singer ?? x.artist ?? x.artists ?? x.ar);
+            return { id, src: 'qq', title: str(x.song ?? x.songname ?? x.name ?? x.title) || '未命名', artist, cover: str(x.cover ?? x.pic), lrc: '' };
         }).filter(Boolean);
     } catch { return []; }
 }
@@ -147,7 +183,7 @@ async function qqUrl(t) {
 // 网易云放不出来：按歌名 + 歌手去 QQ 找同一首
 export async function qqTwin(t) {
     const list = await searchQQ([t.title, t.artist].filter(Boolean).join(' '));
-    return matchingSong(list, t.title, t.artist);
+    return bestSong(list.filter(track=>norm(track.title)===norm(t.title)),t.title,t.artist);
 }
 async function gdUrl(t) {
     const d = await getJson(GD_API + '?' + new URLSearchParams({ types: 'url', source: 'netease', id: t.id, br: 320 }), 2500);
@@ -314,7 +350,7 @@ export function createPlayer({ load, save, onChange, onStatus = () => {}, resolv
         if (t.pending) {
             if (!resolve) return;
             onStatus(`正在找《${t.title}》…`); onChange?.();
-            try { await resolve(t); } catch (e) { if(playing!==t)return;stop();onStatus('未找到准确版本'); onChange?.('error', e?.message || '没找到这首歌'); return; }
+            try { await resolve(t); } catch (e) { if(playing!==t)return;stop();onStatus('暂时没搜到歌曲'); onChange?.('error', e?.message || '没找到这首歌'); return; }
             if (playing !== t) return;
         }
         let src;
@@ -376,7 +412,7 @@ export function createPlayer({ load, save, onChange, onStatus = () => {}, resolv
             onStatus('QQ 音乐放不了，去网易云找同一首…');
             try {
                 const list = (await searchSongs([t.title, t.artist].filter(Boolean).join(' '))).filter(x => x.src !== 'qq');
-                if(playing!==t)return;const twin = matchingSong(list, t.title, t.artist);
+                if(playing!==t)return;const twin = bestSong(list.filter(track=>norm(track.title)===norm(t.title)),t.title,t.artist);
                 if (twin) { const alternate=await sourceList(twin);if(playing!==t)return;sources=alternate;srcIdx = 0; if (sources[0]) { twinMode(); audio.src = sources[0].u; audio.dataset.src = sources[0].u; watch(); await audio.play().catch(() => {}); onChange?.('info', 'QQ 音乐放不了，换成网易云的同一首'); return; } }
             } catch { /* 继续往下提示 */ }
         }

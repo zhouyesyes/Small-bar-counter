@@ -15,7 +15,7 @@ import { openSplashSettings } from './splash.mjs';
 // 只管画和点，数据和酒馆那边都从 host 拿（见 index.js），方便以后换酒馆版本
 import { catSvg } from './cat.mjs';
 import { cropImage } from './crop.mjs';
-import { createPlayer, searchSongs, matchingSong, qqTwin, coverUrl, coverList, resolveCover } from './music.mjs';
+import { createPlayer, searchSongs, bestSong, findSong, coverUrl, coverList, resolveCover } from './music.mjs';
 import { weatherTone, parsePhoneReply, parseBlock, pickKey } from './core.mjs';
 import { PHONE_RULES, LETTER_RULES, PHONE_STATUS, MANUAL, RELATION, onlinePersonaBlock } from './prompt.mjs';
 
@@ -67,7 +67,7 @@ export function createUI(host) {
         const cache = (meta.musicPicks ??= {});
         let picks; try { picks = host.state?.()?.picks; } catch { picks = null; }
         return (picks || []).filter(p=>!meta.musicPickHidden?.[p.key]).map(p => {
-            if(cache[p.key]&&!cache[p.key].pending&&!matchingSong([cache[p.key]],p.title,p.artist))delete cache[p.key];
+            // Keep resolved playable IDs, even when the AI originally wrote a different name.
             const t = (cache[p.key] ??= { id: 'pick:' + p.key, pending: true, title: p.title, artist: p.artist });
             t.pickKey = p.key; t.why = p.why; return t;
         });
@@ -96,17 +96,19 @@ export function createUI(host) {
         const targetMeta=host.meta(),title=t.title,artist=t.artist,query=[title,artist].filter(Boolean).join(' ');
         const stillHere=()=>!t.pickKey||(host.meta()===targetMeta&&!targetMeta.musicPickHidden?.[t.pickKey]);
         const work=(async()=>{
-            const found=await searchSongs(query);
-            if(!stillHere())throw new Error('这条选曲已删除或已切换聊天');
-            const hit=matchingSong(found,title,artist)||await qqTwin(t).catch(()=>null);
+            const {track:hit,candidates:found,exact}=await findSong(title,artist);
             if(!stillHere())throw new Error('这条选曲已删除或已切换聊天');
             if(!hit){
-                if(t.pickKey){(targetMeta.musicPickFailures??={})[t.pickKey]={title,artist};failedPickChecks.add(t);host.saveMeta();host.refreshInject?.();}
-                const error=new Error(`没找到《${title}》${artist?' · '+artist:''}的准确版本，请手动搜索选择；不会自动播放相似歌曲或翻唱`);
-                error.candidates=found;error.query=query;throw error;
+                if(t.pickKey){failedPickChecks.add(t);host.saveMeta();}
+                const error=new Error('搜索来源暂时没有返回歌曲，请换个来源重搜');error.candidates=found;error.query=query;throw error;
             }
-            Object.assign(t,hit,{catalogVerified:true});delete t.pending;failedPickChecks.delete(t);
-            if(t.pickKey){delete targetMeta.musicPickFailures?.[t.pickKey];host.saveMeta();host.refreshInject?.();}else host.saveSettings();
+            Object.assign(t,hit,{artist:hit.artist||artist,catalogVerified:true});delete t.pending;failedPickChecks.delete(t);
+            if(t.pickKey){
+                delete targetMeta.musicPickFailures?.[t.pickKey];
+                if(!exact)(targetMeta.musicPickCorrections??={})[t.pickKey]={requestedTitle:title,requestedArtist:artist,title:t.title,artist:t.artist};
+                else delete targetMeta.musicPickCorrections?.[t.pickKey];
+                host.saveMeta();host.refreshInject?.();
+            }else host.saveSettings();
         })();
         pickChecks.set(t,work);work.catch(()=>{pickChecks.delete(t);});return work;
     }
@@ -480,7 +482,7 @@ export function createUI(host) {
         // 重新生成此刻：再写一版，几版都留着，左右滑 / 点 ‹ › 换着看（没选中的那几版不算数）
         const redoOf = kind === 'now-redo' ? curNowId() : null;
         if (kind === 'now-redo') kind = 'now';
-        const requestMeta=host.meta(), request=++manualRequest;
+        const requestMeta=host.meta(), request=++manualRequest,pickReply=kind==='pick'?host.replyPickStatus?.()?.id:null;
         v.busy = kind; render();
         try {
             const mode=host.cocktailMode?.()||'default';
@@ -499,7 +501,7 @@ export function createUI(host) {
             if(kind!=='cocktail')rule+='\n\n'+PHONE_PERSPECTIVE;
             const msgs = [{ role: 'system', content: parts?[parts.card,parts.persona,parts.world,parts.status,parts.story,rule].filter(Boolean).join('\n\n'):await buildSys('', rule, [], { online: ['post', 'x', 'xprofile'].includes(kind) }) }, { role: 'user', content: '（现在写）' }];
             if(request!==manualRequest||requestMeta!==host.meta())return;
-            const out = String(await host.ask(msgs, `【暂停正文，这一次不写正文】\n${rule}`,kind==='cocktail'?{preserveStatus:true,maxTokens:mode==='adaptive'?4800:2400}:{}) || '');
+            const out = String(await host.ask(msgs, `【暂停正文，这一次不写正文】\n${rule}`,kind==='cocktail'?{preserveStatus:true,maxTokens:mode==='adaptive'?4800:2400}:kind==='pick'?{preserveStatus:true,maxTokens:600}:{}) || '');
             let raw = host.extractBlock(out).raw;
             if (!raw && /[:：]/.test(out)) raw = out; // 没包 <!--SB 也认
             // 要的东西真写了才算：以前状态段里只写了时间之类，也说「写好了」，其实日记没有
@@ -509,12 +511,15 @@ export function createUI(host) {
                 // 日记没按格式（直接写成一段文字）：整段当日记收下
                 const prose = host.extractBlock(out).text.replace(/<[^>]+>/g, '').trim();
                 if (kind === 'diary' && prose.length > 20) raw = (raw ? raw + '\n' : '') + '日记:\n' + prose;
-                else throw new Error(`TA回了，但没按格式写${{ diary: '日记', post: '动态', x: 'X', xfeed: '推文', moments: '朋友圈', weibo: '微博', photos: '照片', cocktail: '酒杯状态' }[kind]}，再点一次试试`);
+                else throw new Error(`TA回了，但没按格式写${{ diary: '日记', post: '动态', x: 'X', xfeed: '推文', moments: '朋友圈', weibo: '微博', photos: '照片', pick:'选曲', cocktail: '酒杯状态' }[kind]}，再点一次试试`);
             }
             if(kind==='cocktail'&&!buildCocktailValid(raw,mode))throw new Error('酒杯数据格式不完整，原记录已保留，请再试一次');
             if (request !== manualRequest || requestMeta !== host.meta()) return;
             if(replan){const planned=parseCocktail(parseBlock(raw)['酒杯'].at(-1));planned.layoutRevision=Math.max((host.state().cocktails?.adaptive?.layoutRevision||0)+1,host.charCfg?.().cocktailPlanPending?host.charCfg().cocktailPlanRevision:0);raw='酒杯: '+JSON.stringify(planned);}
+            if(kind==='pick'&&!(parseBlock(raw)['选曲']?.length||parseBlock(raw)['配乐']?.length))throw new Error('这次回复没有写出选曲，请重试');
+            if(kind==='pick'&&pickReply&&host.replyPickStatus?.()?.id!==pickReply)return;
             const id = host.addBlock(raw);
+            if(kind==='pick'&&pickReply)host.markReplyPicked?.(pickReply);
             if (!id) throw new Error('TA没写出来');
             if (redoOf) {
                 const m = host.meta(); m.nowVer ??= {};
@@ -547,7 +552,7 @@ export function createUI(host) {
     const mi = k => `<span class="sb-mi">${MI[k]}</span>`;
     function musicHtml(st) {
         const m = st.music, t = player.current(), list = host.settings().music?.list || [], mode = host.settings().music?.mode || 'all';
-        const ms = musicState(), names = Object.keys(ms.lists), chat = pickTracks(), onChat = ms.active === CHAT_LIST, pick = st.pick&&!host.meta().musicPickHidden?.[st.pick.key]?st.pick:null;
+        const ms = musicState(), names = Object.keys(ms.lists), chat = pickTracks(), onChat = ms.active === CHAT_LIST, pick = st.pick&&!host.meta().musicPickHidden?.[st.pick.key]?st.pick:null, picked=pick&&chat.find(track=>track.pickKey===pick.key),pickTitle=picked&&!picked.pending?picked.title:pick?.title,pickArtist=picked&&!picked.pending?picked.artist:pick?.artist,replyPick=host.replyPickStatus?.();
         return `<section class="sb-music${ms.compact ? ' is-mini' : ''}"><div class="sb-player-main${player.playing()?' is-playing':''}">
  <button class="sb-cap sb-music-toggle" data-act="music-compact" aria-expanded="${!ms.compact}" title="展开或收起音乐面板">${host.settings().barStyle==='default'?'吧台今日选曲':`${t?'now playing':'music'} · ${Wd().music}`}<span class="sb-music-caret" aria-hidden="true">${ms.compact ? '⌄' : '⌃'}</span></button>
  ${t ? `<div class="sb-mstate"><span class="sb-mstxt" role="status">${esc(v.mstate || '')}</span> <button class="sb-link" data-act="mskip">换个来源</button></div>` : ''}
@@ -560,7 +565,8 @@ export function createUI(host) {
  ${host.settings().barStyle==='default'?'<div class="sb-record-note" aria-hidden="true"><span>SIDE A</span><i></i><span>33⅓ RPM</span></div>':''}
  <div class="sb-mctl"><button data-act="mmode" title="${{ all: '列表循环', one: '单曲循环', shuffle: '随机' }[mode]}">${mi(mode)}</button><button data-act="mprev" aria-label="上一首">${mi('prev')}</button><button class="sb-mplay" data-act="mtoggle" aria-label="播放">${mi(player.playing() ? 'pause' : 'play')}</button><button data-act="mnext" aria-label="下一首">${mi('next')}</button><button data-act="mlist" class="${v.mlist ? 'on' : ''}" aria-label="歌单">${mi('list')}</button></div>
 
- ${pick ? `<div class="sb-mpick-wrap"><button class="sb-mpick${t?.pickKey === pick.key ? ' on' : ''}" data-act="mpick" data-key="${esc(pick.key)}" aria-label="播放本轮选曲《${esc(pick.title)}》"><small>本轮选曲${host.meta().musicPickFailures?.[pick.key]?' · 歌名待确认':chat.find(track=>track.pickKey===pick.key)?.pending?' · 正在核对':''}</small><b>《${esc(pick.title)}》${pick.artist ? `<span> · ${esc(pick.artist)}</span>` : ''}</b>${pick.why ? `<em>${esc(pick.why)}</em>` : ''}<i aria-hidden="true">${t?.pickKey === pick.key && player.playing() ? '♪ 正在放' : '▶ 放这首'}</i></button><button class="sb-mpick-delete" data-act="mpick-delete" data-key="${esc(pick.key)}" aria-label="删除本轮选曲《${esc(pick.title)}》" title="删除这首选曲">×</button></div>` : ''}
+ ${pick ? `<div class="sb-mpick-wrap"><button class="sb-mpick${t?.pickKey === pick.key ? ' on' : ''}" data-act="mpick" data-key="${esc(pick.key)}" aria-label="播放本轮选曲《${esc(pickTitle)}》"><small>${replyPick&&!replyPick.hasPick?'上次选曲':'本轮选曲'}${picked?.pending?(failedPickChecks.has(picked)?' · 暂未搜到':' · 正在找歌'):host.meta().musicPickCorrections?.[pick.key]?' · 按搜索结果':''}</small><b>《${esc(pickTitle)}》${pickArtist ? `<span> · ${esc(pickArtist)}</span>` : ''}</b>${pick.why ? `<em>${esc(pick.why)}</em>` : ''}<i aria-hidden="true">${t?.pickKey === pick.key && player.playing() ? '♪ 正在放' : '▶ 放这首'}</i></button><button class="sb-mpick-delete" data-act="mpick-delete" data-key="${esc(pick.key)}" aria-label="删除本轮选曲《${esc(pickTitle)}》" title="删除这首选曲">×</button></div>` : ''}
+ ${replyPick?.missing?`<div class="sb-pick-missing"><span>这轮回复还没有选歌</span>${genBtn('pick','补选这轮')}</div>`:''}
  </div><div class="sb-music-extras" ${ms.compact ? 'hidden' : ''}>
  ${v.mlist !== false ? `<div class="sb-mres sb-queue"><div class="sb-cap sb-row" style="margin:6px 0"><span>${esc(ms.active)} · ${list.length} 首</span><span>${onChat ? '<small>AI 每轮按剧情选的，只在这个聊天里</small>' : `<button class="sb-link" data-act="mpl-rename">改名</button>${names.length > 1 ? ' <button class="sb-link" data-act="mpl-del">删掉这个歌单</button>' : ''}`}</span></div><div class="sb-queue-scroll" data-keep="music-queue">${list.map((r, i) => `<div class="sb-mrow2${t && r.id === t.id ? ' on' : ''}">${coverImg(r, 'sb-mthumb')}<span data-act="mplayat" data-i="${i}"><b>${esc(r.title)}</b><small>${esc(r.artist)}${onChat && r.why ? ' · ' + esc(r.why) : ''}</small></span><button data-act="msong-menu" data-i="${i}" aria-label="管理这首歌">⋯</button><button data-act="mdelsong" data-i="${i}" aria-label="删除《${esc(r.title)}》" title="从歌单删除">×</button></div>`).join('') || `<div class="sb-empty sm">${onChat ? '这个聊天还没有选曲，下一轮回复后会出现' : '还没有歌'}</div>`}</div></div>` : ''}
  <div class="sb-plists">${chat.length || onChat ? `<button data-act="mpl" data-n="${CHAT_LIST}" class="sb-chat-plist${onChat ? ' on' : ''}">${CHAT_LIST} <small>${chat.length}</small></button>` : ''}${names.map(n => `<button data-act="mpl" data-n="${esc(n)}" class="${n === ms.active ? 'on' : ''}">${esc(n)} <small>${ms.lists[n].length}</small></button>`).join('')}<button data-act="mpl-new" class="add">＋ 新建歌单</button></div>
@@ -1070,7 +1076,8 @@ export function createUI(host) {
   <label class="sb-srow"><span>美化时代<small>决定是小手机、民国信匣还是古风书匣</small></span><select data-cset="era">${[['auto', eraName.startsWith('自动') ? eraName : '自动'], ['modern', '现代'], ['minguo', '民国'], ['ancient', '古风']].map(([k, n]) => `<option value="${k}" ${(c.era || 'auto') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
   <label class="sb-srow"><span>明暗模式</span><select data-set="phoneTheme">${[['auto','跟美化'],['light','浅'],['dark','深']].map(([k,n])=>`<option value="${k}" ${(s.phoneTheme||'auto')===k?'selected':''}>${n}</option>`).join('')}</select></label></div>
  <div class="sb-sh">正文后TA写什么</div><div class="sb-sgrp">
-  <label class="sb-srow"><span>正文之后正常写<small>关掉后正文后什么都不写（多角色、群像卡用）；手动点按钮生成照常能用</small></span><input type="checkbox" class="sb-tg" data-cset-off="noAutoStatus" ${c.noAutoStatus ? '' : 'checked'}></label>
+  <label class="sb-srow"><span>正文之后正常写<small>关掉后不写其他状态；每轮选曲由下面开关独立控制，手动生成照常可用</small></span><input type="checkbox" class="sb-tg" data-cset-off="noAutoStatus" ${c.noAutoStatus ? '' : 'checked'}></label>
+  <label class="sb-srow"><span>每轮自动选曲<small>独立于其他状态，每次正文回复选一首配乐</small></span><input type="checkbox" class="sb-tg" data-cset="autoMusicPick" ${c.autoMusicPick!==false?'checked':''}></label>
   ${c.noAutoStatus ? '' : toggle('只写此刻和选曲（省一点）', 'saveMode', s.saveMode, s.saveMode ? '开着：正文后只写此刻（吧台状态栏）和本轮选曲；朋友圈、日记、X、微博这些小手机内容不写；小手机回消息也不顺带更新' : '关着：此刻和选曲每轮都写；朋友圈、日记、X、微博这些按剧情偶尔写')}
   ${original && !c.noAutoStatus ? `<label class="sb-srow"><span>吧台状态栏的分类<small>吧台默认：固定四类；角色适配：照角色卡自带的状态栏来分</small></span><select data-cset="cocktailMode"><option value="default" ${c.cocktailMode!=='adaptive'?'selected':''}>吧台默认</option><option value="adaptive" ${c.cocktailMode==='adaptive'?'selected':''}>角色适配</option></select></label>` : ''}
   ${toggle('手机活动按时间带进剧情', 'phoneTimelineEnabled', s.phoneTimelineEnabled ?? Number(s.storyPhoneN ?? 2) > 0, '手机新消息与动态固定在下一条剧情消息之前，后续不再反复追加；私聊和动态按各自可见范围处理。')}
@@ -1379,7 +1386,7 @@ export function createUI(host) {
             case 'mdelsong': {const m=musicState();if(m.active===CHAT_LIST){removeChatPick(m.list[Number(b.dataset.i)]?.pickKey);break;}player.remove(Number(b.dataset.i));return;}
             case 'mhis': { // TA在听的那首也须核对歌名、歌手与版本
                 const m = host.state().music; if (!m?.title) return;
-                try { const r = await searchSongs([m.title, m.artist].filter(Boolean).join(' ')); const hit=matchingSong(r,m.title,m.artist);if(!hit)throw new Error('没有找到准确版本，请手动搜索选择');realList();player.add(hit,true); }
+                try { const r = await searchSongs([m.title, m.artist].filter(Boolean).join(' ')); const hit=bestSong(r,m.title,m.artist);if(!hit)throw new Error('暂时没搜到歌曲，请换个来源重搜');realList();player.add(hit,true); }
                 catch (err) { host.toast('error', err?.message || '搜不了'); }
                 return;
             }

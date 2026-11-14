@@ -34,3 +34,6 @@ assert.equal(guessEra('普通的上班族'), 'modern');
 assert.deepEqual(weatherTone('小雨', '01:19'), { night: true, kind: 'rain' });
 assert.deepEqual(weatherTone('晴', '14:00'), { night: false, kind: 'clear' });
 console.log('core 全部通过');
+
+assert.equal(parseBlock('**选曲**：夜曲｜周杰伦｜夜色')['选曲'][0],'夜曲｜周杰伦｜夜色');
+assert.equal(parseBlock('- **选曲：** 夜曲｜周杰伦｜夜色')['选曲'][0],'夜曲｜周杰伦｜夜色');

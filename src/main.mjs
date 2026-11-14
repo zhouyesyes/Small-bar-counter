@@ -17,7 +17,7 @@ import * as personas from '../../../../personas.js';
 // 世界书：全局选中的书在 world-info.js 里；整个模块导入，按名字取
 import * as wi from '../../../../world-info.js';
 import { extractBlock, buildState, guessEra, parseBlock, stripNow } from './core.mjs';
-import { DEFAULT_PROMPT, NOW_PROMPT, PHONE_PROMPT, buildInjection, promptParts, mustWrite } from './prompt.mjs';
+import { DEFAULT_PROMPT, NOW_PROMPT, PHONE_PROMPT, PICK_RULE, buildInjection, promptParts, mustWrite } from './prompt.mjs';
 import { createUI } from './ui.mjs';
 import { applyBarTheme } from './bar-theme.mjs';
 import { setPersonaSource } from './bar-pages.mjs';
@@ -344,6 +344,7 @@ const helper = () => globalThis.TavernHelper;
 const hasHelper = () => typeof helper()?.generate === 'function';
 const customApi = () => { const o = settings().ownApi || {}; return o.url ? { apiurl: apiBase(o.url), key: o.key, model: o.model, source: 'openai' } : null; };
 
+let sideGenerationCount=0;
 async function ask(messages, quiet, options = {}) {
     const maxTokens=options.maxTokens||400;
     const s = settings();
@@ -354,6 +355,7 @@ async function ask(messages, quiet, options = {}) {
     if (own && !s.ownApi?.url) throw new Error('小手机的 API 还没填好（设置 → 小手机用哪个）');
     // 整套：交给酒馆拼（预设 + 世界书 + 角色卡 + 剧情），小手机的规矩插在最后
     if (quiet && replyMode() === 'full') {
+        sideGenerationCount++;
         c.setExtensionPrompt?.(INJECT_KEY, '', 1, 0); // 这一下不要让 TA 顺带写状态段
         try {
             if (hasHelper()) {
@@ -368,7 +370,7 @@ async function ask(messages, quiet, options = {}) {
                 const out = await c.generateQuietPrompt({ quietPrompt: quiet, responseLength: maxTokens, removeReasoning: true });
                 return options.preserveStatus?String(out || ''):extractBlock(String(out || '')).text;
             }
-        } finally { refreshInject(); }
+        } finally { sideGenerationCount--;refreshInject(); }
     }
     // 自己挑：只发小吧台拼的这几段
     if (own) {
@@ -531,10 +533,15 @@ globalThis.smallBarPhoneTimeline = (chat) => {
 function refreshInject() {
     const c = ctx(), s = settings();
     if (!c.setExtensionPrompt) return;
+    if(sideGenerationCount){c.setExtensionPrompt(INJECT_KEY,'',1,0);return;}
     if (!s.enabled || !hasChar()) { c.setExtensionPrompt(INJECT_KEY, '', 1, 0); return; }
     primePhoneTimeline();
     // 这张卡关了「回复时自动更新状态」（多角色、群像卡）：正文后不再让TA写状态段
-    if (charCfg().noAutoStatus) { c.setExtensionPrompt(INJECT_KEY, '', 1, 0); return; }
+    const autoPick=charCfg().autoMusicPick!==false,pickStatus=replyPickStatus();
+    if (charCfg().noAutoStatus) {
+        const text=autoPick?PICK_RULE+'\n正文后只附这一段，不添加其他状态项目：\n<!--SB\n选曲: 正式歌名｜演唱者｜本轮配乐理由\nSB-->\n'+musicSelectionContext(meta(),state().pick)+(pickStatus?.missing?'\n上一轮漏写了选曲，本轮请务必写出选曲行。':''):'';
+        c.setExtensionPrompt(INJECT_KEY,text,1,0,false,0);return;
+    }
     const cover = charCfg().cover;
     const tags = cover?.mode === 'pick' ? (cover.images || []).map(x => x.tag).filter(Boolean) : [];
     // 「下一轮正文顺带回」：她发了还没回的手机消息
@@ -550,7 +557,7 @@ function refreshInject() {
         m0.wxBlock?.him ? '（{{user}} 在微信上把{{char}}拉黑了：你发的微信她收不到。）' : '',
     ].filter(Boolean).join('\n');
     const parts = promptParts(s);
-    let text = buildInjection({ promptNow: parts.now, promptPhone: parts.phone, coverTags: tags, state: {...state(),picks:state().picks.filter(p=>!meta().musicPickFailures?.[p.key])}, wxNote: memoNote(st0.memo), phoneNote: phoneWx, saveMode: s.saveMode, channel: era() === 'modern' ? '在手机上的聊天' : '的书信往来' });
+    let text = buildInjection({ promptNow: parts.now, promptPhone: parts.phone, coverTags: tags, state: state(), autoPick, wxNote: memoNote(st0.memo), phoneNote: phoneWx, saveMode: s.saveMode, channel: era() === 'modern' ? '在手机上的聊天' : '的书信往来' });
     text += '\n\n' + PHONE_PERSPECTIVE;
     if (waiting) text += '\n有微信等待本轮回复：只依据聊天历史中已有的手机记录，在状态段里用「微信:」回复，一行一条；没有消息内容时不要猜测。';
     if (s.barStyle === 'default') {
@@ -564,8 +571,8 @@ function refreshInject() {
             if(reference)text+='\n\n'+formatStatusSources(collectStatusSources({pasted:reference}));
         }
     }
-    const musicFeedback=musicSelectionContext(meta(),state().pick);if(musicFeedback)text+='\n\n'+musicFeedback;
-    text += mustWrite({ cocktail: s.barStyle === 'default', saveMode: s.saveMode });
+    const musicFeedback=autoPick?musicSelectionContext(meta(),state().pick):'';if(musicFeedback)text+='\n\n'+musicFeedback;
+    text += mustWrite({ cocktail: s.barStyle === 'default', saveMode: s.saveMode, autoPick, missingPick:pickStatus?.missing });
     // 1 = 放在聊天里（IN_CHAT），深度 0 = 最后面，0 = 系统身份
     c.setExtensionPrompt(INJECT_KEY, text, 1, 0, false, 0);
 }
@@ -579,6 +586,13 @@ setAssistantAvatarSource(assistantAvatar);
 const usageCache=new WeakMap();
 function lastReply(){const chat=ctx().chat||[];for(let i=chat.length-1;i>=0;i--){const m=chat[i];if(!m.is_user&&!m.is_system&&typeof m.mes==='string')return m;}return null;}
 function replyUsageKey(m){return `${m.swipe_id??0}|${m.mes}|${m.extra?.small_bar||''}`;}
+function replyPickStatus(){
+    const message=lastReply();if(!message)return null;
+    const id=msgId(message)+'|'+(ctx().chat||[]).indexOf(message),block=parseBlock(message.extra?.small_bar||extractBlock(message.mes).raw||'');
+    const hasPick=!!(block['选曲']?.length||block['配乐']?.length||meta().musicPickForReply===id);
+    const enabled=charCfg().autoMusicPick!==false;
+    return {id,hasPick,enabled,missing:enabled&&!hasPick};
+}
 function latestCocktailUsage(){const message=lastReply();if(!message)return null;const native=outputUsage(message);if(native)return native;const cached=usageCache.get(message);return cached?.key===replyUsageKey(message)?cached.value:null;}
 async function updateCocktailUsage(){
     if(settings().barStyle!=='default')return;
@@ -626,6 +640,7 @@ const host = {
     setCocktailMode: mode => { charCfg().cocktailMode=mode==='adaptive'?'adaptive':'default';saveMeta();refreshInject(); },
     cocktailState: () => cocktailFromState(state(),charCfg().cocktailMode==='adaptive'?'adaptive':'default'),
     cocktailUsage: () => latestCocktailUsage(),
+    replyPickStatus, markReplyPicked:id=>{if(replyPickStatus()?.id===id){meta().musicPickForReply=id;saveMeta();refreshInject();}},
     meta, saveMeta, state, unread, markRead, wechat, addWechat, patchWechat, deleteWechat, takeLastRound, restoreRound, repliesFor,
     ...xHost,
     saveSettings,
@@ -798,7 +813,10 @@ jQuery(() => {
         saveMeta();
     });
     // 生成前再算一次注入（她在小手机里刚说的话要带上）
-    onIfEnabled(T.GENERATION_STARTED, () => { dirty(); refreshInject(); });
+    onIfEnabled(T.GENERATION_STARTED, type => {
+        if(sideGenerationCount||type==='quiet'||type==='impersonate'){ctx().setExtensionPrompt?.(INJECT_KEY,'',1,0);return;}
+        dirty();refreshInject();
+    });
     absorbAll(); primePhoneTimeline(); refresh();
 });
 

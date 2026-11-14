@@ -40,7 +40,7 @@ await page.evaluate(()=>{context.chatMetadata.small_bar.wechat.push({id:'w2',at:
 assert.deepEqual(await page.evaluate(()=>context.chat[4].extra.small_bar_phone_timeline.events.map(e=>e.key)),['wx:w2']);
 // The per-card status switch does not disable chronological phone context.
 await page.evaluate(()=>{context.chatMetadata.small_bar.cfg.noAutoStatus=true;emit('GENERATION_STARTED');window.last=[{...context.chat[4],index:0}];smallBarPhoneTimeline(last)});
-assert.equal(await page.evaluate(()=>prompts.small_bar),'');assert.match(await page.evaluate(()=>last[0].mes),/第二次才发的消息/);
+assert.match(await page.evaluate(()=>prompts.small_bar),/选曲:/);assert.doesNotMatch(await page.evaluate(()=>prompts.small_bar),/酒杯状态面板/);assert.match(await page.evaluate(()=>last[0].mes),/第二次才发的消息/);
 // Quiet phone generations have no MESSAGE_SENT and must not consume pending phone events.
 await page.evaluate(()=>{context.chatMetadata.small_bar.wechat.push({id:'w3',at:21,from:'him',text:'尚未进入剧情'});emit('GENERATION_STARTED');smallBarPhoneTimeline(last)});
 assert(!await page.evaluate(()=>context.chatMetadata.small_bar.phoneTimeline.seen.includes('wx:w3')));

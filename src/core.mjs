@@ -28,9 +28,9 @@ export function parseBlock(raw) {
     for (const line0 of String(raw || '').split(/\r?\n/)) {
         const line = line0.trim();
         const m = line.match(/^[-*·\s]*([^:：]{1,8})\s*[:：]\s*(.*)$/);
-        const key = m?.[1].trim();
+        const key = m?.[1].replace(/[*`]/g,'').trim();
         if (m && KEYS.has(key)) {
-            const val = m[2].trim();
+            const val = m[2].trim().replace(/^\*\*\s*/,value=>/^[-*·\s]*\*\*/.test(line0)?'':value);
             if (!val && LONG.has(key)) { (out[key] ??= []).push(''); last = { key, i: out[key].length - 1 }; continue; } // 「日记:」后面另起一行才写
             last = null;
             if (!val || /^(无|没有|none|null|-)$/i.test(val)) continue;

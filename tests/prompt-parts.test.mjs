@@ -17,3 +17,8 @@ assert.ok(parts.phone.includes('动态:') && !parts.phone.includes('改过的心
 assert.equal(promptParts({ promptNow: 'A', promptPhone: 'B', prompt: legacy }).now, 'A');
 assert.ok(splitPrompt('时间: x\n动态: y\n心声: z').now.includes('心声: z'));
 console.log('Prompt split: 此刻 always, 小手机 skipped by save mode, queued replies kept, legacy prompts split.');
+
+assert(!buildInjection({autoPick:false,state:{}}).includes(PICK_RULE));
+assert(mustWrite({missingPick:true}).includes('上一轮回复漏写了选曲'));
+assert(mustWrite().includes('沿用同一首也要重新写'));
+assert(!mustWrite({autoPick:false}).includes('选曲: 正式歌名'));

@@ -8,7 +8,7 @@ export const RELATION = `朋友圈里的互动要合乎真实的人际关系，�
 - 朋友圈下面只能看到共同好友的评论，所以一条底下的人通常来自同一个圈子；没有合适的人，就让它冷清着，不要硬凑`;
 
 // 每轮配一首歌：属于「此刻」，就算她改过提示词、开了省一点也照样带上
-export const PICK_RULE = '选曲: 每轮都在状态段里写一行「选曲: 歌名｜歌手｜一句话说为什么是这首」。选歌时综合考虑：这一轮正文的情节、情绪和氛围；{{char}}的人设（性格、年龄、身份、喜好、出身）；世界书里的时代、地域与世界观（古代、民国、异国、架空等就挑气质相符的，比如古风、老上海、爵士、原声或纯音乐）；{{char}}和 {{user}} 此刻的关系与张力；以及场景里的时间、天气和地点。要的是能把这一刻的气氛衬出来的歌，而不只是歌词字面相关。挑真实存在、在网易云或 QQ 音乐搜得到的歌，写原唱和正式歌名，不要编造，不要写翻唱版、伴奏版；不要把歌手名、翻唱者名、歌词或场景意象拼进歌名。不确定正式歌名与原唱时，改选另一首确定存在的歌，不要猜近似名字。先确定真实曲目，再说明它适合场景，不能反过来用场景意象造歌名。输出前核对正式歌名与实际演唱者是否对应；歌手名、翻唱者名和歌词不能混作歌名；没有真实检索依据时不要声称已查证。收到「选曲核对反馈」时按反馈纠正下一轮选择。理由用一句话点出它和此刻气氛、人物的关联。这是给 {{user}} 的配乐，不是{{char}}在听的歌（那个写「音乐:」）。';
+export const PICK_RULE = '选曲: 每轮都在状态段里写一行「选曲: 歌名｜歌手｜一句话说为什么是这首」。选歌时综合考虑：这一轮正文的情节、情绪和氛围；{{char}}的人设（性格、年龄、身份、喜好、出身）；世界书里的时代、地域与世界观（古代、民国、异国、架空等就挑气质相符的，比如古风、老上海、爵士、原声或纯音乐）；{{char}}和 {{user}} 此刻的关系与张力；以及场景里的时间、天气和地点。要的是能把这一刻的气氛衬出来的歌，而不只是歌词字面相关。挑真实存在、在网易云或 QQ 音乐搜得到的歌，写原唱和正式歌名，不要编造，不要写翻唱版、伴奏版；不要把歌手名、翻唱者名、歌词或场景意象拼进歌名。不确定正式歌名与原唱时，改选另一首确定存在的歌，不要猜近似名字。先确定真实曲目，再说明它适合场景，不能反过来用场景意象造歌名。输出前核对正式歌名与实际演唱者是否对应；歌手名、翻唱者名和歌词不能混作歌名；没有真实检索依据时不要声称已查证。参考「选曲名称参考」中的真实曲库名字，纠正下一轮的歌曲称呼。理由用一句话点出它和此刻气氛、人物的关联。这是给 {{user}} 的配乐，不是{{char}}在听的歌（那个写「音乐:」）。';
 
 // 提示词分两段：「此刻」每轮都写（吧台状态栏 + 选曲）；「小手机」只在没开省一点时才加
 export const NOW_PROMPT = `【小吧台 · 此刻】
@@ -84,6 +84,7 @@ export const PHONE_STATUS = `回完消息以后，如果此刻有变化，或者
 
 // 她点按钮让TA现在写：只写这一样
 export const MANUAL = {
+    pick: PICK_RULE+'\n根据最近这一轮正文补选一首配乐。只输出 <!--SB\n选曲: 正式歌名｜演唱者｜理由\nSB-->，不要写其他状态。',
     post: '现在发一条朋友圈动态。只写一段 <!--SB … SB-->，里面写「动态: 正文｜照片描述｜地点」，也可以顺带写 0～3 条「评论: 名字｜内容」和一行「点赞: 名字、名字」，谁会来照你身边真实的关系判断，没有合适的人就不写。不要写别的。',
     diary: '现在写一篇日记，记今天发生的、心里想的。只写一段 <!--SB … SB-->，里面写「日记: 标题｜正文」，标题和正文写在同一行，正文要分段就接着往下写。正文可以长一点，用你自己的口吻。不要写别的。',
     x: '现在在 X 上发一条。X 是你比较私人的地方：小号心情、深夜的念头、不能跟熟人说的话、欲望和阴暗面都可以，口吻比朋友圈放开得多。只写一段 <!--SB … SB-->，里面写「X: 正文｜照片描述（没有就空着）」。不要写别的。',
@@ -110,10 +111,10 @@ export const PHONE_RULES = `你在用手机和对方聊天。像真人发消息�
 // - 此刻（每轮都有）：吧台状态 + 选曲
 // - 小手机（省一点时整段不加）：朋友圈、日记、X、微博……以及手机里最近的事、留言
 // - 下一轮正文顺带回的微信：她明确选了这个方式，省一点时也照样带上
-export function buildInjection({ prompt, promptNow, promptPhone, coverTags, state, wechatTail, myComments, waiting, wxNote, phoneNote, saveMode, channel = '手机上的聊天' }) {
+export function buildInjection({ prompt, promptNow, promptPhone, coverTags, state, wechatTail, myComments, waiting, wxNote, phoneNote, saveMode, autoPick = true, channel = '手机上的聊天' }) {
     const parts = prompt != null && promptNow == null ? promptParts({ prompt }) : { now: promptNow || NOW_PROMPT, phone: promptPhone || PHONE_PROMPT };
     const bg = coverTags?.length ? `背景: 从这几个里挑一个最合适此刻的：${coverTags.join('、')}` : '';
-    let text = parts.now.replace('{{背景}}', bg) + '\n' + PICK_RULE;
+    let text = parts.now.replace('{{背景}}', bg) + (autoPick?'\n'+PICK_RULE:'\n本轮不自动选曲，不写「选曲:」行。');
     const recent = (state?.picks || []).slice(-8).map(p => `《${p.title}》${p.artist ? p.artist : ''}`);
     if (recent.length) text += `\n这个聊天里已经选过的歌（尽量换一首，除非剧情就该是这首）：${recent.join('、')}`;
     const n = state?.now || {};
@@ -131,8 +132,8 @@ export function buildInjection({ prompt, promptNow, promptPhone, coverTags, stat
     return text;
 }
 // 放在注入最后：模型最后读到的是这一轮一定要有的项，避免选曲、酒杯被长长的规则冲掉
-export function mustWrite({ cocktail = false, saveMode = false } = {}) {
-    return `\n\n【本轮状态段必须有】时间、在哪、心声、选曲${cocktail ? '、酒杯' : ''}${saveMode ? '；小手机内容这一轮不写' : '；小手机内容按剧情可有可无'}。`;
+export function mustWrite({ cocktail = false, saveMode = false, autoPick = true, missingPick = false } = {}) {
+    return `\n\n【本轮状态段必须有】时间、在哪、心声${autoPick?'、选曲':''}${cocktail ? '、酒杯' : ''}${saveMode ? '；小手机内容这一轮不写' : '；小手机内容按剧情可有可无'}。${autoPick?`\n${missingPick?'上一轮回复漏写了选曲，本轮务必补齐。':''}每次正文回复的最后一段 <!--SB … SB--> 内必须实际写一行「选曲: 正式歌名｜演唱者｜本轮配乐理由」。沿用同一首也要重新写这行，不得因为上文已经选过就省略，不要写空值，不要用「音乐:」代替；这行属于本轮正文后的状态段。`:''}`;
 }
 
 // 她指定的线上人设：紧挨着小手机规矩放，离生成最近

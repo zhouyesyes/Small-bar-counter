@@ -15,9 +15,9 @@ test('automatic first-page fallback remains pinned, with no mid-search source ch
 test('concurrent requests for a page share a request and duplicate IDs are removed',async()=>{
  let count=0;const search=createMusicSearch({netease:async()=>{count++;return {rows:[{id:'one'},{id:'one'}],load:async()=>[]}}});const [a,b]=await Promise.all([search('歌'),search('歌')]);assert.equal(count,1);assert.equal(a.length,1);assert.equal(b.length,1);
 });
-test('selection feedback is grounded, scoped to the current pick, and does not declare unavailable songs nonexistent',()=>{
- const meta={musicPickFailures:{bad:{title:'柠檬气球',artist:'周杰伦'}},musicPicks:{valid:{title:'夜曲',artist:'周杰伦',catalogVerified:true},unverified:{title:'编造',artist:'错',pending:true}}};
- const feedback=musicSelectionContext(meta,{key:'bad'});assert.match(feedback,/未能在曲库/);assert.match(feedback,/不等于断定歌曲不存在/);assert.match(feedback,/《夜曲》/);assert.doesNotMatch(feedback,/编造/);assert.doesNotMatch(musicSelectionContext(meta,{key:'other'}),/柠檬气球/);
+test('catalog names correct AI naming without turning old failed verification into a gate',()=>{
+ const meta={musicPickFailures:{bad:{title:'柠檬气球',artist:'周杰伦'}},musicPickCorrections:{bad:{requestedTitle:'柠檬气球',requestedArtist:'周杰伦',title:'告白气球',artist:'周杰伦'}},musicPicks:{valid:{title:'夜曲',artist:'周杰伦',catalogVerified:true},unverified:{title:'编造',artist:'错',pending:true}}};
+ const feedback=musicSelectionContext(meta,{key:'bad'});assert.match(feedback,/实际选中的曲库条目为《告白气球》/);assert.match(feedback,/不代表搜索结果一定就是原先意图/);assert.match(feedback,/《夜曲》/);assert.doesNotMatch(feedback,/编造|不能继续把近似|未能在曲库/);assert.doesNotMatch(musicSelectionContext(meta,{key:'other'}),/柠檬气球/);
 });
 
 test('an explicit new search refreshes the session; paging alone does not',async()=>{

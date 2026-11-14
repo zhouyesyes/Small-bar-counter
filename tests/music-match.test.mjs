@@ -12,3 +12,11 @@ assert(matchingSong([{title:'千里之外',artist:'周杰伦 / 费玉清'}],'千
 assert.equal(matchingSong([{title:'夜曲',artist:'周杰'}],'夜曲','周杰伦'),null,'partial artist names are not identity');
 assert.equal(rankSongs([cover,original],'告白气球 周杰伦')[0],original);
 console.log('PASS: exact song/artist/version selection, cover and demo rejection, ambiguous artists and Unicode normalization.');
+
+const {bestSong,findSong}=await import('../src/music.mjs');
+const maria={id:'maria',title:'Playboy',artist:'The Marias'};
+assert.equal(matchingSong([maria],'Playboy','The Marías'),maria,'accent marks do not block playback');
+assert.equal(bestSong([original],'柠檬气球','周杰伦'),original,'uncertain naming still returns a playable catalog result');
+assert.equal(bestSong([cover,original],'柠檬气球','周杰伦'),original,'prefer the original singer even when the AI misspells the title');
+const recovered=await findSong('Playboy','The Marías',{search:async q=>q.includes('Marías')?[]:[maria],qq:async()=>[]});assert.equal(recovered.track,maria,'retry plain metadata spelling');
+const corrected=await findSong('柠檬气球','周杰伦',{search:async q=>q==='周杰伦'?[original]:[cover],qq:async()=>[]});assert.equal(corrected.track,original,'artist search can recover the official title');

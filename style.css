@@ -1700,3 +1700,5 @@ html.sb-bar[data-sb-mode=dark] #completion_prompt_manager_popup {color-scheme:da
 #sb-root .sb-mpick-wrap .sb-mpick{margin-top:0}
 #sb-root .sb-msearch [data-music-source]{width:76px;flex:0 0 76px;padding:7px 5px;font-size:12px}
 #sb-root .sb-msearch input{min-width:0}
+#sb-root .sb-pick-missing{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 2px 0;font-size:11px;color:var(--sb-dim)}
+#sb-root .sb-pick-missing .sb-gen{white-space:nowrap;font-size:11px;color:var(--sb-accent)}
