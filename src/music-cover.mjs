@@ -1,5 +1,5 @@
 // Keep decoded covers across drawer redraws; each UI owns a bounded cache.
-const caches = new WeakMap();
+const caches = new WeakMap(),observers=new WeakMap();
 const trackKey = track => `${track.src || 'netease'}:${track.id}`;
 function cacheFor(root) {
     if (!caches.has(root)) caches.set(root, new Map());
@@ -28,6 +28,10 @@ export function warmMusicCover(root, track, candidates) {
 
 // Each displayed cover gets a bounded fallback cycle; no full UI redraw.
 export function bindMusicCovers(root, tracks, candidates, refresh, save) {
+    observers.get(root)?.disconnect();
+    const deferred=new Map();
+    const observer=new IntersectionObserver(entries=>{for(const entry of entries)if(entry.isIntersecting){observer.unobserve(entry.target);deferred.get(entry.target)?.();deferred.delete(entry.target);}},{rootMargin:'160px'});
+    observers.set(root,observer);
     const reused = new Set();
     root.querySelectorAll('img[data-cover-key]').forEach(slot => {
         let img = slot;
@@ -40,18 +44,21 @@ export function bindMusicCovers(root, tracks, candidates, refresh, save) {
         if (img.dataset.bound) return;
         img.dataset.bound = '1';
         const track = tracks.get(img.dataset.coverKey);
-        let urls = [...new Set(candidates(track))], index = 0, timer, cycle = 0, token = 0;
+        let urls = [...new Set(candidates(track))], index = 0, timer, cycle = 0, token = 0, refreshing = false;
         const arm = () => { clearTimeout(timer); timer = setTimeout(fail, 4000); };
         const show = url => { img.style.visibility = 'hidden'; img.src = url; arm(); };
         async function fail() {
             clearTimeout(timer);
-            if (!img.isConnected) return;
+            if (!img.isConnected || refreshing) return;
             if (++index < urls.length) { show(urls[index]); return; }
+            const fresh=[...new Set(candidates(track))];
+            if(fresh.some(url=>!urls.includes(url))){urls=fresh;index=0;show(urls[0]);return;}
             if (cycle++) { img.style.visibility = 'hidden'; return; }
-            const generation = ++token;
+            const generation = ++token;refreshing=true;
             try {
-                if (await refresh(track, { refresh: true })) save();
+                if (await refresh(track, { refresh: urls.length>0 })) save();
             } catch { /* Retry available candidates once, then stop. */ }
+            finally{refreshing=false;}
             if (!img.isConnected || generation !== token) return;
             urls = [...new Set(candidates(track))]; index = 0;
             if (urls.length) show(urls[0]); else img.style.visibility = 'hidden';
@@ -65,9 +72,14 @@ export function bindMusicCovers(root, tracks, candidates, refresh, save) {
             const url = img.currentSrc || img.src;
             if (track && /^https?:/.test(url) && track.cover !== url) { track.cover = url; save(); }
         };
-        if (urls.length) {
-            if (img.complete && img.naturalWidth) img.onload();
-            else if (img.complete) fail(); else arm();
-        } else fail();
+        const begin=()=>{
+            if(img.naturalWidth){img.onload();return;}
+            if(urls.length){if(img.complete)fail();else arm();}else fail();
+        };
+        // Missing artwork metadata should not queue requests for the entire hidden playlist.
+        const bounds=img.getBoundingClientRect();
+        if(img.classList.contains('sb-mthumb')&&(!bounds.width||bounds.bottom < -160||bounds.top > innerHeight+160)){
+            deferred.set(img,begin);observer.observe(img);
+        }else begin();
     });
 }

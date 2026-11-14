@@ -190,7 +190,7 @@ async function qqUrl(t, {standardOnly=false}={}) {
             const d=await getJson(QQ_API+'?'+params,8000);
             const x=Array.isArray(d?.data)?d.data[0]:d?.data||d;
             const url=qqAudioUrl(x?.url);if(!url)continue;
-            if(x.cover&&!t.cover)t.cover=x.cover;
+            if(x.cover)t.cover=x.cover;
             if(x.lyric&&!t.lrc)t.lrc=x.lyric;
             t.qqRequestedQuality=attempt.quality;t.qqQuality=str(x.quality);t.qqPreview=/试听|preview|trial/i.test(t.qqQuality);
             return url;
@@ -281,9 +281,21 @@ const gotCover = new Map();
 let coverBusy = 0; const coverWait = [];
 const coverSlot = () => (coverBusy < 3 ? (coverBusy++, Promise.resolve()) : new Promise(r => coverWait.push(r)));
 const coverDone = () => { const next = coverWait.shift(); if (next) next(); else coverBusy--; };
-export async function resolveCover(t, { refresh = false } = {}) {
+const coverJobs=new Map(),coverRetryAt=new Map();
+export async function resolveCover(t, options={}) {
+    if(!t||t.pending||(!options.refresh&&/^https?:/.test(t.cover||'')))return false;
+    const key=(t.src||'netease')+':'+t.id;
+    if(coverRetryAt.get(key)>Date.now())return false;
+    let job=coverJobs.get(key);
+    if(!job){
+        job=loadCover(t,options).then(ok=>{if(!ok)coverRetryAt.set(key,Date.now()+15000);else coverRetryAt.delete(key);return ok?t.cover:'';}).finally(()=>coverJobs.delete(key));
+        coverJobs.set(key,job);
+    }
+    const cover=await job;if(cover){t.cover=cover;return true;}return false;
+}
+async function loadCover(t, { refresh = false } = {}) {
     if (!t || (!refresh && t.cover && /^https?:/.test(t.cover))) return false;
-    if (refresh) { gotCover.delete(t.picId || t.id); delete t.cover; }
+    if (refresh) gotCover.delete(t.picId || t.id);
     if (t.src === 'qq') { try { await qqUrl(t); return !!t.cover; } catch { return false; } }
     const key = t.picId || t.id;
     if (gotCover.has(key)) { t.cover = gotCover.get(key); return true; }
@@ -399,10 +411,22 @@ export function createPlayer({ load, save, onChange, onStatus = () => {}, resolv
     };
     const blobTried=new Set();
     const releaseBlob=()=>{blobController?.abort();blobController=null;if(blobUrl)URL.revokeObjectURL(blobUrl);blobUrl='';};
+    let presentationRevision=0,lyricJobKey='';
     let lrc = [], lrcFor = '', sources = [], srcIdx = 0, playing = null, swapped = false; // swapped：换成了另一个平台的同一首（这时不记来源）
     const twinMode = platform => { swapped = true;sourcePlatform=platform; }; // playing：真正在响的那首（切歌单不影响它）
     const st = () => load(); // { list: [], idx, mode }
     const cur = () => st().list[st().idx];
+    function refreshPresentation(track) {
+        const target=playing,revision=presentationRevision;if(!track||!target||track.pending)return;
+        const current=()=>playing===target&&presentationRevision===revision;
+        if(track!==target&&!target.cover&&track.cover)target.cover=track.cover;
+        onChange?.();
+        if(!track.cover)resolveCover(track).then(ok=>{if(ok&&current()){if(track!==target&&!target.cover)target.cover=track.cover;save();onChange?.();}}).catch(()=>{});
+        const key=(track.src||'n')+':'+track.id;
+        if(lrcFor===key&&(lrc.length||lyricJobKey===key))return;
+        lrcFor=key;lyricJobKey=key;
+        lyricOf(track).then(lines=>{if(current()&&lrcFor===key){lrc=lines;onChange?.('state');}}).catch(()=>{}).finally(()=>{if(current()&&lyricJobKey===key)lyricJobKey='';});
+    }
     async function play(i) {
         const s = st();
         if (i != null) { s.idx = Math.max(0, Math.min(s.list.length - 1, i)); save(); }
@@ -411,6 +435,9 @@ export function createPlayer({ load, save, onChange, onStatus = () => {}, resolv
         delete audio.dataset.tried;delete audio.dataset.src;recoveryFailed=false;resolving=true;sources=[];srcIdx=0;sourceTrack=t;
         media.prepare();
         playing = t; swapped = false;
+        presentationRevision++;lrc=[];lrcFor='';lyricJobKey='';
+        audio.pause();audio.removeAttribute('src');audio.load();
+        onChange?.();
         // AI 选的歌只有歌名和歌手：第一次放时才去搜，搜到的结果直接写回这首（下次不用再搜）
         if (t.pending) {
             if (!resolve) return;
@@ -418,20 +445,18 @@ export function createPlayer({ load, save, onChange, onStatus = () => {}, resolv
             try { await waitStep(resolve(t)); } catch (e) { if(playing!==t||revision!==playRevision)return;stop();onStatus('暂时没搜到歌曲'); onChange?.('error', e?.message || '没找到这首歌'); return; }
             if (playing !== t || revision !== playRevision) return;
         }
+        refreshPresentation(t);
         let src;sourcePlatform=t.src==='qq'?'qq':'netease';sourcePreview=false;
         onStatus(t.src === 'qq' ? '正在问 QQ 音乐要播放地址…' : '正在连网易云…');
         try { const candidates=await waitStep(sourceList(t));if(playing!==t||revision!==playRevision)return;sources=taggedSources(candidates||[],t);srcIdx = 0;src = sources[0]?.u; } catch (e) { onStatus('拿不到播放地址'); onChange?.('error', e?.message || '拿不到播放地址'); return; }
         if (playing !== t || revision !== playRevision) return;
-        resolving=false;sourcePreview=sourcePlatform==='qq'&&!!t.qqPreview;
+        resolving=false;sourcePreview=sourcePlatform==='qq'&&!!t.qqPreview;refreshPresentation(t);
         if (!src) { onStatus('拿不到播放地址'); return fallback(); }
         if (t.ok) onStatus('用上次放得出来的那个来源…');
         if (t.src === 'qq') save(); // 问地址时顺便拿到了封面、歌词
         if (audio.dataset.src !== src) { audio.src = src; audio.dataset.src = src; audio.dataset.id = t.id; audio.dataset.tried = ''; }
         if(!await startAudio())return fallback();
         if(playing!==t||revision!==playRevision)return;
-        if (!t.cover) resolveCover(t).then(ok => { if (ok) { save(); onChange?.(); } });
-        const key = (t.src || 'n') + ':' + t.id;
-        if (lrcFor !== key || !lrc.length) { lrcFor = key; lrc = []; lyricOf(t).then(l => { if (lrcFor === key) { lrc = l; onChange?.('state'); } }); }
         onChange?.();
     }
     const next = (auto) => {
@@ -481,7 +506,7 @@ export function createPlayer({ load, save, onChange, onStatus = () => {}, resolv
                     const entry=sources[++srcIdx];let url=entry.u;
                     try{if(!url&&entry.get){onStatus(`正在获取备用音源（${srcIdx+1} / ${sources.length}）…`);url=await waitStep(entry.get());entry.u=url;}}catch{continue;}
                     if(!current())return;if(!url)continue;
-                    releaseBlob();sourceTrack=entry.track||t;sourcePlatform=entry.platform||(t.src==='qq'?'qq':'netease');swapped=sourceTrack!==t;sourcePreview=sourcePlatform==='qq'&&!!sourceTrack.qqPreview;audio.dataset.id=sourceTrack.id;
+                    releaseBlob();sourceTrack=entry.track||t;sourcePlatform=entry.platform||(t.src==='qq'?'qq':'netease');swapped=sourceTrack!==t;sourcePreview=sourcePlatform==='qq'&&!!sourceTrack.qqPreview;audio.dataset.id=sourceTrack.id;refreshPresentation(sourceTrack);
                     onStatus(`换一个来源试试（${srcIdx+1} / ${sources.length}）…`);
                     audio.src=url;audio.dataset.src=url;
                     if(await startAudio())return;continue;
@@ -497,7 +522,7 @@ export function createPlayer({ load, save, onChange, onStatus = () => {}, resolv
                         if(twin){
                             const alternate=await waitStep(sourceList(twin));if(!current())return;
                             if(alternate?.[0]?.u){sources=[...taggedSources(alternate,twin),...sources.slice(srcIdx+1)];srcIdx=0;releaseBlob();sourceTrack=twin;twinMode('netease');sourcePreview=false;
-                                audio.dataset.id=twin.id;audio.src=sources[0].u;audio.dataset.src=sources[0].u;
+                                refreshPresentation(twin);audio.dataset.id=twin.id;audio.src=sources[0].u;audio.dataset.src=sources[0].u;
                                 if(await startAudio()){onChange?.('info','QQ 音乐放不了，换成网易云的同一首');return;}continue;}
                         }
                     }else{
@@ -505,7 +530,7 @@ export function createPlayer({ load, save, onChange, onStatus = () => {}, resolv
                         const twin=await waitStep(qqTwin(t));if(!current())return;
                         if(twin){const alternate=await waitStep(sourceList(twin));if(!current())return;
                             if(alternate?.[0]?.u){sources=[...taggedSources(alternate,twin),...sources.slice(srcIdx+1)];srcIdx=0;releaseBlob();sourceTrack=twin;twinMode('qq');sourcePreview=!!twin.qqPreview;
-                                audio.dataset.id=twin.id;audio.src=sources[0].u;audio.dataset.src=sources[0].u;
+                                refreshPresentation(twin);audio.dataset.id=twin.id;audio.src=sources[0].u;audio.dataset.src=sources[0].u;
                                 if(await startAudio()){onChange?.('info','网易云放不了，换成 QQ 音乐的同一首');return;}continue;}
                         }
                     }
@@ -546,7 +571,7 @@ export function createPlayer({ load, save, onChange, onStatus = () => {}, resolv
         if (!document.hidden && !audio.paused && audio.readyState < 2) watch();
     });
     function stop() {
-        playRevision++;stopWait?.();releaseBlob();blobTried.clear();resolving=false;recoveryFailed=false;sourceTrack=null;playing=null;confirmedSource='';sourcePlatform='';sourcePreview=false;sources=[];srcIdx=0;lrc=[];lrcFor='';clearTimeout(dog);
+        playRevision++;presentationRevision++;stopWait?.();releaseBlob();blobTried.clear();resolving=false;recoveryFailed=false;sourceTrack=null;playing=null;confirmedSource='';sourcePlatform='';sourcePreview=false;sources=[];srcIdx=0;lrc=[];lrcFor='';clearTimeout(dog);
         audio.pause();audio.removeAttribute('src');delete audio.dataset.src;delete audio.dataset.id;delete audio.dataset.tried;audio.load();
         try { if(navigator.mediaSession)navigator.mediaSession.metadata=null; } catch { /* Optional host API. */ }
         onStatus('');onChange?.();
