@@ -1,3 +1,4 @@
+import { PHONE_PERSPECTIVE } from './phone-timeline.mjs';
 import { createPhoneIOS } from './phone-ios.mjs';
 import {createCocktailHistory} from './cocktail-history.mjs';
 import {glassControlsHtml,bindGlassControls} from './glass.mjs';
@@ -155,6 +156,11 @@ export function createUI(host) {
         // 评论框：跟着字多自动变高；打到一半的字记着，重画也不丢
         root.addEventListener('input', e => {
             const t = e.target;
+            if(t.matches?.('[data-wxsearch]')){
+                const q=t.value.trim().toLocaleLowerCase();let count=0;
+                root.querySelectorAll('[data-wxmatch]').forEach(row=>{row.hidden=!row.dataset.wxmatch.toLocaleLowerCase().includes(q);if(!row.hidden)count++;});
+                const empty=root.querySelector('.ios-wx-no-results');if(empty)empty.hidden=count>0;return;
+            }
             if (t.matches?.('[data-mseek]')) { player.seek(Number(t.value) / 1000); tickMusic(); return; }
             if (t.matches?.('[data-mtext]')) { v.mdraft = t.value; return; }
             if (t.matches?.('[data-mpics]')) { v.mpicsDraft = t.value; return; }
@@ -456,6 +462,7 @@ export function createUI(host) {
                 if(request!==manualRequest||requestMeta!==host.meta())return;
                 if(references)rule+='\n\n'+references;
             }
+            if(kind!=='cocktail')rule+='\n\n'+PHONE_PERSPECTIVE;
             const msgs = [{ role: 'system', content: parts?[parts.card,parts.persona,parts.world,parts.status,parts.story,rule].filter(Boolean).join('\n\n'):await buildSys('', rule, [], { online: ['post', 'x', 'xprofile'].includes(kind) }) }, { role: 'user', content: '（现在写）' }];
             if(request!==manualRequest||requestMeta!==host.meta())return;
             const out = String(await host.ask(msgs, `【暂停正文，这一次不写正文】\n${rule}`,kind==='cocktail'?{preserveStatus:true,maxTokens:mode==='adaptive'?4800:2400}:{}) || '');
@@ -648,9 +655,9 @@ export function createUI(host) {
     // ---------- 小手机 ----------
     function phoneHtml(era) {
         const views = {
-            home: homeHtml, 'wx-chat': wxChatHtml, 'wx-contacts': wxContactsHtml, 'wx-moments': wxMomentsHtml, 'wx-me': wxMeHtml,
+            home: homeHtml, 'wx-chats': wxChatsHtml, 'wx-chat': wxChatHtml, 'wx-contacts': wxContactsHtml, 'wx-moments': wxMomentsHtml, 'wx-me': wxMeHtml,
             x: xHtml, 'x-dm': xDmHtml, weibo: weiboHtml, diary: pDiaryHtml, 'diary-detail': pDiaryDetailHtml, memo: pMemoHtml, photos: pPhotosHtml, music: pMusicHtml,
-            settings: setHtml, 'set-cover': setCoverHtml, 'set-him': setHimHtml, 'set-me': setMeHtml, 'set-prompt': setPromptHtml, 'set-api': setApiHtml, 'set-reply': setReplyHtml, 'set-online': setOnlineHtml, 'set-when': setWhenHtml, 'set-clean': setCleanHtml,
+            settings: setHtml, 'set-wallpaper': () => phoneIOS.wallpaperSettings(head('壁纸')), 'set-cover': setCoverHtml, 'set-him': setHimHtml, 'set-me': setMeHtml, 'set-prompt': setPromptHtml, 'set-api': setApiHtml, 'set-reply': setReplyHtml, 'set-online': setOnlineHtml, 'set-when': setWhenHtml, 'set-clean': setCleanHtml,
         };
         return views;
     }
@@ -753,18 +760,34 @@ export function createUI(host) {
         const banner = iBlocked ? `<div class="sb-wxban">你把TA拉黑了，TA发的消息你收不到 <button class="sb-link" data-act="wxblock" data-k="him">解除拉黑</button></div>`
             : blockedMe ? `<div class="sb-wxban">消息已发出，但被对方拒收了。${req?.text && !req.done ? '好友申请已发送，等TA通过' : '<button class="sb-link" data-act="wxreq">发送朋友验证</button>'}</div>` : '';
         const menu = v.menuFor ? `<div class="sb-sheet"><button data-act="minput" data-id="${esc(v.menuFor)}">写进正文</button><button data-act="medit" data-id="${esc(v.menuFor)}">编辑</button><button data-act="mdel" data-id="${esc(v.menuFor)}">删除</button><button data-act="mcancel">取消</button></div>` : '';
-        return `${head(`<span class="sb-pav sm" style="background-image:url('${esc(him.avatar)}')"></span><span><b>${esc(him.remark || him.name)}</b><small>${v.busy ? '对方正在输入…' : Wd().online}</small></span>`, `<button class="sb-phx sb-phx-text${v.wxManage ? ' on' : ''}" data-act="wx-manage" aria-pressed="${!!v.wxManage}">${v.wxManage ? '完成' : '删除'}</button><button class="sb-phx" data-act="phone-go" data-to="wx-contacts" aria-label="联系人">≡</button>`)}
+        return `${head(`<span class="sb-pav sm" style="background-image:url('${esc(him.avatar)}')"></span><span><b>${esc(him.remark || him.name)}</b><small>${v.busy ? '对方正在输入…' : phoneIOS.active() ? '' : Wd().online}</small></span>`, `<button class="sb-phx sb-phx-text${v.wxManage ? ' on' : ''}" data-act="wx-manage" aria-pressed="${!!v.wxManage}">${v.wxManage ? '完成' : '删除'}</button><button class="sb-phx" data-act="phone-go" data-to="wx-contacts" aria-label="联系人">≡</button>`)}
  ${v.wxManage ? `<div class="sb-wxmanage"><span>点消息右边的 × 删掉那一条</span>${list.length && list[list.length - 1].from !== 'me' ? '<button data-act="wx-del-round">删掉TA最近一轮</button>' : ''}</div>` : ''}
  <div class="sb-msgs sb-wxchat" data-keep="msgs">${rows || '<div class="sb-empty sm">还没聊过。说点什么吧。</div>'}
   ${banner}
   ${pend ? `<div class="sb-pendnote">待发送 ${pend} 条 · 点 ↑ TA才回</div>` : ''}
   ${v.busy ? '<div class="sb-typing">· · ·</div>' : ''}
  </div>
- ${v.edit ? `<div class="sb-inp"><input class="sb-field" data-edit="${esc(v.edit)}" value="${esc(list.find(m => m.id === v.edit)?.text || '')}"><button class="sb-send" data-act="medit-ok">✓</button></div>` : `<div class="sb-inp"><button class="sb-plus${v.plus ? ' on' : ''}" data-act="plus">${v.plus ? '×' : '+'}</button><input class="sb-field" data-wx placeholder="说点什么" enterkeyhint="send"><button class="sb-send" data-act="wx-send" ${v.busy ? 'disabled' : ''}>↑</button></div>`}
- ${v.plus ? `<div class="sb-ppanel">${[['emoji', '表情'], ['voice', '语音'], ['photos', '图片'], ['money', '转账'], ['redo', '重生成']].map(([k, n]) => `<button class="sb-app" data-act="pp" data-k="${k}"><span class="sb-ai sm">${svg(k)}</span><span class="sb-an">${n}</span></button>`).join('')}</div>` : ''}
+ ${v.edit ? `<div class="sb-inp"><input class="sb-field" data-edit="${esc(v.edit)}" value="${esc(list.find(m => m.id === v.edit)?.text || '')}"><button class="sb-send" data-act="medit-ok">✓</button></div>` : `<div class="sb-inp"><button class="sb-plus${v.plus ? ' on' : ''}" data-act="plus">${v.plus ? '×' : '+'}</button><input class="sb-field" data-wx aria-label="微信消息" placeholder="说点什么" enterkeyhint="send"><button class="sb-send" data-act="wx-send" ${v.busy ? 'disabled' : ''}>${phoneIOS.active()?'发送':'↑'}</button></div>`}
+ ${v.plus ? `<div class="sb-ppanel">${[['emoji', '表情'], ['voice', '语音'], ['photos', '图片'], ['money', '转账'], ['redo', '重生成']].map(([k, n]) => `<button class="sb-app" data-act="pp" data-k="${k}" aria-label="${n}" title="${n}"><span class="sb-ai sm">${svg(k)}</span><span class="sb-an">${n}</span></button>`).join('')}</div>` : ''}
  ${menu}`;
     }
-    const wxTabs = on => `<nav class="sb-wxtabs">${[['wx-contacts', Wd().contacts], ['wx-moments', Wd().moments]].map(([k, n]) => `<button data-act="phone-go" data-to="${k}" class="${on === k ? 'on' : ''}">${n}${k === 'wx-contacts' && host.unread() ? ` <b class="sb-badge">${host.unread()}</b>` : ''}</button>`).join('')}</nav>`;
+    const wxTabIcon = key => `<svg viewBox="0 0 24 24" aria-hidden="true">${{
+        'wx-chats':'<path d="M4 5h16v12H9l-5 3z"/>',
+        'wx-contacts':'<rect x="3" y="3" width="17" height="18" rx="3"/><circle cx="11.5" cy="9" r="2.5"/><path d="M7 17c0-4 9-4 9 0M20 8h2m-2 5h2"/>',
+        'wx-moments':'<circle cx="12" cy="12" r="9"/><path d="m15 8-2 6-5 2 2-6z"/>',
+        'wx-me':'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-9 16-9 16 0"/>'
+    }[key]}</svg>`;
+    const wxTabs = on => {
+        const tabs=phoneIOS.active()?[['wx-chats','微信'],['wx-contacts','通讯录'],['wx-moments','发现'],['wx-me','我']]:[['wx-contacts',Wd().contacts],['wx-moments',Wd().moments]];
+        return `<nav class="sb-wxtabs" aria-label="微信导航">${tabs.map(([key,label])=>`<button data-act="phone-go" data-to="${key}" class="${on===key?'on':''}" ${on===key?'aria-current="page"':''}>${phoneIOS.active()?wxTabIcon(key):''}<span>${label}</span>${key===(phoneIOS.active()?'wx-chats':'wx-contacts')&&host.unread()?`<b class="sb-badge">${host.unread()}</b>`:''}</button>`).join('')}</nav>`;
+    };
+    const wxSearch = () => '<label class="ios-wx-search"><span aria-hidden="true">⌕</span><input type="search" data-wxsearch placeholder="搜索" aria-label="搜索微信会话"></label>';
+    function wxChatsHtml(){
+        const him=host.him(),last=host.wechat().filter(m=>m.type!=='note').at(-1),unread=host.unread();
+        const preview=last?`${last.pending?'[草稿] ':''}${last.type!=='text'?'['+({voice:'语音',pic:'图片',sticker:'表情',money:'转账'}[last.type]||last.type)+'] ':''}${last.text||''}`:'还没有消息';
+        return `${head('微信')}${wxSearch()}<div class="sb-list ios-wx-conversations"><button class="ios-wx-conversation" data-wxmatch="${esc(him.remark||him.name)} ${esc(preview)}" data-act="phone-go" data-to="wx-chat"><span class="ios-wx-conversation-avatar" style="background-image:url('${esc(him.avatar)}')">${unread?`<b class="sb-badge">${unread}</b>`:''}</span><span class="ios-wx-conversation-copy"><span><b>${esc(him.remark||him.name)}</b><time>${esc(last?.time?.match(/\d{1,2}[:：]\d{2}/)?.[0]||'')}</time></span><small>${esc(preview)}</small></span></button><div class="ios-wx-no-results" hidden>没有找到相关会话</div></div>${wxTabs('wx-chats')}`;
+    }
+
     // 通讯录：新的朋友（好友申请）、好友、黑名单
     function wxContactsHtml() {
         const him = host.him(), st = host.state(), m = host.meta();
@@ -1007,7 +1030,7 @@ export function createUI(host) {
         const apiName = s.api === 'own' ? (s.ownApi?.model || '自己填的') : '跟正文';
         const original = (s.barStyle || 'folio') === 'default';
         return `${head(Wd().set)}<div class="sb-slist">
- <div class="sb-sh">资料与样子</div><div class="sb-sgrp">${row('TA的资料', host.him().name, 'set-him')}${row('我的资料', host.me().name, 'set-me')}${row('抽屉的头图', modeName, 'set-cover')}
+ <div class="sb-sh">资料与样子</div><div class="sb-sgrp">${row('TA的资料', host.him().name, 'set-him')}${row('我的资料', host.me().name, 'set-me')}${row('抽屉的头图', modeName, 'set-cover')}${phoneIOS.active()?row('手机壁纸', '锁屏与桌面', 'set-wallpaper'):''}
   <label class="sb-srow"><span>美化时代<small>决定是小手机、民国信匣还是古风书匣</small></span><select data-cset="era">${[['auto', eraName.startsWith('自动') ? eraName : '自动'], ['modern', '现代'], ['minguo', '民国'], ['ancient', '古风']].map(([k, n]) => `<option value="${k}" ${(c.era || 'auto') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
   <label class="sb-srow"><span>明暗模式</span><select data-set="phoneTheme">${[['auto','跟美化'],['light','浅'],['dark','深']].map(([k,n])=>`<option value="${k}" ${(s.phoneTheme||'auto')===k?'selected':''}>${n}</option>`).join('')}</select></label></div>
  <div class="sb-sh">正文后TA写什么</div><div class="sb-sgrp">
@@ -1392,7 +1415,7 @@ export function createUI(host) {
                 if (!await host.confirm('删掉这篇？（只是在小吧台里不显示，正文不动）')) return;
                 meta.hidden ??= {}; meta.hidden[b.dataset.id] = true; host.saveMeta(); v.diaryId = ''; break;
             case 'phone-back': {
-                const back = { 'diary-detail': 'diary', 'set-when': 'settings', 'wx-chat': 'wx-contacts', 'x-dm': 'x', 'set-reply': 'settings', 'set-online': 'settings', 'set-cover': 'settings', 'set-him': 'settings', 'set-me': 'settings', 'set-prompt': 'settings', 'set-api': 'settings', 'set-clean': 'settings' }[v.view];
+                const back = { 'diary-detail': 'diary', 'set-wallpaper': 'settings', 'set-when': 'settings', 'wx-chat': phoneIOS.active() && v.prev==='wx-chats'?'wx-chats':'wx-contacts', 'x-dm': 'x', 'set-reply': 'settings', 'set-online': 'settings', 'set-cover': 'settings', 'set-him': 'settings', 'set-me': 'settings', 'set-prompt': 'settings', 'set-api': 'settings', 'set-clean': 'settings' }[v.view];
                 v.view = back || 'home'; v.plus = false; v.menuFor = ''; v.edit = null; break;
             }
             case 'phone-close':
@@ -1454,6 +1477,10 @@ export function createUI(host) {
             }
             case 'minput': { const m = host.wechat().find(x => x.id === b.dataset.id); v.menuFor = ''; if (m) toInput(msgLine(m)); break; }
             case 'pinput': { const p = allPosts().find(x => x.id === b.dataset.post); v.pmenu = ''; if (p) toInput(postLine(p)); break; }
+            case 'phone-wallpaper-reset': {
+                const key=b.dataset.wallpaper;if(!['lock','home'].includes(key))return;
+                host.setCharCfg(c=>{c.phoneWallpapers={...(c.phoneWallpapers||{})};delete c.phoneWallpapers[key];});break;
+            }
             case 'cover-mode': host.setCharCfg(c => { c.cover = { ...(c.cover || {}), mode: b.dataset.mode }; }); break;
             case 'cover-clear': host.dropImage(host.charCfg().cover?.fixed); host.setCharCfg(c => { c.cover = {...(c.cover||{}),mode:'fixed',fixed:''}; }); break;
             case 'cover-del': host.dropImage(host.charCfg().cover?.images?.[Number(b.dataset.i)]?.src); host.setCharCfg(c => { c.cover.images.splice(Number(b.dataset.i), 1); }); break;
@@ -1475,6 +1502,7 @@ export function createUI(host) {
         render();
     }
     function onKey(e) {
+        if(!e.isComposing && (e.key==='Enter'||e.key===' ') && e.target.matches('.ios-wallpaper-upload')){e.preventDefault();e.target.querySelector('input').click();return;}
         if (!e.isComposing && (e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-bg-target],[data-bg-settings]')) { e.preventDefault(); e.target.click(); return; }
         if (e.key !== 'Enter' || e.isComposing) return;
         const t = e.target;
@@ -1502,15 +1530,20 @@ export function createUI(host) {
             // 第一次改：把旧的整段拆好的两段都存下来，以后只认这两段
             host.setSettings(s => { s.promptNow = cur.now.trim() === d.now.trim() ? '' : cur.now; s.promptPhone = cur.phone.trim() === d.phone.trim() ? '' : cur.phone; const val = t.value.trim() === d[key].trim() ? '' : t.value; if (key === 'now') s.promptNow = val; else s.promptPhone = val; s.prompt = ''; }); }
         else if (t.dataset.upload && t.files?.[0]) {
-            const kind = t.dataset.upload, file = t.files[0];
+            const kind = t.dataset.upload, file = t.files[0], wallpaperKey = /^phone-wallpaper-(lock|home)$/.exec(kind)?.[1], uploadMeta = wallpaperKey ? host.meta() : null;
             t.value = ''; // 同一张图还能再选一次
             // 先调位置：框的比例照用的地方（抽屉头图 330×128、朋友圈 330×120、X 330×84、头像圆的）
-            const frame = kind.includes('avatar') ? { ratio: 1, round: true, outW: 320 }
+            const frame = wallpaperKey ? {ratio:9/19.5,outW:900} : kind.includes('avatar') ? { ratio: 1, round: true, outW: 320 }
                 : kind === 'coverWx' ? { ratio: 330 / 120 } : /^(coverX|coverXMe|xacc-cover)$/.test(kind) ? { ratio: 330 / 84 } : { ratio: 330 / 128 };
             let src;
             try { src = await cropImage(file, frame); } catch (err) { host.toast('error', err?.message || '这张图读不出来'); return; }
             if (!src) return; // 点了取消
-            src = await host.saveImage(src); // 只存在这台手机的浏览器里，设置里记个编号
+            if(wallpaperKey && uploadMeta!==host.meta())return;
+            src = await host.saveImage(src); // 图片内容随扩展设置导出，聊天里保存引用
+            if(wallpaperKey){
+                if(uploadMeta!==host.meta())return;
+                host.setCharCfg(c=>{c.phoneWallpapers={...(c.phoneWallpapers||{}),[wallpaperKey]:src};});
+            }
             if (/^opening-(cover|avatar)(-(light|dark))?$/.test(kind)) { const [, field, , mode] = kind.match(/^opening-(cover|avatar)(-(light|dark))?$/); host.setOpeningImage(field, src, mode||theme()); }
             if (kind === 'fixed') host.setCharCfg(c => { c.cover = { ...(c.cover || {}), mode: 'fixed', fixed: src }; });
             if (kind === 'pick') host.setCharCfg(c => { c.cover = { ...(c.cover || {}), mode: 'pick', images: [...(c.cover?.images || []), { tag: '', src }] }; });
@@ -1610,7 +1643,7 @@ export function createUI(host) {
     async function buildSys(intro, rules, scan = [], { online = false } = {}) {
         const p = await buildParts(scan);
         const persona = online ? onlinePersonaBlock(await host.onlinePersona?.()) : '';
-        return [p.card, p.persona, p.world, intro, p.status, p.story, persona, rules].filter(Boolean).join('\n\n');
+        return [p.card, p.persona, p.world, intro, p.status, p.story, rules.includes('【手机视角与角色知情范围】')?'':PHONE_PERSPECTIVE, persona, rules].filter(Boolean).join('\n\n');
     }
     // 设置页上算一下：小手机回一次，大概带多少 tokens
     async function countTokens() {
@@ -1619,7 +1652,7 @@ export function createUI(host) {
         const N = Number(host.settings().wxMemory ?? 50);
         const chat = host.wechat().filter(x => x.type !== 'note').slice(-Math.max(1, N)).map(m => m.text || '').join('\n');
         const p = await buildParts(host.wechat().slice(-6).map(m => m.text || ''));
-        const parts = [['角色卡', p.card], ['我的人设', p.persona], ['世界书', p.world], ['此刻', p.status], ['正文', p.story], ['手机聊天', chat], ['规矩', PHONE_RULES]];
+        const parts = [['角色卡', p.card], ['我的人设', p.persona], ['世界书', p.world], ['此刻', p.status], ['正文', p.story], ['手机聊天', chat], ['规矩', PHONE_RULES], ['手机视角', PHONE_PERSPECTIVE]];
         const nums = await Promise.all(parts.map(([, t]) => host.countTokens(t || '')));
         const total = nums.reduce((a, b) => a + b, 0);
         if (!el.isConnected) return;

@@ -12,7 +12,7 @@ const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
         window.phoneUI=createUI(host);phoneUI.mount();phoneUI.openPhone();
     });
     if(await p.locator('.ios-lock').count())await p.locator('.ios-lock-clock').click();
-await p.locator('#sb-root [data-to="wx-contacts"]').click();
+await p.locator('#sb-root .sb-app[aria-label="微信"],#sb-root .sb-app[data-to="wx-contacts"]').first().click();
     await p.locator('#sb-root [data-to="wx-moments"]').click();
     await p.evaluate(()=>{
         const cover=document.querySelector('#sb-root .sb-wcover');

@@ -46,3 +46,10 @@ assert.equal(filtered[0].mes,'无手机记录');assert.match(filtered[1].mes,/�
 const direct=[msg];decoratePhoneHistory(direct);assert.equal(msg.mes,'我走进房间');
 
 const thread=collectPhoneEvents({comments:{old:[{id:'reply',text:'评论内容',who:'me'}]}},{},{posts:[{id:'old',text:'之前剧情里生成的动态'}]});assert.match(thread[0].text,/之前剧情里生成的动态/);
+
+const {PHONE_PERSPECTIVE}=await import('../src/phone-timeline.mjs');
+assert.match(PHONE_PERSPECTIVE,/自己的小手机/);
+assert.match(PHONE_PERSPECTIVE,/微博、X 等公开内容也不等于双方已读/);
+assert.match(PHONE_PERSPECTIVE,/共友的动态可能双方可见/);
+assert.match(PHONE_PERSPECTIVE,/不把一次推测永久当事实/);
+assert.match(formatPhoneTimeline(msg.extra[TIMELINE_KEY]),/记录视角：.*的小手机/);

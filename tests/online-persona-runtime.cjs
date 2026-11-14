@@ -24,7 +24,7 @@ assert.deepEqual(await p.evaluate(()=>({src:cfg.online.source,book:cfg.online.bo
 // Send a message from the chat page and inspect the reply request.
 await p.evaluate(()=>{wx.push({id:'0',from:'him',type:'text',text:'在吗'})});
 await p.locator('[data-act=phone-back]').first().click();await p.locator('[data-to=home]').first().click().catch(()=>{});
-await p.locator('[data-to=wx-chat]').first().click().catch(async()=>{await p.locator('[data-to=wx-contacts]').first().click();await p.locator('[data-to=wx-chat]').first().click()});
+if(!await p.locator('[data-to=wx-chat]').count())await p.locator('.sb-app[aria-label="微信"],[data-to=wx-contacts]').first().click();await p.locator('[data-to=wx-chat]').first().click();
 await p.evaluate(()=>{document.querySelector('[data-wx]').value='你好';document.querySelector('[data-act=wx-send]').click()});await p.waitForFunction(()=>asks.length===1);
 const sys=await p.evaluate(()=>asks[0]);
 const at=sys.indexOf('微信上惜字如金'),rules=sys.indexOf('你在用手机和对方聊天');

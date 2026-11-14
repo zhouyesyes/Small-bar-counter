@@ -1,0 +1,70 @@
+/* iOS WeChat presentation only. Message IDs, menus, send flow and storage stay native. */
+#sb-root.sb-default-bar .ios-shell.ios-wechat{--wx-page:#ededed;--wx-bar:#f7f7f7;--wx-card:#fff;--wx-ink:#151515;--wx-dim:#8a8a8a;--wx-line:#0000000c;--wx-green:#07c160;color:var(--wx-ink)}
+#sb-root.sb-default-bar.sb-dark .ios-shell.ios-wechat{--wx-page:#111;--wx-bar:#1c1c1e;--wx-card:#232325;--wx-ink:#eee;--wx-dim:#919194;--wx-line:#ffffff0c;--wx-green:#07c160}
+#sb-root.sb-default-bar .ios-wechat .ios-surface{background:var(--wx-page);color:var(--wx-ink)}
+#sb-root.sb-default-bar .ios-wechat .ios-status,#sb-root.sb-default-bar .ios-wechat .sb-ph{background:var(--wx-page);color:var(--wx-ink)}
+#sb-root.sb-default-bar .ios-wechat .sb-ph{min-height:49px;padding:7px 12px 9px;border-bottom:1px solid var(--wx-line);gap:5px}
+#sb-root.sb-default-bar .ios-wechat .sb-pht{flex:1;justify-content:center;text-align:center;min-width:0;font-size:17px;font-weight:600}
+#sb-root.sb-default-bar .ios-wechat .sb-bk{width:28px;min-width:28px;height:32px;font-size:32px;line-height:1;color:var(--wx-ink)}
+#sb-root.sb-default-bar .ios-wechat .sb-phx{font-size:24px;min-width:28px;height:32px;color:var(--wx-ink)}
+#sb-root.sb-default-bar .ios-wechat .sb-phx-text{font-size:12px;min-width:34px;margin-left:3px}
+#sb-root.sb-default-bar .ios-wechat .sb-pht>.sb-pav{display:none}
+#sb-root.sb-default-bar .ios-wechat .sb-pht small{font-size:10px;font-weight:400;color:var(--wx-dim)}
+#sb-root.sb-default-bar .ios-wechat .sb-pht small:empty{display:none}
+#sb-root.sb-default-bar .ios-wechat .sb-list{background:var(--wx-card);padding:0;min-width:0}
+#sb-root.sb-default-bar .ios-wechat .sb-cap{padding:10px 14px 6px;background:var(--wx-page);font-size:11px;letter-spacing:0;text-transform:none;color:var(--wx-dim)}
+#sb-root.sb-default-bar .ios-wechat .sb-cr{padding:11px 14px;margin:0;min-height:65px;border-bottom:1px solid var(--wx-line);gap:11px;background:var(--wx-card)}
+#sb-root.sb-default-bar .ios-wechat .sb-cr .sb-pav{width:40px;height:40px;border-radius:7px;font-size:17px;background-color:var(--wx-page)}
+#sb-root.sb-default-bar .ios-wechat .sb-crm{min-width:0}
+#sb-root.sb-default-bar .ios-wechat .sb-crm b{font-weight:500;font-size:15px;overflow-wrap:anywhere}
+#sb-root.sb-default-bar .ios-wechat .sb-crm small{font-size:11px;color:var(--wx-dim)}
+#sb-root.sb-default-bar .ios-wechat .sb-crmore{font-size:20px;color:var(--wx-dim);min-width:26px}
+#sb-root.sb-default-bar .ios-wechat .sb-wxtabs{display:flex;align-items:stretch;padding:8px 4px 4px;gap:0;background:var(--wx-bar);border-top:1px solid var(--wx-line);flex-shrink:0}
+#sb-root.sb-default-bar .ios-wechat .sb-wxtabs button{position:relative;display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:0;min-height:43px;min-width:0;color:var(--wx-dim);font-size:10px}
+#sb-root.sb-default-bar .ios-wechat .sb-wxtabs svg{width:23px;height:23px;stroke:currentColor;stroke-width:1.5;fill:none;stroke-linejoin:round;stroke-linecap:round}
+#sb-root.sb-default-bar .ios-wechat .sb-wxtabs .on{color:var(--wx-green);font-weight:500}
+#sb-root.sb-default-bar .ios-wechat .sb-wxtabs .sb-badge{position:absolute;top:-3px;left:55%;background:#fa5151;color:#fff;font-size:9px;min-width:15px;height:15px;border:2px solid var(--wx-bar)}
+#sb-root.sb-default-bar .ios-wechat .sb-hbar{background:var(--wx-ink);width:100px;height:4px;min-height:4px;margin:8px auto 7px}
+#sb-root.sb-default-bar .ios-wechat .ios-wx-search{display:flex;align-items:center;gap:5px;background:var(--wx-card);border-radius:8px;margin:0 10px 10px;padding:0 10px;color:var(--wx-dim)}
+#sb-root.sb-default-bar .ios-wechat .ios-wx-search>span{font-size:24px;line-height:1}
+#sb-root.sb-default-bar .ios-wechat .ios-wx-search input{min-width:0;flex:1;background:none;border:0;padding:7px 3px;font-size:13px;color:var(--wx-ink)}
+#sb-root.sb-default-bar .ios-wechat .ios-wx-conversation{display:flex;align-items:center;gap:12px;width:100%;padding:13px 14px;text-align:left;background:var(--wx-card)}
+#sb-root.sb-default-bar .ios-wechat .ios-wx-conversation-avatar{position:relative;width:46px;height:46px;flex:none;border-radius:8px;background:#ddd center/cover}
+#sb-root.sb-default-bar .ios-wechat .ios-wx-conversation-avatar .sb-badge{position:absolute;right:-5px;top:-5px;background:#fa5151;color:white}
+#sb-root.sb-default-bar .ios-wechat .ios-wx-conversation-copy{display:block;flex:1;min-width:0;padding-bottom:9px;border-bottom:1px solid var(--wx-line)}
+#sb-root.sb-default-bar .ios-wechat .ios-wx-conversation-copy>span{display:flex;align-items:center;gap:8px;justify-content:space-between;margin:2px 0 5px}
+#sb-root.sb-default-bar .ios-wechat .ios-wx-conversation-copy b{font-size:16px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#sb-root.sb-default-bar .ios-wechat .ios-wx-conversation-copy time{font-size:10px;color:var(--wx-dim);flex:none}
+#sb-root.sb-default-bar .ios-wechat .ios-wx-conversation-copy small{font-size:12px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:var(--wx-dim)}
+#sb-root.sb-default-bar .ios-wechat [hidden]{display:none!important}
+#sb-root.sb-default-bar .ios-wechat .ios-wx-no-results{padding:24px 14px;font-size:12px;text-align:center;color:var(--wx-dim)}
+#sb-root.sb-default-bar .ios-wechat .sb-wxchat{background:var(--wx-page);padding:14px 12px 18px;gap:16px}
+#sb-root.sb-default-bar .ios-wechat .sb-mrow{gap:9px;min-width:0}
+#sb-root.sb-default-bar .ios-wechat .sb-mav{width:37px;height:37px;border-radius:6px;background-color:var(--wx-card)}
+#sb-root.sb-default-bar .ios-wechat .sb-mrow .sb-b{display:block;max-width:calc(100% - 62px);min-width:0;padding:9px 11px;font-size:14px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;box-shadow:0 1px 1px #00000003}
+#sb-root.sb-default-bar .ios-wechat .sb-mrow.managing .sb-b{max-width:calc(100% - 90px)}
+#sb-root.sb-default-bar .ios-wechat .sb-b.c{background:var(--wx-card);color:var(--wx-ink)}
+#sb-root.sb-default-bar .ios-wechat .sb-b.c:before{border-right-color:var(--wx-card)}
+#sb-root.sb-default-bar .ios-wechat .sb-b.u{background:#95ec69;color:#141b10}
+#sb-root.sb-default-bar .ios-wechat .sb-b.u:before{border-left-color:#95ec69}
+#sb-root.sb-default-bar .ios-wechat .sb-b.t-money{background:#f5a447;color:white;min-width:min(145px,65%)}
+#sb-root.sb-default-bar .ios-wechat .sb-b.u.t-money:before{border-left-color:#f5a447}
+#sb-root.sb-default-bar .ios-wechat .sb-b.c.t-money:before{border-right-color:#f5a447}
+#sb-root.sb-default-bar .ios-wechat .sb-time,#sb-root.sb-default-bar .ios-wechat .sb-note{font-size:10px;color:var(--wx-dim);text-align:center;padding:3px 0}
+#sb-root.sb-default-bar .ios-wechat .sb-inp{background:var(--wx-bar);border-top:1px solid var(--wx-line);padding:9px 10px;gap:8px;align-items:center}
+#sb-root.sb-default-bar .ios-wechat .sb-inp .sb-field{background:var(--wx-card);border:0;border-radius:7px;min-height:36px;font-size:14px;min-width:0;color:var(--wx-ink)}
+#sb-root.sb-default-bar .ios-wechat .sb-plus{width:26px;min-width:26px;height:26px;border:1.6px solid var(--wx-ink);border-radius:50%;font-size:24px;line-height:22px;font-weight:300;color:var(--wx-ink)}
+#sb-root.sb-default-bar .ios-wechat .sb-send{height:34px;min-width:44px;border-radius:6px;padding:0 8px;background:var(--wx-green);font-size:12px;color:#fff}
+#sb-root.sb-default-bar .ios-wechat .sb-ppanel{background:var(--wx-bar);padding:15px 10px;gap:10px;border-top:1px solid var(--wx-line)}
+#sb-root.sb-default-bar .ios-wechat .sb-ppanel .sb-app{min-width:0}
+#sb-root.sb-default-bar .ios-wechat .sb-ppanel .sb-ai{width:42px;height:42px;border-radius:12px;background:var(--wx-card);color:var(--wx-ink);box-shadow:none}
+#sb-root.sb-default-bar .ios-wechat .sb-wxfeed{background:var(--wx-card)}
+#sb-root.sb-default-bar .ios-wechat .sb-wcover{min-height:170px;border-radius:0}
+#sb-root.sb-default-bar .ios-wechat .sb-post{background:var(--wx-card);border-bottom-color:var(--wx-line);padding:18px 14px}
+#sb-root.sb-default-bar .ios-wechat .sb-wsign{background:var(--wx-card);padding-right:14px}
+#sb-root.sb-default-bar .ios-wechat .sb-mehead{padding:24px 18px;background:var(--wx-card)}
+@media(max-width:420px){#sb-root.sb-default-bar .ios-wechat .sb-mrow .sb-b{font-size:13.5px}#sb-root.sb-default-bar .ios-wechat .sb-ph{padding-left:8px;padding-right:8px}}
+/* Override the legacy circular sender, whose declarations use !important. */
+#sb-root.sb-default-bar .ios-wechat .sb-inp .sb-send{width:auto;min-width:48px;white-space:nowrap;border-radius:6px!important;background:var(--wx-green)!important;color:#fff!important;font-size:13px!important}
+#sb-root.sb-default-bar .ios-wechat .sb-inp .sb-plus{color:var(--wx-ink)!important;border:1.6px solid var(--wx-ink)!important;font-size:24px!important;background:none!important}
+#sb-root.sb-default-bar .ios-wechat .sb-pht b{font-weight:600}

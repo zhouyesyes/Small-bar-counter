@@ -133,3 +133,32 @@
 @media(max-height:700px){#sb-root .ios-shell .ios-lock{padding-top:12px;padding-bottom:10px}#sb-root .ios-shell .ios-padlock{margin-top:3px;margin-bottom:4px}#sb-root .ios-shell button.ios-lock-clock{font-size:75px}#sb-root .ios-shell .ios-lock-mini{margin-top:6px;padding:5px 10px}#sb-root .ios-shell .ios-lock-player-slot{padding-top:8px;margin-bottom:8px}#sb-root .ios-shell .ios-lock-bottom{padding-bottom:10px}}
 /* The old phone entrance transform conflicts with the new frame and viewport clamp. */
 #sb-root .sb-phone.ios-shell{animation:none!important}
+
+/* A physical frame around the embedded phone; drawer and chat remain in place. */
+#sb-root.sb-default-bar .sb-phone.ios-shell.sb-inline {
+ width:calc(100% - 24px);max-width:430px;align-self:center;margin:10px 12px 12px;
+ border:7px solid #22252a;border-radius:38px;box-shadow:0 0 0 1px #92979d,0 0 0 3px #373b42,0 12px 28px #0003;
+ flex:1;min-height:0;position:relative;overflow:hidden;container-type:inline-size;
+}
+#sb-root .ios-hardware-island{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:74px;height:20px;border-radius:20px;background:#101114;box-shadow:inset 0 0 0 1px #ffffff08;z-index:33;pointer-events:none}
+#sb-root .ios-shell .ios-island{visibility:hidden}
+#sb-root .ios-shell .ios-status{min-height:41px;padding:10px 16px 7px;flex-shrink:0}
+#sb-root .ios-shell .ios-lock-top{padding:0 10px;height:34px;flex-shrink:0}
+#sb-root .ios-shell .ios-lock-top>span:first-child{max-width:62px;overflow:hidden;white-space:nowrap}
+#sb-root .ios-shell .ios-lock{background-image:linear-gradient(180deg,#18354d12,#0000),var(--ios-lock-wallpaper,linear-gradient(180deg,#9ba8bb,#c7d0df 55%,#f9fafc))}
+#sb-root.sb-dark .ios-shell .ios-lock{background-image:linear-gradient(180deg,#0b162233,#10172622),var(--ios-lock-wallpaper,linear-gradient(180deg,#121a28,#394858))}
+#sb-root .ios-shell .ios-wallpaper-settings{background:var(--sb-soft);padding:10px 14px 24px}
+#sb-root .ios-wallpaper-settings h2{font-size:27px;letter-spacing:-.04em;margin:0 0 20px}
+#sb-root .ios-wallpaper-choices{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+#sb-root .ios-wallpaper-choice{text-align:center;min-width:0}
+#sb-root .ios-wallpaper-choice h3{font-size:14px;font-weight:500;margin:0 0 12px}
+#sb-root .ios-wallpaper-preview{position:relative;aspect-ratio:9/19.5;border:3px solid #292c30;border-radius:19px;overflow:hidden;background:var(--ios-fallback-wallpaper);box-shadow:0 5px 12px #0001;margin-bottom:16px}
+#sb-root .ios-wallpaper-preview img{width:100%;height:100%;object-fit:cover;display:block}
+#sb-root .ios-wallpaper-preview-clock{position:absolute;top:18%;left:0;width:100%;color:white;font-size:clamp(20px,8cqi,36px);font-weight:300;text-shadow:0 1px 8px #0004}
+#sb-root .ios-wallpaper-preview-apps{position:absolute;inset:20% 12% auto;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+#sb-root .ios-wallpaper-preview-apps i{aspect-ratio:1;border-radius:5px;background:#ffffffb0;box-shadow:0 1px 3px #0002}
+#sb-root .ios-wallpaper-preview-apps i:nth-child(3n){background:#38c567c9}
+#sb-root .ios-wallpaper-choice .ios-wallpaper-upload{display:block;border-radius:18px;padding:9px 4px;background:#007aff12;color:#007aff;font-size:12px;cursor:pointer}
+#sb-root .ios-wallpaper-choice>button{color:var(--sb-dim);font-size:11px;padding:12px 2px}
+#sb-root .ios-wallpaper-upload:focus-within{outline:2px solid #007aff;outline-offset:3px}
+@media(max-width:420px){#sb-root.sb-default-bar .sb-phone.ios-shell.sb-inline{width:calc(100% - 20px);margin:8px 10px 10px;border-width:6px;border-radius:33px}}
