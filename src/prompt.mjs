@@ -7,12 +7,14 @@ export const RELATION = `朋友圈里的互动要合乎真实的人际关系，�
 - 只有熟到能开口的人才评论，口吻合乎彼此的身份和亲疏（对上级客气、对熟人随便、对暧昧的人收着）
 - 朋友圈下面只能看到共同好友的评论，所以一条底下的人通常来自同一个圈子；没有合适的人，就让它冷清着，不要硬凑`;
 
-// 每轮配一首歌：就算她改过提示词也照样带上
+// 每轮配一首歌：属于「此刻」，就算她改过提示词、开了省一点也照样带上
 export const PICK_RULE = '选曲: 每轮都在状态段里写一行「选曲: 歌名｜歌手｜一句话说为什么是这首」。选歌时综合考虑：这一轮正文的情节、情绪和氛围；{{char}}的人设（性格、年龄、身份、喜好、出身）；世界书里的时代、地域与世界观（古代、民国、异国、架空等就挑气质相符的，比如古风、老上海、爵士、原声或纯音乐）；{{char}}和 {{user}} 此刻的关系与张力；以及场景里的时间、天气和地点。要的是能把这一刻的气氛衬出来的歌，而不只是歌词字面相关。挑真实存在、在网易云或 QQ 音乐搜得到的歌，写原唱和正式歌名，不要编造，不要写翻唱版、伴奏版。理由用一句话点出它和此刻气氛、人物的关联。这是给 {{user}} 的配乐，不是{{char}}在听的歌（那个写「音乐:」）。';
-export const DEFAULT_PROMPT = `【小吧台】
+
+// 提示词分两段：「此刻」每轮都写（吧台状态栏 + 选曲）；「小手机」只在没开省一点时才加
+export const NOW_PROMPT = `【小吧台 · 此刻】
 每次回复正文写完以后，另起一行，写一段 {{char}} 此刻的状态，用 <!--SB 开头、SB--> 结尾，一行一项，没有的就不写那一行。这段不会显示给 {{user}}，也不要在正文里提到它。
 这段也是 {{char}} 本人：内容要贴合 {{char}} 的性格、口吻、关系和当下剧情，不要写成旁白或客观报告。
-可以写的项：
+此刻（每轮都写）：
 时间: 剧情里的日期和时刻（接着上一轮往下走）
 天气: 晴 / 阴 / 小雨 / 大雪……
 在哪: 此刻在哪
@@ -20,17 +22,21 @@ export const DEFAULT_PROMPT = `【小吧台】
 想要: 此刻最想要的
 心声: 心里想的一句话
 心声背面: 更露骨、不会说出口的那一面
-签名: {{char}}的个性签名（想换才写）
-音乐: 歌名｜歌手｜正在唱的一句歌词（{{char}}在听歌时才写）
 选曲: 歌名｜歌手｜一句话说为什么是这首（每轮都写，按正文、人设、世界观和此刻的气氛挑）
+按需才写：
+签名: {{char}}的个性签名（想换才写）
+音乐: 歌名｜歌手｜正在唱的一句歌词（{{char}}自己在听歌时才写）
 备忘: {{char}}记下的一件要做的事（偶尔）
 完成: 做完的那件事
+{{背景}}`;
+
+export const PHONE_PROMPT = `【小吧台 · 小手机】
+同一段 <!--SB … SB--> 里，下面这些是小手机里的内容：按剧情偶尔写，不是每轮都要有，没有就不写。
 动态: 正文｜照片描述,照片描述｜地点（朋友圈：熟人能看到，体面、生活化的那一面；{{char}}想发时才写，一轮最多 2 条）
 朋友圈: 名字｜正文｜照片描述｜时间｜点赞的人（{{user}} 微信好友发的朋友圈，偶尔写；点赞的人用顿号隔开，没有就空着）
 朋友圈评论: 发帖人｜评论人｜内容（别人朋友圈下面的评论，一条 0～2 个）
 评论: 名字｜内容（别人在{{char}}最新一条动态下面的留言，偶尔）
 点赞: 名字、名字（给{{char}}最新一条动态点赞的人，偶尔）
-（谁会评论、谁只点赞、谁不出现，照下面「朋友圈里的互动」那几条判断）
 回复: 内容（{{user}} 在{{char}}动态下留言了，{{char}}回一句）
 日记: 标题｜正文（剧情里有值得记的事才写，不是每轮都写）
 X: 正文（X 是{{char}}比较私人的地方：小号心情、深夜的念头、不能跟熟人说的话、欲望和阴暗面，口吻更放开；偶尔）
@@ -41,9 +47,30 @@ X网名 / X账号 / X签名: 新的（只有剧情里{{char}}想改自己的 X �
 好友申请: 名字｜验证消息（剧情里有人在微信上加 {{user}} 好友时，偶尔）
 微信拉黑: 是（只有剧情里{{char}}真的在微信上把 {{user}} 拉黑时才写）
 微信解除拉黑: 是（{{char}}把 {{user}} 从黑名单里放出来时）
-{{背景}}
 
 ${RELATION}`;
+
+// 旧版只有一整段：保留给旧代码和「改过」的判断
+export const DEFAULT_PROMPT = NOW_PROMPT + '\n\n' + PHONE_PROMPT;
+const PHONE_KEYS = /^(?:动态|朋友圈|朋友圈评论|评论|点赞|回复|日记|X|微博|热搜|X网名|微信|好友申请|微信拉黑|微信解除拉黑|朋友圈里的互动|（谁会评论)/;
+// 以前改过的整段提示词：按行拆成「此刻」和「小手机」两段（从第一条小手机项开始，后面不是此刻项的都归小手机）
+export function splitPrompt(text) {
+    const now = [], phone = []; let inPhone = false;
+    for (const line of String(text || '').split('\n')) {
+        const t = line.trim();
+        if (PHONE_KEYS.test(t)) inPhone = true;
+        else if (/^(?:时间|天气|在哪|地点|穿着|想要|心声|心声背面|签名|音乐|备忘|完成|选曲|\{\{背景\}\})\s*[:：]?/.test(t)) { now.push(line); continue; }
+        (inPhone ? phone : now).push(line);
+    }
+    return { now: now.join('\n').trim(), phone: phone.join('\n').trim() };
+}
+// 设置里存的两段（空着就是默认）；旧设置的整段自动拆开
+export function promptParts(settings = {}) {
+    if (settings.prompt && settings.promptNow == null && settings.promptPhone == null) {
+        const p = splitPrompt(settings.prompt); return { now: p.now || NOW_PROMPT, phone: p.phone || PHONE_PROMPT };
+    }
+    return { now: settings.promptNow || NOW_PROMPT, phone: settings.promptPhone || PHONE_PROMPT };
+}
 
 export const LETTER_RULES = `你们在书信往来。回一封信：几句话就好，一行一句，口吻合乎你们所处的年代。
 不要写动作描写、不要写旁白、不要加引号，不用写抬头和落款（会自动加）。
@@ -51,7 +78,7 @@ export const LETTER_RULES = `你们在书信往来。回一封信：几句话就
 [图片]随信附上的东西或画
 [转账]数目｜附言`;
 
-// 小手机回完消息，顺带更新状态（她没开「省一点」时）
+// 小手机回完消息，顺带更新状态（只在没开「省一点」时）
 export const PHONE_STATUS = `回完消息以后，如果此刻有变化，或者你想发动态、写日记、记备忘，另起一行用 <!--SB 开头、SB--> 结尾写一段，写法和正文后面的状态段一样（时间、在哪、心声、动态、日记、备忘……没有变化的不写，整段都可以不写）。`;
 
 // 她点按钮让TA现在写：只写这一样
@@ -77,19 +104,31 @@ export const PHONE_RULES = `你在用手机和对方聊天。像真人发消息�
 [表情]表情的意思
 [转账]金额｜留言`;
 
-// 每轮注入正文的那一段：规则 + 现在的状态（{{char}}不用每次从头想）+ 她在小手机里新说的话
-export function buildInjection({ prompt, coverTags, state, wechatTail, myComments, waiting, wxNote, saveMode, channel = '手机上的聊天' }) {
-    let text = (prompt || DEFAULT_PROMPT).replace('{{背景}}', coverTags?.length ? `背景: 从这几个里挑一个最合适此刻的：${coverTags.join('、')}` : '');
-    text += '\n' + PICK_RULE;
-    if (saveMode) text += '\n（省一点：这一轮只写 时间、天气、在哪、心声、选曲 这几项）';
+// 每轮注入正文的那一段：
+// - 此刻（每轮都有）：吧台状态 + 选曲
+// - 小手机（省一点时整段不加）：朋友圈、日记、X、微博……以及手机里最近的事、留言
+// - 下一轮正文顺带回的微信：她明确选了这个方式，省一点时也照样带上
+export function buildInjection({ prompt, promptNow, promptPhone, coverTags, state, wechatTail, myComments, waiting, wxNote, phoneNote, saveMode, channel = '手机上的聊天' }) {
+    const parts = prompt != null && promptNow == null ? promptParts({ prompt }) : { now: promptNow || NOW_PROMPT, phone: promptPhone || PHONE_PROMPT };
+    const bg = coverTags?.length ? `背景: 从这几个里挑一个最合适此刻的：${coverTags.join('、')}` : '';
+    let text = parts.now.replace('{{背景}}', bg) + '\n' + PICK_RULE;
     const recent = (state?.picks || []).slice(-8).map(p => `《${p.title}》${p.artist ? p.artist : ''}`);
     if (recent.length) text += `\n这个聊天里已经选过的歌（尽量换一首，除非剧情就该是这首）：${recent.join('、')}`;
     const n = state?.now || {};
     const cur = [n.time && '时间 ' + n.time, n.weather && '天气 ' + n.weather, n.where && '在 ' + n.where, n.wear && '穿着 ' + n.wear].filter(Boolean).join('，');
     if (cur) text += `\n上一轮的状态：${cur}`;
-    if (wechatTail) text += `\n\n你们最近${channel}（{{char}} 记得这些）：\n${wechatTail}`;
+    if (wxNote) text += `\n${wxNote}`;
+    if (saveMode) text += '\n（省一点：状态段只写上面「此刻」的内容和选曲，不写朋友圈、动态、日记、X、微博、热搜这些小手机内容。）';
+    else {
+        text += '\n\n' + parts.phone.replace('{{背景}}', bg);
+        if (wechatTail) text += `\n\n你们最近${channel}（{{char}} 记得这些）：\n${wechatTail}`;
+        if (myComments) text += `\n\n{{user}} 在{{char}}动态下的留言（还没回）：\n${myComments}`;
+        if (phoneNote) text += `\n\n${phoneNote}`;
+    }
     if (waiting) text += `\n\n{{user}} 刚在手机上发来、还没回的消息：\n${waiting}\n这一轮请在状态段里用「微信:」回她，一行一条（可以好几行）。`;
-    if (wxNote) text += `\n\n${wxNote}`;
-    if (myComments) text += `\n\n{{user}} 在{{char}}动态下的留言（还没回）：\n${myComments}`;
     return text;
+}
+// 放在注入最后：模型最后读到的是这一轮一定要有的项，避免选曲、酒杯被长长的规则冲掉
+export function mustWrite({ cocktail = false, saveMode = false } = {}) {
+    return `\n\n【本轮状态段必须有】时间、在哪、心声、选曲${cocktail ? '、酒杯' : ''}${saveMode ? '；小手机内容这一轮不写' : '；小手机内容按剧情可有可无'}。`;
 }

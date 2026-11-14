@@ -44,3 +44,8 @@ html.sb-bar #movingDivs:has(.sb-helper-dialog){z-index:32009!important}
 #sb-root .sb-cocktail .cup-reference>summary{cursor:pointer;padding:5px 0}
 #sb-root .sb-cocktail .cup-reference textarea{display:block;width:100%;min-height:160px;max-height:340px;resize:vertical;margin:8px 0;padding:10px;border:1px solid var(--line);border-radius:6px;background:var(--wash);color:var(--ink);font:11px/1.7 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere}
 #sb-root .sb-cocktail .reference-actions{display:flex;gap:12px;flex-wrap:wrap}#sb-root .sb-cocktail .reference-actions button{padding:5px 0;border-bottom:1px dotted var(--line);color:var(--accent)}
+/* Narrow bars: the month label wraps above the buttons and buttons never wrap their text. */
+#sb-root .sb-cocktail .cal-controls{flex-wrap:wrap;row-gap:6px}
+#sb-root .sb-cocktail .cal-controls>span:not(.cal-nav){flex:1 1 9em;min-width:0}
+#sb-root .sb-cocktail .cal-controls>.cal-nav{display:flex;gap:5px;flex:none;margin:0 0 0 auto}
+#sb-root .sb-cocktail .cal-controls button{flex:none;white-space:nowrap;line-height:1;display:inline-flex;align-items:center;justify-content:center}
