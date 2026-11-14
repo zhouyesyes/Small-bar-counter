@@ -1660,3 +1660,27 @@ html.sb-bar[data-sb-mode=dark] #completion_prompt_manager_popup {color-scheme:da
 #sb-root .sb-mpick.on{border-style:solid;background:color-mix(in srgb,var(--sb-accent) 12%,transparent)}
 #sb-root .sb-mpick:focus-visible{outline:2px solid var(--sb-accent);outline-offset:2px}
 #sb-root .sb-plists .sb-chat-plist{border-style:dashed}
+
+/* Modern phone: its own sans-serif (黑体) type, independent of the global/bar font; letters keep Songti. */
+#sb-root.sb-era-modern .sb-phone{--sb-phone-font:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Noto Sans SC","Microsoft YaHei","Helvetica Neue",sans-serif;--sb-font:var(--sb-phone-font)!important;--sb-serif:var(--sb-phone-font)!important}
+#sb-root.sb-era-modern .sb-phone,#sb-root.sb-era-modern .sb-phone :not([class*="fa-"]){font-family:var(--sb-phone-font)!important}
+/* Chat bubbles always wrap inside the phone and use a slightly smaller size. */
+#sb-root .sb-phone .sb-b{white-space:normal;overflow-wrap:anywhere;word-break:break-word;min-width:0}
+#sb-root .sb-mrow .sb-b{font-size:calc(13.5px * var(--fontScale,1));line-height:1.5;padding:7px 10px}
+#sb-root .sb-mrow{min-width:0}
+/* WeChat delete mode: a visible × beside each message, plus "delete last reply round". */
+#sb-root .sb-phx.sb-phx-text{width:auto;padding:0 8px;font-size:calc(13px * var(--fontScale,1))}
+#sb-root .sb-phx.sb-phx-text.on{color:#fa5151}
+#sb-root .sb-wxmanage{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 12px;font-size:calc(12px * var(--fontScale,1));color:#888;background:#f7f7f7;border-bottom:1px solid #e0e0e0}
+#sb-root .sb-wxmanage button{flex:none;color:#fa5151;border:1px solid #fa5151;border-radius:12px;padding:3px 10px;font-size:calc(12px * var(--fontScale,1))}
+#sb-root .sb-mdel{flex:none;align-self:center;width:24px;height:24px;border-radius:50%;background:#fa5151;color:#fff;font-size:15px;line-height:24px;text-align:center;padding:0}
+#sb-root .sb-mrow.managing .sb-b{max-width:calc(100% - 128px)}
+#sb-root .sb-mrow-letter{display:flex;align-items:center;gap:8px}
+#sb-root .sb-mrow-letter.u{flex-direction:row-reverse}
+#sb-root.sb-dark .sb-wxmanage{background:#1e1e1e;border-color:#2a2a2a}
+/* The 酒馆 page button rule shares the .sb-b class name: undo its look on phone bubbles. */
+#sb-root .sb-phone .sb-b{cursor:auto;color:inherit}
+#sb-root .sb-phone .sb-b.c{color:var(--sb-fg)}
+#sb-root .sb-phone .sb-b.u{color:var(--sb-bg)}
+#sb-root .sb-mrow .sb-b.c,#sb-root .sb-mrow .sb-b.u{color:#111}
+#sb-root.sb-dark .sb-mrow .sb-b.c{color:#e5e5e5}
