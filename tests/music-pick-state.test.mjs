@@ -24,3 +24,24 @@ test('legacy deletion flags become occurrence-specific without revealing the del
  assert.equal(isPickHidden(meta,old),true);assert.deepEqual(meta.musicPickHidden[old.key],{msg:'reply1'});
  assert.equal(isPickHidden(meta,buildState([first,second]).pick),false);
 });
+
+test('avoidance uses the last five selection occurrences rather than unique playlist insertion order',async()=>{
+ const {musicSelectionContext}=await import('../src/music-selection.mjs');
+ const entries=['第一首','第二首','第三首','第四首','第五首','第六首','第一首'].map((title,i)=>({id:'r'+i,raw:`选曲: ${title}｜歌手｜理由`,at:i}));
+ const state=buildState(entries);
+ assert.deepEqual(state.recentPicks.map(p=>p.title),['第三首','第四首','第五首','第六首','第一首']);
+ assert.equal(state.picks.length,6);
+ const prompt=musicSelectionContext({},state.pick,state.recentPicks);
+ assert.match(prompt,/本轮必须另选一首/);assert.match(prompt,/《第一首》/);assert.doesNotMatch(prompt,/《第二首》/);
+ assert.match(prompt,/翻唱、现场、伴奏/);
+ assert.deepEqual(buildState(entries.slice(0,-1)).recentPicks.map(p=>p.title),['第二首','第三首','第四首','第五首','第六首'],'deleting or switching the latest reply rebuilds the window');
+ assert.deepEqual(buildState([]).recentPicks,[],'a new chat starts fresh');
+});
+test('the avoidance list survives playlist deletion and includes corrected catalog names',async()=>{
+ const {musicSelectionContext}=await import('../src/music-selection.mjs');
+ const state=buildState([first,second]);
+ const meta={musicPickHidden:{[state.pick.key]:{msg:state.pick.msg}},musicPicks:{[state.pick.key]:{title:'修正曲名',artist:'歌手',catalogVerified:true}}};
+ const prompt=musicSelectionContext(meta,state.pick,state.recentPicks);
+ assert.match(prompt,/《夜曲》/);assert.match(prompt,/实际条目：《修正曲名》/);
+ assert.equal((prompt.split('【最近五次选曲')[1].match(/《夜曲》/g)||[]).length,2,'repeat occurrences take separate slots');
+});

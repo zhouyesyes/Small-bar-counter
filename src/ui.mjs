@@ -1,4 +1,4 @@
-import { isPickHidden } from './music-selection.mjs';
+import { isPickHidden, musicSelectionContext } from './music-selection.mjs';
 import { PHONE_PERSPECTIVE } from './phone-timeline.mjs';
 import { createPhoneIOS } from './phone-ios.mjs';
 import {createCocktailHistory} from './cocktail-history.mjs';
@@ -502,6 +502,7 @@ export function createUI(host) {
         try {
             const mode=host.cocktailMode?.()||'default';
             let rule = kind==='cocktail'?cocktailProtocol(mode,cocktailFromState(host.state(),mode),{recentNames:(host.state().cocktailLog||[]).filter(r=>r.mode===mode).slice(-10).map(r=>r.drink.name),replan,replanRevision:host.charCfg?.().cocktailPlanPending?host.charCfg().cocktailPlanRevision:null})+'\n只写状态段，不写正文。':MANUAL[kind];
+            if (kind==='pick') rule+='\n\n'+musicSelectionContext(host.meta(),host.state().pick,host.state().recentPicks);
             if (['now', 'memo', 'all', 'cocktail'].includes(kind)) rule += '\n' + host.memoNote(redoOf);
             if (['post', 'moments', 'all'].includes(kind)) rule += '\n\n' + RELATION;
             let parts=null;

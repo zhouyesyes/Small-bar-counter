@@ -539,7 +539,7 @@ function refreshInject() {
     // 这张卡关了「回复时自动更新状态」（多角色、群像卡）：正文后不再让TA写状态段
     const autoPick=charCfg().autoMusicPick!==false,pickStatus=replyPickStatus();
     if (charCfg().noAutoStatus) {
-        const text=autoPick?PICK_RULE+'\n正文后只附这一段，不添加其他状态项目：\n<!--SB\n选曲: 正式歌名｜演唱者｜本轮配乐理由\nSB-->\n'+musicSelectionContext(meta(),state().pick)+(pickStatus?.missing?'\n上一轮漏写了选曲，本轮请务必写出选曲行。':''):'';
+        const text=autoPick?PICK_RULE+'\n正文后只附这一段，不添加其他状态项目：\n<!--SB\n选曲: 正式歌名｜演唱者｜本轮配乐理由\nSB-->\n'+musicSelectionContext(meta(),state().pick,state().recentPicks)+(pickStatus?.missing?'\n上一轮漏写了选曲，本轮请务必写出选曲行。':''):'';
         c.setExtensionPrompt(INJECT_KEY,text,1,0,false,0);return;
     }
     const cover = charCfg().cover;
@@ -571,7 +571,7 @@ function refreshInject() {
             if(reference)text+='\n\n'+formatStatusSources(collectStatusSources({pasted:reference}));
         }
     }
-    const musicFeedback=autoPick?musicSelectionContext(meta(),state().pick):'';if(musicFeedback)text+='\n\n'+musicFeedback;
+    const musicFeedback=autoPick?musicSelectionContext(meta(),state().pick,state().recentPicks):'';if(musicFeedback)text+='\n\n'+musicFeedback;
     text += mustWrite({ cocktail: s.barStyle === 'default', saveMode: s.saveMode, autoPick, missingPick:pickStatus?.missing });
     // 1 = 放在聊天里（IN_CHAT），深度 0 = 最后面，0 = 系统身份
     c.setExtensionPrompt(INJECT_KEY, text, 1, 0, false, 0);

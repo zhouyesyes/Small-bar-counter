@@ -20,5 +20,6 @@ console.log('Prompt split: 此刻 always, 小手机 skipped by save mode, queued
 
 assert(!buildInjection({autoPick:false,state:{}}).includes(PICK_RULE));
 assert(mustWrite({missingPick:true}).includes('上一轮回复漏写了选曲'));
-assert(mustWrite().includes('沿用同一首也要重新写'));
+assert(mustWrite().includes('不得与最近五次选曲重复'));
+assert(!mustWrite().includes('沿用同一首'));
 assert(!mustWrite({autoPick:false}).includes('选曲: 正式歌名'));

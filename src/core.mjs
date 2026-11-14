@@ -62,7 +62,7 @@ export function pickKey(title, artist) {
 }
 export function buildState(msgs, {history=true}={}) {
     const st = {
-        cocktails: {}, cocktailLog: [], now: {}, nowLog: [], posts: [], moments: [], diary: [], memo: [], music: null, picks: [], pick: null, xposts: [], xfeed: [], weibo: [], hot: [], photos: [], freq: [], blockedMe: false, wechat: [], npcComments: [], replies: [], cover: '',
+        cocktails: {}, cocktailLog: [], now: {}, nowLog: [], posts: [], moments: [], diary: [], memo: [], music: null, picks: [], recentPicks: [], pick: null, xposts: [], xfeed: [], weibo: [], hot: [], photos: [], freq: [], blockedMe: false, wechat: [], npcComments: [], replies: [], cover: '',
         likes: {}, // 谁点了赞：帖子 id → [名字]（TA按关系写的，界面不自己猜）
     };
     const historyIndex=new Map();
@@ -172,6 +172,8 @@ export function buildState(msgs, {history=true}={}) {
             const [title, artist, why] = split(pick);
             const key = pickKey(title, artist);
             if (title && key) {
+                st.recentPicks.push({key,title,artist:artist||'',msg:id});
+                if(st.recentPicks.length>5)st.recentPicks.shift();
                 const old = st.picks.find(x => x.key === key);
                 if (old) Object.assign(old, { why: why || old.why, msg: id, at, selections: (old.selections || 1) + 1 });
                 else st.picks.push({ key, title, artist: artist || '', why: why || '', msg: id, at });
