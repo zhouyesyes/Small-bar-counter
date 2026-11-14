@@ -3,8 +3,8 @@ import {collectStatusSources,statusExcerpt,formatStatusSources,pastedReference,P
 import {drinkName,parseCocktail,emptyCocktail,cocktailProtocol,fallbackDrinkName} from '../src/cocktail-state.mjs';
 const result=collectStatusSources({character:{data:{description:'现代角色',first_mes:'开场正文'.repeat(4000)+'<details><summary>状态栏</summary>精力:72 穿着:外套</details>',mes_example:'状态栏：关系是朋友',extensions:{regex_scripts:[{scriptName:'角色状态',replaceString:'<div class="status">{{stat_data.疲劳}}</div>'},{scriptName:'停用的',disabled:true,replaceString:'状态栏:不该读取'}]}}},messages:[{is_user:true,mes:'状态栏:用户乱写'},{is_user:false,mes:'长正文'.repeat(2000)+'状态栏：精力68，心声：还没说完'}],rendered:['状态栏：当前精力66']});
 assert.ok(result.some(s=>s.label.includes('开场白')&&s.content.includes('精力:72')));assert.ok(result.some(s=>s.label.includes('正则')&&s.content.includes('stat_data.疲劳')));assert.ok(result.some(s=>s.content.includes('精力68')));assert.ok(result.some(s=>s.content.includes('当前精力66')));assert.ok(!result.some(s=>s.content.includes('用户乱写')||s.content.includes('不该读取')));assert.ok(result.reduce((n,s)=>n+s.content.length,0)<=28000);assert.equal(statusExcerpt('没有相关标记的普通叙述'), '');assert.match(formatStatusSources([]),/没有找到/);
-for(const name of ['中文酒名','铃朱','此刻的温柔','宋亭','Take a Seat'])assert.equal(drinkName(name),null);
-for(const name of ['青梅金汤力','烟橙古典','莓果酸酒','樱桃曼哈顿','长岛冰茶','桂花特调'])assert.equal(drinkName(name),name);
+for(const name of ['中文酒名','酒品名','未命名','A Martini','坏名\n高球','<script>'])assert.equal(drinkName(name),null);
+for(const name of ['青梅金汤力','烟橙古典','莓果酸酒','樱桃曼哈顿','长岛冰茶','桂花特调','半颗盐梅','橙皮留白','桃色微醺'])assert.equal(drinkName(name),name);
 const first=parseCocktail({...emptyCocktail(),drink:{name:'樱桃曼哈顿',cupType:'coupe'}});assert.equal(parseCocktail({version:1,mode:'default',drink:{name:'中文酒名'}},first).drink.name,'樱桃曼哈顿');
 assert.match(cocktailProtocol('adaptive',null,{replan:true}),/旧模块只是参考/);assert.match(cocktailProtocol('adaptive'),/原卡正在使用的状态字段/);
 const modules=['a','b'].map(id=>({id,title:id,garnish:'ice',sections:[{title:'项目',items:[{value:'原值'}]}]}));const original=parseCocktail({...emptyCocktail('adaptive'),modules});assert.deepEqual(parseCocktail({...emptyCocktail('adaptive'),layoutRevision:1,modules:[modules[1],modules[0]]},original).modules.map(m=>m.id),['b','a']);
@@ -19,7 +19,7 @@ assert.match(cocktailProtocol('adaptive',null,{replan:true,replanRevision:5}),/l
 for(const name of ['蜜桃朗姆高球','荔枝气泡','玫瑰金酒特饮'])assert.equal(drinkName(name),name);
 assert.equal(fallbackDrinkName({base:'白朗姆酒',mixers:['水蜜桃利口酒','蔓越莓汁','苏打水'],cupType:'highball'}),'蜜桃朗姆高球');
 assert.ok(drinkName(fallbackDrinkName({})));
-assert.equal(parseCocktail({version:1,mode:'default',drink:{name:'桃色微醺',base:'白朗姆酒',mixers:['水蜜桃利口酒','蔓越莓汁','苏打水'],cupType:'highball'}}).drink.name,'蜜桃朗姆高球');
+assert.equal(parseCocktail({version:1,mode:'default',drink:{name:'桃色微醺',base:'白朗姆酒',mixers:['水蜜桃利口酒','蔓越莓汁','苏打水'],cupType:'highball'}}).drink.name,'桃色微醺');
 assert.ok(parseCocktail({version:1,mode:'default',drink:{cupType:'coupe'}}).drink.name);
 console.log('Card status sources, bounded context, drink-name checks, replan protocol and layout revisions passed.');
 
@@ -27,3 +27,15 @@ const naming=cocktailProtocol('default',null,{recentNames:['烟橙古典','烟�
 assert.match(naming,/近期已用酒名/);assert.match(naming,/优先选择尚未使用/);
 assert.ok(naming.includes(JSON.stringify(['烟橙古典','青梅金汤力'])));
 assert.match(naming,/不要照抄示例酒名/);
+
+// A valid creative name must survive a changed recipe without rewriting the previous snapshot.
+const creative=parseCocktail({version:1,mode:'default',drink:{name:'半颗盐梅',base:'金酒',mixers:['梅汁']}},first);
+assert.equal(creative.drink.name,'半颗盐梅');
+assert.equal(first.drink.name,'樱桃曼哈顿','updating a name must not rewrite the previous snapshot');
+assert.equal(parseCocktail({version:1,mode:'default',drink:{name:'<script>',base:'白朗姆酒',mixers:['水蜜桃汁','苏打水'],cupType:'highball'}},creative).drink.name,'蜜桃朗姆高球');
+for(const mode of ['default','adaptive']){
+ const prompt=cocktailProtocol(mode);
+ assert.doesNotMatch(prompt,/酒名必须以酒型结尾|否则程序会按配方自动改名/);
+ assert.match(prompt,/命名与配方分开/);
+ assert.match(prompt,/不把同一句情绪改写四遍/);
+}
