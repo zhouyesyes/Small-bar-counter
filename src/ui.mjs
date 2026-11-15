@@ -1,3 +1,4 @@
+import {createFloatingLyrics} from './floating-lyrics.mjs';
 import { isPickHidden, musicSelectionContext } from './music-selection.mjs';
 import { PHONE_PERSPECTIVE } from './phone-timeline.mjs';
 import { createPhoneIOS } from './phone-ios.mjs';
@@ -148,6 +149,7 @@ export function createUI(host) {
         // 状态那行小字只改字，不整页重画（滑着的时候不跳）
         onStatus: text => { v.mstate = text; root?.querySelectorAll('.sb-mstxt').forEach(el => { el.textContent = text; }); },
     });
+    const floatingLyrics=createFloatingLyrics({player,settings:host.settings,save:()=>host.saveSettings(),onToggle:enabled=>root?.querySelectorAll('[data-act=mfloat]').forEach(button=>{button.setAttribute('aria-pressed',String(enabled));button.textContent=enabled?'关闭悬浮歌词':'悬浮歌词';})});
     const coverTracks = new Map();
     const coverImg = (t, cls) => { const key = `${t.src || 'netease'}:${t.id}`; coverTracks.set(key, t); const url = displayMusicCover(root,t,cls,coverList); return `<img class="${cls}" ${url ? `src="${esc(url)}"` : ''} data-cover-key="${esc(key)}" decoding="async" style="visibility:hidden" alt="">`; };
     const fmt = s => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
@@ -166,7 +168,7 @@ export function createUI(host) {
         // 主页小卡片：放到哪句显示哪句
         const wl = root?.querySelector('.sb-wlyr');
         if (wl) { const i = player.line(); if (wl.dataset.i !== String(i)) { wl.dataset.i = i; wl.textContent = player.lyric()[i]?.text || ''; } }
-        phoneIOS.sync();
+        floatingLyrics.sync();phoneIOS.sync();
         const a = player.audio, box = root?.querySelector('.sb-music'); if (!box) return;
         const bar = box.querySelector('[data-mseek]'); if (bar) { const ratio = Number.isFinite(a.duration) && a.duration > 0 ? Math.max(0, Math.min(1, a.currentTime / a.duration)) : 0; const value = Math.round(ratio * 1000); if (Number(bar.value) !== value) bar.value = value; const fill = (ratio * 100).toFixed(2) + '%'; if (bar.style.getPropertyValue('--sb-progress') !== fill) bar.style.setProperty('--sb-progress', fill); }
         const t = box.querySelector('.sb-mtime'); if (t) { const value = `${fmt(a.currentTime)} / ${fmt(a.duration)}`; if (t.textContent !== value) t.textContent = value; }
@@ -196,7 +198,7 @@ export function createUI(host) {
         bindGlassControls(root,{getSettings:host.settings,save:()=>host.saveSettings()});
         bindDrawerSize(root,{settings:()=>host.settings(),save:()=>host.saveSettings()});
         widePanel.addEventListener('change', () => render());
-        document.documentElement.appendChild(root); // 不放进 body：酒馆主题可能给 body 加变形，会把固定定位困住
+        document.documentElement.appendChild(root);floatingLyrics.mount(); // 不放进 body：酒馆主题可能给 body 加变形，会把固定定位困住
         root.addEventListener('click', onClick);
         phoneIOS.bind(root);
         root.addEventListener('keydown', onKey);
@@ -312,7 +314,7 @@ export function createUI(host) {
 
     function render() {
         if (!root) return;
-        const s = host.settings();
+        const s = host.settings();floatingLyrics.sync();
         warmMusicCover(root, player.current(), coverList);
         const oldCover=host.charCfg?.()?.cover;
         if(oldCover?.mode&&oldCover.mode!=='fixed'&&host.setCharCfg){
@@ -584,6 +586,7 @@ export function createUI(host) {
  ${host.settings().barStyle==='default'?'<div class="sb-record-note" aria-hidden="true"><span>SIDE A</span><i></i><span>33⅓ RPM</span></div>':''}
  <div class="sb-mctl"><button data-act="mmode" title="${{ all: '列表循环', one: '单曲循环', shuffle: '随机' }[mode]}">${mi(mode)}</button><button data-act="mprev" aria-label="上一首">${mi('prev')}</button><button class="sb-mplay" data-act="mtoggle" aria-label="播放">${mi(player.playing() ? 'pause' : 'play')}</button><button data-act="mnext" aria-label="下一首">${mi('next')}</button><button data-act="mlist" class="${v.mlist ? 'on' : ''}" aria-label="歌单">${mi('list')}</button></div>
 
+ <button type="button" class="sb-link sb-float-entry" data-act="mfloat" aria-pressed="${floatingLyrics.enabled()}">${floatingLyrics.enabled()?'关闭悬浮歌词':'悬浮歌词'}</button>
  ${pick ? `<div class="sb-mpick-wrap"><button class="sb-mpick${t?.pickKey === pick.key ? ' on' : ''}" data-act="mpick" data-key="${esc(pick.key)}" aria-label="播放本轮选曲《${esc(pickTitle)}》"><small>${replyPick&&!replyPick.hasPick?'上次选曲':`本轮选曲${pick.selections>1?' · 再次选中':''}`}${picked?.pending?(failedPickChecks.has(picked)?' · 暂未搜到':' · 正在找歌'):host.meta().musicPickCorrections?.[pick.key]?' · 按搜索结果':''}</small><b>《${esc(pickTitle)}》${pickArtist ? `<span> · ${esc(pickArtist)}</span>` : ''}</b>${pick.why ? `<em>${esc(pick.why)}</em>` : ''}<i aria-hidden="true">${t?.pickKey === pick.key && player.playing() ? '♪ 正在放' : '▶ 放这首'}</i></button><button class="sb-mpick-delete" data-act="mpick-delete" data-key="${esc(pick.key)}" aria-label="删除本轮选曲《${esc(pickTitle)}》" title="删除这首选曲">×</button></div>` : ''}
  ${replyPick?.missing?`<div class="sb-pick-missing"><span>本轮未收到选曲${pick?' · 上方保留上一首':''}</span>${genBtn('pick','补选这轮')}</div>`:''}
  </div><div class="sb-music-extras" ${ms.compact ? 'hidden' : ''}>
@@ -1294,6 +1297,7 @@ export function createUI(host) {
                 break;
             case 'flip': v.flip = !v.flip; break;
             case 'gen': await generate(b.dataset.kind); return;
+            case 'mfloat': floatingLyrics.toggle();return;
             case 'mtoggle': await player.toggle(); return;
             case 'mskip': player.skipSource(); return;
             case 'mnext': player.next(); return;
