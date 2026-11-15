@@ -402,7 +402,7 @@ export function createUI(host) {
  <div class="sb-home-identity"><label class="sb-av" style="background-image:url('${esc(p.avatar)}')" title="点一下换头像"><input type="file" accept="image/*" data-upload="opening-avatar" hidden></label>
  <div class="sb-home-words"><div class="sb-name" data-act="home-name" role="button" tabindex="0">${esc(p.name)}</div><div class="sb-sign" data-act="home-sign" role="button" tabindex="0">${esc(p.sign)}</div></div></div>
 
- <dl class="sb-home-tab" aria-label="个人单据">${[['座位',p.table,'table'],['酒单',p.order,'order'],['日期',p.date,'date']].map(([label,value,key])=>`<div><dt>${label}</dt><dd><button type="button" data-act="home-field" data-key="${key}">${esc(value)}</button></dd></div>`).join('')}</dl>
+ <dl class="sb-home-tab" aria-label="个人单据">${[['SEAT',p.table,'table'],['DRINK',p.order,'order'],['DATE',p.date,'date']].map(([label,value,key])=>`<div><dt>${label}</dt><dd><button type="button" data-act="home-field" data-key="${key}">${esc(value)}</button></dd></div>`).join('')}</dl>
  ${musicHtml({})}</div></div>`;
     }
     function drawerHtml(era) {
