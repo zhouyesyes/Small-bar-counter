@@ -11,7 +11,7 @@ assert.equal(await p.locator('.sb-chat-stats').count(),0,'do not create a copied
 assert.equal(await text('[mesid="7"] .sb-native-footer'),'#7 · 247.8s · 9279t · 2026年8月15日');
 assert.equal(await text('[mesid="8"] .sb-native-footer'),'#8 · 42t · 2026年8月15日','empty timer is skipped');
 // Native counters remain inside the same wrapper; their text and listeners are untouched.
-assert.equal(await p.locator('[mesid="7"] .sb-chat-scene').evaluate(n=>getComputedStyle(n).whiteSpace),'nowrap');
+assert.equal(await p.locator('[mesid="7"] .sb-chat-scene').evaluate(n=>getComputedStyle(n).whiteSpace),'normal');
 assert(await p.evaluate(()=>nativeRefs.every(({message,wrapper,fields,stamp})=>message.querySelector('.mesAvatarWrapper')===wrapper&&fields.every(field=>wrapper.contains(field))&&message.querySelectorAll('.timestamp').length===1&&message.querySelector('.timestamp')===stamp)));
 await p.locator('[mesid="8"] .timestamp').evaluate(n=>n.click());assert.equal(await p.evaluate(()=>nativeClicks),1);
 assert.equal(await p.locator('[mesid="7"] .mes_timer').textContent(),'247.8s');
@@ -26,14 +26,18 @@ assert.equal(await p.locator('[mesid="8"] .sb-chat-poured').isVisible(),false);
 // User receipt stub, bigger avatar, no script names, no paper backgrounds.
 assert.equal(await text('[mesid="8"] .sb-chat-stub'),'TABLE · BY THE WINDOW THE USUAL');
 assert(await p.locator('[mesid="7"]').evaluate(n=>{const footer=n.querySelector('.sb-native-footer'),poured=n.querySelector('.sb-chat-poured');return footer.parentElement===n&&footer===nativeRefs[0].wrapper&&footer.getBoundingClientRect().top>=poured.getBoundingClientRect().bottom;}));
-for(const width of [390,1024]){
+await p.evaluate(()=>{timeline[7].scene.where='城东半山别墅 · 一楼客厅 · 露台尽头的玻璃门旁';document.querySelector('[mesid="7"] .name_text').textContent='陈谦文'});await p.waitForTimeout(50);
+for(const width of [320,390,430,1024]){
  await p.setViewportSize({width,height:1000});
+ await p.evaluate(width=>document.documentElement.style.setProperty('--fontScale',width<500?'1.25':'1'),width);
  for(const selector of ['[mesid="7"] .sb-native-footer','[mesid="7"] .sb-chat-poured','[mesid="7"] .sb-chat-scene','[mesid="8"] .sb-chat-stub']){
   assert(await p.locator(selector).evaluate(n=>{const style=getComputedStyle(n);return style.textAlign==='center'||style.justifyContent==='center';}),selector+' is centered');
+  assert(await p.locator(selector).evaluate(n=>{const row=n.getBoundingClientRect(),message=n.closest('.mes').getBoundingClientRect();return Math.abs(row.x+row.width/2-message.x-message.width/2)<1&&row.width>=message.width-30;}),selector+' spans and centers within the message, including native align-items:flex-start');
  }
  assert(await p.locator('[mesid="7"] .sb-native-footer').evaluate(n=>n.scrollWidth<=n.clientWidth+1),'footer wraps instead of overflowing on mobile');
+ assert(await p.locator('[mesid="7"] .sb-chat-scene').evaluate(n=>n.scrollWidth<=n.clientWidth+1),'long scene text wraps within the centered row');
 }
-await p.setViewportSize({width:640,height:1000});
+await p.setViewportSize({width:640,height:1000});await p.evaluate(()=>document.documentElement.style.removeProperty('--fontScale'));
 await p.evaluate(()=>{timeline[8].scene.date='2026-08-15 21:35';document.querySelector('[mesid="8"] .name_text').textContent='yesyes'});await p.waitForTimeout(50);
 assert.equal(await text('[mesid="8"] .sb-chat-scene'),'2026-08-15 21:35 · 小雨 · 旧街口','already combined dates do not repeat the time');
 
