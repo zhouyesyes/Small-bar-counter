@@ -44,13 +44,13 @@ export function chatStyleControlsHtml(settings) {
 <div class="sb-cs-row"><span>你的消息样子</span>${seg('mine', v.mine, [['receipt', '吧台小票'], ['note', '便签'], ['plain', '和TA一样']])}</div>
 <div class="sb-cs-row"><span>对话</span>${seg('dialogue', v.dialogue, [['wash', '主题色加淡底'], ['color', '只变色']])}</div>
 ${toggle('dropCap', '首字下沉', 'TA 的回复第一个字放大', v.dropCap)}
-${toggle('scene', '分隔条写场景', '日期、时间、天气、地点；尾部的第几杯 · 用时 · tokens 跟着酒馆 UI 自己的开关', v.scene)}
+${toggle('scene', '分隔条写场景', '日期、时间、天气、地点；尾部的第几杯 · 用时 · tokens · 时间跟着酒馆 UI 自己的开关', v.scene)}
 ${toggle('drink', '回复底部写这一轮的酒', '酒名和度数', v.drink)}
 </div>`;
 }
-// 毛玻璃和聊天页样式放在一起，两块默认都折叠
+// 毛玻璃和聊天页样式收在同一个折叠里，默认折叠
 export function chatLookFoldsHtml(settings) {
-    return `<div class="sb-chat-look"><details class="sb-chat-look-fold"><summary>聊天区毛玻璃</summary>${glassControlsHtml(settings)}</details><details class="sb-chat-look-fold"><summary>聊天页样式</summary>${chatStyleControlsHtml(settings)}</details></div>`;
+    return `<div class="sb-chat-look"><details class="sb-chat-look-fold"><summary>聊天页美化 · 毛玻璃与样式</summary><h4 class="sb-chat-look-sub">聊天区毛玻璃</h4>${glassControlsHtml(settings)}<h4 class="sb-chat-look-sub">聊天页样式</h4>${chatStyleControlsHtml(settings)}</details></div>`;
 }
 
 const bindings = new WeakMap();

@@ -1787,7 +1787,7 @@ html:not(.sb-cs) .sb-wine{display:none}
 .sb-chat-look-fold{border:1px solid color-mix(in srgb,currentColor 18%,transparent);border-radius:6px;padding:0 12px}
 .sb-chat-look-fold > summary{cursor:pointer;padding:10px 0;font-weight:500;list-style-position:inside}
 .sb-chat-look-fold[open] > summary{border-bottom:1px solid color-mix(in srgb,currentColor 12%,transparent);margin-bottom:10px}
-.sb-chat-look-fold .sb-glass-controls{border:0;padding:0 0 12px;margin:0}
+.sb-chat-look-fold .sb-glass-controls{border:0!important;padding:0 0 12px!important;margin:0!important;background:transparent!important}
 .sb-chat-look-fold .sb-glass-controls > legend{display:none}
 .sb-cs-controls{display:grid;gap:10px;padding:0 0 12px}
 .sb-cs-controls > p{margin:-4px 0 0;font-size:.85em;opacity:.7}
@@ -1803,3 +1803,6 @@ html:not(.sb-cs) .sb-wine{display:none}
 .sb-chat-look .sb-cs-controls output{margin-left:.6em;opacity:.7;font-variant-numeric:tabular-nums}
 .sb-chat-look .sb-cs-controls .sb-glass-row{display:grid;gap:6px}
 .sb-chat-look .sb-cs-controls .sb-glass-row input[type=range]{width:100%;accent-color:var(--sb-bar-accent,#bf9186)}
+
+.sb-chat-look-sub{margin:4px 0 8px;font-size:.92em;font-weight:500;opacity:.75;letter-spacing:.06em}
+.sb-chat-look-fold .sb-glass-controls + .sb-chat-look-sub{border-top:1px solid color-mix(in srgb,currentColor 12%,transparent);padding-top:12px}

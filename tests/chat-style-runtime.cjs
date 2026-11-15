@@ -24,8 +24,9 @@ assert.equal(await p.locator('[mesid="7"] .sb-chat-avatar').evaluate(n=>n.getBou
 assert.equal(await p.locator('[mesid="7"]').evaluate(n=>getComputedStyle(n).backgroundColor),'rgba(0, 0, 0, 0)');
 // Settings change the page and save on release.
 await p.evaluate(async()=>{const m=await import('/src/chat-style.mjs');const box=document.createElement('div');box.id='look';box.innerHTML=m.chatLookFoldsHtml(s);document.body.append(box);window.saves=0;m.bindChatLookControls(box,{getSettings:()=>s,save:()=>saves++});});
-assert.deepEqual(await p.locator('#look details').evaluateAll(ns=>ns.map(n=>n.open)),[false,false],'both folds start closed');
-await p.locator('#look summary').nth(1).click();
+assert.deepEqual(await p.locator('#look details').evaluateAll(ns=>ns.map(n=>n.open)),[false],'glass and chat style share one closed fold');
+await p.locator('#look summary').click();
+assert.equal(await p.locator('#look details [data-sb-glass=opacity]').count(),1);
 await p.locator('#look [data-sb-chat-style=mine][data-value=note]').click();
 assert.ok(await p.evaluate(()=>document.documentElement.classList.contains('sb-cs-note')&&!document.documentElement.classList.contains('sb-cs-receipt')&&s.chatStyle.mine==='note'&&saves===1));
 await p.locator('#look [data-sb-chat-style=drink]').uncheck();
