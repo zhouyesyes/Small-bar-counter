@@ -10,6 +10,12 @@ export function groupChatRows(rows) {
     for (const row of rows) { const key = loungeKey(row); if (!groups.has(key)) groups.set(key, []); groups.get(key).push(row); }
     return groups;
 }
+// Pin identity comes from the role collection, not the host's capped recent list.
+export function includePinnedRoles(groups,pins,characters=[]) {
+    const result=new Map(groups),known=new Set(characters.filter(Boolean).map(c=>c.avatar));
+    for(const key of pins)if(known.has(key)&&!result.has(key))result.set(key,[]);
+    return result;
+}
 export function chatRowTimestamp(row) {
     const date = $('.chatDate', row), title = date?.title || '';
     // Native dates use the current locale; prefer Moment's exact native format when available.
@@ -68,7 +74,7 @@ function roleMenu(state, group, anchor) {
 function settingsMenu(state, anchor) {
     const h = state.host, p = prefs(h);
     state.popup(anchor, [
-        ...[['light', '日间'], ['dark', '夜间'], ['auto', '跟随酒馆']].map(([mode, label]) => [label + (h.settings().theme === mode ? ' ✓' : ''), () => h.setTheme?.(mode)]),
+        ...[['light', '日间'], ['dark', '夜间'], ['auto', '跟随系统']].map(([mode, label]) => [label + (h.settings().theme === mode ? ' ✓' : ''), () => h.setTheme?.(mode)]),
         ['首页显示 ' + (peopleLimit(p.peopleLimit) ? peopleLimit(p.peopleLimit) + ' 人' : '全部角色'), async () => {
             const c = h.context(), text = '首页先显示多少人？同一角色的多段聊天只算一人；输入 0 显示全部（最多 200 人）。';
             const result = c.callGenericPopup ? await c.callGenericPopup(text, c.POPUP_TYPE?.INPUT ?? 2, String(peopleLimit(p.peopleLimit))) : window.prompt(text, String(peopleLimit(p.peopleLimit)));
@@ -116,11 +122,11 @@ function makeGroup(state, key) {
     toggle.append(image, info, expand);
     const more = el('button', 'sb-lounge-more', '⋯'); more.type = 'button'; more.setAttribute('aria-label', '角色选项'); top.append(toggle, more);
     const content = el('div', 'sb-lounge-group-chats'); content.id = `sb-lounge-chats-${++state.ids}`;
-    const older = el('button', 'sb-lounge-older'); older.type = 'button'; content.append(older); toggle.setAttribute('aria-controls', content.id);
+    const older = el('button', 'sb-lounge-older'),status=el('p','sb-lounge-empty');status.hidden=true;older.type='button';content.append(status,older); toggle.setAttribute('aria-controls', content.id);
     section.append(top, content); state.list.append(section);
-    const group = { key, section, toggle, image, name, date, count, content, older, rows: [] };
+    const group = { key, section, toggle, image, name, date, count, content, older, status, rows: [] };
     // 点这个人（头像、名字、小箭头都一样）只是展开 / 收起他的聊天，不直接进；进哪段由她在下面挑（她 11/11 改回来的）
-    toggle.onclick = () => { const p = prefs(state.host); p.open[key] = !p.open[key]; save(state); };
+    toggle.onclick = () => { const p = prefs(state.host); setGroupOpen(state,key,!p.open[key]);save(state); };
     more.onclick = e => { e.stopPropagation(); roleMenu(state, group, more); };
     older.onclick = () => { if (state.expanded.has(key)) state.expanded.delete(key); else state.expanded.add(key); render(state); };
     return group;
@@ -139,8 +145,8 @@ function renderPins(state) {
         tile.append(image, el('span', '', g.name.textContent));
         // 上面置顶的大头像也一样：不直接进聊天，展开下面这个人、滚过去让她挑
         tile.onclick = () => {
-            const p = prefs(state.host), g2 = state.groups.get(key); if (!g2) return;
-            p.open[key] = true; save(state);
+            const g2 = state.groups.get(key); if (!g2) return;
+            setGroupOpen(state,key,true);save(state);
             g2.section.scrollIntoView({ behavior: 'smooth', block: 'start' });
         };
         state.pins.append(tile);
@@ -176,8 +182,13 @@ function ensureCount(state, key) {
     info.countAsked = true;
     queueFetch(state, async () => {
         try { info.count = (await fetchRoleChats(state, key, true)).length; } catch { info.count = null; }
-        if (state.panel.isConnected) render(state);
+        if(state.panel.isConnected&&state.root.isConnected)render(state);
     });
+}
+function setGroupOpen(state,key,open){
+    prefs(state.host).open[key]=open;
+    const info=roleInfo(state,key);
+    if(open&&info.fullFailed){info.fullAsked=false;info.fullFailed=false;delete info.full;}
 }
 function ensureFull(state, key) {
     const info = roleInfo(state, key); if (!isRole(key) || info.fullAsked) return;
@@ -187,8 +198,8 @@ function ensureFull(state, key) {
             const list = await fetchRoleChats(state, key, false);
             info.full = list.map(x => ({ ...x, chat_name: String(x.file_name).replace(/\.jsonl$/i, '') }));
             info.count = info.full.length;
-        } catch { info.full = []; }
-        if (state.panel.isConnected) render(state);
+        } catch { info.full=[];info.fullFailed=true; }
+        if(state.panel.isConnected&&state.root.isConnected)render(state);
     });
 }
 function chatTime(v) {
@@ -236,25 +247,30 @@ async function openRoleChat(state, avatar, chatName) {
 function render(state) {
     const { panel, host } = state, p = prefs(host), query = state.search.value.trim().normalize('NFKC').toLocaleLowerCase();
     const tokens = query.split(/\s+/).filter(Boolean);
-    const rows = [...panel.querySelectorAll('.recentChat')];
+    const rows = [...panel.querySelectorAll('.recentChat:not(.sb-lounge-extra)')];
     for (const row of rows) rememberRow(state, row);
     // Native pin order can mix roles; identity comes from the avatar filename / group ID.
-    const groups = groupChatRows(rows);
+    const context=host.context?.()||{},characters=context.characters||[];
+    const groups=includePinnedRoles(groupChatRows(rows),p.pins,characters);
     for (const [key, entries] of groups) {
         let g = state.groups.get(key); if (!g) { g = makeGroup(state, key); state.groups.set(key, g); }
         g.rows = entries;
         const latest = latestChatRow(entries);
-        const original = $('.characterName', latest)?.textContent || '';
-        updateText(g.name, labelFor(state, key, original)); updateText(g.date, $('.chatDate', latest)?.textContent || '');
-        updateImage(g.image, $('.avatar img', latest)?.getAttribute('src'));
+        const character=characters.find(c=>c?.avatar===key);
+        const original=(latest?$('.characterName',latest)?.textContent:'')||character?.name||character?.data?.name||'';
+        updateText(g.name, labelFor(state, key, original)); updateText(g.date,latest?$('.chatDate',latest)?.textContent||'':'');
+        updateImage(g.image,(latest?$('.avatar img',latest)?.getAttribute('src'):'')||(character?.avatar?(context.getThumbnailUrl?.('avatar',character.avatar)||'/thumbnail?type=avatar&file='+encodeURIComponent(character.avatar)):''));
         const matches = entries.filter(row => tokens.every(t => (original + ' ' + g.name.textContent + ' ' + row.dataset.file + ' ' + row.textContent).normalize('NFKC').toLocaleLowerCase().includes(t)));
         const pinned = p.pins.includes(key), open = !!query || !!p.open[key];
         // 展开了才去拿这个人全部的聊天；拿到之前先用首页已有的那几段
         if (open && isRole(key)) ensureFull(state, key);
         const extras = extraRows(state, g, key), extraMatches = extras.filter(row => tokens.every(t => row.dataset.search.includes(t)));
-        const total = Math.max(entries.length, roleInfo(state, key).count ?? 0);
+        const info=roleInfo(state,key),total=Math.max(entries.length,info.count??0);
+        g.status.hidden=!open||entries.length+extras.length>0;
+        updateText(g.status,info.fullFailed?'暂时未能读取，收起后再展开重试。':info.full?'暂时没有聊天记录。':'正在读取聊天记录…');
         updateText(g.count, `${total} 段聊天`);
-        g.section.hidden = matches.length + extraMatches.length === 0;
+        const pinnedIdentityMatch=pinned&&tokens.every(t=>(original+' '+g.name.textContent).normalize('NFKC').toLocaleLowerCase().includes(t));
+        g.section.hidden=!pinnedIdentityMatch&&matches.length+extraMatches.length===0;
         g.section.style.order = String(pinned ? -1 : 0); g.section.classList.toggle('is-pinned', pinned); g.section.classList.toggle('is-private', !!p.blurred[key]);
         g.toggle.setAttribute('aria-expanded', String(open)); g.content.hidden = !open;
         const limit = p.chatLimit || 3, all = state.expanded.has(key) || !!query;
@@ -282,11 +298,12 @@ function render(state) {
     const candidates = [...state.groups.values()].filter(g => !g.section.hidden).sort((a, b) => Number(p.pins.includes(b.key)) - Number(p.pins.includes(a.key)));
     const limit = peopleLimit(p.peopleLimit);
     const cap = query || limit === 0 || state.showAllPeople ? Infinity : limit;
-    candidates.forEach((group, i) => { if (i >= cap) group.section.hidden = true; });
+    const visibleLimit=Math.max(cap,candidates.filter(g=>p.pins.includes(g.key)).length);
+    candidates.forEach((group,i)=>{if(i>=visibleLimit)group.section.hidden=true;});
     for (const group of candidates) if (!group.section.hidden) ensureCount(state, group.key);
     const nativeMore = $('.showMoreChats', panel);
     state.nativeMore = nativeMore && !nativeMore.hidden && !nativeMore.classList.contains('hidden') && nativeMore.closest('.recentChatsMore')?.hidden !== true ? nativeMore : null;
-    state.remainingPeople = limit ? Math.max(0, candidates.length - limit) : 0;
+    state.remainingPeople=limit?Math.max(0,candidates.length-Math.max(limit,candidates.filter(g=>p.pins.includes(g.key)).length)):0;
     const expanded = state.showAllPeople && state.remainingPeople > 0;
     state.morePeople.hidden = !!query || (!state.remainingPeople && !state.nativeMore);
     updateText(state.morePeople, expanded ? '收起' : state.remainingPeople ? '再看 ' + state.remainingPeople + ' 人' : '更多聊天');

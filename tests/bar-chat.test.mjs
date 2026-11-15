@@ -68,3 +68,10 @@ test('home display limit counts people and preserves saved settings', async () =
     assert.equal(peopleLimit('5'), 5);
     for (const invalid of [-1, 1.5, 'bad', 201, '']) assert.equal(peopleLimit(invalid), 10);
 });
+
+test('pinned roles remain available after falling out of the native recent-chat window',async()=>{
+ const {includePinnedRoles}=await import('../src/bar-lounge.mjs');
+ const recent=new Map([['recent.png',[{id:'recent'}]]]);
+ const result=includePinnedRoles(recent,['older.png','deleted.png'],[{name:'旧友',avatar:'older.png'},{name:'近聊',avatar:'recent.png'}]);
+ assert(result.has('older.png'));assert.deepEqual(result.get('older.png'),[]);assert(!result.has('deleted.png'),'deleted roles are not resurrected');assert(!recent.has('older.png'),'the native recent collection is not modified');
+});
