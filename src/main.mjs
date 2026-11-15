@@ -5,7 +5,7 @@ import { cocktailFromState, cocktailProtocol, outputUsage, parseCocktail } from 
 import { artwork, artworkMode, personalProfile, landingArtwork } from './artwork.mjs';
 import { resolveMe } from './profile.mjs';
 import { createAppearanceBridge } from './appearance-api.mjs';
-import { applyPalette, phoneModeFor } from './palette.mjs';
+import { applyPalette, phoneModeFor, watchSystemTheme } from './palette.mjs';
 import { seedFolioColors } from './folio-theme.mjs';
 // 小吧台 —— 入口：把界面接到酒馆上
 // 只从 extensions.js 拿 getContext（酒馆 1.18 起它带了要用的全部东西），不逐个 import script.js 里的名字：
@@ -766,6 +766,7 @@ const ctxConfirm = async text => { const c = ctx(); return c.callGenericPopup ? 
 
 // 开场与配色里改了颜色 / 深浅：小吧台和整个店一起变
 window.addEventListener('small-bar-appearance', () => { ui.render(); applyAppearance(); });
+watchSystemTheme(applyAppearance);
 window.addEventListener('small-bar-appearance-preview', event => {
     const draft = event.detail || settings();
     applyBarTheme(draft, ctx, { appearance: host.appearance, setSettings: host.setSettings, openAppearance: openSplashSettings });

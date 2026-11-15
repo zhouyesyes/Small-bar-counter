@@ -9,7 +9,7 @@ import { bindDrawerSize, applyDrawerSize } from './drawer-size.mjs';
 import { installTypography } from './typography.mjs';
 import { updateLyrics, invalidateLyricsLayout } from './music-lyrics.mjs';
 import { bindMusicCovers, rememberMusicCovers, warmMusicCover, displayMusicCover } from './music-cover.mjs';
-import { applyPalette, modeFor, phoneModeFor } from './palette.mjs';
+import { applyPalette, modeFor, phoneModeFor, watchSystemTheme } from './palette.mjs';
 import { profileCover } from './profile.mjs';
 import { openSplashSettings } from './splash.mjs';
 // 小吧台的界面：小猫入口、左边滑出的抽屉、弹出来的小手机
@@ -296,12 +296,13 @@ export function createUI(host) {
         player.audio.addEventListener('timeupdate', tickMusic);
         for (const event of ['playing','pause','ended']) player.audio.addEventListener(event, syncMusicAnimation);
         document.addEventListener('visibilitychange', syncMusicAnimation);
+        watchSystemTheme(render);
         setInterval(() => { if (root.firstChild && player.current()) tickMusic(); }, 1000); // 没打开、没在放歌时不动
         setInterval(() => { if (!v.drawer && !v.phone && root.isConnected) { catBlink = 1; drawCat(); setTimeout(() => { catBlink = 0; drawCat(); }, 160); } }, 4200);
         render();
     }
 
-    // 跟酒馆：看酒馆页面底色的深浅（吧台美化开着时看酒馆原来设的颜色，见 palette.mjs）
+    // Automatic mode follows the operating system; manual surface overrides still win.
     const theme = () => phoneModeFor(host.settings());
 
     function drawCat() {
@@ -1092,7 +1093,7 @@ export function createUI(host) {
         return `${head(Wd().set)}<div class="sb-slist">
  <div class="sb-sh">资料与样子</div><div class="sb-sgrp">${row('TA的资料', host.him().name, 'set-him')}${row('我的资料', host.me().name, 'set-me')}${row('抽屉的头图', modeName, 'set-cover')}${phoneIOS.active()?row('手机壁纸', '锁屏与桌面', 'set-wallpaper'):''}
   <label class="sb-srow"><span>美化时代<small>决定是小手机、民国信匣还是古风书匣</small></span><select data-cset="era">${[['auto', eraName.startsWith('自动') ? eraName : '自动'], ['modern', '现代'], ['minguo', '民国'], ['ancient', '古风']].map(([k, n]) => `<option value="${k}" ${(c.era || 'auto') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
-  <label class="sb-srow"><span>明暗模式</span><select data-set="phoneTheme">${[['auto','跟美化'],['light','浅'],['dark','深']].map(([k,n])=>`<option value="${k}" ${(s.phoneTheme||'auto')===k?'selected':''}>${n}</option>`).join('')}</select></label></div>
+  <label class="sb-srow"><span>明暗模式</span><select data-set="phoneTheme">${[['auto','跟随吧台'],['light','浅'],['dark','深']].map(([k,n])=>`<option value="${k}" ${(s.phoneTheme||'auto')===k?'selected':''}>${n}</option>`).join('')}</select></label></div>
  <div class="sb-sh">正文后TA写什么</div><div class="sb-sgrp">
   <label class="sb-srow"><span>正文之后正常写<small>关掉后不写其他状态；每轮选曲由下面开关独立控制，手动生成照常可用</small></span><input type="checkbox" class="sb-tg" data-cset-off="noAutoStatus" ${c.noAutoStatus ? '' : 'checked'}></label>
   <label class="sb-srow"><span>每轮自动选曲<small>独立于其他状态，每次正文回复选一首配乐</small></span><input type="checkbox" class="sb-tg" data-cset="autoMusicPick" ${c.autoMusicPick!==false?'checked':''}></label>

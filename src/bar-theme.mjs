@@ -90,7 +90,7 @@ export function applyBarTheme(settings, ctx, adapter) {
         observer?.disconnect(); observer = null; media?.removeEventListener('change', media.sb); media = null;
         return;
     }
-    // 先挂类再看深浅：modeFor 看到 sb-bar 就去读酒馆原来的底色
+    // Automatic day/night follows the system, independently of the host background.
     html.classList.add('sb-bar');
     syncHelperDialogs();
     // 花体英文标题、斜体英文小字、中文宋体；加载不了时 CSS 里有退路（iPhone 自带的 Snell Roundhand、宋体）

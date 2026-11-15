@@ -17,12 +17,26 @@ export function palette(mode, colors = {}) {
     const ink = contrast(accent, '#ffffff') > contrast(accent, '#000000') ? '#ffffff' : '#000000';
     return { bg, fg, dim, soft, line, accent, ink };
 }
+export const systemMode = () => globalThis.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 export function modeFor(settings = {}) {
-    if (['dark', 'light'].includes(settings.theme)) return settings.theme;
-    // 吧台美化开着时，页面底色是我们自己盖上去的，要看酒馆原来设的那个，不然深浅就跟着自己转不回来了
-    const own = document.documentElement.classList.contains('sb-bar') && document.documentElement.style.getPropertyValue('--SmartThemeBlurTintColor').trim();
-    const c = (/^rgb/.test(own) ? own : getComputedStyle(document.body).backgroundColor).match(/[\d.]+/g);
-    return c && Number(c[3] ?? 1) !== 0 ? ((+c[0] * .299 + +c[1] * .587 + +c[2] * .114) < 128 ? 'dark' : 'light') : (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    return ['dark','light'].includes(settings.theme) ? settings.theme : systemMode();
+}
+// WebKit may suspend change events while the app is backgrounded. Recheck on
+// return as well, without writing the detected mode over the user's preference.
+export function watchSystemTheme(callback) {
+    const media=globalThis.matchMedia?.('(prefers-color-scheme: dark)');
+    if(!media)return ()=>{};
+    let previous=media.matches;
+    const check=()=>{const next=media.matches;if(next!==previous){previous=next;callback(next?'dark':'light');}};
+    const visible=()=>{if(!document.hidden)check();};
+    if(media.addEventListener)media.addEventListener('change',check);else media.addListener?.(check);
+    globalThis.document?.addEventListener('visibilitychange',visible);
+    globalThis.window?.addEventListener('pageshow',check);
+    return ()=>{
+        if(media.removeEventListener)media.removeEventListener('change',check);else media.removeListener?.(check);
+        globalThis.document?.removeEventListener('visibilitychange',visible);
+        globalThis.window?.removeEventListener('pageshow',check);
+    };
 }
 export function applyPalette(el, settings, mode = modeFor(settings)) {
     const p = palette(mode, settings.splash?.colors?.[mode]);

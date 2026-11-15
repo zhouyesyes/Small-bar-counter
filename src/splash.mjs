@@ -2,7 +2,7 @@ import {glassControlsHtml,bindGlassControls,syncGlassControls} from './glass.mjs
 import { drawerLimits, drawerWidth, setDrawerWidth, notifyDrawerSize } from './drawer-size.mjs';
 import { installTypography } from './typography.mjs';
 import { artwork, artworkMode, personalProfile, landingArtwork } from './artwork.mjs';
-import { applyPalette, defaults } from './palette.mjs';
+import { applyPalette, defaults, watchSystemTheme } from './palette.mjs';
 import { readAppearanceColors, updateAppearanceColors, createAppearancePreview } from './appearance-api.mjs';
 import { openColorPicker } from './color-picker.mjs';
 import { imageUrl, saveImage } from './imgstore.mjs';
@@ -102,6 +102,7 @@ function syncAppearancePanel() {
     if (mode) mode.value = settings.theme || 'auto';
 }
 if (typeof window !== 'undefined') window.addEventListener('small-bar-appearance', syncAppearancePanel);
+watchSystemTheme(()=>{paint();syncAppearancePanel();if(panel)applyPalette(panel,settings);});
 function image(src, node) { const update = () => { const url = imageUrl(src, update); if (url && node.isConnected) { node.src = url; node.hidden = false; } }; update(); }
 function dismiss() {
     clearTimeout(unlockTimer); cancelAnimationFrame(replayFrame); replaying = false; observer?.disconnect(); appReadyCleanup?.();
@@ -252,7 +253,7 @@ export function openSplashSettings() {
     const focus = document.activeElement;
     panel.innerHTML = `<style>${styles}</style><div class="sb-custom"><header><b>SMALL BAR / APPEARANCE</b><button data-close aria-label="Close settings">×</button></header>
     <label>显示开场<input type="checkbox" data-key="enabled" ${s.enabled !== false ? 'checked' : ''}></label>
-    <label>美化明暗<select data-theme>${['auto','light','dark'].map(x=>`<option ${settings.theme === x ? 'selected' : ''}>${x}</option>`).join('')}</select></label>
+    <label>美化明暗<select data-theme>${[['auto','跟随系统'],['light','日间'],['dark','夜间']].map(([value,label])=>`<option value="${value}" ${settings.theme === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label>
     <label><span data-width-device>抽屉宽度</span><span class="sb-width-input"><input type="number" data-drawer-width aria-label="抽屉宽度（像素）" step="1" value="${drawerWidth(settings)}"> px</span></label><p>拖动抽屉与聊天之间的分隔线也能调宽。手机与平板分别记住，修改后自动保存。</p>
     ${glassControlsHtml(settings)}
     ${['light','dark'].map(mode => `<fieldset class="sb-palette-line"><legend>${mode === 'light' ? '日间配色' : '夜间配色'}</legend>${['bg','accent'].map(key => { const color = s.colors[mode]?.[key] || defaults[mode][key]; return `<div class="sb-color-setting"><span>${key === 'bg' ? '背景色' : '辅助色'}</span><button type="button" class="sb-color-launch" data-mode="${mode}" data-color="${key}" data-value="${esc(color)}" aria-label="调整${mode === 'light' ? '日间' : '夜间'}${key === 'bg' ? '背景色' : '辅助色'}"><span style="background:${esc(color)}"></span><code>${esc(color.toUpperCase())}</code></button></div>`; }).join('')}</fieldset>`).join('')}
