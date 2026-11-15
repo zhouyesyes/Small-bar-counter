@@ -65,7 +65,7 @@ export function sharedChatImages({ side, person, nativeAvatar = '', config = {},
         cover: source?image(source):'',
     };
 }
-// 分隔条尾部：酒馆自己的楼层号、用时、tokens（显示哪项跟着酒馆 UI 的开关）
+// 消息末尾：酒馆自己的楼层号、用时、tokens（显示哪项跟着酒馆 UI 的开关）
 function nativeStats(node) {
     const body = document.body.classList, out = [];
     const id = $('.mesIDDisplay', node)?.textContent.trim().replace(/^#/, '');
@@ -79,7 +79,11 @@ function nativeStats(node) {
     if (stamp && !body.contains('no-timestamps')) out.push(stamp);
     return out.join(' · ');
 }
-const sceneText = s => [[s?.date, s?.time].filter(Boolean).join(' '), s?.weather, s?.where].filter(Boolean).join(' · ');
+const sceneText = s => {
+    const date=String(s?.date||'').trim(),time=String(s?.time||'').trim();
+    const when=date&&time?(date.includes(time)?date:time.includes(date)?time:date+' '+time):date||time;
+    return [when,s?.weather,s?.where].filter(Boolean).join(' · ');
+};
 const setText = (el, text) => { if (el.textContent !== text) el.textContent = text; };
 function decorateMessage(node, h, c, greeting=false, info=null) {
     if ((!greeting&&node.getAttribute('is_system') === 'true') || node.querySelector('.welcomePanel')) return;
@@ -91,9 +95,9 @@ function decorateMessage(node, h, c, greeting=false, info=null) {
         const coverImage = element('img', ''); coverImage.alt = ''; coverImage.decoding = 'async'; cover.append(coverImage);
         const who = element('div', 'sb-chat-who'); const avatar = element('button', 'sb-chat-avatar');avatar.type='button';
         const av = element('img', ''); av.alt = ''; avatar.append(av); const name = element('span', 'sb-chat-name'); const time = element('span', 'sb-chat-time'); who.append(avatar, name, time);
-        const scene = element('div', 'sb-chat-scene'); const mid = element('span', 'sb-chat-scene-mid'); const where = element('span', 'sb-chat-where'); const sep = element('span', 'sb-chat-sep', '·'); const stats = element('span', 'sb-chat-stats'); mid.append(where, sep, stats); scene.append(mid);
+        const scene = element('div', 'sb-chat-scene'); const mid = element('span', 'sb-chat-scene-mid'); const where = element('span', 'sb-chat-where'); const stats = element('div', 'sb-chat-stats'); mid.append(where); scene.append(mid);
         const poured = element('div', 'sb-chat-poured'); const stub = element('div', 'sb-chat-stub');
-        node.prepend(scene, cover, who); node.append(poured, stub); record = { cover, coverImage, who, avatar, av, name, time, scene, where, sep, stats, poured, stub }; touched.set(node, record); node.classList.add('sb-reading-message');
+        node.prepend(scene, cover, who); node.append(poured, stub, stats); record = { cover, coverImage, who, avatar, av, name, time, scene, where, stats, poured, stub }; touched.set(node, record); node.classList.add('sb-reading-message');
     }
     node.dataset.sbSide = side;
     node.classList.toggle('sb-welcome-greeting',greeting);
@@ -108,10 +112,10 @@ function decorateMessage(node, h, c, greeting=false, info=null) {
     const name = greeting?nativeName?.textContent||'助手':side === 'me' ? person?.name : nameFor(h, key, person?.remark || person?.name || nativeName?.textContent || '');
     if (record.name.textContent !== name) record.name.textContent = name;
     const time = $('.timestamp', node)?.textContent || ''; if (record.time.textContent !== time) record.time.textContent = time;
-    // 分隔条：场景在前，楼层数据在尾；两样都没有就只剩一条细线
+    // 场景留在消息上方，原生统计单独放在酒名落款下方。
     const where = greeting ? '' : sceneText(info?.scene), stats = nativeStats(node);
     setText(record.where, where); setText(record.stats, stats);
-    record.where.hidden = !where; record.stats.hidden = !stats; record.sep.hidden = !where || !stats;
+    record.where.hidden = !where; record.stats.hidden = !stats;
     // 落款：TA 这一轮调的酒
     const drink = !greeting && side === 'him' ? info?.drink : null;
     record.poured.hidden = !drink?.name;
@@ -156,7 +160,7 @@ export function mountChat(host) {
     if (!observer) {
         observer = new MutationObserver(records => {
             // Streaming text changes inside .mes_text need no work or DOM replacement.
-            if (records.some(r => r.target === surface || (r.target instanceof Element && !r.target.closest('[data-sb-lounge-owned],.mes_text,.sb-reading-head,.sb-chat-who,.sb-chat-cover,.sb-chat-popup,.sb-chat-scene,.sb-chat-poured,.sb-chat-stub') && (r.target.closest('.welcomePanel') || r.target.matches('.mes,.timestamp,.name_text,.mesIDDisplay,.mes_timer,.tokenCounterDisplay'))))) schedule();
+            if (records.some(r => r.target === surface || (r.target instanceof Element && !r.target.closest('[data-sb-lounge-owned],.mes_text,.sb-reading-head,.sb-chat-who,.sb-chat-cover,.sb-chat-popup,.sb-chat-scene,.sb-chat-poured,.sb-chat-stub,.sb-chat-stats') && (r.target.closest('.welcomePanel') || r.target.matches('.mes,.timestamp,.name_text,.mesIDDisplay,.mes_timer,.tokenCounterDisplay'))))) schedule();
         });
         observer.observe(surface, { childList: true, subtree: true }); document.addEventListener('click', outside); document.addEventListener('keydown', escape);
         // 酒馆 UI 里开关楼层号、计时、token 时，body 上的类会变
@@ -168,7 +172,7 @@ export function mountChat(host) {
 export function unmountChat() {
     getHost = null; observer?.disconnect(); observer = null; bodyObserver?.disconnect(); bodyObserver = null; unmountGlass(); closeMenu();
     document.removeEventListener('click', outside); document.removeEventListener('keydown', escape);
-    for (const [node, r] of touched) { r.cover.remove(); r.who.remove(); r.scene.remove(); r.poured.remove(); r.stub.remove(); node.classList.remove('sb-reading-message','sb-welcome-greeting'); delete node.dataset.sbSide; }
+    for (const [node, r] of touched) { r.cover.remove(); r.who.remove(); r.scene.remove(); r.poured.remove(); r.stub.remove(); r.stats.remove(); node.classList.remove('sb-reading-message','sb-welcome-greeting'); delete node.dataset.sbSide; }
     document.querySelectorAll('.sb-chat-file').forEach(node=>node.remove());
     touched.clear();
     surface?.classList.remove('sb-reading', 'sb-lounge'); surface?.querySelector('.sb-reading-head')?.remove();

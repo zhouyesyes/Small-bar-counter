@@ -1734,17 +1734,16 @@ html.sb-bar[data-sb-mode=dark] #completion_prompt_manager_popup {color-scheme:da
    Cards keep no background of their own: they sit on the user's chat glass. */
 html.sb-cs #chat.sb-reading > .sb-reading-message{padding:0 12px 6px!important}
 html.sb-cs #chat.sb-reading > .sb-reading-message::after{display:none}
-/* divider above every message: one line, centered; scene first, native stats at the tail */
-html.sb-bar #chat .sb-chat-scene{display:none}
-html.sb-cs #chat .sb-reading-message > .sb-chat-scene{order:-1;display:flex;align-items:center;gap:10px;margin:16px 0 8px;white-space:nowrap;color:var(--sb-bar-sub);font:calc(11px * var(--fontScale,1))/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em}
+/* Scene line above each message; native statistics are centered at its end. */
+html.sb-bar #chat .sb-chat-scene,html.sb-bar #chat .sb-chat-stats{display:none}
+html.sb-cs #chat .sb-reading-message > .sb-chat-scene{order:-1;display:flex;justify-content:center;text-align:center;align-items:center;gap:10px;margin:16px 0 8px;white-space:nowrap;color:var(--sb-bar-sub);font:calc(11px * var(--fontScale,1))/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em}
 html.sb-cs #chat .sb-chat-scene::before,html.sb-cs #chat .sb-chat-scene::after{content:'';flex:1 1 0;min-width:0;height:1px;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--sb-bar-text) 22%,transparent) 35%,color-mix(in srgb,var(--sb-bar-text) 22%,transparent) 65%,transparent)}
-html.sb-cs #chat .sb-chat-scene-mid{display:flex;align-items:baseline;min-width:0;flex:0 1 auto;overflow:hidden}
+html.sb-cs #chat .sb-chat-scene-mid{display:flex;justify-content:center;max-width:100%;align-items:baseline;min-width:0;flex:0 1 auto;overflow:hidden}
 html.sb-cs #chat .sb-chat-where{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
-html.sb-cs #chat .sb-chat-sep{flex:none;margin:0 .55em;opacity:.55}
-html.sb-cs #chat .sb-chat-stats{flex:none;color:color-mix(in srgb,var(--sb-bar-sub) 80%,var(--sb-bar-accent))}
-html.sb-cs:not(.sb-cs-scene) #chat .sb-chat-where,html.sb-cs:not(.sb-cs-scene) #chat .sb-chat-sep{display:none}
+html.sb-cs #chat .sb-reading-message>.sb-chat-stats:not([hidden]){display:block;order:6;align-self:center;width:100%;text-align:center;white-space:normal;overflow-wrap:anywhere;margin:3px 0 10px;color:color-mix(in srgb,var(--sb-bar-sub) 80%,var(--sb-bar-accent));font:calc(11px * var(--fontScale,1))/1.8 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em}
+html.sb-cs:not(.sb-cs-scene) #chat .sb-reading-message>.sb-chat-scene{display:none}
 html.sb-cs #chat .sb-chat-scene [hidden]{display:none!important}
-/* native stats now live in the divider; the native node stays in place, just hidden */
+/* Original statistics stay intact; their display copy lives below the drink signature. */
 html.sb-cs #chat.sb-reading .sb-reading-message :is(.mesIDDisplay,.mes_timer,.tokenCounterDisplay,.timestamp){display:none!important}
 html.sb-cs #chat.sb-reading .sb-reading-message .sb-chat-time{display:none}
 /* header image: fixed per side, adjustable height, fades into the glass */
@@ -1771,7 +1770,7 @@ html.sb-cs #chat .sb-chat-poured b{font:500 calc(13px * var(--fontScale,1)) var(
 html.sb-cs #chat.sb-reading .sb-reading-message > .mesAvatarWrapper{order:5}
 /* the user's own message: receipt or note, no paper either */
 html.sb-cs.sb-cs-receipt #chat [data-sb-side=me] > .mes_block > .mes_text{border-top:1px dashed color-mix(in srgb,var(--sb-bar-text) 28%,transparent);margin-top:8px!important}
-html.sb-cs.sb-cs-receipt #chat [data-sb-side=me] > .sb-chat-stub:not([hidden]){order:3;display:flex;justify-content:space-between;gap:12px;padding:2px 0 10px;border-bottom:1px dashed color-mix(in srgb,var(--sb-bar-text) 28%,transparent);font:calc(10px * var(--fontScale,1)) ui-monospace,monospace;letter-spacing:.06em;color:var(--sb-bar-sub)}
+html.sb-cs.sb-cs-receipt #chat [data-sb-side=me] > .sb-chat-stub:not([hidden]){order:3;display:flex;justify-content:center;text-align:center;flex-wrap:wrap;gap:6px 12px;padding:2px 0 10px;border-bottom:1px dashed color-mix(in srgb,var(--sb-bar-text) 28%,transparent);font:calc(10px * var(--fontScale,1)) ui-monospace,monospace;letter-spacing:.06em;color:var(--sb-bar-sub)}
 html.sb-cs.sb-cs-note #chat [data-sb-side=me] > .mes_block > .mes_text{border-left:2px solid color-mix(in srgb,var(--sb-bar-accent) 50%,transparent);padding-left:12px!important;margin-top:8px!important}
 html.sb-cs.sb-cs-note #chat [data-sb-side=me] > .sb-chat-cover::after{content:'';position:absolute;top:0;left:50%;width:70px;height:14px;margin-left:-35px;background:color-mix(in srgb,var(--sb-bar-accent) 35%,transparent)}
 html.sb-cs.sb-cs-note #chat [data-sb-side=me] > .sb-chat-cover{position:relative}
