@@ -1732,7 +1732,7 @@ html.sb-cs #chat .sb-chat-stats{flex:none;color:color-mix(in srgb,var(--sb-bar-s
 html.sb-cs:not(.sb-cs-scene) #chat .sb-chat-where,html.sb-cs:not(.sb-cs-scene) #chat .sb-chat-sep{display:none}
 html.sb-cs #chat .sb-chat-scene [hidden]{display:none!important}
 /* native stats now live in the divider; the native node stays in place, just hidden */
-html.sb-cs #chat.sb-reading .sb-reading-message > .mesAvatarWrapper :is(.mesIDDisplay,.mes_timer,.tokenCounterDisplay){display:none!important}
+html.sb-cs #chat.sb-reading .sb-reading-message :is(.mesIDDisplay,.mes_timer,.tokenCounterDisplay,.timestamp){display:none!important}
 html.sb-cs #chat.sb-reading .sb-reading-message .sb-chat-time{display:none}
 /* header image: fixed per side, adjustable height, fades into the glass */
 html.sb-cs #chat .sb-chat-cover{height:var(--sb-chat-cover-h,132px);min-height:var(--sb-chat-cover-h,132px);width:calc(100% + 24px);margin:0 -12px;border-radius:6px 6px 0 0;background:transparent;-webkit-mask-image:linear-gradient(#000 55%,transparent);mask-image:linear-gradient(#000 55%,transparent)}

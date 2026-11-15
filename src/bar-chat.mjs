@@ -74,6 +74,9 @@ function nativeStats(node) {
     if (timer && !body.contains('no-timer')) out.push(timer);
     const tokens = $('.tokenCounterDisplay', node)?.textContent.trim();
     if (tokens && !body.contains('no-tokenCount')) out.push(tokens);
+    // 发送时间也是酒馆自己的字段（跟着酒馆 UI 的时间戳开关），一起接在尾部
+    const stamp = $('.timestamp', node)?.textContent.trim();
+    if (stamp && !body.contains('no-timestamps')) out.push(stamp);
     return out.join(' · ');
 }
 const sceneText = s => [[s?.date, s?.time].filter(Boolean).join(' '), s?.weather, s?.where].filter(Boolean).join(' · ');
