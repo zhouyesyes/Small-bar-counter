@@ -44,7 +44,7 @@ export function chatStyleControlsHtml(settings) {
 <div class="sb-cs-row"><span>你的消息样子</span>${seg('mine', v.mine, [['receipt', '吧台小票'], ['note', '便签'], ['plain', '和TA一样']])}</div>
 <div class="sb-cs-row"><span>对话</span>${seg('dialogue', v.dialogue, [['wash', '主题色加淡底'], ['color', '只变色']])}</div>
 ${toggle('dropCap', '首字下沉', 'TA 的回复第一个字放大', v.dropCap)}
-${toggle('scene', '分隔条写场景', '日期、时间、天气、地点居中；消息末尾的第几杯 · 用时 · tokens · 时间跟着酒馆 UI 自己的开关', v.scene)}
+${toggle('scene', '分隔条写场景', '日期、时间、天气、地点居中；消息末尾使用酒馆原生楼层号、用时、tokens 和时间，显示开关也跟随酒馆', v.scene)}
 ${toggle('drink', '回复底部写这一轮的酒', '酒名和度数', v.drink)}
 </div>`;
 }

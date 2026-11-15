@@ -1109,7 +1109,6 @@ html.sb-bar #chat [data-sb-side=me] .sb-chat-who {flex-direction:row-reverse;pad
 html.sb-bar #chat .sb-chat-avatar {display:block;flex:0 0 40px;width:40px;height:40px;min-height:40px;border:0;border-radius:50%;padding:0;background:var(--sb-bar-card);overflow:hidden;cursor:default;}
 html.sb-bar #chat .sb-chat-avatar img {width:100%;height:100%;object-fit:cover;display:block;}
 html.sb-bar #chat .sb-chat-name {font-size:calc(11px * var(--fontScale,1));font-weight:500;color:var(--sb-bar-ink);}
-html.sb-bar #chat .sb-chat-time {font:calc(8px * var(--fontScale,1))/1.4 ui-monospace,monospace;color:var(--sb-bar-sub);}
 html.sb-bar #chat:is(.sb-reading,.sb-lounge) .sb-reading-message > .mesAvatarWrapper {display:flex!important;order:3;flex-wrap:wrap;align-items:center;gap:3px 10px;width:100%;max-width:none;margin:8px 0 0;padding:0!important;}
 html.sb-bar #chat:is(.sb-reading,.sb-lounge) .sb-reading-message > .mesAvatarWrapper > .avatar {display:none!important;}
 html.sb-bar #chat:is(.sb-reading,.sb-lounge) .sb-reading-message[data-sb-side=me] > .mesAvatarWrapper {justify-content:flex-end;}
@@ -1735,17 +1734,15 @@ html.sb-bar[data-sb-mode=dark] #completion_prompt_manager_popup {color-scheme:da
 html.sb-cs #chat.sb-reading > .sb-reading-message{padding:0 12px 6px!important}
 html.sb-cs #chat.sb-reading > .sb-reading-message::after{display:none}
 /* Scene line above each message; native statistics are centered at its end. */
-html.sb-bar #chat .sb-chat-scene,html.sb-bar #chat .sb-chat-stats{display:none}
+html.sb-bar #chat .sb-chat-scene{display:none}
 html.sb-cs #chat .sb-reading-message > .sb-chat-scene{order:-1;display:flex;justify-content:center;text-align:center;align-items:center;gap:10px;margin:16px 0 8px;white-space:nowrap;color:var(--sb-bar-sub);font:calc(11px * var(--fontScale,1))/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em}
 html.sb-cs #chat .sb-chat-scene::before,html.sb-cs #chat .sb-chat-scene::after{content:'';flex:1 1 0;min-width:0;height:1px;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--sb-bar-text) 22%,transparent) 35%,color-mix(in srgb,var(--sb-bar-text) 22%,transparent) 65%,transparent)}
 html.sb-cs #chat .sb-chat-scene-mid{display:flex;justify-content:center;max-width:100%;align-items:baseline;min-width:0;flex:0 1 auto;overflow:hidden}
 html.sb-cs #chat .sb-chat-where{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
-html.sb-cs #chat .sb-reading-message>.sb-chat-stats:not([hidden]){display:block;order:6;align-self:center;width:100%;text-align:center;white-space:normal;overflow-wrap:anywhere;margin:3px 0 10px;color:color-mix(in srgb,var(--sb-bar-sub) 80%,var(--sb-bar-accent));font:calc(11px * var(--fontScale,1))/1.8 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em}
+html.sb-cs #chat:is(.sb-reading,.sb-lounge) .sb-reading-message>.mesAvatarWrapper.sb-native-footer{order:6;justify-content:center;align-items:baseline;text-align:center;flex-wrap:wrap;gap:3px 12px;width:100%;margin:3px 0 10px;padding:0;white-space:normal;overflow-wrap:anywhere;font:calc(11px * var(--fontScale,1))/1.8 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--sb-bar-sub)}
+html.sb-cs #chat .sb-native-footer>:is(.mesIDDisplay,.mes_timer,.tokenCounterDisplay,.timestamp){font:inherit;letter-spacing:.04em;color:inherit;white-space:normal;overflow-wrap:anywhere;max-width:100%}
 html.sb-cs:not(.sb-cs-scene) #chat .sb-reading-message>.sb-chat-scene{display:none}
 html.sb-cs #chat .sb-chat-scene [hidden]{display:none!important}
-/* Original statistics stay intact; their display copy lives below the drink signature. */
-html.sb-cs #chat.sb-reading .sb-reading-message :is(.mesIDDisplay,.mes_timer,.tokenCounterDisplay,.timestamp){display:none!important}
-html.sb-cs #chat.sb-reading .sb-reading-message .sb-chat-time{display:none}
 /* header image: fixed per side, adjustable height, fades into the glass */
 html.sb-cs #chat .sb-chat-cover{height:var(--sb-chat-cover-h,132px);min-height:var(--sb-chat-cover-h,132px);width:calc(100% + 24px);margin:0 -12px;border-radius:6px 6px 0 0;background:transparent;-webkit-mask-image:linear-gradient(#000 55%,transparent);mask-image:linear-gradient(#000 55%,transparent)}
 html.sb-cs #chat .sb-chat-cover img{filter:none}
@@ -1767,7 +1764,6 @@ html.sb-bar #chat .sb-chat-poured,html.sb-bar #chat .sb-chat-stub{display:none}
 html.sb-cs.sb-cs-drink #chat .sb-reading-message > .sb-chat-poured:not([hidden]){order:3;display:flex;flex-wrap:wrap;justify-content:center;align-items:baseline;gap:4px 10px;padding:6px 0 4px;color:var(--sb-bar-sub);font:italic calc(13px * var(--fontScale,1)) var(--sb-f-italic,serif)}
 html.sb-cs #chat .sb-chat-poured em{font:calc(10px * var(--fontScale,1)) ui-monospace,monospace;font-style:normal;letter-spacing:.14em;text-transform:uppercase}
 html.sb-cs #chat .sb-chat-poured b{font:500 calc(13px * var(--fontScale,1)) var(--sb-f-serif);color:color-mix(in srgb,var(--sb-bar-accent) 75%,var(--sb-bar-ink));font-style:normal}
-html.sb-cs #chat.sb-reading .sb-reading-message > .mesAvatarWrapper{order:5}
 /* the user's own message: receipt or note, no paper either */
 html.sb-cs.sb-cs-receipt #chat [data-sb-side=me] > .mes_block > .mes_text{border-top:1px dashed color-mix(in srgb,var(--sb-bar-text) 28%,transparent);margin-top:8px!important}
 html.sb-cs.sb-cs-receipt #chat [data-sb-side=me] > .sb-chat-stub:not([hidden]){order:3;display:flex;justify-content:center;text-align:center;flex-wrap:wrap;gap:6px 12px;padding:2px 0 10px;border-bottom:1px dashed color-mix(in srgb,var(--sb-bar-text) 28%,transparent);font:calc(10px * var(--fontScale,1)) ui-monospace,monospace;letter-spacing:.06em;color:var(--sb-bar-sub)}
