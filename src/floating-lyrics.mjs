@@ -1,4 +1,3 @@
-import {createLyricsPip} from './lyrics-pip.mjs';
 import {displayMusicTitle} from './music-title.mjs';
 import {updateLyricWords} from './music-lyrics.mjs';
 import {applyPalette,phoneModeFor} from './palette.mjs';
@@ -6,9 +5,8 @@ const icon=path=>`<svg viewBox="0 0 24 24" aria-hidden="true">${path}</svg>`;
 const playIcon=icon('<path d="m9 5 11 7-11 7Z"/>'),pauseIcon=icon('<path d="M8 5v14M16 5v14"/>');
 const prevIcon=icon('<path d="M6 5v14M19 5 8 12l11 7Z"/>'),nextIcon=icon('<path d="M18 5v14M5 5l11 7-11 7Z"/>');
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
-export function createFloatingLyrics({player,settings,save,onToggle=()=>{},notify=()=>{}}){
+export function createFloatingLyrics({player,settings,save,onToggle=()=>{}}){
     let root,drag,skipClickUntil=0,paletteKey='',observer,resize,marquee,marqueeKey='';
-    const pip=createLyricsPip({player,settings,notify,onChange:value=>{if(!root)return;const button=root.querySelector('[data-float-pip]');button.setAttribute('aria-pressed',String(value));button.textContent=value?'退出画中画':'画中画歌词';}});
     const config=()=>{const m=settings().music??={};if(!m.floatingLyrics||typeof m.floatingLyrics!=='object')m.floatingLyrics={enabled:false};return m.floatingLyrics;};
     const viewport=()=>{const v=window.visualViewport;return {x:v?.offsetLeft||0,y:v?.offsetTop||0,width:v?.width||innerWidth,height:v?.height||innerHeight};};
     function bounds(){const v=viewport();root.style.maxWidth=`${Math.max(1,v.width-16)}px`;const r=root.getBoundingClientRect();return {left:v.x+8,top:v.y+8,width:Math.max(0,v.width-r.width-16),height:Math.max(0,v.height-r.height-16)};}
@@ -36,7 +34,7 @@ export function createFloatingLyrics({player,settings,save,onToggle=()=>{},notif
     }
     const text=(selector,value)=>{const node=root.querySelector(selector);if(node.textContent!==value)node.textContent=value;};
     function sync(){
-        pip.sync();if(!root)return;const cfg=config();root.hidden=!cfg.enabled;if(root.hidden){marquee?.cancel();marquee=null;marqueeKey='';return;}
+        if(!root)return;const cfg=config();root.hidden=!cfg.enabled;if(root.hidden){marquee?.cancel();marquee=null;marqueeKey='';return;}
         const s=settings(),mode=phoneModeFor(s),key=JSON.stringify([mode,s.splash?.colors?.[mode]]);
         if(key!==paletteKey){paletteKey=key;applyPalette(root,s,mode);}
         const t=player.current(),lines=player.lyric(),index=player.line(),line=lines[index]?.text||'';
@@ -54,10 +52,10 @@ export function createFloatingLyrics({player,settings,save,onToggle=()=>{},notif
         if(root)return;
         if(!document.getElementById('sb-floating-lyrics-style')){const style=document.createElement('style');style.id='sb-floating-lyrics-style';style.textContent=styles;document.head.append(style);}
         root=document.createElement('aside');root.id='sb-floating-lyrics';root.setAttribute('aria-label','悬浮歌词');root.hidden=true;
-        root.innerHTML=`<span class="fl-resize fl-resize-left" data-float-resize="left" role="separator" aria-label="调整歌词左边缘" aria-orientation="vertical" tabindex="0"></span><span class="fl-resize fl-resize-right" data-float-resize="right" role="separator" aria-label="调整歌词右边缘" aria-orientation="vertical" tabindex="0"></span><div class="fl-cap"><button type="button" class="fl-main" data-float-grip aria-label="展开或收起悬浮歌词，可拖动位置" aria-expanded="false" aria-controls="sb-floating-lyrics-details"><span class="fl-note" aria-hidden="true">♪</span><span data-float-line><span></span></span><span class="fl-chevron" aria-hidden="true">⌃</span></button><button type="button" class="fl-close" data-float-close aria-label="关闭悬浮歌词">×</button></div><div class="fl-details" id="sb-floating-lyrics-details" data-float-details hidden><p class="fl-title" data-float-title></p><p class="fl-neighbor" data-float-prev></p><p class="fl-current" data-float-current></p><p class="fl-neighbor" data-float-next></p><div class="fl-controls"><button type="button" data-float-control data-float-prev-song aria-label="上一首">${prevIcon}</button><button type="button" data-float-control data-float-play aria-label="播放">${playIcon}</button><button type="button" data-float-control data-float-next-song aria-label="下一首">${nextIcon}</button></div><button type="button" class="fl-pip" data-float-pip aria-pressed="false">画中画歌词</button></div>`;
+        root.innerHTML=`<span class="fl-resize fl-resize-left" data-float-resize="left" role="separator" aria-label="调整歌词左边缘" aria-orientation="vertical" tabindex="0"></span><span class="fl-resize fl-resize-right" data-float-resize="right" role="separator" aria-label="调整歌词右边缘" aria-orientation="vertical" tabindex="0"></span><div class="fl-cap"><button type="button" class="fl-main" data-float-grip aria-label="展开或收起悬浮歌词，可拖动位置" aria-expanded="false" aria-controls="sb-floating-lyrics-details"><span class="fl-note" aria-hidden="true">♪</span><span data-float-line><span></span></span><span class="fl-chevron" aria-hidden="true">⌃</span></button><button type="button" class="fl-close" data-float-close aria-label="关闭悬浮歌词">×</button></div><div class="fl-details" id="sb-floating-lyrics-details" data-float-details hidden><p class="fl-title" data-float-title></p><p class="fl-neighbor" data-float-prev></p><p class="fl-current" data-float-current></p><p class="fl-neighbor" data-float-next></p><div class="fl-controls"><button type="button" data-float-control data-float-prev-song aria-label="上一首">${prevIcon}</button><button type="button" data-float-control data-float-play aria-label="播放">${playIcon}</button><button type="button" data-float-control data-float-next-song aria-label="下一首">${nextIcon}</button></div></div>`;
         document.documentElement.append(root);
         root.addEventListener('click',e=>{
-            e.stopPropagation();if(e.target.closest('[data-float-pip]')){pip.toggle();return;}if(e.target.closest('[data-float-close]')){setEnabled(false);return;}
+            e.stopPropagation();if(e.target.closest('[data-float-close]')){setEnabled(false);return;}
             if(e.target.closest('[data-float-play]')){Promise.resolve(player.toggle()).catch(()=>{});return;}
             if(e.target.closest('[data-float-prev-song]')){player.prev();return;}if(e.target.closest('[data-float-next-song]')){player.next();return;}
             if(e.target.closest('[data-float-grip]')&&Date.now()>=skipClickUntil)expand();
@@ -110,6 +108,5 @@ const styles=`
 #sb-floating-lyrics .fl-details{padding:2px 18px 14px;border-top:1px solid color-mix(in srgb,var(--sb-accent) 18%,transparent)}#sb-floating-lyrics p{margin:8px 0;overflow-wrap:anywhere;text-align:center}#sb-floating-lyrics .fl-title{font-size:11px;color:var(--sb-dim);margin:10px 0 14px}
 #sb-floating-lyrics .fl-neighbor{font-size:12px;color:var(--sb-dim)}#sb-floating-lyrics .fl-neighbor:empty{display:none}#sb-floating-lyrics .fl-current{font-size:15px;max-height:96px;overflow:auto;color:var(--sb-fg);user-select:text;-webkit-user-select:text}
 #sb-floating-lyrics .fl-word{color:color-mix(in srgb,var(--sb-fg) 35%,var(--sb-bg))}#sb-floating-lyrics .fl-word.played{color:color-mix(in srgb,var(--sb-fg) 58%,var(--sb-bg))}#sb-floating-lyrics .fl-word.active{color:var(--sb-accent)}
-#sb-floating-lyrics .fl-pip{display:block;margin:12px auto 0;padding:5px 12px;border:1px solid var(--sb-dim);border-radius:14px;font-size:11px;color:var(--sb-dim)}#sb-floating-lyrics .fl-pip[aria-pressed=true]{color:var(--sb-accent);border-color:var(--sb-accent)}
 #sb-floating-lyrics .fl-controls{display:flex;justify-content:center;gap:28px;padding-top:10px}#sb-floating-lyrics .fl-controls button{width:32px;height:32px;display:grid;place-items:center}#sb-floating-lyrics svg{width:20px;height:20px;fill:currentColor;stroke:currentColor;stroke-width:1.5}#sb-floating-lyrics button:disabled{opacity:.4;cursor:default}
 `;

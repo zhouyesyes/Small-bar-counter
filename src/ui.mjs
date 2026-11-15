@@ -150,7 +150,7 @@ export function createUI(host) {
         // 状态那行小字只改字，不整页重画（滑着的时候不跳）
         onStatus: text => { v.mstate = text; root?.querySelectorAll('.sb-mstxt').forEach(el => { el.textContent = text; }); },
     });
-    const floatingLyrics=createFloatingLyrics({player,settings:host.settings,notify:message=>host.toast('info',message),save:()=>host.saveSettings(),onToggle:enabled=>root?.querySelectorAll('[data-act=mfloat]').forEach(button=>{button.setAttribute('aria-pressed',String(enabled));button.setAttribute('aria-label',enabled?'关闭悬浮歌词':'开启悬浮歌词');button.title=enabled?'关闭悬浮歌词':'开启悬浮歌词';button.classList.toggle('on',enabled);})});
+    const floatingLyrics=createFloatingLyrics({player,settings:host.settings,save:()=>host.saveSettings(),onToggle:enabled=>root?.querySelectorAll('[data-act=mfloat]').forEach(button=>{button.setAttribute('aria-pressed',String(enabled));button.setAttribute('aria-label',enabled?'关闭悬浮歌词':'开启悬浮歌词');button.title=enabled?'关闭悬浮歌词':'开启悬浮歌词';button.classList.toggle('on',enabled);})});
     const coverTracks = new Map();
     const coverImg = (t, cls) => { const key = `${t.src || 'netease'}:${t.id}`; coverTracks.set(key, t); const url = displayMusicCover(root,t,cls,coverList); return `<img class="${cls}" ${url ? `src="${esc(url)}"` : ''} data-cover-key="${esc(key)}" decoding="async" style="visibility:hidden" alt="">`; };
     const fmt = s => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
