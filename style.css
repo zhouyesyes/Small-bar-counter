@@ -668,7 +668,7 @@ html.sb-bar[data-sb-mode=dark] #chat .sb-chat-cover[data-sb-cover-empty=true]{ba
 #sb-root .sb-music .sb-lyr .sb-lyric-line{font-size:calc(12px * var(--fontScale,1))}
 #sb-root .sb-music-toggle{width:calc(100% + 32px);cursor:pointer;text-align:left}
 #sb-root .sb-music-caret{margin-left:auto;font-size:calc(14px * var(--fontScale,1));letter-spacing:0}
-#sb-root .sb-music-extras[hidden]{display:none!important}
+#sb-root .sb-player-content[hidden],#sb-root .sb-music-extras[hidden]{display:none!important}
 #sb-root .sb-music.is-mini .sb-lyr{height:58px;padding:12px 0;margin:8px 0}
 #sb-root .sb-music.is-mini .sb-lyr .sb-lyric-line.cur{font-size:calc(14px * var(--fontScale,1))}
 #sb-root .sb-music.is-mini .sb-mctl{margin-bottom:0}
@@ -983,7 +983,7 @@ html.sb-bar #char-management-dropdown { -webkit-appearance: none; appearance: no
 #sb-root .sb-music{background:transparent;border:0;border-radius:0;padding:0;overflow:visible}
 #sb-root .sb-player-main{padding:18px 16px 12px;border:1px solid var(--sb-accent);border-radius:14px;background:var(--sb-card,var(--sb-bg));overflow:hidden}
 #sb-root .sb-player-main>.sb-cap{margin:-18px -16px 0;padding:11px 16px;border-bottom:1px solid var(--sb-accent);background:color-mix(in srgb,var(--sb-accent) 12%,var(--sb-card,var(--sb-bg)));justify-content:flex-start}
-#sb-root .sb-player-main>.sb-mstate{margin:8px 0 10px;text-align:right}
+#sb-root .sb-player-content>.sb-mstate{margin:8px 0 10px;text-align:right}
 #sb-root .sb-track-head .sb-bigcover{width:54px!important;height:54px!important;flex:0 0 54px;border-radius:50%!important;border:6px solid #171717;box-shadow:none}
 #sb-root .sb-music .sb-queue{margin:10px 0 0;padding:9px 12px 4px;border:1px solid var(--sb-accent);border-radius:14px;background:var(--sb-card,var(--sb-bg))}
 #sb-root .sb-music .sb-plists{border:0;margin:0;padding:12px 0 0}
@@ -1708,3 +1708,6 @@ html.sb-bar[data-sb-mode=dark] #completion_prompt_manager_popup {color-scheme:da
 #sb-root .sb-music .sb-plists button small{line-height:inherit}
 #sb-root .sb-pick-missing{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 2px 0;font-size:11px;color:var(--sb-dim)}
 #sb-root .sb-pick-missing .sb-gen{white-space:nowrap;font-size:11px;color:var(--sb-accent)}
+
+#sb-root .sb-music.is-mini .sb-player-main{padding-bottom:0}
+#sb-root .sb-music.is-mini .sb-music-toggle{border-bottom:0}
