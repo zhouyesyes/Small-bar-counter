@@ -9,7 +9,7 @@ await p.route(/^https:\/\/(?!127\.0\.0\.1)/,async route=>{
  if(u.pathname.endsWith('/api.php')&&u.searchParams.get('types')==='search'){
   const name=u.searchParams.get('name'),page=Number(u.searchParams.get('pages'));searches.push({name,page,provider:'netease'});
   if(name==='慢查询')await new Promise(resolve=>releaseSlow=resolve);
-  const rows=page>2?[]:Array.from({length:20},(_,i)=>({id:String((page-1)*20+i+1),name:name+' 第'+((page-1)*20+i+1)+'首',artist:['歌手']}));
+  const rows=page>2||name==='QQ查询'||name==='重复'?[]:Array.from({length:20},(_,i)=>({id:String((page-1)*20+i+1),name:name+' 第'+((page-1)*20+i+1)+'首',artist:['歌手']}));
   return route.fulfill({contentType:'application/json',body:JSON.stringify(rows)});
  }
  if(u.hostname==='api.vkeys.cn'&&u.searchParams.has('word')){
@@ -35,12 +35,15 @@ await p.locator('[data-act=mpage][data-d="1"]').click();await p.waitForFunction(
 await p.locator('[data-act=mpage][data-d="-1"]').click();await p.waitForFunction(()=>document.querySelector('.sb-mpager>span')?.textContent==='1');assert.match(await titles().first().innerText(),/第1首/);
 assert.deepEqual(searches.filter(r=>r.name==='测试歌曲'&&r.provider==='netease').map(r=>r.page),[1,2],'back navigation uses the same cached page');
 await p.locator('[data-act=mpage][data-d="1"]').click();await p.waitForFunction(()=>document.querySelector('.sb-mpager>span')?.textContent==='2');await p.locator('[data-act=mpage][data-d="1"]').click();await p.waitForFunction(()=>toasts.includes('没有下一页了'));assert.equal(await p.locator('.sb-mpager>span').innerText(),'2');
-await p.locator('[data-music-source]').selectOption('qq');await p.waitForFunction(()=>document.querySelector('.sb-mpager>span')?.textContent==='1');assert.match(await titles().first().innerText(),/QQ第1页/);
+await p.locator('[data-msearch]').fill('QQ查询');await p.locator('[data-act=msearch]').click();await p.waitForFunction(()=>document.querySelector('.sb-mpager>span')?.textContent==='1');assert.match(await titles().first().innerText(),/QQ第1页/);
 await p.locator('[data-act=mpage][data-d="1"]').click();await p.waitForFunction(()=>document.querySelector('.sb-mpager>span')?.textContent==='2');assert.match(await titles().first().innerText(),/QQ第2页/);
 await p.locator('[data-msearch]').fill('重复');await p.locator('[data-act=msearch]').click();await p.waitForFunction(()=>document.querySelector('.sb-mpager>span')?.textContent==='1');await p.locator('[data-act=mpage][data-d="1"]').click();await p.waitForFunction(()=>toasts.some(t=>t.includes('重复返回同一页')));assert.equal(await p.locator('.sb-mpager>span').innerText(),'1');
 // A slow previous search may finish after a newer search. It must not overwrite it.
-await p.locator('[data-music-source]').selectOption('netease');await p.waitForFunction(()=>!document.querySelector('[data-act=msearch]').textContent.includes('…'));
+assert.equal(await p.locator('[data-music-source]').count(),0);
 await p.locator('[data-msearch]').fill('慢查询');await p.locator('[data-act=msearch]').click();while(!releaseSlow)await new Promise(resolve=>setTimeout(resolve,10));
 await p.locator('[data-msearch]').fill('新查询');await p.locator('[data-msearch]').press('Enter');await p.waitForFunction(()=>[...document.querySelectorAll('.sb-mres:not(.sb-queue) b')].some(n=>n.textContent.includes('新查询')));releaseSlow();await p.waitForTimeout(200);assert.match(await titles().first().innerText(),/新查询/);
-assert.deepEqual(errors,[]);await b.close();console.log('PASS: real GD/QQ page parameters, distinct next pages, cached previous pages, end-of-results, source switching, duplicate-page rejection and stale-search isolation.');
+await p.setViewportSize({width:390,height:844});
+const searchBox=await p.locator('.sb-music .sb-msearch input').boundingBox(),searchButton=await p.locator('.sb-music .sb-msearch button').boundingBox();
+assert.equal(searchBox.height,34);assert.equal(searchButton.height,34);assert.equal(searchBox.y,searchButton.y);
+assert.deepEqual(errors,[]);await b.close();console.log('PASS: real GD/QQ page parameters, distinct next pages, cached previous pages, end-of-results, automatic QQ fallback, compact aligned search, duplicate-page rejection and stale-search isolation.');
 })().catch(e=>{console.error(e);process.exit(1)});

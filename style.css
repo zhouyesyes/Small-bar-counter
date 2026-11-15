@@ -1698,7 +1698,13 @@ html.sb-bar[data-sb-mode=dark] #completion_prompt_manager_popup {color-scheme:da
 #sb-root .sb-mpick-delete:hover,#sb-root .sb-mpick-delete:focus-visible{color:#c54556;background:color-mix(in srgb,#c54556 10%,transparent)}
 #sb-root .sb-mpick-wrap{margin-top:12px}
 #sb-root .sb-mpick-wrap .sb-mpick{margin-top:0}
-#sb-root .sb-msearch [data-music-source]{width:76px;flex:0 0 76px;padding:7px 5px;font-size:12px}
-#sb-root .sb-msearch input{min-width:0}
+/* Keep music search and playlist pills compact, including host themes with tall inputs. */
+#sb-root .sb-music .sb-msearch{align-items:center;gap:6px}
+#sb-root .sb-music .sb-msearch input,#sb-root .sb-music .sb-msearch button{box-sizing:border-box;height:34px;min-height:34px;margin:0;border-radius:17px;line-height:normal;font-size:calc(12px * var(--fontScale,1))}
+#sb-root .sb-music .sb-msearch input{min-width:0;padding:0 12px}
+#sb-root .sb-music .sb-msearch button{flex:0 0 38px;padding:0 8px;display:grid;place-items:center}
+#sb-root .sb-music .sb-plists{align-items:center}
+#sb-root .sb-music .sb-plists button{display:inline-flex;align-items:center;justify-content:center;gap:3px;min-height:26px;margin:0;padding:3px 8px;border-radius:13px;font-size:calc(11px * var(--fontScale,1));line-height:18px}
+#sb-root .sb-music .sb-plists button small{line-height:inherit}
 #sb-root .sb-pick-missing{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 2px 0;font-size:11px;color:var(--sb-dim)}
 #sb-root .sb-pick-missing .sb-gen{white-space:nowrap;font-size:11px;color:var(--sb-accent)}

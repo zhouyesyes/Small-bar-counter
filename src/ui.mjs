@@ -593,7 +593,7 @@ export function createUI(host) {
  ${v.mlist !== false ? `<div class="sb-mres sb-queue"><div class="sb-cap sb-row" style="margin:6px 0"><span>${esc(listLabel(ms.active))} · ${list.length} 首</span><span>${onChat ? '<small>随这一席的故事，慢慢添歌</small>' : `<button class="sb-link" data-act="mpl-rename">改名</button>${ms.active !== ms.defaultList ? ' <button class="sb-link" data-act="mpl-del">删掉这个歌单</button>' : ''}`}</span></div><div class="sb-queue-scroll" data-keep="music-queue">${list.map((r, i) => `<div class="sb-mrow2${t && r.id === t.id ? ' on' : ''}">${coverImg(r, 'sb-mthumb')}<span data-act="mplayat" data-i="${i}"><b>${esc(r.title)}</b><small>${esc(r.artist)}${onChat && r.why ? ' · ' + esc(r.why) : ''}</small></span><button data-act="msong-menu" data-i="${i}" aria-label="管理这首歌">⋯</button><button data-act="mdelsong" data-i="${i}" aria-label="删除《${esc(r.title)}》" title="从歌单删除">×</button></div>`).join('') || `<div class="sb-empty sm">${onChat ? '这个聊天还没有选曲，下一轮回复后会出现' : '还没有歌'}</div>`}</div></div>` : ''}
  <div class="sb-plists">${chat.length ? `<button data-act="mpl" data-n="${CHAT_LIST}" class="sb-chat-plist${onChat ? ' on' : ''}">${CHAT_LIST_LABEL} <small>${chat.length}</small></button>` : ''}${names.map(n => `<button data-act="mpl" data-n="${esc(n)}" class="${n === ms.active ? 'on' : ''}">${esc(n)} <small>${ms.lists[n].length}</small></button>`).join('')}<button data-act="mpl-new" class="add">＋ 新建歌单</button></div>
  ${m?.title ? `<button class="sb-mhis" data-act="mhis">${Wd().listen}《${esc(m.title)}》${m.artist ? ' · ' + esc(m.artist) : ''} · 放这首</button>` : ''}
- <div class="sb-msearch"><select data-music-source aria-label="音乐搜索来源">${[['auto','自动'],['netease','网易云'],['qq','QQ']].map(([key,label])=>`<option value="${key}" ${(v.msource||'auto')===key?'selected':''}>${label}</option>`).join('')}</select><input data-msearch placeholder="搜歌名、歌手，或贴网易云链接" enterkeyhint="search" value="${esc(v.mqueryDraft ?? v.mq ?? '')}"><button data-act="msearch">${v.msearching ? '…' : '搜'}</button></div>
+ <div class="sb-msearch"><input data-msearch placeholder="搜歌名、歌手，或贴网易云链接" enterkeyhint="search" value="${esc(v.mqueryDraft ?? v.mq ?? '')}"><button data-act="msearch">${v.msearching ? '…' : '搜'}</button></div>
  ${v.mres?.length ? `<div class="sb-mres"><div class="sb-cap sb-row" style="margin:6px 0"><span>搜「${esc(v.mq)}」· 第 ${v.mpage || 1} 页</span><button class="sb-link" data-act="mclose">收起 ×</button></div>${v.mres.map((r, i) => `<div class="sb-mrow2">${coverImg(r, 'sb-mthumb')}<span><b>${esc(r.title)}</b><small>${esc(r.artist)}${r.src === 'qq' ? ' · QQ' : ''}</small></span><button data-act="madd" data-i="${i}" data-play="1">▶</button><button data-act="madd" data-i="${i}">＋</button></div>`).join('')}
   <div class="sb-mpager"><button data-act="mpage" data-d="-1" ${(v.mpage || 1) <= 1 || v.msearching ? 'disabled' : ''}>上一页</button><span>${v.mpage || 1}</span><button data-act="mpage" data-d="1" ${v.msearching ? 'disabled' : ''}>下一页</button><button data-act="mclose">收起</button></div></div>` : ''}
 
@@ -621,7 +621,7 @@ export function createUI(host) {
     }
     async function musicSearch(q,page=1,refresh=false) {
         q=String(q||'').trim();if(!q)return;
-        const request=++musicSearchRequest,source=v.msource||'auto';
+        const request=++musicSearchRequest,source='auto';
         if(q!==v.mq){v.mres=[];v.mpage=1;}
         v.mq=q;v.mqueryDraft=q;v.msearching=true;render();
         try{
@@ -1589,7 +1589,6 @@ export function createUI(host) {
     }
     async function onChange(e) {
         const t = e.target;
-        if(t.matches?.('[data-music-source]')){const query=root.querySelector('[data-msearch]')?.value||v.mq;v.msource=t.value;v.mres=[];v.mpage=1;await musicSearch(query,1,true);render();return;}
         if (t.dataset.set) host.setSettings(s => { s[t.dataset.set] = t.type === 'checkbox' ? t.checked : t.type === 'number' ? Number(t.value) : t.value; });
         // 反过来存的开关：界面上「开」= 设置里是 false（比如「这张卡正文后写状态」对应 noAutoStatus）
         if (t.dataset.csetOff) host.setCharCfg(c => { c[t.dataset.csetOff] = !t.checked; });
