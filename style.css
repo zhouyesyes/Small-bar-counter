@@ -1711,3 +1711,8 @@ html.sb-bar[data-sb-mode=dark] #completion_prompt_manager_popup {color-scheme:da
 
 #sb-root .sb-music.is-mini .sb-player-main{padding-bottom:0}
 #sb-root .sb-music.is-mini .sb-music-toggle{border-bottom:0}
+
+#sb-root .sb-track-meta .sb-mt{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#sb-root .sb-track-info{margin-top:6px;font-size:11px;color:var(--sb-dim)}
+#sb-root .sb-track-info summary{cursor:pointer;list-style:none;text-decoration:underline;text-underline-offset:3px}
+#sb-root .sb-track-info p{font-size:11px;line-height:1.6;margin:6px 0 0;overflow-wrap:anywhere}

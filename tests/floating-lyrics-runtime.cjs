@@ -12,11 +12,16 @@ await page.route('https://**',r=>r.abort());
 await page.goto('http://127.0.0.1:8870/tests/fixtures/folio-runtime.html');await page.waitForFunction(()=>window.ready);
 await page.evaluate(async()=>{
  const {createUI}=await import('/src/ui.mjs');s.barStyle='default';s.theme='auto';s.cat=false;
- s.music={lists:{小曲:[{id:'float',title:'胶囊测试',artist:'本地',direct:location.origin+'/float-tone.wav',cover:location.origin+'/assets/opening/dark-avatar.jpg',lrc:'[00:00]第一句歌词\n[00:01]第二句歌词\n[00:03]<img src=x onerror=alert(1)>',dur:30}]},active:'小曲',idx:0,mode:'all'};
+ s.music={lists:{小曲:[{id:'float',title:'胶囊测试（电影《测试》插曲）',artist:'本地',direct:location.origin+'/float-tone.wav',cover:location.origin+'/assets/opening/dark-avatar.jpg',lrc:'[00:00]第一句歌词\n[00:01]第二句歌词\n[00:03]<img src=x onerror=alert(1)>',dur:30}]},active:'小曲',idx:0,mode:'all'};
  window.saves=0;window.ui=createUI({settings:()=>s,hasChar:()=>false,meta:()=>({}),openingProfile:()=>({name:'test'}),unread:()=>0,saveSettings:()=>saves++,toast(){}});ui.mount();window.audio=document.querySelector('audio');window.float=document.querySelector('#sb-floating-lyrics');
 });
 const bubble=page.locator('#sb-floating-lyrics'),grip=page.locator('[data-float-grip]');
 assert.equal(await bubble.isVisible(),false);
+assert.equal(await page.locator('.sb-track-meta .sb-mt').textContent(),'胶囊测试');
+await page.locator('.sb-track-info summary').click();
+assert.equal(await page.locator('.sb-track-info p').textContent(),'胶囊测试（电影《测试》插曲）');
+assert.equal(await page.evaluate(()=>s.music.lists.小曲[0].title),'胶囊测试（电影《测试》插曲）');
+await page.locator('.sb-track-info summary').click();
 assert.equal(await page.locator('[data-act=mlist]').count(),0);
 assert.equal(await page.locator('.sb-mctl [data-act=mfloat] svg').count(),1);
 assert.equal(await page.locator('[data-act=mfloat]').textContent(),'');

@@ -1,3 +1,4 @@
+import {displayMusicTitle} from './music-title.mjs';
 import {updateLyricWords} from './music-lyrics.mjs';
 import {applyPalette,phoneModeFor} from './palette.mjs';
 const icon=path=>`<svg viewBox="0 0 24 24" aria-hidden="true">${path}</svg>`;
@@ -37,8 +38,8 @@ export function createFloatingLyrics({player,settings,save,onToggle=()=>{}}){
         const s=settings(),mode=phoneModeFor(s),key=JSON.stringify([mode,s.splash?.colors?.[mode]]);
         if(key!==paletteKey){paletteKey=key;applyPalette(root,s,mode);}
         const t=player.current(),lines=player.lyric(),index=player.line(),line=lines[index]?.text||'';
-        highlight('[data-float-line]>span',lines[index],line||t?.title||'选一首歌，歌词会浮在这里');
-        text('[data-float-title]',t?[t.title,t.artist].filter(Boolean).join(' · '):'还没有播放的歌曲');
+        highlight('[data-float-line]>span',lines[index],line||displayMusicTitle(t?.title)||'选一首歌，歌词会浮在这里');
+        text('[data-float-title]',t?[displayMusicTitle(t.title),t.artist].filter(Boolean).join(' · '):'还没有播放的歌曲');
         text('[data-float-prev]',lines[index-1]?.text||'');highlight('[data-float-current]',lines[index],line||(lines.length?'等待下一句歌词':'暂无歌词'));text('[data-float-next]',lines[index+1]?.text||'');
         const button=root.querySelector('[data-float-play]'),playing=player.playing();
         if(button.dataset.playing!==String(playing)){button.dataset.playing=String(playing);button.innerHTML=playing?pauseIcon:playIcon;button.setAttribute('aria-label',playing?'暂停':'播放');}
