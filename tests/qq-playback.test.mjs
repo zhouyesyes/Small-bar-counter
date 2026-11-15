@@ -27,7 +27,7 @@ test('QQ business-error 503 on HQ/MID falls back to a standard numeric-ID reques
 test('a returned HQ URL does not suppress the lazy standard-quality playback retry',async()=>{
  const saved=globalThis.fetch,requests=[];
  globalThis.fetch=async url=>{const q=new URL(url).searchParams;requests.push(q.get('quality'));return{ok:true,json:async()=>({data:{url:'https://ws.stream.qqmusic.qq.com/'+q.get('quality')+'.mp3',quality:q.get('quality')==='4'?'音乐试听':'HQ高音质'}})}};
- try{const rows=await sourceList({id:'123',src:'qq'});assert.deepEqual(requests,['8']);assert.equal(rows.length,2);assert.equal(await rows[1].get(),'https://ws.stream.qqmusic.qq.com/4.mp3');assert.deepEqual(requests,['8','4']);}finally{globalThis.fetch=saved;}
+ try{const rows=await sourceList({id:'123',src:'qq'});assert.deepEqual(requests,['8']);assert.equal(rows.length,3);assert.equal(await rows[1].get(),'https://ws.stream.qqmusic.qq.com/4.mp3');assert.deepEqual(requests,['8','4']);}finally{globalThis.fetch=saved;}
 });
 test('QQ compatibility download identifies audio bytes despite a form-data MIME header',async()=>{
  const {qqAudioBlob}=await import('../src/music.mjs');const saved=globalThis.fetch;
@@ -39,4 +39,10 @@ test('QQ compatibility download rejects non-audio replies and oversized bodies',
  try{globalThis.fetch=async()=>new Response('<html>error</html>');await assert.rejects(qqAudioBlob('https://example.com/error'),/不是可识别的音频/);
  globalThis.fetch=async()=>new Response('small',{headers:{'Content-Length':String(25*1024*1024)}});await assert.rejects(qqAudioBlob('https://example.com/large'),/过大/);
  }finally{globalThis.fetch=saved;}
+});
+
+test('QQ provider-selected unencrypted format remains available when fixed qualities fail',async()=>{
+ const saved=globalThis.fetch,requests=[];
+ globalThis.fetch=async url=>{const q=new URL(url).searchParams;requests.push(q);return {ok:true,json:async()=>q.has('quality')?{code:503}:{data:{url:'https://ws.stream.qqmusic.qq.com/auto.mp3',quality:'音乐试听'}}};};
+ try{const track={id:'reader',src:'qq'};const rows=await sourceList(track);assert.equal(rows[0].u,'https://ws.stream.qqmusic.qq.com/auto.mp3');assert.equal(requests.length,3);assert(!requests[2].has('quality'));assert.equal(requests[2].get('ekey'),'0');assert.equal(track.qqPreview,true);assert.equal(track.qqRequestedQuality,'auto');}finally{globalThis.fetch=saved;}
 });

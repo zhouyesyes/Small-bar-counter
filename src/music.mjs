@@ -184,17 +184,18 @@ function qqAudioUrl(value){
 async function qqUrl(t, {standardOnly=false,qualityOnly=null,signal}={}) {
     const identity=str(t.qqMid)||str(t.id),key=/^\d+$/.test(identity)?'id':'mid';
     const standardIdentity=str(t.id)||identity,standardKey=/^\d+$/.test(standardIdentity)?'id':'mid';
-    const attempts=[{key,identity,quality:8},{key:standardKey,identity:standardIdentity,quality:4}];
-    for(const attempt of qualityOnly?attempts.filter(a=>a.quality===qualityOnly):standardOnly?attempts.slice(1):attempts){
-        const params=new URLSearchParams({[attempt.key]:attempt.identity,quality:attempt.quality,ekey:0});
+    const attempts=[{key,identity,quality:8},{key:standardKey,identity:standardIdentity,quality:4},{key:standardKey,identity:standardIdentity,quality:null}];
+    for(const attempt of qualityOnly?attempts.filter(a=>a.quality===(qualityOnly==='auto'?null:qualityOnly)):standardOnly?attempts.filter(a=>a.quality===4):attempts){
+        const params=new URLSearchParams({[attempt.key]:attempt.identity,ekey:0});
+        if(attempt.quality!==null)params.set('quality',String(attempt.quality));
         if(t.qqType)params.set('type',String(t.qqType));
         try{
             const d=await getJson(QQ_API+'?'+params,8000,signal);
             const x=Array.isArray(d?.data)?d.data[0]:d?.data||d;
-            const url=qqAudioUrl(x?.url);if(!url)continue;
+            const url=qqAudioUrl(x?.url);if(!url||str(x?.ekey))continue;
             if(x.cover)t.cover=x.cover;
             if(x.lyric&&!t.lrc)t.lrc=x.lyric;
-            t.qqRequestedQuality=attempt.quality;t.qqQuality=str(x.quality);t.qqPreview=/试听|preview|trial/i.test(t.qqQuality);
+            t.qqRequestedQuality=attempt.quality??'auto';t.qqQuality=str(x.quality);t.qqPreview=/试听|preview|trial/i.test(t.qqQuality);
             return url;
         }catch{/* A failed HQ/MID response may still work with the standard numeric-ID request. */}
     }
@@ -251,6 +252,7 @@ export async function sourceList(t) {
             list.push({ k: 'qq', get: () => qqUrl(t) });
         } else await add('qq', () => qqUrl(t));
         list.push({k:'qq',get:()=>{if(t.qqRequestedQuality===4)throw new Error('标准音质已尝试');return qqUrl(t,{standardOnly:true});}});
+        list.push({k:'qq',get:()=>qqUrl(t,{qualityOnly:'auto'})});
     } else {
         const bases = [...new Set([t.base, ...MUSIC_APIS].filter(Boolean))];
         const savedMeting = t.ok?.startsWith('m:');
@@ -331,10 +333,10 @@ async function loadCover(t, { refresh = false } = {}) {
 // 歌词：[mm:ss.xx] 一行一句
 // 好几个地方挨个问，谁给了像样的歌词用谁：歌上记的 → 搜出这首的那个节点和别的 Meting 节点 → GD
 // （以前只问一个节点，那个节点挂了或者歌是从 GD 搜到的，就一直没歌词）
-const gotLrc = new Map();
+const gotLrc = new Map(),pendingLrc=new Map();
 const lrcText = raw => {
     if (raw && typeof raw === 'object') {
-        for (const key of ['yrc', 'lyric', 'lrc', 'data']) { const text = lrcText(raw[key]); if (text) return text; }
+        for (const key of ['yrc', 'lyric', 'lrc', 'data']) { const text = lrcText(raw[key]); if (text && /\[\d{1,2}:\d|\[\d+,\d+\]/.test(text)) return text; }
         return '';
     }
     const s = String(raw || '').trim();
@@ -348,29 +350,36 @@ async function fetchText(url, timeout = 6000) {
 }
 export async function lyricOf(t) {
     const key = (t.src || 'n') + ':' + t.id;
+    const inline=t.lrc&&!/^https?:/.test(t.lrc)?parseLrc(t.lrc):[];
+    if(inline.length){gotLrc.set(key,inline);return inline;}
     if (gotLrc.has(key)) return gotLrc.get(key);
     const tries = [];
-    if (t.lrc && !/^https?:/.test(t.lrc)) tries.push(async () => t.lrc);
     if (/^https?:/.test(t.lrc || '')) tries.push(() => fetchText(t.lrc));
-    if (t.src !== 'qq') {
+    if (t.src === 'qq') {
+        const identity=str(t.qqMid)||str(t.id),key=/^\d+$/.test(identity)?'id':'mid';
+        tries.push(()=>fetchText(QQ_API+'/lyric?'+new URLSearchParams({[key]:identity}),6000));
+    } else {
         const id = t.lyricId || t.id;
         // Meting 节点一起问，第一个有歌词的算
         tries.push(() => Promise.any([...new Set([t.base, ...MUSIC_APIS].filter(Boolean))].map(b => fetchText(apiUrl(b, { server: 'netease', type: 'yrc', id }), 1500).then(x => (parseLrc(lrcText(x)).length ? x : Promise.reject())))).catch(() => ''));
         tries.push(() => Promise.any([...new Set([t.base, ...MUSIC_APIS].filter(Boolean))].map(b => fetchText(apiUrl(b, { server: 'netease', type: 'lrc', id })).then(x => (parseLrc(lrcText(x)).length ? x : Promise.reject())))).catch(() => ''));
         tries.push(() => fetchText(GD_API + '?' + new URLSearchParams({ types: 'lyric', source: 'netease', id })));
     }
-    for (const get of tries) {
-        const lines = parseLrc(lrcText(await get()));
-        if (lines.length) { gotLrc.set(key, lines); return lines; }
-    }
-    return [];
+    if(pendingLrc.has(key))return pendingLrc.get(key);
+    const job=(async()=>{
+        for(const get of tries){const lines=parseLrc(lrcText(await get()));if(lines.length){gotLrc.set(key,lines);return lines;}}
+        return [];
+    })();
+    pendingLrc.set(key,job);try{return await job;}finally{if(pendingLrc.get(key)===job)pendingLrc.delete(key);}
 }
 export function parseLrc(text) {
     text = lrcText(text);
     const precise = [];
     for (const row of text.split(/\r?\n/)) {
         const head = row.match(/^\[(\d+),(\d+)\]/); if (!head) continue;
-        const words = [...row.slice(head[0].length).matchAll(/\((\d+),(\d+),\d+\)([^()]*)/g)].map(m => ({ text:m[3], start:+m[1]/1000, end:(+m[1]+ +m[2])/1000 }));
+        let words = [...row.slice(head[0].length).matchAll(/\((\d+),(\d+),\d+\)([^()]*)/g)].map(m => ({ text:m[3], start:+m[1]/1000, end:(+m[1]+ +m[2])/1000 }));
+        // QQ YRC writes the text before (start,duration); NetEase writes timings before the text.
+        if(!words.length)words=[...row.slice(head[0].length).matchAll(/([^()]*)\((\d+),(\d+)\)/g)].map(m=>({text:m[1],start:+m[2]/1000,end:(+m[2]+ +m[3])/1000}));
         if (words.length) precise.push({t:+head[1]/1000,text:words.map(w=>w.text).join(''),words});
     }
     if (precise.length) return precise.sort((a,b)=>a.t-b.t);
@@ -413,6 +422,7 @@ function parallelSourceRace(track,{signal}={}) {
                 emit({key:`qq:${identity}:${quality}`,k:'qq',cacheKey:'qq',platform:'qq',track:copy,u,family:'qq',priority:quality===8?0:1});
             }catch{/* The other quality and NetEase remain independent. */}
         }));
+        if(!signal.aborted){const copy={...t};try{const u=await qqUrl(copy,{qualityOnly:'auto',signal});emit({key:`qq:${identity}:auto`,k:'qq',cacheKey:'qq',platform:'qq',track:copy,u,family:'qq',priority:2});}catch{/* No available unencrypted format returned. */}}
     };
     const producers=[];
     if(track.src==='qq')producers.push((emit,signal)=>qq(track,emit,signal));
@@ -445,6 +455,8 @@ export function createPlayer({ load, save, onChange, onStatus = () => {}, resolv
     const audio = new Audio();
     audio.preload = 'auto';
     let confirmedSource = '',sourcePlatform='',sourcePreview=false;
+    let skipTimer=0;const failedTracks=new Set();
+    const trackIdentity=t=>`${t.src||'netease'}:${t.id||t.title}`;
     let playRevision=0,fallbackJob=null,fallbackRevision=-1,recoveryFailed=false,resolving=false,sourceTrack=null;
     let raceController,sourceRace,sourceDisposer;const excludedSources=new Set();
     let stopWait=null,cancelAudioAttempt=null;
@@ -478,12 +490,13 @@ export function createPlayer({ load, save, onChange, onStatus = () => {}, resolv
         if(track!==target&&!target.cover&&track.cover)target.cover=track.cover;
         onChange?.();
         if(!track.cover)resolveCover(track).then(ok=>{if(ok&&current()){if(track!==target&&!target.cover)target.cover=track.cover;save();onChange?.();}}).catch(()=>{});
-        const key=(track.src||'n')+':'+track.id;
+        const key=(track.src||'n')+':'+track.id+':'+str(track.lrc);
         if(lrcFor===key&&(lrc.length||lyricJobKey===key))return;
         lrcFor=key;lyricJobKey=key;
         lyricOf(track).then(lines=>{if(current()&&lrcFor===key){lrc=lines;onChange?.('state');}}).catch(()=>{}).finally(()=>{if(current()&&lyricJobKey===key)lyricJobKey='';});
     }
-    async function play(i) {
+    async function play(i,{continueFailures=false}={}) {
+        clearTimeout(skipTimer);if(!continueFailures)failedTracks.clear();
         const s = st();
         if (i != null) { s.idx = Math.max(0, Math.min(s.list.length - 1, i)); save(); }
         const t = cur(); if (!t) return;
@@ -496,9 +509,9 @@ export function createPlayer({ load, save, onChange, onStatus = () => {}, resolv
         onChange?.();
         // AI 选的歌只有歌名和歌手：第一次放时才去搜，搜到的结果直接写回这首（下次不用再搜）
         if (t.pending) {
-            if (!resolve) return;
+            if (!resolve){resolving=false;finishFailure('暂时没搜到歌曲');return;}
             onStatus(`正在找《${t.title}》…`); onChange?.();
-            try { await waitStep(resolve(t)); } catch (e) { if(playing!==t||revision!==playRevision)return;stop();onStatus('暂时没搜到歌曲'); onChange?.('error', e?.message || '没找到这首歌'); return; }
+            try { await waitStep(resolve(t)); } catch (e) { if(playing!==t||revision!==playRevision)return;resolving=false;finishFailure('暂时没搜到歌曲',e?.message||'没找到这首歌');return; }
             if (playing !== t || revision !== playRevision) return;
         }
         refreshPresentation(t);
@@ -525,11 +538,18 @@ export function createPlayer({ load, save, onChange, onStatus = () => {}, resolv
     audio.addEventListener('stalled', () => {if(playing&&!recoveryFailed)onStatus('卡住了，还在等音乐接口…');});
     audio.addEventListener('playing', () => {if(playing&&!recoveryFailed)onStatus('正在播放 · ' + where()+(sourcePlatform==='qq'&&sourcePreview?' · 试听':''));});
     audio.addEventListener('pause', () => { if (!recoveryFailed&&!audio.ended&&audio.currentTime>0)onStatus('暂停了'); });
-    // 放不出来：网易云的歌先去 QQ 找同一首，再不行就提示
-    function finishFailure() {
-        if(recoveryFailed)return;recoveryFailed=true;clearTimeout(dog);releaseSource();
+    // All sources for this song failed: skip within a bounded failure round, even in repeat-one mode.
+    function finishFailure(status='放不了',message='可用音源检测失败，点播放可重新检测') {
+        if(recoveryFailed)return;recoveryFailed=true;clearTimeout(dog);releaseSource();raceController?.abort();sourceRace=null;
         audio.pause();audio.removeAttribute('src');audio.load();
-        onStatus('放不了');onChange?.('error','可用音源检测失败，点播放可重新检测');
+        const failed=playing,s=st(),list=s.list,activeList=s.active,revision=playRevision;
+        if(failed)failedTracks.add(trackIdentity(failed));
+        const candidates=Array.from({length:list.length},(_,offset)=>(s.idx+offset+1)%list.length).filter(index=>!failedTracks.has(trackIdentity(list[index])));
+        if(candidates.length){
+            const index=s.mode==='shuffle'?candidates[Math.floor(Math.random()*candidates.length)]:candidates[0],target=list[index];
+            onStatus('这首暂时放不了，正在跳到下一首…');onChange?.('info',`《${failed?.title||'当前歌曲'}》暂时放不了，跳过这首`);
+            skipTimer=setTimeout(()=>{if(playRevision===revision&&recoveryFailed){const live=st(),index=live.list.indexOf(target);if(live.active===activeList&&index>=0)play(index,{continueFailures:true});}},0);
+        }else{onStatus(status);onChange?.('error',failedTracks.size>1?'歌单里的歌曲都暂时放不了，点播放可重新检测':message);}
     }
     async function fallback() {
         const t=playing,revision=playRevision;if(!t||recoveryFailed)return;
@@ -553,7 +573,7 @@ export function createPlayer({ load, save, onChange, onStatus = () => {}, resolv
                 audio.src=winner.u;audio.dataset.src=winner.remoteUrl||winner.u;audio.dataset.id=sourceTrack.id;
                 if(await startAudio()){
                     if(!current())return;
-                    raceController?.abort();sourceRace=null;onChange?.();return;
+                    failedTracks.clear();raceController?.abort();sourceRace=null;onChange?.();return;
                 }
             }
         })();
@@ -576,7 +596,7 @@ export function createPlayer({ load, save, onChange, onStatus = () => {}, resolv
     audio.addEventListener('error', () => { clearTimeout(dog); if (audio.src&&!recoveryFailed&&!resolving&&!cancelAudioAttempt) fallback(); });
     audio.addEventListener('play', () => onChange?.('state'));
     audio.addEventListener('pause', () => onChange?.('state'));
-    const pausePlayback=()=>{playRevision++;stopWait?.();resolving=false;clearTimeout(dog);audio.pause();};
+    const pausePlayback=()=>{clearTimeout(skipTimer);playRevision++;stopWait?.();resolving=false;clearTimeout(dog);audio.pause();};
     const resume = async () => {
         if (recoveryFailed || audio.error || !audio.src || !playing) return play();
         media.prepare();
@@ -588,7 +608,7 @@ export function createPlayer({ load, save, onChange, onStatus = () => {}, resolv
         if (!document.hidden && !audio.paused && audio.readyState < 2) watch();
     });
     function stop() {
-        playRevision++;presentationRevision++;stopWait?.();raceController?.abort();sourceRace=null;releaseSource();resolving=false;recoveryFailed=false;sourceTrack=null;playing=null;confirmedSource='';sourcePlatform='';sourcePreview=false;sources=[];srcIdx=0;lrc=[];lrcFor='';clearTimeout(dog);
+        clearTimeout(skipTimer);failedTracks.clear();playRevision++;presentationRevision++;stopWait?.();raceController?.abort();sourceRace=null;releaseSource();resolving=false;recoveryFailed=false;sourceTrack=null;playing=null;confirmedSource='';sourcePlatform='';sourcePreview=false;sources=[];srcIdx=0;lrc=[];lrcFor='';clearTimeout(dog);
         audio.pause();audio.removeAttribute('src');delete audio.dataset.src;delete audio.dataset.id;delete audio.dataset.tried;audio.load();
         try { if(navigator.mediaSession)navigator.mediaSession.metadata=null; } catch { /* Optional host API. */ }
         onStatus('');onChange?.();
