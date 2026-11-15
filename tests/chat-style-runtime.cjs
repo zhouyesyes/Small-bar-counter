@@ -38,7 +38,7 @@ await p.locator('#look [data-sb-chat-style=coverHeight]').evaluate(n=>{n.value=2
 assert.equal(await p.locator('[mesid="7"] .sb-chat-cover').evaluate(n=>n.getBoundingClientRect().height),200);
 // Send key: empty glass, pouring while 酒馆 shows the stop key, full after it hides.
 assert.equal(await p.locator('#send_but > .sb-wine').count(),1);
-assert.deepEqual(await p.locator('#send_but > .sb-wine').evaluate(n=>({width:n.getBoundingClientRect().width,height:n.getBoundingClientRect().height})),{width:20,height:30});
+assert.deepEqual(await p.locator('#send_but > .sb-wine').evaluate(n=>({width:n.getBoundingClientRect().width,height:n.getBoundingClientRect().height})),{width:18,height:24});
 await p.evaluate(()=>{document.querySelector('#mes_stop').style.display='flex'});await p.waitForTimeout(50);
 await p.evaluate(()=>{document.querySelector('#mes_stop').style.display='none'});await p.waitForTimeout(50);
 assert.ok(await p.evaluate(()=>document.querySelector('#send_but').classList.contains('sb-wine-full')));

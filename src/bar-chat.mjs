@@ -7,7 +7,7 @@ export { loungeKey } from './bar-lounge.mjs';
 
 let getHost, observer, bodyObserver, surface, queued = false, menu;
 // 发送键：简笔红酒杯。生成时长未知，所以不显示进度：生成中（酒馆显示停止键时）酒一滴滴落、液面停在半杯晃；结束时倒满、碰一下杯。
-const GLASS = '<svg class="sb-wine" viewBox="0 0 20 30" aria-hidden="true"><defs><clipPath id="sb-wine-bowl"><path d="M4 2 C3.4 8 4.4 13.5 10 15 C15.6 13.5 16.6 8 16 2 Z"/></clipPath></defs><circle class="sb-wine-drop" cx="10" cy="-1" r=".9"/><g class="sb-wine-glass"><g clip-path="url(#sb-wine-bowl)"><g class="sb-wine-liquid"><path class="sb-wine-wave" d="M-6 0 Q-3 -1 0 0 T6 0 T12 0 T18 0 T24 0 L24 20 L-6 20 Z"/></g></g><path class="sb-wine-line" d="M4 2 C3.4 8 4.4 13.5 10 15 C15.6 13.5 16.6 8 16 2 Z M10 15 V26.5 M6 27.5 H14"/></g></svg>';
+const GLASS = '<svg class="sb-wine" viewBox="0 0 20 26" aria-hidden="true"><defs><clipPath id="sb-wine-bowl"><path d="M4 2 C3.4 8 4.4 13.5 10 15 C15.6 13.5 16.6 8 16 2 Z"/></clipPath></defs><circle class="sb-wine-drop" cx="10" cy="-1" r=".9"/><g class="sb-wine-glass"><g clip-path="url(#sb-wine-bowl)"><g class="sb-wine-liquid"><path class="sb-wine-wave" d="M-6 0 Q-3 -1 0 0 T6 0 T12 0 T18 0 T24 0 L24 20 L-6 20 Z"/></g></g><path class="sb-wine-line" d="M4 2 C3.4 8 4.4 13.5 10 15 C15.6 13.5 16.6 8 16 2 Z M10 15 V22.5 M6 23.5 H14"/></g></svg>';
 let stopObserver, fullTimer = 0, wasGenerating = false;
 function mountGlass() {
     const send = $('#send_but'), stop = $('#mes_stop');
