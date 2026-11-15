@@ -34,6 +34,11 @@ assert(await bubble.isVisible());assert(await page.evaluate(()=>!audio.paused));
 await page.locator('[data-act=music-compact]').click();assert(await page.locator('.sb-queue').isVisible());
 await grip.click();assert.equal(await grip.getAttribute('aria-expanded'),'true');
 assert.equal(await page.locator('[data-float-title]').textContent(),'胶囊测试 · 本地');
+await page.evaluate(()=>{audio.currentTime=.45;audio.dispatchEvent(new Event('timeupdate'));});
+await page.waitForFunction(()=>document.querySelector('[data-float-line] .fl-word.played')&&document.querySelector('[data-float-line] .fl-word.active'));
+assert.equal(await page.locator('[data-float-current] .fl-word.active').count(),1);
+assert(await page.evaluate(()=>{const active=document.querySelector('[data-float-line] .fl-word.active'),future=document.querySelector('[data-float-line] .fl-word:not(.active):not(.played)');return future&&getComputedStyle(active).color!==getComputedStyle(future).color;}));
+
 await page.locator('[data-float-play]').click();await page.waitForFunction(()=>audio.paused);
 await page.locator('[data-float-play]').click();await page.waitForFunction(()=>!audio.paused);
 await page.evaluate(()=>{audio.currentTime=3.2;audio.dispatchEvent(new Event('timeupdate'));});

@@ -1,3 +1,4 @@
+import {updateLyricWords} from './music-lyrics.mjs';
 import {applyPalette,phoneModeFor} from './palette.mjs';
 const icon=path=>`<svg viewBox="0 0 24 24" aria-hidden="true">${path}</svg>`;
 const playIcon=icon('<path d="m9 5 11 7-11 7Z"/>'),pauseIcon=icon('<path d="M8 5v14M16 5v14"/>');
@@ -19,15 +20,26 @@ export function createFloatingLyrics({player,settings,save,onToggle=()=>{}}){
     }
     function position(){if(!root||root.hidden||drag||resize)return;applyWidth();const b=bounds(),p=config().position||{};root.style.left=`${b.left+b.width*clamp(Number.isFinite(p.x)?p.x:.5,0,1)}px`;root.style.top=`${b.top+b.height*clamp(Number.isFinite(p.y)?p.y:.82,0,1)}px`;scrollLine();}
     function persistPosition(left,top){const b=bounds();config().position={x:b.width?clamp((left-b.left)/b.width,0,1):0,y:b.height?clamp((top-b.top)/b.height,0,1):0};save();}
+    const wordRows=new WeakMap();
+    function highlight(selector,line,fallback){
+        const node=root.querySelector(selector),previous=wordRows.get(node);
+        if(previous?.line!==line||previous?.fallback!==fallback){
+            const words=line?.words;
+            if(words?.length){const fragment=document.createDocumentFragment();for(const word of words){const span=document.createElement('span');span.className='fl-word';span.textContent=word.text;fragment.append(span);}node.replaceChildren(fragment);}
+            else node.textContent=fallback;
+            wordRows.set(node,{line,fallback});
+        }
+        updateLyricWords(node.querySelectorAll('.fl-word'),line?.words,player.audio.currentTime||0);
+    }
     const text=(selector,value)=>{const node=root.querySelector(selector);if(node.textContent!==value)node.textContent=value;};
     function sync(){
         if(!root)return;const cfg=config();root.hidden=!cfg.enabled;if(root.hidden){marquee?.cancel();marquee=null;marqueeKey='';return;}
         const s=settings(),mode=phoneModeFor(s),key=JSON.stringify([mode,s.splash?.colors?.[mode]]);
         if(key!==paletteKey){paletteKey=key;applyPalette(root,s,mode);}
         const t=player.current(),lines=player.lyric(),index=player.line(),line=lines[index]?.text||'';
-        text('[data-float-line] span',line||t?.title||'选一首歌，歌词会浮在这里');
+        highlight('[data-float-line]>span',lines[index],line||t?.title||'选一首歌，歌词会浮在这里');
         text('[data-float-title]',t?[t.title,t.artist].filter(Boolean).join(' · '):'还没有播放的歌曲');
-        text('[data-float-prev]',lines[index-1]?.text||'');text('[data-float-current]',line||(lines.length?'等待下一句歌词':'暂无歌词'));text('[data-float-next]',lines[index+1]?.text||'');
+        text('[data-float-prev]',lines[index-1]?.text||'');highlight('[data-float-current]',lines[index],line||(lines.length?'等待下一句歌词':'暂无歌词'));text('[data-float-next]',lines[index+1]?.text||'');
         const button=root.querySelector('[data-float-play]'),playing=player.playing();
         if(button.dataset.playing!==String(playing)){button.dataset.playing=String(playing);button.innerHTML=playing?pauseIcon:playIcon;button.setAttribute('aria-label',playing?'暂停':'播放');}
         for(const button of root.querySelectorAll('[data-float-control]'))button.disabled=!t;
@@ -94,5 +106,6 @@ const styles=`
 #sb-floating-lyrics.is-expanded{border-radius:22px}#sb-floating-lyrics.is-expanded .fl-chevron{transform:rotate(180deg)}#sb-floating-lyrics.is-dragging .fl-main{cursor:grabbing}
 #sb-floating-lyrics .fl-details{padding:2px 18px 14px;border-top:1px solid color-mix(in srgb,var(--sb-accent) 18%,transparent)}#sb-floating-lyrics p{margin:8px 0;overflow-wrap:anywhere;text-align:center}#sb-floating-lyrics .fl-title{font-size:11px;color:var(--sb-dim);margin:10px 0 14px}
 #sb-floating-lyrics .fl-neighbor{font-size:12px;color:var(--sb-dim)}#sb-floating-lyrics .fl-neighbor:empty{display:none}#sb-floating-lyrics .fl-current{font-size:15px;max-height:96px;overflow:auto;color:var(--sb-fg);user-select:text;-webkit-user-select:text}
+#sb-floating-lyrics .fl-word{color:color-mix(in srgb,var(--sb-fg) 35%,var(--sb-bg))}#sb-floating-lyrics .fl-word.played{color:color-mix(in srgb,var(--sb-fg) 58%,var(--sb-bg))}#sb-floating-lyrics .fl-word.active{color:var(--sb-accent)}
 #sb-floating-lyrics .fl-controls{display:flex;justify-content:center;gap:28px;padding-top:10px}#sb-floating-lyrics .fl-controls button{width:32px;height:32px;display:grid;place-items:center}#sb-floating-lyrics svg{width:20px;height:20px;fill:currentColor;stroke:currentColor;stroke-width:1.5}#sb-floating-lyrics button:disabled{opacity:.4;cursor:default}
 `;

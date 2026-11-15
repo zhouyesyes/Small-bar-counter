@@ -1,4 +1,11 @@
 const states = new WeakMap();
+export function updateLyricWords(spans, words, seconds) {
+    if (!words) return;
+    spans.forEach((span, i) => {
+        span.classList.toggle('played', seconds >= words[i].end);
+        span.classList.toggle('active', seconds >= words[i].start && seconds < words[i].end);
+    });
+}
 export function invalidateLyricsLayout(el) { const state = states.get(el); if (state) state.centered = false; }
 const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export function updateLyrics(el, lyrics, current, trackKey = '', seconds = 0) {
@@ -31,10 +38,7 @@ export function updateLyrics(el, lyrics, current, trackKey = '', seconds = 0) {
     }
     const active = el.querySelector('.cur');
     const words = lyrics[current]?.words;
-    if (active && words) active.querySelectorAll('.sb-lyric-word').forEach((span, i) => {
-        span.classList.toggle('played', seconds >= words[i].end);
-        span.classList.toggle('active', seconds >= words[i].start && seconds < words[i].end);
-    });
+    if (active && words) updateLyricWords(active.querySelectorAll('.sb-lyric-word'), words, seconds);
     // Only scroll this lyric viewport; never scroll the containing chat or drawer.
     const line = el.querySelector('.cur');
     if (line && !state.centered && Date.now() >= state.holdUntil) {
