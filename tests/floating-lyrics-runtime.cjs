@@ -38,15 +38,33 @@ await page.locator('[data-float-play]').click();await page.waitForFunction(()=>a
 await page.locator('[data-float-play]').click();await page.waitForFunction(()=>!audio.paused);
 await page.evaluate(()=>{audio.currentTime=3.2;audio.dispatchEvent(new Event('timeupdate'));});
 await page.waitForFunction(()=>document.querySelector('[data-float-current]').textContent==='<img src=x onerror=alert(1)>');assert.equal(await bubble.locator('img').count(),0);
-await grip.click();const box=await grip.boundingBox();
+await grip.click();
+// Both edges resize the capsule; the opposite edge stays in place.
+const old=await bubble.boundingBox(),right=await page.locator('[data-float-resize=right]').boundingBox();
+await page.mouse.move(right.x+5,right.y+20);await page.mouse.down();await page.mouse.move(right.x+105,right.y+20,{steps:10});await page.mouse.up();
+const wider=await bubble.boundingBox();assert(wider.width>old.width+90);assert(Math.abs(wider.x-old.x)<2);
+const left=await page.locator('[data-float-resize=left]').boundingBox();
+await page.mouse.move(left.x+5,left.y+20);await page.mouse.down();await page.mouse.move(left.x-45,left.y+20,{steps:10});await page.mouse.up();
+const widest=await bubble.boundingBox();assert(widest.width>wider.width+40);assert(Math.abs(widest.x+widest.width-wider.x-wider.width)<2);
+assert.equal(await page.evaluate(()=>s.music.floatingLyrics.width),widest.width);
+await page.evaluate(()=>ui.render());assert.equal((await bubble.boundingBox()).width,widest.width);
+const box=await grip.boundingBox();
 await page.mouse.move(box.x+40,box.y+20);await page.mouse.down();await page.mouse.move(-100,-100,{steps:10});await page.mouse.up();
 assert.equal(await grip.getAttribute('aria-expanded'),'false');
 assert(await page.evaluate(()=>s.music.floatingLyrics.position.x===0&&s.music.floatingLyrics.position.y===0));
 await page.setViewportSize({width:390,height:640});await page.evaluate(()=>ui.reset({keepOpen:false}));
 assert(await bubble.isVisible());assert(await page.evaluate(()=>!audio.paused&&float===document.querySelector('#sb-floating-lyrics')));
 const checkBounds=async()=>{const r=await bubble.boundingBox(),v=page.viewportSize();assert(r.x>=7&&r.y>=7&&r.x+r.width<=v.width-7&&r.y+r.height<=v.height-7,JSON.stringify(r));};
-await checkBounds();await page.waitForTimeout(400);await grip.click();await checkBounds();
-await page.setViewportSize({width:900,height:390});await checkBounds();
+await checkBounds();
+await page.setViewportSize({width:260,height:640});await checkBounds();
+// Narrowing the viewport scrolls overflow text without replacing it or resetting on time updates.
+await page.waitForFunction(()=>document.querySelector('[data-float-line] span').getAnimations().length===1);
+await page.waitForTimeout(1700);
+assert(await page.evaluate(()=>{const node=document.querySelector('[data-float-line] span');window.scrollAnimation=node.getAnimations()[0];return getComputedStyle(node).transform!=='none';}));
+await page.evaluate(()=>{audio.dispatchEvent(new Event('timeupdate'));});
+assert(await page.evaluate(()=>document.querySelector('[data-float-line] span').getAnimations()[0]===scrollAnimation));
+await page.waitForTimeout(400);await grip.click();await checkBounds();
+await page.setViewportSize({width:900,height:390});await checkBounds();assert.equal((await bubble.boundingBox()).width,widest.width);
 if(process.env.FLOAT_PREVIEW)await page.screenshot({path:process.env.FLOAT_PREVIEW});
 await page.emulateMedia({colorScheme:'dark'});await page.waitForFunction(()=>document.querySelector('#sb-floating-lyrics').dataset.mode==='dark');
 await page.evaluate(()=>{for(let i=0;i<10;i++)ui.render();});assert(await page.evaluate(()=>float===document.querySelector('#sb-floating-lyrics')&&!audio.paused));
