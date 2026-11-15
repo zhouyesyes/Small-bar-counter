@@ -1730,3 +1730,92 @@ html.sb-bar[data-sb-mode=dark] #completion_prompt_manager_popup {color-scheme:da
 #sb-root .cal-event-meta{color:var(--sb-dim);font-size:12px;margin:6px 0}#sb-root .cal-concurrent{border-left:2px solid var(--sb-accent);padding-left:10px}#sb-root .cal-concurrent em{color:var(--sb-accent);font-style:normal}
 
 #sb-root .sb-calendar-panel :is(.cal-agenda,.cal-recaps) *{font-family:SmallBarCalendarHand,var(--sb-serif)!important}
+/* ===== 原版酒吧聊天页样式（聊天页样式设置）：只在 html.sb-cs（吧台美化 + 原版酒吧）下生效 =====
+   Cards keep no background of their own: they sit on the user's chat glass. */
+html.sb-cs #chat.sb-reading > .sb-reading-message{padding:0 12px 6px!important}
+html.sb-cs #chat.sb-reading > .sb-reading-message::after{display:none}
+/* divider above every message: one line, centered; scene first, native stats at the tail */
+html.sb-bar #chat .sb-chat-scene{display:none}
+html.sb-cs #chat .sb-reading-message > .sb-chat-scene{order:-1;display:flex;align-items:center;gap:10px;margin:16px 0 8px;white-space:nowrap;color:var(--sb-bar-sub);font:calc(11px * var(--fontScale,1))/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em}
+html.sb-cs #chat .sb-chat-scene::before,html.sb-cs #chat .sb-chat-scene::after{content:'';flex:1 1 0;min-width:0;height:1px;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--sb-bar-text) 22%,transparent) 35%,color-mix(in srgb,var(--sb-bar-text) 22%,transparent) 65%,transparent)}
+html.sb-cs #chat .sb-chat-scene-mid{display:flex;align-items:baseline;min-width:0;flex:0 1 auto;overflow:hidden}
+html.sb-cs #chat .sb-chat-where{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+html.sb-cs #chat .sb-chat-sep{flex:none;margin:0 .55em;opacity:.55}
+html.sb-cs #chat .sb-chat-stats{flex:none;color:color-mix(in srgb,var(--sb-bar-sub) 80%,var(--sb-bar-accent))}
+html.sb-cs:not(.sb-cs-scene) #chat .sb-chat-where,html.sb-cs:not(.sb-cs-scene) #chat .sb-chat-sep{display:none}
+html.sb-cs #chat .sb-chat-scene [hidden]{display:none!important}
+/* native stats now live in the divider; the native node stays in place, just hidden */
+html.sb-cs #chat.sb-reading .sb-reading-message :is(.mesIDDisplay,.mes_timer,.tokenCounterDisplay,.timestamp){display:none!important}
+html.sb-cs #chat.sb-reading .sb-reading-message .sb-chat-time{display:none}
+/* header image: fixed per side, adjustable height, fades into the glass */
+html.sb-cs #chat .sb-chat-cover{height:var(--sb-chat-cover-h,132px);min-height:var(--sb-chat-cover-h,132px);width:calc(100% + 24px);margin:0 -12px;border-radius:6px 6px 0 0;background:transparent;-webkit-mask-image:linear-gradient(#000 55%,transparent);mask-image:linear-gradient(#000 55%,transparent)}
+html.sb-cs #chat .sb-chat-cover img{filter:none}
+html.sb-cs #chat .sb-chat-cover[data-sb-cover-empty=true]{background:linear-gradient(160deg,color-mix(in srgb,var(--sb-bar-accent) 35%,transparent),transparent)}
+/* bigger avatar sitting on the image's lower edge, plain serif names */
+html.sb-cs #chat .sb-chat-who{margin:-30px 0 0;padding-right:0;gap:12px;position:relative;z-index:1;min-height:60px}
+html.sb-cs #chat [data-sb-side=me] .sb-chat-who{padding-left:0}
+html.sb-cs #chat .sb-chat-avatar{flex:0 0 60px;width:60px;height:60px;min-height:60px;border:2px solid color-mix(in srgb,#fff 75%,transparent);box-shadow:0 2px 8px #0000001f}
+html.sb-cs #chat .sb-chat-name{font:500 calc(16px * var(--fontScale,1))/1.2 var(--sb-f-serif);letter-spacing:.1em;padding-top:24px;color:var(--sb-bar-ink)}
+html.sb-cs #chat.sb-reading .sb-reading-message > .mes_block > .ch_name{top:calc(var(--sb-chat-cover-h,132px) + 44px)}
+/* body text */
+html.sb-cs #chat.sb-reading .sb-reading-message > .mes_block > .mes_text{font-size:calc(14px * var(--fontScale,1));line-height:1.85}
+html.sb-cs #chat.sb-reading .sb-reading-message > .mes_block > .mes_text q{color:color-mix(in srgb,var(--sb-bar-accent) 75%,var(--sb-bar-ink))}
+html.sb-cs.sb-cs-wash #chat.sb-reading .sb-reading-message > .mes_block > .mes_text q{background:color-mix(in srgb,var(--sb-bar-accent) 14%,transparent);border-radius:3px;padding:0 .15em;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+html.sb-cs #chat.sb-reading .sb-reading-message > .mes_block > .mes_text em{color:var(--sb-bar-sub)}
+html.sb-cs.sb-cs-dropcap #chat.sb-reading .sb-reading-message[data-sb-side=him] > .mes_block > .mes_text > p:first-child::first-letter{float:left;font:500 2.9em/.95 var(--sb-f-serif);color:color-mix(in srgb,var(--sb-bar-accent) 75%,var(--sb-bar-ink));margin:.06em .12em 0 0}
+/* this round's drink, centered under TA's reply */
+html.sb-bar #chat .sb-chat-poured,html.sb-bar #chat .sb-chat-stub{display:none}
+html.sb-cs.sb-cs-drink #chat .sb-reading-message > .sb-chat-poured:not([hidden]){order:3;display:flex;flex-wrap:wrap;justify-content:center;align-items:baseline;gap:4px 10px;padding:6px 0 4px;color:var(--sb-bar-sub);font:italic calc(13px * var(--fontScale,1)) var(--sb-f-italic,serif)}
+html.sb-cs #chat .sb-chat-poured em{font:calc(10px * var(--fontScale,1)) ui-monospace,monospace;font-style:normal;letter-spacing:.14em;text-transform:uppercase}
+html.sb-cs #chat .sb-chat-poured b{font:500 calc(13px * var(--fontScale,1)) var(--sb-f-serif);color:color-mix(in srgb,var(--sb-bar-accent) 75%,var(--sb-bar-ink));font-style:normal}
+html.sb-cs #chat.sb-reading .sb-reading-message > .mesAvatarWrapper{order:5}
+/* the user's own message: receipt or note, no paper either */
+html.sb-cs.sb-cs-receipt #chat [data-sb-side=me] > .mes_block > .mes_text{border-top:1px dashed color-mix(in srgb,var(--sb-bar-text) 28%,transparent);margin-top:8px!important}
+html.sb-cs.sb-cs-receipt #chat [data-sb-side=me] > .sb-chat-stub:not([hidden]){order:3;display:flex;justify-content:space-between;gap:12px;padding:2px 0 10px;border-bottom:1px dashed color-mix(in srgb,var(--sb-bar-text) 28%,transparent);font:calc(10px * var(--fontScale,1)) ui-monospace,monospace;letter-spacing:.06em;color:var(--sb-bar-sub)}
+html.sb-cs.sb-cs-note #chat [data-sb-side=me] > .mes_block > .mes_text{border-left:2px solid color-mix(in srgb,var(--sb-bar-accent) 50%,transparent);padding-left:12px!important;margin-top:8px!important}
+html.sb-cs.sb-cs-note #chat [data-sb-side=me] > .sb-chat-cover::after{content:'';position:absolute;top:0;left:50%;width:70px;height:14px;margin-left:-35px;background:color-mix(in srgb,var(--sb-bar-accent) 35%,transparent)}
+html.sb-cs.sb-cs-note #chat [data-sb-side=me] > .sb-chat-cover{position:relative}
+/* send key: the small line-drawn wine glass */
+html.sb-cs #send_but.sb-wine-send,html.sb-cs #mes_stop.sb-wine-stop{position:relative;color:var(--sb-bar-accent)}
+html.sb-cs #send_but.sb-wine-send::before{content:none!important}
+html.sb-cs #send_but.sb-wine-send{font-size:0!important}
+html.sb-cs #mes_stop.sb-wine-stop > :not(.sb-wine){display:none!important}
+html:not(.sb-cs) .sb-wine{display:none}
+.sb-wine{width:20px;height:30px;overflow:visible;display:block;margin:auto}
+.sb-wine-line{fill:none;stroke:currentColor;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round}
+.sb-wine-liquid{fill:#7d1f2e;transform:translateY(17px);transition:transform 1s cubic-bezier(.3,.7,.2,1)}
+.sb-wine-stop .sb-wine-liquid{transform:translateY(8px)}
+.sb-wine-full .sb-wine-liquid{transform:translateY(4.5px)}
+.sb-wine-stop .sb-wine-wave{animation:sb-wine-slosh 1.8s ease-in-out infinite}
+.sb-wine-drop{fill:#7d1f2e;opacity:0}
+.sb-wine-stop .sb-wine-drop{animation:sb-wine-fall 1.3s ease-in infinite}
+.sb-wine-glass{transform-origin:10px 29px}
+.sb-wine-full .sb-wine-glass{animation:sb-wine-clink .6s ease}
+@keyframes sb-wine-slosh{0%,100%{transform:translateX(0)}50%{transform:translateX(-4px)}}
+@keyframes sb-wine-fall{0%{opacity:0;transform:translateY(-6px)}20%{opacity:1}75%{opacity:1;transform:translateY(7px)}100%{opacity:0;transform:translateY(8px)}}
+@keyframes sb-wine-clink{30%{transform:rotate(-6deg)}60%{transform:rotate(3deg)}}
+@media (prefers-reduced-motion:reduce){.sb-wine-stop .sb-wine-wave,.sb-wine-stop .sb-wine-drop,.sb-wine-full .sb-wine-glass{animation:none}.sb-wine-liquid{transition:none}}
+/* settings: glass + chat page, both folded by default */
+.sb-chat-look{display:grid;gap:8px;margin-top:10px}
+.sb-chat-look-fold{border:1px solid color-mix(in srgb,currentColor 18%,transparent);border-radius:6px;padding:0 12px}
+.sb-chat-look-fold > summary{cursor:pointer;padding:10px 0;font-weight:500;list-style-position:inside}
+.sb-chat-look-fold[open] > summary{border-bottom:1px solid color-mix(in srgb,currentColor 12%,transparent);margin-bottom:10px}
+.sb-chat-look-fold .sb-glass-controls{border:0!important;padding:0 0 12px!important;margin:0!important;background:transparent!important}
+.sb-chat-look-fold .sb-glass-controls > legend{display:none}
+.sb-cs-controls{display:grid;gap:10px;padding:0 0 12px}
+.sb-cs-controls > p{margin:-4px 0 0;font-size:.85em;opacity:.7}
+.sb-cs-row{display:grid;gap:6px}
+.sb-cs-seg{display:flex;flex-wrap:wrap;gap:6px}
+.sb-cs-seg button{font:inherit;font-size:.92em;background:transparent;color:inherit;border:1px solid color-mix(in srgb,currentColor 25%,transparent);border-radius:999px;padding:3px 11px;cursor:pointer}
+.sb-cs-seg button[aria-pressed="true"]{background:var(--sb-bar-accent,#bf9186);border-color:var(--sb-bar-accent,#bf9186);color:#fff}
+.sb-cs-switch{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.sb-cs-switch small{display:block;font-size:.82em;opacity:.65;font-weight:400}
+/* settings panels reset their buttons; keep the pill look inside the chat-page fold everywhere */
+.sb-chat-look .sb-cs-seg button{border:1px solid color-mix(in srgb,currentColor 25%,transparent)!important;border-radius:999px!important;padding:3px 11px!important;background:transparent!important;color:inherit!important}
+.sb-chat-look .sb-cs-seg button[aria-pressed="true"]{background:var(--sb-bar-accent,#bf9186)!important;border-color:var(--sb-bar-accent,#bf9186)!important;color:#fff!important}
+.sb-chat-look .sb-cs-controls output{margin-left:.6em;opacity:.7;font-variant-numeric:tabular-nums}
+.sb-chat-look .sb-cs-controls .sb-glass-row{display:grid;gap:6px}
+.sb-chat-look .sb-cs-controls .sb-glass-row input[type=range]{width:100%;accent-color:var(--sb-bar-accent,#bf9186)}
+
+.sb-chat-look-sub{margin:4px 0 8px;font-size:.92em;font-weight:500;opacity:.75;letter-spacing:.06em}
+.sb-chat-look-fold .sb-glass-controls + .sb-chat-look-sub{border-top:1px solid color-mix(in srgb,currentColor 12%,transparent);padding-top:12px}

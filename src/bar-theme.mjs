@@ -1,4 +1,5 @@
 import {applyChatGlass} from './glass.mjs';
+import {applyChatStyle} from './chat-style.mjs';
 import { syncHelperDialogs, restoreHelperDialogs } from './helper-dialogs.mjs';
 import { installTypography } from './typography.mjs';
 // 吧台美化（docs/bar-theme.md 第 1 批）：总开关、酒馆颜色跟小吧台调色走、顶栏九个按钮换成细线小物件
@@ -78,7 +79,7 @@ let getCtx = () => null;
 let currentSettings;
 export function applyBarTheme(settings, ctx, adapter) {
     currentSettings=settings;
-    applyChatGlass(settings);
+    applyChatGlass(settings);applyChatStyle(settings);
     installTypography();
     configureFolio(settings, adapter);
     if (ctx) getCtx = ctx;

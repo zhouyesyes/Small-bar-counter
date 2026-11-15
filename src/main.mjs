@@ -1,7 +1,7 @@
 import {musicSelectionContext} from './music-selection.mjs';
 import { collectPhoneEvents, primeTimeline, anchorPhoneEvents, decoratePhoneHistory, PHONE_PERSPECTIVE } from './phone-timeline.mjs';
 import { collectStatusSources, formatStatusSources, pastedReference } from './status-sources.mjs';
-import { cocktailFromState, cocktailProtocol, outputUsage, parseCocktail } from './cocktail-state.mjs';
+import { cocktailFromState, cocktailProtocol, outputUsage, parseCocktail, fallbackDrinkName } from './cocktail-state.mjs';
 import { artwork, artworkMode, personalProfile, landingArtwork } from './artwork.mjs';
 import { resolveMe } from './profile.mjs';
 import { createAppearanceBridge } from './appearance-api.mjs';
@@ -23,6 +23,7 @@ import { applyBarTheme } from './bar-theme.mjs';
 import { setPersonaSource } from './bar-pages.mjs';
 setPersonaSource(() => personas.user_avatar);
 import { mountChat, unmountChat, activeChat } from './bar-chat.mjs';
+import { chatLookFoldsHtml, bindChatLookControls } from './chat-style.mjs';
 import { configureImageStore, imageReferences, saveImage, imageUrl, deleteImage, listImages } from './imgstore.mjs';
 
 const NS = 'small_bar';          // 扩展设置里的位置
@@ -673,7 +674,33 @@ host.appearance = createAppearanceBridge({
 const ui = createUI(host);
 let refreshTimer = 0;
 // Pass existing profile resolvers so message avatars follow Moments / character cards.
-const barChatHost = () => ({ context: ctx, settings, config: charCfg, state, me, him, image: img,
+// 聊天页分隔条和落款用：每一楼当时的场景（状态段只写有变化的项，所以按楼层往下累积）和这一轮的酒
+const blockInfos = new WeakMap();
+function blockInfo(m) {
+    const raw = m?.extra?.small_bar; if (!raw) return null;
+    const hit = blockInfos.get(m); if (hit?.raw === raw) return hit.info;
+    const b = parseBlock(raw), one = k => { const v = b[k]; return v?.length ? String(v[v.length - 1]).trim() : ''; };
+    const scene = { date: '', time: one('时间'), weather: one('天气'), where: one('在哪') || one('地点') };
+    let drink = null;
+    const cup = (b['酒杯'] || []).at(-1), c = cup ? parseCocktail(cup) : null;
+    if (c) {
+        const sc = c.scene || {};
+        if (sc.storyDate) scene.date = sc.storyDate; if (sc.storyTime) scene.time = sc.storyTime;
+        if (sc.weather) scene.weather = sc.weather; if (sc.location) scene.where = sc.location;
+        if (c.drink?.name || c.drink?.base) drink = { name: c.drink.name || fallbackDrinkName(c.drink), abv: typeof c.drink.abv === 'number' ? c.drink.abv : null };
+    }
+    const info = { scene, drink }; blockInfos.set(m, { raw, info }); return info;
+}
+function chatTimeline() {
+    const chat = ctx().chat || [], out = []; let cur = { date: '', time: '', weather: '', where: '' };
+    for (let i = 0; i < chat.length; i++) {
+        const m = chat[i], info = !m.is_user && !m.is_system ? blockInfo(m) : null;
+        if (info) { const next = { ...cur }; for (const k of Object.keys(cur)) if (info.scene[k]) next[k] = info.scene[k]; if (info.scene.time && !info.scene.date && /\d{4}|年|月/.test(info.scene.time)) next.date = ''; cur = next; }
+        out[i] = { scene: cur, drink: info?.drink || null };
+    }
+    return out;
+}
+const barChatHost = () => ({ timeline: chatTimeline, context: ctx, settings, config: charCfg, state, me, him, image: img,
     saveChat: saveMeta, saveSettings, saveImage: saveImageHere, openAppearance: openSplashSettings,
     setChatImage: (side,kind,source,greeting,mode) => {
         if(greeting)host.setOpeningImage(kind,source,mode);
@@ -701,8 +728,10 @@ function settingsPanel() {
 <div class="inline-drawer-content"><label class="checkbox_label"><input type="checkbox" id="sb-enabled"> 小猫抽屉</label>
 <label class="checkbox_label" title="酒馆的颜色跟小吧台的配色走，顶栏换成小物件；要用别的大改美化时关掉它"><input type="checkbox" id="sb-bartheme"> 吧台美化</label>
 <div class="flex-container" style="gap:6px;margin-top:6px"><div class="menu_button" id="sb-openbtn">打开抽屉</div><div class="menu_button" id="sb-cleanbtn">扫描清理</div><div class="menu_button" id="sb-lookbtn">开场与配色</div></div>
-<small id="sb-cleanres" style="opacity:.7"></small></div></div>`;
+<small id="sb-cleanres" style="opacity:.7"></small><div class="sb-ext-look">${chatLookFoldsHtml(settings())}</div></div></div>`;
     box.appendChild(el);
+    // 聊天区毛玻璃 + 聊天页样式：和共用美化、开场与配色里的是同一份设置
+    bindChatLookControls(el.querySelector('.sb-ext-look'), { getSettings: settings, save: saveSettings });
     const cb = el.querySelector('#sb-enabled');
     cb.checked = settings().enabled;
     cb.addEventListener('change', () => { settings().enabled = cb.checked; saveSettings(); if (cb.checked) { ui.reset({ keepOpen: true }); absorbAll(); claimImages(); } refresh(); });
