@@ -1,4 +1,5 @@
-import {glassControlsHtml,bindGlassControls,syncGlassControls} from './glass.mjs';
+import {syncGlassControls} from './glass.mjs';
+import {chatLookFoldsHtml,bindChatLookControls,syncChatStyleControls} from './chat-style.mjs';
 import { drawerLimits, drawerWidth, setDrawerWidth, notifyDrawerSize } from './drawer-size.mjs';
 import { installTypography } from './typography.mjs';
 import { artwork, artworkMode, personalProfile, landingArtwork } from './artwork.mjs';
@@ -89,7 +90,7 @@ window.addEventListener('small-bar-drawer-size',syncDrawerWidthControls);
 window.addEventListener('resize',syncDrawerWidthControls);
 function syncAppearancePanel() {
     syncDrawerWidthControls();
-    if(panel)syncGlassControls(panel,settings);
+    if(panel){syncGlassControls(panel,settings);syncChatStyleControls(panel,settings);}
     if (!panel?.isConnected) return;
     for (const button of panel.querySelectorAll('.sb-color-launch')) {
         const color = readAppearanceColors(settings, button.dataset.mode)[button.dataset.color];
@@ -255,14 +256,14 @@ export function openSplashSettings() {
     <label>显示开场<input type="checkbox" data-key="enabled" ${s.enabled !== false ? 'checked' : ''}></label>
     <label>美化明暗<select data-theme>${[['auto','跟随系统'],['light','日间'],['dark','夜间']].map(([value,label])=>`<option value="${value}" ${settings.theme === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label>
     <label><span data-width-device>抽屉宽度</span><span class="sb-width-input"><input type="number" data-drawer-width aria-label="抽屉宽度（像素）" step="1" value="${drawerWidth(settings)}"> px</span></label><p>拖动抽屉与聊天之间的分隔线也能调宽。手机与平板分别记住，修改后自动保存。</p>
-    ${glassControlsHtml(settings)}
+    ${chatLookFoldsHtml(settings)}
     ${['light','dark'].map(mode => `<fieldset class="sb-palette-line"><legend>${mode === 'light' ? '日间配色' : '夜间配色'}</legend>${['bg','accent'].map(key => { const color = s.colors[mode]?.[key] || defaults[mode][key]; return `<div class="sb-color-setting"><span>${key === 'bg' ? '背景色' : '辅助色'}</span><button type="button" class="sb-color-launch" data-mode="${mode}" data-color="${key}" data-value="${esc(color)}" aria-label="调整${mode === 'light' ? '日间' : '夜间'}${key === 'bg' ? '背景色' : '辅助色'}"><span style="background:${esc(color)}"></span><code>${esc(color.toUpperCase())}</code></button></div>`; }).join('')}</fieldset>`).join('')}
     <fieldset><legend>卡片文字 · CARD DETAILS</legend><p>修改后自动保存，下次打开也会保留。</p>
     ${[['quote','头像旁的小字','a quiet seat, kept for you'],['table','座位 · SEAT','by the window'],['order','酒单 · DRINK','the usual'],['date','日期 · DATE（留空用今天）',''],['signature','底部署名 · SIGNED, WITH LOVE','yesyes']].map(([key,label,value])=>`<label>${label}<input type="text" data-key="${key}" maxlength="${key === 'quote' ? 120 : 60}" value="${esc(s[key] ?? value)}"></label>`).join('')}</fieldset>
     ${['light','dark'].map(mode => `<fieldset class="sb-image-settings"><legend>${mode === 'light' ? '日间图片' : '夜间图片'}</legend>${[['cover','横图'],['avatar','头像']].map(([key,label])=>`<label><span>${label}</span><img data-image-preview="${key}" data-mode="${mode}" alt="当前${label}"><input type="file" accept="image/*" data-upload="${key}" data-image-mode="${mode}"></label><button data-clear="${key}" data-image-mode="${mode}">恢复默认${label}</button>`).join('')}</fieldset>`).join('')}
     <p class="sb-upload-status" role="status"></p><p>私人照片随酒馆扩展设置保存，不进入仓库。卡片上的 keep my tab open 会立即保存当前署名；修改署名后，再勾选即可重新保存。</p><button data-preview>Preview opening</button></div>`;
     document.documentElement.appendChild(panel); applyPalette(panel, settings);syncAppearancePanel();
-    bindGlassControls(panel,{getSettings:()=>settings,save:persist});
+    bindChatLookControls(panel,{getSettings:()=>settings,save:persist});
     let closeColorPicker;
     const close = () => { closeColorPicker?.(); panel.remove(); panel = null; if (focus?.isConnected) focus.focus({preventScroll:true}); };
     panel.querySelectorAll('.sb-color-launch').forEach(button => button.onclick = () => {
