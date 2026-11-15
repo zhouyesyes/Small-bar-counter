@@ -22,7 +22,7 @@ export function applyChatGlass(settings){
 }
 export function glassControlsHtml(settings){
  const value=glassSettings(settings);
- return `<fieldset class="sb-glass-controls"><legend>聊天区毛玻璃 · 原版酒吧</legend><label class="sb-glass-switch"><span>启用毛玻璃</span><input type="checkbox" data-sb-glass="enabled" ${value.enabled?'checked':''}></label>${[['opacity','透明度','%'],['blur','模糊程度','px'],['width','宽度','%']].map(([key,label,unit])=>`<label class="sb-glass-row"><span>${label}<output data-glass-value="${key}">${value[key]}${unit}</output></span><input type="range" data-sb-glass="${key}" min="${GLASS_LIMITS[key][0]}" max="${GLASS_LIMITS[key][1]}" step="1" value="${value[key]}" aria-label="聊天区毛玻璃${label}"></label>`).join('')}<p>透明度越大越实（不透明），越小越透；宽度 100% 贴齐聊天区两侧。拖动预览，松手保存。</p></fieldset>`;
+ return `<fieldset class="sb-glass-controls"><legend>聊天区毛玻璃 · 原版酒吧</legend><label class="sb-glass-switch"><span>启用毛玻璃</span><input type="checkbox" data-sb-glass="enabled" ${value.enabled?'checked':''}></label>${[['opacity','不透明度','%'],['blur','模糊程度','px'],['width','宽度','%']].map(([key,label,unit])=>`<label class="sb-glass-row"><span>${label}<output data-glass-value="${key}">${value[key]}${unit}</output></span><input type="range" data-sb-glass="${key}" min="${GLASS_LIMITS[key][0]}" max="${GLASS_LIMITS[key][1]}" step="1" value="${value[key]}" aria-label="聊天区毛玻璃${label}"></label>`).join('')}<p>不透明度越大越实，越小越透；宽度 100% 贴齐聊天区两侧。拖动预览，松手保存。</p></fieldset>`;
 }
 const bindings=new WeakMap();
 export function syncGlassControls(container,settings){
