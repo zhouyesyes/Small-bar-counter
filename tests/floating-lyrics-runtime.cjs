@@ -32,8 +32,15 @@ assert.equal(await page.locator('[data-act=mfloat]').getAttribute('aria-pressed'
 assert(await page.evaluate(()=>audio.paused&&!audio.src));
 await page.locator('[data-act=mtoggle]').first().click();await page.waitForFunction(()=>audio.currentTime>.2&&!audio.paused);
 assert.equal(await page.locator('[data-float-line]').textContent(),'第一句歌词');
+const playerBox=await page.locator('.sb-player-main').boundingBox();
 await page.locator('[data-act=music-compact]').click();
-assert.equal(await page.locator('.sb-player-content').isVisible(),false);
+for(const selector of ['.sb-player-content','.sb-track-head','.sb-lyr','[data-mseek]','.sb-mctl'])assert(await page.locator(selector).isVisible(),selector);
+assert.equal((await page.locator('.sb-player-main').boundingBox()).height,playerBox.height);
+assert.equal(await page.locator('.sb-msearch').isVisible(),false);
+assert.equal(await page.locator('[data-act=music-compact]').getAttribute('aria-expanded'),'false');
+await page.evaluate(()=>ui.render());
+assert(await page.evaluate(()=>s.music.compact&&!audio.paused));
+assert(await page.locator('.sb-player-content').isVisible());
 assert.equal(await page.locator('.sb-queue').isVisible(),false);
 assert(await bubble.isVisible());assert(await page.evaluate(()=>!audio.paused));
 await page.locator('[data-act=music-compact]').click();assert(await page.locator('.sb-queue').isVisible());

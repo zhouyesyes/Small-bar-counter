@@ -575,9 +575,9 @@ export function createUI(host) {
     function musicHtml(st) {
         const ms = musicState(), m = st.music, t = player.current(), list = ms.list || [], mode = ms.mode;
         const names = [ms.defaultList, ...Object.keys(ms.lists).filter(n => n !== ms.defaultList)], chat = pickTracks(), onChat = ms.active === CHAT_LIST, pick = st.pick&&!isPickHidden(host.meta(),st.pick)?st.pick:null, picked=pick&&chat.find(track=>track.pickKey===pick.key),pickTitle=picked&&!picked.pending?picked.title:pick?.title,pickArtist=picked&&!picked.pending?picked.artist:pick?.artist,replyPick=host.hasChar()?host.replyPickStatus?.():null;
-        return `<section class="sb-music${ms.compact ? ' is-mini' : ''}"><div class="sb-player-main${player.playing()?' is-playing':''}">
- <button class="sb-cap sb-music-toggle" data-act="music-compact" aria-expanded="${!ms.compact}" title="展开或收起音乐面板">${host.settings().barStyle==='default'?'吧台今日选曲':`${t?'now playing':'music'} · ${Wd().music}`}<span class="sb-music-caret" aria-hidden="true">${ms.compact ? '⌄' : '⌃'}</span></button>
- <div class="sb-player-content" ${ms.compact ? 'hidden' : ''}>
+        return `<section class="sb-music"><div class="sb-player-main${player.playing()?' is-playing':''}">
+ <button class="sb-cap sb-music-toggle" data-act="music-compact" aria-expanded="${!ms.compact}" title="展开或收起歌单">${host.settings().barStyle==='default'?'吧台今日选曲':`${t?'now playing':'music'} · ${Wd().music}`}<span class="sb-music-caret" aria-hidden="true">${ms.compact ? '⌄' : '⌃'}</span></button>
+ <div class="sb-player-content">
  ${t ? `<div class="sb-mstate"><span class="sb-mstxt" role="status">${esc(v.mstate || '')}</span> <button class="sb-link" data-act="mskip">换个来源</button></div>` : ''}
  <div class="sb-track-head"><div class="sb-bigcover">${t ? coverImg(t, 'sb-bigimg') : ''}</div>${host.settings().barStyle==='default'?`<svg class="sb-tone-arm" viewBox="0 0 33 83" aria-hidden="true"><path d="M21 11V48L10 68" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><circle cx="21" cy="11" r="6" fill="var(--sb-bg)" stroke="currentColor" stroke-width="2"/><path d="m8 65 6 3-5 10-6-3z" fill="currentColor"/></svg>`:''}<div class="sb-track-meta">
  <div class="sb-mt" title="${esc(t?.title || '')}">${esc(displayMusicTitle(t?.title) || '还没放歌')}</div>
@@ -1376,9 +1376,8 @@ export function createUI(host) {
             case 'madd': { const t = v.mres?.[Number(b.dataset.i)]; if (t) { realList(); player.add(t, !!b.dataset.play); } if (!b.dataset.play) host.toast('success', '加进歌单了'); return; }
             case 'music-compact': {
                 const m = musicState(); m.compact = !m.compact; host.saveSettings();
-                const box = b.closest('.sb-music'); box.classList.toggle('is-mini', m.compact);
+                const box = b.closest('.sb-music');
                 box.querySelector('.sb-music-extras').hidden = m.compact;
-                box.querySelector('.sb-player-content').hidden = m.compact;
                 b.setAttribute('aria-expanded', String(!m.compact)); box.querySelector('.sb-music-caret').textContent = m.compact ? '⌄' : '⌃';
                 invalidateLyricsLayout(box.querySelector('.sb-lyr')); tickMusic(); return;
             }

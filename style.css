@@ -662,17 +662,13 @@ html.sb-bar[data-sb-mode=dark] #chat .sb-chat-cover[data-sb-cover-empty=true]{ba
 
 #sb-root .sb-music>.sb-mstate{margin:8px 0 10px;text-align:right}
 
-/* Smaller type and a collapsible, persistent mini player. */
+/* Smaller type and a collapsible playlist below the persistent player. */
 #sb-root .sb-track-meta .sb-mt{font-size:calc(14px * var(--fontScale,1));line-height:1.45}
 #sb-root .sb-music .sb-lyr .sb-lyric-line.cur{font-size:calc(16px * var(--fontScale,1));line-height:1.55}
 #sb-root .sb-music .sb-lyr .sb-lyric-line{font-size:calc(12px * var(--fontScale,1))}
 #sb-root .sb-music-toggle{width:calc(100% + 32px);cursor:pointer;text-align:left}
 #sb-root .sb-music-caret{margin-left:auto;font-size:calc(14px * var(--fontScale,1));letter-spacing:0}
-#sb-root .sb-player-content[hidden],#sb-root .sb-music-extras[hidden]{display:none!important}
-#sb-root .sb-music.is-mini .sb-lyr{height:58px;padding:12px 0;margin:8px 0}
-#sb-root .sb-music.is-mini .sb-lyr .sb-lyric-line.cur{font-size:calc(14px * var(--fontScale,1))}
-#sb-root .sb-music.is-mini .sb-mctl{margin-bottom:0}
-#sb-root .sb-music.is-mini .sb-track-head{margin:8px 0}
+#sb-root .sb-music-extras[hidden]{display:none!important}
 #sb-root .sb-song-pop{position:fixed;z-index:15;pointer-events:auto;padding:6px;background:var(--sb-bg);color:var(--sb-fg);border:1px solid var(--sb-accent);border-radius:14px;box-shadow:0 4px 16px #0002;text-align:left;font-size:calc(12px * var(--fontScale,1))}
 #sb-root .sb-song-pop-title{display:flex;align-items:center;gap:8px;padding:4px 7px 7px;border-bottom:1px solid var(--sb-line);margin-bottom:3px;font-size:calc(11px * var(--fontScale,1));color:var(--sb-dim)}
 #sb-root .sb-song-pop-title>span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -685,7 +681,6 @@ html.sb-bar[data-sb-mode=dark] #chat .sb-chat-cover[data-sb-cover-empty=true]{ba
 #sb-root .sb-song-pop-choices{max-height:220px;overflow:auto;overscroll-behavior:contain}
 #sb-root .sb-song-pop p{margin:8px;font-size:calc(11px * var(--fontScale,1));color:var(--sb-dim)}
 
-#sb-root .sb-music.is-mini .sb-lyr:has(.sb-lyric-empty){display:none}
 
 /* ================= 吧台美化（docs/bar-theme.md）=================
    只在扩展面板里勾了「吧台美化」时生效（<html> 上有 sb-bar）。颜色变量在 src/bar-theme.mjs 里算好挂在 <html> 上，
@@ -1708,8 +1703,6 @@ html.sb-bar[data-sb-mode=dark] #completion_prompt_manager_popup {color-scheme:da
 #sb-root .sb-pick-missing{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 2px 0;font-size:11px;color:var(--sb-dim)}
 #sb-root .sb-pick-missing .sb-gen{white-space:nowrap;font-size:11px;color:var(--sb-accent)}
 
-#sb-root .sb-music.is-mini .sb-player-main{padding-bottom:0}
-#sb-root .sb-music.is-mini .sb-music-toggle{border-bottom:0}
 
 #sb-root .sb-track-meta .sb-mt{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 #sb-root .sb-track-info{margin-top:6px;font-size:11px;color:var(--sb-dim)}
