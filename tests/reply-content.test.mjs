@@ -5,8 +5,8 @@ import {cocktailProtocol} from '../src/cocktail-state.mjs';
 import {calendarOnlyProtocol} from '../src/calendar-state.mjs';
 test('legacy choices migrate by interpretation without enabling previously disabled content',()=>{
  const c={noAutoStatus:true},s={saveMode:true};assert.deepEqual(replyContent(c,s),{status:false,calendar:false,music:true,phone:false});assert.deepEqual(c,{noAutoStatus:true});
- assert.deepEqual(replyContent({},s),{status:true,calendar:false,music:true,phone:false});
- assert.equal(replyContent({},{barStyle:'default'}).calendar,true);assert.equal(replyContent({},{barStyle:'folio'}).calendar,false);
+ assert.deepEqual(replyContent({},s),{status:true,calendar:true,music:true,phone:false});
+ assert.equal(replyContent({era:'ancient'},{barStyle:'default'}).calendar,false);assert.equal(replyContent({},{barStyle:'default'}).calendar,true);assert.equal(replyContent({},{barStyle:'folio'}).calendar,true);
  assert.deepEqual(replyContent({autoStatus:false,autoCalendar:true,autoMusicPick:false,autoPhone:true,noAutoStatus:true},s),{status:false,calendar:true,music:false,phone:true});
 });
 test('all combinations build only enabled content instructions',()=>{

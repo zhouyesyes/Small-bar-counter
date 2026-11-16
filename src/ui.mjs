@@ -309,6 +309,7 @@ export function createUI(host) {
 
     // Automatic mode follows the operating system; manual surface overrides still win.
     const theme = () => phoneModeFor(host.settings());
+    const presentation = () => counterStyle(host.hasChar() ? host.era?.()||'modern' : 'modern');
 
     function drawCat() {
         const el = root?.querySelector('.sb-cat'); if (!el) return;
@@ -336,7 +337,7 @@ export function createUI(host) {
         const drawerVisible = v.drawer || docked;
         const nowOpen = (drawerVisible ? 'd' : '') + (v.phone ? 'p' : '');
         root.dataset.open = nowOpen;
-        const cls = `sb-${theme()} sb-era-${era}` + (counterStyle(s) === 'folio' ? ' sb-folio-phone' : ' sb-default-bar') + (nowOpen && nowOpen !== wasOpen ? ' sb-anim' : '');
+        const cls = `sb-${theme()} sb-era-${era}` + (presentation() === 'folio' ? ' sb-folio-phone' : ' sb-default-bar') + (nowOpen && nowOpen !== wasOpen ? ' sb-anim' : '');
         if (root.className !== cls) { root.className = cls; lastHtml = null; }
         if (!s.enabled) { cocktail?.detach();archive?.detach(); root.innerHTML = ''; lastHtml = ''; return; }
         const keepScroll = [...root.querySelectorAll('[data-keep]')].map(el => [el.dataset.keep, el.scrollTop]);
@@ -397,7 +398,7 @@ export function createUI(host) {
 <div class="${floating ? 'sb-phone sb-float sb-landing' : 'sb-drawer sb-landing'}" role="dialog" aria-label="小吧台主页">
  <div class="sb-body" data-keep="landing">
  <div class="sb-cover ${p.cover?'sb-cover-img':'sb-w-clear'+(theme()==='dark'?' sb-w-night':'')}" style="${p.cover?`background-image:url('${esc(p.cover)}')`:''}">
-  <span class="sb-logo">${counterStyle(host.settings()) === 'folio' ? '随身匣' : 'Small Bar'}</span><button class="sb-x" data-act="${floating ? 'phone-close' : 'close'}" aria-label="关上">×</button>
+  <span class="sb-logo">${presentation() === 'folio' ? '随身匣' : 'Small Bar'}</span><button class="sb-x" data-act="${floating ? 'phone-close' : 'close'}" aria-label="关上">×</button>
   <input type="file" accept="image/*" data-upload="opening-cover" data-bg-picker hidden>
 
  </div>
@@ -411,7 +412,7 @@ export function createUI(host) {
         const st = host.state(), him = host.him(), n = st.now;
         const labels = ERA[era].tabs;
         let body = '';
-        const original = counterStyle(host.settings()) === 'default';
+        const original = presentation() === 'default';
         if (original && v.tab === 'now') v.tab = 'posts';
         if (v.tab === 'posts') body = original ? (v.nowBook ? nowBookHtml() : nowHtml(st)+musicHtml(st)+archive.entryHtml()) : postsHtml(st,him)+musicHtml(st);
         if (v.tab === 'now') body = v.nowBook ? nowBookHtml() : nowHtml(st);
@@ -429,7 +430,7 @@ export function createUI(host) {
  <div class="sb-minibar"><span class="sb-mininame">${esc(him.name)}</span><button class="sb-x" data-act="close" aria-label="关上">×</button></div>
  <div class="sb-body" data-keep="body">
  <div class="sb-cover ${coverClass()}" style="${coverStyle()}" data-bg-settings tabindex="0" role="button" aria-label="更换背景">
-  <span class="sb-logo">${counterStyle(host.settings()) === 'folio' ? '随身匣' : 'Small Bar'}</span><button class="sb-x" data-act="close" aria-label="关上">×</button>
+  <span class="sb-logo">${presentation() === 'folio' ? '随身匣' : 'Small Bar'}</span><button class="sb-x" data-act="close" aria-label="关上">×</button>
 
  </div>
  <div class="sb-home-identity"><label class="sb-av" style="background-image:url('${esc(him.avatar)}')" title="点一下换头像"><input type="file" accept="image/*" data-upload="him-avatar" hidden></label>
@@ -578,16 +579,16 @@ export function createUI(host) {
         const ms = musicState(), m = st.music, t = player.current(), list = ms.list || [], mode = ms.mode;
         const names = [ms.defaultList, ...Object.keys(ms.lists).filter(n => n !== ms.defaultList)], chat = pickTracks(), onChat = ms.active === CHAT_LIST, pick = st.pick&&!isPickHidden(host.meta(),st.pick)?st.pick:null, picked=pick&&chat.find(track=>track.pickKey===pick.key),pickTitle=picked&&!picked.pending?picked.title:pick?.title,pickArtist=picked&&!picked.pending?picked.artist:pick?.artist,replyPick=host.hasChar()?host.replyPickStatus?.():null;
         return `<section class="sb-music"><div class="sb-player-main${player.playing()?' is-playing':''}">
- <button class="sb-cap sb-music-toggle" data-act="music-compact" aria-expanded="${!ms.compact}" title="展开或收起歌单">${counterStyle(host.settings())==='default'?'吧台今日选曲':`${t?'now playing':'music'} · ${Wd().music}`}<span class="sb-music-caret" aria-hidden="true">${ms.compact ? '⌄' : '⌃'}</span></button>
+ <button class="sb-cap sb-music-toggle" data-act="music-compact" aria-expanded="${!ms.compact}" title="展开或收起歌单">${presentation()==='default'?'吧台今日选曲':`${t?'now playing':'music'} · ${Wd().music}`}<span class="sb-music-caret" aria-hidden="true">${ms.compact ? '⌄' : '⌃'}</span></button>
  <div class="sb-player-content">
  ${t ? `<div class="sb-mstate"><span class="sb-mstxt" role="status">${esc(v.mstate || '')}</span> <button class="sb-link" data-act="mskip">换个来源</button></div>` : ''}
- <div class="sb-track-head"><div class="sb-bigcover">${t ? coverImg(t, 'sb-bigimg') : ''}</div>${counterStyle(host.settings())==='default'?`<svg class="sb-tone-arm" viewBox="0 0 33 83" aria-hidden="true"><path d="M21 11V48L10 68" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><circle cx="21" cy="11" r="6" fill="var(--sb-bg)" stroke="currentColor" stroke-width="2"/><path d="m8 65 6 3-5 10-6-3z" fill="currentColor"/></svg>`:''}<div class="sb-track-meta">
+ <div class="sb-track-head"><div class="sb-bigcover">${t ? coverImg(t, 'sb-bigimg') : ''}</div>${presentation()==='default'?`<svg class="sb-tone-arm" viewBox="0 0 33 83" aria-hidden="true"><path d="M21 11V48L10 68" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><circle cx="21" cy="11" r="6" fill="var(--sb-bg)" stroke="currentColor" stroke-width="2"/><path d="m8 65 6 3-5 10-6-3z" fill="currentColor"/></svg>`:''}<div class="sb-track-meta">
  <div class="sb-mt" title="${esc(t?.title || '')}">${esc(displayMusicTitle(t?.title) || '还没放歌')}</div>
  <div class="sb-ma">${esc(t?.artist || '搜一首喜欢的歌')}</div>${t?.title&&(displayMusicTitle(t.title)!==t.title||t.title.length>24)?`<details class="sb-track-info"><summary>曲目信息</summary><p>${esc(t.title)}</p></details>`:''}</div></div>
  <div class="sb-lyr" aria-label="滚动歌词"></div>
 
  ${t ? `<input class="sb-mbar" data-mseek type="range" min="0" max="1000" step="1" value="0" aria-label="播放进度"><div class="sb-mtime">0:00 / 0:00</div>` : ''}
- ${counterStyle(host.settings())==='default'?'<div class="sb-record-note" aria-hidden="true"><span>SIDE A</span><i></i><span>33⅓ RPM</span></div>':''}
+ ${presentation()==='default'?'<div class="sb-record-note" aria-hidden="true"><span>SIDE A</span><i></i><span>33⅓ RPM</span></div>':''}
  <div class="sb-mctl"><button data-act="mmode" title="${{ all: '列表循环', one: '单曲循环', shuffle: '随机' }[mode]}">${mi(mode)}</button><button data-act="mprev" aria-label="上一首">${mi('prev')}</button><button class="sb-mplay" data-act="mtoggle" aria-label="播放">${mi(player.playing() ? 'pause' : 'play')}</button><button data-act="mnext" aria-label="下一首">${mi('next')}</button><button type="button" data-act="mfloat" class="${floatingLyrics.enabled()?'on':''}" aria-pressed="${floatingLyrics.enabled()}" aria-label="${floatingLyrics.enabled()?'关闭悬浮歌词':'开启悬浮歌词'}" title="${floatingLyrics.enabled()?'关闭悬浮歌词':'开启悬浮歌词'}">${mi('lyrics')}</button></div>
 
  ${pick ? `<div class="sb-mpick-wrap"><button class="sb-mpick${t?.pickKey === pick.key ? ' on' : ''}" data-act="mpick" data-key="${esc(pick.key)}" aria-label="播放本轮选曲《${esc(pickTitle)}》"><small>${replyPick&&!replyPick.hasPick?'上次选曲':`本轮选曲${pick.selections>1?' · 再次选中':''}`}${picked?.pending?(failedPickChecks.has(picked)?' · 暂未搜到':' · 正在找歌'):host.meta().musicPickCorrections?.[pick.key]?' · 按搜索结果':''}</small><b>《${esc(pickTitle)}》${pickArtist ? `<span> · ${esc(pickArtist)}</span>` : ''}</b>${pick.why ? `<em>${esc(pick.why)}</em>` : ''}<i aria-hidden="true">${t?.pickKey === pick.key && player.playing() ? '♪ 正在放' : '▶ 放这首'}</i></button><button class="sb-mpick-delete" data-act="mpick-delete" data-key="${esc(pick.key)}" aria-label="删除本轮选曲《${esc(pickTitle)}》" title="删除这首选曲">×</button></div>` : ''}
@@ -647,7 +648,7 @@ export function createUI(host) {
         g.pick = i; v.flip = false; host.nowChanged(); render();
     }
     function nowHtml(st) {
-        if(counterStyle(host.settings()) === 'default') return cocktail.html();
+        if(presentation() === 'default') return cocktail.html();
         const n = st.now;
         const row = (k, val, extra = '') => val ? `<div class="sb-k">${k}</div><div>${extra}${esc(val)}</div>` : '';
         const has = n.where || n.wear || n.want || n.voice;
@@ -658,11 +659,11 @@ export function createUI(host) {
  ${n.voice ? `<div class="sb-voice"><div><span class="sb-k">${v.flip ? '心声 · 背面' : '心声'}</span><br>${esc(v.flip && n.voiceBack ? n.voiceBack : n.voice)}</div>${n.voiceBack ? '<button class="sb-flip" data-act="flip">翻面</button>' : ''}</div>` : ''}
  ${(() => { const left = st.memo.filter(m => !m.done); return `<div class="sb-cap sb-row"><span>memo · 备忘录</span><span>${left.length ? left.length + ' 件没做完' : ''}</span></div>
  ${left.length ? left.map(m => `<div class="sb-memo"><span class="sb-ck"></span>${esc(m.text)}</div>`).join('') : `<div class="sb-empty sm">${st.memo.length ? '记下的事都做完了' : 'TA还没记要做的事'}</div>`}`; })()}
-</div>`;
+</div>${cocktail.calendarView()}`;
     }
     // 此刻的本子：每一轮的此刻一页，新的在上面，按日子分开
     function nowBookHtml() {
-        if(counterStyle(host.settings())!=='default')return legacyNowBookHtml();
+        if(presentation()!=='default')return legacyNowBookHtml();
         const state=host.state(),wineIds=new Set((state.cocktailLog||[]).map(row=>row.sourceId));
         const hasLegacy=(state.nowLog||[]).some(row=>!wineIds.has(row.id));
         return archive.html()+(hasLegacy?'<details class="sb-legacy-history"><summary>早前的文字记录</summary>'+legacyNowBookHtml()+'</details>':'');
@@ -1091,14 +1092,13 @@ export function createUI(host) {
  </div></div>`;
     }
     function setHtml() {
-        const s = host.settings(), c = host.charCfg(), content = replyContent(c,s);
+        const s = host.settings(), c = host.charCfg(), content = replyContent(c,s,host.era?.());
         const modeName = '固定一张';
         const eraName = { auto: '自动 · ' + ({ modern: '现代', minguo: '民国', ancient: '古风' }[host.guessedEra()]), modern: '现代', minguo: '民国', ancient: '古风' }[c.era || 'auto'];
         const apiName = s.api === 'own' ? (s.ownApi?.model || '自己填的') : '跟正文';
-        const original = counterStyle(s) === 'default';
+        const original = presentation() === 'default';
         return `${head(Wd().set)}<div class="sb-slist">
  <div class="sb-sh">资料与样子</div><div class="sb-sgrp">${row('TA的资料', host.him().name, 'set-him')}${row('我的资料', host.me().name, 'set-me')}${row('抽屉的头图', modeName, 'set-cover')}${phoneIOS.active()?row('手机壁纸', '锁屏与桌面', 'set-wallpaper'):''}
-  <label class="sb-srow"><span>吧台样式<small>只改变小吧台，酒馆页面的美化单独设置；颜色与明暗仍共用</small></span><select data-set="counterStyle"><option value="default" ${counterStyle(s)==='default'?'selected':''}>原版酒吧</option><option value="folio" ${counterStyle(s)==='folio'?'selected':''}>闲庭手记</option></select></label>
   ${toggle('宽屏常驻吧台','counterDock',s.counterDock,'平板和电脑上单独保留吧台侧栏，不受酒馆页面美化开关影响；手机仍用抽屉。')}
   <label class="sb-srow"><span>美化时代<small>决定是小手机、民国信匣还是古风书匣</small></span><select data-cset="era">${[['auto', eraName.startsWith('自动') ? eraName : '自动'], ['modern', '现代'], ['minguo', '民国'], ['ancient', '古风']].map(([k, n]) => `<option value="${k}" ${(c.era || 'auto') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
   <label class="sb-srow"><span>明暗模式</span><select data-set="phoneTheme">${[['auto','跟随吧台'],['light','浅'],['dark','深']].map(([k,n])=>`<option value="${k}" ${(s.phoneTheme||'auto')===k?'selected':''}>${n}</option>`).join('')}</select></label></div>
@@ -1172,7 +1172,7 @@ export function createUI(host) {
 </div>`;
     }
     function setPromptHtml() {
-        const p = host.promptParts(), d = host.defaultPromptParts(), content = replyContent(host.charCfg(),host.settings());
+        const p = host.promptParts(), d = host.defaultPromptParts(), content = replyContent(host.charCfg(),host.settings(),host.era?.());
         return `${head('提示词', '<button class="sb-phx" data-act="prompt-reset">默认</button>')}<div class="sb-list">
  <div class="sb-hint">分两段加进正文的提示词里，改了马上生效；点右上「默认」两段都换回来。</div>
  <div class="sb-sh">此刻 · ${content.status ? '已开启' : '已关闭，不随正文发送'}</div><div class="sb-hint">吧台状态栏（时间、在哪、心声……），由「状态栏」开关控制；歌曲与日历各自独立。</div>
@@ -1681,7 +1681,7 @@ export function createUI(host) {
             const msgs = await phoneMessages();
             const text = await host.ask(msgs, quietOf(msgs, (host.era() === 'modern' ? '现在只写你在手机上回的消息，一行一条。' : '现在只写你回的信，一行一句。') + (phoneSideStatus(host.charCfg(),host.settings()) ? '\n' + phoneSideStatus(host.charCfg(),host.settings()) : '')));
             const cut = host.extractBlock(String(text || ''));
-            if (cut.raw && replyContent(host.charCfg(),host.settings()).phone) host.addBlock(cut.raw); // 顺带的状态段：此刻、动态、日记都跟着更新
+            if (cut.raw && replyContent(host.charCfg(),host.settings(),host.era?.()).phone) host.addBlock(cut.raw); // 顺带的状态段：此刻、动态、日记都跟着更新
             const list = parsePhoneReply(cut.text);
             if (!list.length) throw new Error('TA没回出东西');
             for (const m of list) {

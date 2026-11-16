@@ -1,8 +1,7 @@
-const valid=value=>['default','folio'].includes(value);
-export const counterStyle=settings=>valid(settings?.counterStyle)?settings.counterStyle:valid(settings?.barStyle)?settings.barStyle:'folio';
-// Migrate once, before native page styling can change. Colors and mode stay shared.
+// Era is the sole choice for the companion's presentation. Old counterStyle
+// values remain as inert backup data; native page barStyle never controls it.
+export const counterStyle=(era='modern')=>['ancient','minguo'].includes(era)?'folio':'default';
 export function ensureCounterAppearance(settings){
- if(!valid(settings.counterStyle))settings.counterStyle=counterStyle(settings);
  if(typeof settings.counterDock!=='boolean')settings.counterDock=!!settings.barTheme;
  return settings;
 }

@@ -542,7 +542,7 @@ function refreshInject() {
     if (!s.enabled || !hasChar()) { c.setExtensionPrompt(INJECT_KEY, '', 1, 0); return; }
     primePhoneTimeline();
     // Four per-chat content choices are independent; legacy settings supply defaults only.
-    const content=replyContent(charCfg(),s),autoPick=content.music,pickStatus=replyPickStatus();
+    const content=replyContent(charCfg(),s,era()),autoPick=content.music,pickStatus=replyPickStatus();
     const cover = charCfg().cover;
     const tags = cover?.mode === 'pick' ? (cover.images || []).map(x => x.tag).filter(Boolean) : [];
     // 「下一轮正文顺带回」：她发了还没回的手机消息
@@ -565,7 +565,7 @@ function refreshInject() {
     let text = buildInjection({ promptNow: parts.now, promptPhone: parts.phone, coverTags: tags, state: state(), autoPick, autoStatus:content.status, autoPhone:content.phone, wxNote: memoNote(st0.memo), phoneNote: phoneWx, saveMode: s.saveMode, channel: era() === 'modern' ? '在手机上的聊天' : '的书信往来' });
     text += '\n\n' + PHONE_PERSPECTIVE;
     if (waiting) text += '\n有微信等待本轮回复：只依据聊天历史中已有的手机记录，在状态段里用「微信:」回复，一行一条；没有消息内容时不要猜测。';
-    if (counterStyle(s) === 'default' && content.status) {
+    if (counterStyle(era()) === 'default' && content.status) {
         const mode=charCfg().cocktailMode==='adaptive'?'adaptive':'default';
         const snapshot={...cocktailFromState(state(),mode)};
         if(mode==='default')snapshot.gestures={...snapshot.gestures,reminders:snapshot.gestures.reminders.filter(r=>!r.done&&!meta().cocktailDone?.[r.id||r.text])};
@@ -576,9 +576,9 @@ function refreshInject() {
             if(reference)text+='\n\n'+formatStatusSources(collectStatusSources({pasted:reference}));
         }
     }
-    if(content.calendar && !(counterStyle(s)==='default' && content.status)){const mode=charCfg().cocktailMode==='adaptive'?'adaptive':'default';text+='\n\n'+calendarOnlyProtocol(cocktailFromState(state(),mode),mode);}
+    if(content.calendar && !(counterStyle(era())==='default' && content.status)){const mode=charCfg().cocktailMode==='adaptive'?'adaptive':'default';text+='\n\n'+calendarOnlyProtocol(cocktailFromState(state(),mode),mode);}
     const musicFeedback=autoPick?musicSelectionContext(meta(),state().pick,state().recentPicks):'';if(musicFeedback)text+='\n\n'+musicFeedback;
-    text += mustWrite({ cocktail: counterStyle(s) === 'default' && content.status, saveMode: s.saveMode, autoStatus:content.status, autoPhone:content.phone, autoPick, missingPick:pickStatus?.missing });
+    text += mustWrite({ cocktail: counterStyle(era()) === 'default' && content.status, saveMode: s.saveMode, autoStatus:content.status, autoPhone:content.phone, autoPick, missingPick:pickStatus?.missing });
     // 1 = 放在聊天里（IN_CHAT），深度 0 = 最后面，0 = 系统身份
     c.setExtensionPrompt(INJECT_KEY, text, 1, 0, false, 0);
 }
@@ -601,7 +601,7 @@ function replyPickStatus(){
 }
 function latestCocktailUsage(){const message=lastReply();if(!message)return null;const native=outputUsage(message);if(native)return native;const cached=usageCache.get(message);return cached?.key===replyUsageKey(message)?cached.value:null;}
 async function updateCocktailUsage(){
-    if(counterStyle(settings())!=='default')return;
+    if(counterStyle(era())!=='default')return;
     const message=lastReply();if(!message)return;const key=replyUsageKey(message),cached=usageCache.get(message);
     const exact=outputUsage(message);if(exact){usageCache.set(message,{key,value:exact});return;}
     if(cached?.key===key)return;
@@ -615,10 +615,10 @@ async function updateCocktailUsage(){
 // ---------- 接起来 ----------
 const host = {
     settings, setSettings: f => {
-        const s = settings(), before = [s.barTheme, s.theme, s.barStyle], counterBefore=[s.counterStyle,s.counterDock];
+        const s = settings(), before = [s.barTheme, s.theme, s.barStyle], counterBefore=s.counterDock;
         f(s); saveSettings(); refreshInject();
         if (before[0] !== s.barTheme || before[1] !== s.theme || before[2] !== s.barStyle) { applyAppearance(); ui.render(); }
-        else if(counterBefore[0]!==s.counterStyle||counterBefore[1]!==s.counterDock)ui.render();
+        else if(counterBefore!==s.counterDock)ui.render();
     },
     openingProfile: (mode=artworkMode(settings())) => { const h = personalProfile(settings()), art = landingArtwork(h, mode,assistantAvatar()); return { avatar: img(art.avatar), cover: img(art.cover), name: h.signature ?? 'yesyes', sign: h.quote ?? 'a quiet seat, kept for you', table: h.table ?? 'by the window', order: h.order ?? 'the usual', date: h.date || new Intl.DateTimeFormat('sv-SE').format(new Date()).replaceAll('-', '.') }; },
     setHomeProfile: patch => { const shared = {}; if ('name' in patch) shared.signature = patch.name; if ('sign' in patch) shared.quote = patch.sign; for(const key of ['table','order','date'])if(key in patch)shared[key]=patch[key]; updatePersonalProfile(shared); },
@@ -638,7 +638,7 @@ const host = {
     saveCocktailReference: (value,{queue=false}={}) => {
         const reference=pastedReference(value);if(reference===null){host.toast('warning','参考内容最多 12000 字，请分段整理后再保存');return false;}
         const config=charCfg();config.cocktailReference=reference;config.cocktailMode='adaptive';
-        if(queue&&!replyContent(config,settings()).status){saveMeta();host.toast('warning','参考已保存；这张卡关闭了自动更新，请先开启，或点立即识别');return false;}
+        if(queue&&!replyContent(config,settings(),era()).status){saveMeta();host.toast('warning','参考已保存；这张卡关闭了自动更新，请先开启，或点立即识别');return false;}
         config.cocktailPlanPending=queue;
         if(queue)config.cocktailPlanRevision=Math.max(config.cocktailPlanRevision||0,state().cocktails?.adaptive?.layoutRevision||0)+1;
         saveMeta();refreshInject();return true;
