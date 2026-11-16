@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="香囊">
+  <defs><linearGradient id="sachet-silk" x1="18" y1="24" x2="45" y2="53" gradientUnits="userSpaceOnUse"><stop stop-color="#b99b9b"/><stop offset="1" stop-color="#8c747b"/></linearGradient></defs>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <path d="M28 18c-9-11-12-5-7-1 3 2 8 1 11 0 3-1 5-9 0-9-4 0-4 7 0 10" stroke="#bda27d" stroke-width="1.5"/>
+    <path d="m23 18-3-5 9 2 7-1 9-1-3 7" fill="#c1a6a4" stroke="#ad8e8f" stroke-width="1.4"/>
+    <path d="M23 21c-4 7-9 13-8 23 1 8 10 11 17 11s16-3 17-11c1-10-4-16-8-23Z" fill="url(#sachet-silk)" stroke="#ba9c96" stroke-width="1.6"/>
+    <path d="M22 24c-4 7-6 12-5 18M42 24c4 7 5 13 4 19" stroke="#dfc6bd" stroke-width="1.1" opacity=".55"/>
+    <path d="M22 20h20M22 23h20" stroke="#c9ad82" stroke-width="1.5"/>
+    <path d="M32 33c-5-7-10 0-4 3-8 1-5 9 1 5-2 8 7 8 5 1 6 5 11-2 4-5 7-4 0-10-4-5" stroke="#dec7b5" stroke-width="1.1"/>
+    <circle cx="32" cy="37" r="1.5" fill="#d9bd96"/>
+    <path d="m42 22 8 6-3 7M49 33l-2 10M51 34l-1 10M32 55v6M29 56l-1 5M35 56l1 5" stroke="#bca183" stroke-width="1.3"/>
+  </g>
+</svg>

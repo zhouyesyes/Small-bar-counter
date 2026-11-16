@@ -78,10 +78,11 @@ export function buildState(msgs, {history=true}={}) {
             candidate.sourceId = id;
             st.cocktails[candidate.mode] = candidate;
             // Keep small historical summaries. Rebuild the selected reply only when opened.
-            if(history){const entry={id:id+':'+candidate.mode,sourceId:id,mode:candidate.mode,at,
+            if(history&&(fresh.drink.name||fresh.drink.base||fresh.tea?.name||fresh.tea?.base)){const entry={id:id+':'+candidate.mode,sourceId:id,mode:candidate.mode,at,
                 date:candidate.calendar.date||candidate.scene.storyDate||'',time:candidate.scene.storyTime||'',
                 drink:{name:candidate.drink.name,cupType:candidate.drink.cupType,colors:[...(candidate.drink.colors||['#d6a16c','#a86454'])]},
-                mood:candidate.emotion.visibleMood||''};
+                tea:fresh.tea?.name||fresh.tea?.base?{...candidate.tea}:null,
+                beverage:fresh.tea?.name||fresh.tea?.base?'tea':'drink',mood:candidate.emotion.visibleMood||''};
             Object.defineProperty(entry,'snapshot',{get:()=>buildState(msgs.slice(0,messageIndex+1),{history:false}).cocktails[candidate.mode]});
             const previous=historyIndex.get(entry.id);
             if(previous===undefined){historyIndex.set(entry.id,st.cocktailLog.length);st.cocktailLog.push(entry);}else st.cocktailLog[previous]=entry;}

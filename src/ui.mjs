@@ -26,7 +26,7 @@ import { PHONE_RULES, LETTER_RULES, MANUAL, RELATION, onlinePersonaBlock } from 
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const nl = s => esc(s).replace(/\n/g, '<br>');
-const buildCocktailValid=(raw,mode)=>{const payload=parseBlock(raw)['酒杯']?.at(-1);const state=parseCocktail(payload);return !!state&&!!state.drink.name&&!!state.drink.cupType&&state.mode===mode&&(mode!=='adaptive'||state.modules.length>0)};
+const buildCocktailValid=(raw,mode,era='modern')=>{const payload=parseBlock(raw)['酒杯']?.at(-1);const state=parseCocktail(payload);return !!state&&!!(era==='ancient'?state.tea?.name:state.drink.name)&&!!(era==='ancient'?state.tea?.cupType:state.drink.cupType)&&state.mode===mode&&(mode!=='adaptive'||state.modules.length>0)};
 const wait = ms => new Promise(r => setTimeout(r, ms));
 
 // 不同时代：同一套功能，换名字和字体
@@ -309,6 +309,7 @@ export function createUI(host) {
 
     // Automatic mode follows the operating system; manual surface overrides still win.
     const theme = () => phoneModeFor(host.settings());
+    const richStatus = () => ['modern','ancient'].includes(host.era?.()||'modern');
     const presentation = () => counterStyle(host.hasChar() ? host.era?.()||'modern' : 'modern');
 
     function drawCat() {
@@ -412,7 +413,7 @@ export function createUI(host) {
         const st = host.state(), him = host.him(), n = st.now;
         const labels = ERA[era].tabs;
         let body = '';
-        const original = presentation() === 'default';
+        const original = richStatus();
         if (original && v.tab === 'now') v.tab = 'posts';
         if (v.tab === 'posts') body = original ? (v.nowBook ? nowBookHtml() : nowHtml(st)+musicHtml(st)+archive.entryHtml()) : postsHtml(st,him)+musicHtml(st);
         if (v.tab === 'now') body = v.nowBook ? nowBookHtml() : nowHtml(st);
@@ -437,7 +438,7 @@ export function createUI(host) {
  <div class="sb-home-words"><div class="sb-name">${esc(him.name)}</div>
  ${him.handle ? `<div class="sb-handle">${esc(him.handle)}</div>` : ''}
  ${him.sign || n.sign ? `<div class="sb-sign">${esc(him.sign || n.sign)}</div>` : ''}</div></div>
- ${original?`<div class="sb-wine-bridge"><span>ON THE HOUSE</span><i></i><b>${esc(host.cocktailState?.().drink?.name||fallbackDrinkName(host.cocktailState?.().drink))}</b></div>`:`<div class="sb-meta">${[n.time,n.weather].filter(Boolean).map(x=>`<span>${esc(x)}</span>`).join('')||'还没有状态 · 等TA下一次回复'}</div>`}
+ ${original?`<div class="sb-wine-bridge"><span>${host.era?.()==='ancient'?'案上一盏':'ON THE HOUSE'}</span><i></i><b>${esc(host.era?.()==='ancient'?(host.cocktailState?.().tea?.name||'待点一盏'):(host.cocktailState?.().drink?.name||fallbackDrinkName(host.cocktailState?.().drink)))}</b></div>`:`<div class="sb-meta">${[n.time,n.weather].filter(Boolean).map(x=>`<span>${esc(x)}</span>`).join('')||'还没有状态 · 等TA下一次回复'}</div>`}
  ${body}</div>
  ${tabsNav}
 </div>`;
@@ -510,7 +511,7 @@ export function createUI(host) {
         v.busy = kind; render();
         try {
             const mode=host.cocktailMode?.()||'default';
-            let rule = kind==='cocktail'?cocktailProtocol(mode,cocktailFromState(host.state(),mode),{recentNames:(host.state().cocktailLog||[]).filter(r=>r.mode===mode).slice(-10).map(r=>r.drink.name),replan,replanRevision:host.charCfg?.().cocktailPlanPending?host.charCfg().cocktailPlanRevision:null})+'\n只写状态段，不写正文。':MANUAL[kind];
+            let rule = kind==='cocktail'?cocktailProtocol(mode,cocktailFromState(host.state(),mode),{era:host.era?.(),recentNames:(host.state().cocktailLog||[]).filter(r=>r.mode===mode).slice(-10).map(r=>host.era?.()==='ancient'?r.tea?.name:r.drink.name),replan,replanRevision:host.charCfg?.().cocktailPlanPending?host.charCfg().cocktailPlanRevision:null})+'\n只写状态段，不写正文。':MANUAL[kind];
             if (kind==='pick') rule+='\n\n'+musicSelectionContext(host.meta(),host.state().pick,host.state().recentPicks);
             if (['now', 'memo', 'all', 'cocktail'].includes(kind)) rule += '\n' + host.memoNote(redoOf);
             if (['post', 'moments', 'all'].includes(kind)) rule += '\n\n' + RELATION;
@@ -538,7 +539,7 @@ export function createUI(host) {
                 if (kind === 'diary' && prose.length > 20) raw = (raw ? raw + '\n' : '') + '日记:\n' + prose;
                 else throw new Error(`TA回了，但没按格式写${{ diary: '日记', post: '动态', x: 'X', xfeed: '推文', moments: '朋友圈', weibo: '微博', photos: '照片', pick:'选曲', cocktail: '酒杯状态' }[kind]}，再点一次试试`);
             }
-            if(kind==='cocktail'&&!buildCocktailValid(raw,mode))throw new Error('酒杯数据格式不完整，原记录已保留，请再试一次');
+            if(kind==='cocktail'&&!buildCocktailValid(raw,mode,host.era?.()))throw new Error('酒杯数据格式不完整，原记录已保留，请再试一次');
             if (request !== manualRequest || requestMeta !== host.meta()) return;
             if(replan){const planned=parseCocktail(parseBlock(raw)['酒杯'].at(-1));planned.layoutRevision=Math.max((host.state().cocktails?.adaptive?.layoutRevision||0)+1,host.charCfg?.().cocktailPlanPending?host.charCfg().cocktailPlanRevision:0);raw='酒杯: '+JSON.stringify(planned);}
             if(kind==='pick'&&!(parseBlock(raw)['选曲']?.length||parseBlock(raw)['配乐']?.length))throw new Error('这次回复没有写出选曲，请重试');
@@ -579,7 +580,7 @@ export function createUI(host) {
         const ms = musicState(), m = st.music, t = player.current(), list = ms.list || [], mode = ms.mode;
         const names = [ms.defaultList, ...Object.keys(ms.lists).filter(n => n !== ms.defaultList)], chat = pickTracks(), onChat = ms.active === CHAT_LIST, pick = st.pick&&!isPickHidden(host.meta(),st.pick)?st.pick:null, picked=pick&&chat.find(track=>track.pickKey===pick.key),pickTitle=picked&&!picked.pending?picked.title:pick?.title,pickArtist=picked&&!picked.pending?picked.artist:pick?.artist,replyPick=host.hasChar()?host.replyPickStatus?.():null;
         return `<section class="sb-music"><div class="sb-player-main${player.playing()?' is-playing':''}">
- <button class="sb-cap sb-music-toggle" data-act="music-compact" aria-expanded="${!ms.compact}" title="展开或收起歌单">${presentation()==='default'?'吧台今日选曲':`${t?'now playing':'music'} · ${Wd().music}`}<span class="sb-music-caret" aria-hidden="true">${ms.compact ? '⌄' : '⌃'}</span></button>
+ <button class="sb-cap sb-music-toggle" data-act="music-compact" aria-expanded="${!ms.compact}" title="展开或收起歌单">${host.era?.()==='ancient'?'听曲':presentation()==='default'?'吧台今日选曲':`${t?'now playing':'music'} · ${Wd().music}`}<span class="sb-music-caret" aria-hidden="true">${ms.compact ? '⌄' : '⌃'}</span></button>
  <div class="sb-player-content">
  ${t ? `<div class="sb-mstate"><span class="sb-mstxt" role="status">${esc(v.mstate || '')}</span> <button class="sb-link" data-act="mskip">换个来源</button></div>` : ''}
  <div class="sb-track-head"><div class="sb-bigcover">${t ? coverImg(t, 'sb-bigimg') : ''}</div>${presentation()==='default'?`<svg class="sb-tone-arm" viewBox="0 0 33 83" aria-hidden="true"><path d="M21 11V48L10 68" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><circle cx="21" cy="11" r="6" fill="var(--sb-bg)" stroke="currentColor" stroke-width="2"/><path d="m8 65 6 3-5 10-6-3z" fill="currentColor"/></svg>`:''}<div class="sb-track-meta">
@@ -648,7 +649,7 @@ export function createUI(host) {
         g.pick = i; v.flip = false; host.nowChanged(); render();
     }
     function nowHtml(st) {
-        if(presentation() === 'default') return cocktail.html();
+        if(richStatus()) return cocktail.html();
         const n = st.now;
         const row = (k, val, extra = '') => val ? `<div class="sb-k">${k}</div><div>${extra}${esc(val)}</div>` : '';
         const has = n.where || n.wear || n.want || n.voice;
@@ -663,7 +664,7 @@ export function createUI(host) {
     }
     // 此刻的本子：每一轮的此刻一页，新的在上面，按日子分开
     function nowBookHtml() {
-        if(presentation()!=='default')return legacyNowBookHtml();
+        if(!richStatus())return legacyNowBookHtml();
         const state=host.state(),wineIds=new Set((state.cocktailLog||[]).map(row=>row.sourceId));
         const hasLegacy=(state.nowLog||[]).some(row=>!wineIds.has(row.id));
         return archive.html()+(hasLegacy?'<details class="sb-legacy-history"><summary>早前的文字记录</summary>'+legacyNowBookHtml()+'</details>':'');
@@ -1096,14 +1097,14 @@ export function createUI(host) {
         const modeName = '固定一张';
         const eraName = { auto: '自动 · ' + ({ modern: '现代', minguo: '民国', ancient: '古风' }[host.guessedEra()]), modern: '现代', minguo: '民国', ancient: '古风' }[c.era || 'auto'];
         const apiName = s.api === 'own' ? (s.ownApi?.model || '自己填的') : '跟正文';
-        const original = presentation() === 'default';
+        const original = richStatus();
         return `${head(Wd().set)}<div class="sb-slist">
  <div class="sb-sh">资料与样子</div><div class="sb-sgrp">${row('TA的资料', host.him().name, 'set-him')}${row('我的资料', host.me().name, 'set-me')}${row('抽屉的头图', modeName, 'set-cover')}${phoneIOS.active()?row('手机壁纸', '锁屏与桌面', 'set-wallpaper'):''}
   ${toggle('宽屏常驻吧台','counterDock',s.counterDock,'平板和电脑上单独保留吧台侧栏，不受酒馆页面美化开关影响；手机仍用抽屉。')}
   <label class="sb-srow"><span>美化时代<small>决定是小手机、民国信匣还是古风书匣</small></span><select data-cset="era">${[['auto', eraName.startsWith('自动') ? eraName : '自动'], ['modern', '现代'], ['minguo', '民国'], ['ancient', '古风']].map(([k, n]) => `<option value="${k}" ${(c.era || 'auto') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
   <label class="sb-srow"><span>明暗模式</span><select data-set="phoneTheme">${[['auto','跟随吧台'],['light','浅'],['dark','深']].map(([k,n])=>`<option value="${k}" ${(s.phoneTheme||'auto')===k?'selected':''}>${n}</option>`).join('')}</select></label></div>
  <div class="sb-sh">正文后写什么 · 各自独立</div><div class="sb-sgrp">
-  ${[['autoStatus','状态栏','时间、地点、心声和酒杯状态',content.status],['autoCalendar','日历','新月份整理；平常只补新增或变化，不重复整月记录',content.calendar],['autoMusicPick','歌曲','每轮选一首配乐，最近五次不重复',content.music],['autoPhone','小手机偶尔更新','按剧情偶尔发动态、写日记或回消息，不要求每轮都有',content.phone]].map(([key,name,hint,on])=>`<label class="sb-srow"><span>${name}<small>${hint}</small></span><input type="checkbox" class="sb-tg" data-cset="${key}" ${on?'checked':''}></label>`).join('')}
+  ${[['autoStatus','状态栏',host.era?.()==='ancient'?'时间、地点、心声和茶盏状态':'时间、地点、心声和酒杯状态',content.status],['autoCalendar','日历','新月份整理；平常只补新增或变化，不重复整月记录',content.calendar],['autoMusicPick','歌曲','每轮选一首配乐，最近五次不重复',content.music],['autoPhone','小手机偶尔更新','按剧情偶尔发动态、写日记或回消息，不要求每轮都有',content.phone]].map(([key,name,hint,on])=>`<label class="sb-srow"><span>${name}<small>${hint}</small></span><input type="checkbox" class="sb-tg" data-cset="${key}" ${on?'checked':''}></label>`).join('')}
   ${original && content.status ? `<label class="sb-srow"><span>状态栏分类<small>吧台默认：固定四类；角色适配：照角色卡的状态栏来分</small></span><select data-cset="cocktailMode"><option value="default" ${c.cocktailMode!=='adaptive'?'selected':''}>吧台默认</option><option value="adaptive" ${c.cocktailMode==='adaptive'?'selected':''}>角色适配</option></select></label>` : ''}
   ${row('提示词', s.promptNow || s.promptPhone || s.prompt ? '改过' : '默认', 'set-prompt')}
  </div>

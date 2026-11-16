@@ -8,7 +8,7 @@ for(const era of ['modern','minguo','ancient'])for(const width of [390,1024]){
   window.counterUI=createUI({settings:()=>s,setSettings:f=>{f(s);apply()},hasChar:()=>true,era:()=>counterConfig.era==='auto'?'ancient':counterConfig.era,guessedEra:()=> 'ancient',charCfg:()=>counterConfig,setCharCfg:f=>f(counterConfig),state:()=>counterState,meta:()=>({}),him:()=>({name:'故人'}),me:()=>({name:'我'}),unread:()=>0,saveSettings(){},markRead(){},toast(){},replyMode:()=> 'pick',replyCtx:()=>({}),chatBytes:()=>0,promptParts:()=>({}),defaultPromptParts:()=>({})});counterUI.mount();counterUI.open();
  },era);
  const measure=()=>page.evaluate(()=>{const root=document.querySelector('#sb-root'),drawer=root.querySelector('.sb-drawer'),style=getComputedStyle(root);return {classes:[...root.classList].filter(c=>c!=='sb-anim').join(' '),docked:document.documentElement.classList.contains('sb-panel-docked'),width:drawer.getBoundingClientRect().width,font:style.fontFamily,size:style.fontSize,glass:!!root.querySelector('.sb-cocktail'),logo:root.querySelector('.sb-logo')?.textContent};});
- const original=await measure();assert.equal(original.glass,era==='modern');assert.equal(original.docked,width>=768);
+ const original=await measure();assert.equal(original.glass,era!=='minguo');assert.equal(original.docked,width>=768);
  for(const nativeStyle of ['folio','default'])for(const enabled of [false,true]){
   await page.evaluate(({nativeStyle,enabled})=>{s.barTheme=enabled;setStyle(nativeStyle);counterUI.render()}, {nativeStyle,enabled});await page.waitForTimeout(80);
   assert.deepEqual(await measure(),original,'native page style/toggle changed counter');assert.equal(await page.evaluate(()=>s.counterStyle),'folio');
@@ -24,7 +24,7 @@ for(const era of ['modern','minguo','ancient'])for(const width of [390,1024]){
  await page.locator('[data-cset=era]').selectOption('minguo');assert(await page.locator('#sb-root').evaluate(n=>n.classList.contains('sb-folio-phone')&&n.classList.contains('sb-era-minguo')));
  await page.locator('[data-cset=era]').selectOption('ancient');assert(await page.locator('#sb-root').evaluate(n=>n.classList.contains('sb-era-ancient')));
  await page.locator('[data-cset=era]').selectOption('auto');assert(await page.locator('#sb-root').evaluate(n=>n.classList.contains('sb-era-ancient')));
- await page.locator('[data-tab=now]').click();await page.locator('.sb-calendar-panel>.calendar>summary').click();await page.locator('[data-cup-date="2026-11-20"]').click();assert.match(await page.locator('.sb-calendar-popup').textContent(),/仍能查看的记事/);
+ await page.locator('[data-tab=posts]').click();await page.locator('.sb-calendar-panel>.calendar>summary').click();await page.locator('[data-cup-date="2026-11-20"]').click();assert.match(await page.locator('.sb-calendar-popup').textContent(),/仍能查看的记事/);
  assert.deepEqual(errors,[]);await page.close();console.log(`PASS ${era} ${width}px: native styling on/off and both designs preserve counter layout, typography and docking; shared colors/mode and era-only selection work`);
 }
 }finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});

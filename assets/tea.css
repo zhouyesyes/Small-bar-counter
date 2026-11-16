@@ -1,0 +1,85 @@
+/* Ancient counter only. Reuse the folio font files and shared palette, independently of native page styling. */
+@font-face{font-family:SB-Folio-Body;src:url('./folio/fonts/KingHwaOldSong.ttf') format('truetype');font-display:swap;font-weight:100 900}
+#sb-root.sb-era-ancient{--sb-type-body:SB-Folio-Body,'Noto Serif SC','Songti SC',serif!important;--sb-type-ui:var(--sb-type-body)!important;--sb-type-action:var(--sb-type-body)!important;--sb-font:var(--sb-type-body)!important;--sb-serif:var(--sb-type-body)!important}
+#sb-root.sb-era-ancient :is(.sb-cocktail,.sb-cocktail *,.sb-coaster-entry,.sb-coaster-entry *,.sb-wine-history,.sb-wine-history *,.sb-wine-dialog,.sb-wine-dialog *,.sb-cocktail-popup,.sb-cocktail-popup *,.sb-music,.sb-music *){font-family:var(--sb-type-body)!important}
+#sb-root.sb-era-ancient .sb-cocktail{--paper:var(--sb-card);--ink:var(--sb-fg);--dim:var(--sb-dim);--accent:var(--sb-accent);--line:color-mix(in srgb,var(--sb-accent) 26%,transparent);--wash:color-mix(in srgb,var(--sb-accent) 8%,var(--sb-bg));border-radius:3px;background:var(--sb-card);box-shadow:none;margin:18px 20px;padding:22px 23px 14px}
+#sb-root.sb-era-ancient .sb-cocktail:before{border-radius:0}
+#sb-root.sb-era-ancient .sb-cocktail.is-collapsed{padding:12px 18px}
+#sb-root.sb-era-ancient .sb-cocktail .main-toggle h2{font-size:29px;letter-spacing:.18em;color:var(--sb-fg);margin:0;font-weight:400;line-height:1.5}
+#sb-root.sb-era-ancient .sb-cocktail .main-toggle>span{position:static}
+#sb-root.sb-era-ancient .sb-cocktail .page-caption{border-top:1px solid var(--line);font-size:10px;padding-top:16px}
+#sb-root.sb-era-ancient .token-price{justify-content:space-between}
+#sb-root.sb-era-ancient .token-price strong{font-size:25px;letter-spacing:0}
+#sb-root.sb-era-ancient .tea-status-name{text-align:center;margin-top:22px}
+#sb-root.sb-era-ancient .tea-status-name h3{font-size:25px;font-weight:400;letter-spacing:.18em;margin:0 0 4px}
+#sb-root.sb-era-ancient .tea-status-name small{font-size:11px}
+#sb-root.sb-era-ancient .tea-stage{position:relative;width:100%;aspect-ratio:400/390;margin-top:12px}
+#sb-root.sb-era-ancient .tea-vessel{position:absolute;left:23%;top:19%;width:54%;height:64%;padding:0}
+#sb-root.sb-era-ancient .tea-art{display:block;width:100%;height:100%;overflow:visible}
+#sb-root .tea-liquid{opacity:0}#sb-root .tea-wall,#sb-root .tea-lid{opacity:1}
+#sb-root .is-transparent .tea-liquid{opacity:.95}#sb-root .is-transparent .tea-wall,#sb-root .is-transparent .tea-lid{opacity:.12}
+#sb-root .tea-mini-svg .tea-liquid{opacity:0}
+#sb-root.sb-era-ancient .tea-vessel:focus-visible{outline:1px solid var(--sb-accent);outline-offset:3px}
+#sb-root.sb-era-ancient .tea-reveal-hint{position:absolute;bottom:0;width:100%;text-align:center;font-size:10px;color:var(--sb-dim);pointer-events:none}
+#sb-root.sb-era-ancient .tea-stage .bubble-carrier{width:44px;height:44px;transform:translate(-25%,-12%)}
+#sb-root.sb-era-ancient .tea-stage .tea-ornament{padding:0;width:44px;height:44px;background:transparent;box-shadow:none;border:0;border-radius:3px;backdrop-filter:none}
+#sb-root.sb-era-ancient .tea-ornament:before{display:none}
+#sb-root.sb-era-ancient .tea-ornament img{width:44px;height:44px;object-fit:contain}
+#sb-root.sb-era-ancient .tea-ornament:hover,#sb-root.sb-era-ancient .tea-ornament[aria-expanded=true]{outline:1px solid var(--sb-accent);outline-offset:3px}
+#sb-root.sb-era-ancient .sb-cocktail .flavor{gap:10px;border:0;text-align:center;font-size:12px;color:var(--sb-dim)}
+#sb-root.sb-era-ancient .sb-cocktail .flavor>div+div{border:0}
+#sb-root.sb-era-ancient .sb-cocktail .flavor small{font-size:11px;color:var(--sb-accent)}
+#sb-root.sb-era-ancient .sb-cocktail .ending{font-style:normal;font-size:10px}
+/* The independent calendar uses the same events, archive, popup and month navigation. */
+#sb-root.sb-era-ancient .sb-calendar-panel{padding:0;border:0;background:none}
+#sb-root.sb-era-ancient .sb-calendar-panel>.calendar{padding:20px 16px 14px;box-shadow:none;border:1px solid color-mix(in srgb,var(--sb-accent) 26%,transparent);border-radius:3px}
+#sb-root.sb-era-ancient .sb-calendar-panel :is(.binding,.month-no,.month-star,.cal-pencil){display:none}
+#sb-root.sb-era-ancient .sb-calendar-panel .month-cover{min-height:0}
+#sb-root.sb-era-ancient .sb-calendar-panel .cal-kicker{font-size:24px;color:var(--sb-fg);letter-spacing:.15em}
+#sb-root.sb-era-ancient .sb-calendar-panel .month-word{font-size:17px;font-style:normal;margin-top:7px}
+#sb-root.sb-era-ancient .sb-calendar-panel .month-zh{font-size:10px}
+#sb-root.sb-era-ancient .sb-calendar-panel .day.important{background:none}
+#sb-root.sb-era-ancient .sb-calendar-panel .day.important .num{border:1px solid var(--sb-accent);border-radius:50%}
+#sb-root.sb-era-ancient .sb-calendar-panel .day.important .num:after{display:none}
+#sb-root.sb-era-ancient .sb-calendar-panel .day.today .num{outline:none}
+/* The fifth playback button remains mfloat. The header alone folds the playlist. */
+#sb-root.sb-era-ancient .sb-music{margin:22px 20px;background:none;border-radius:0;overflow:visible}
+#sb-root.sb-era-ancient .sb-player-main{padding:0 19px 17px;border:1px solid color-mix(in srgb,var(--sb-accent) 26%,transparent);border-radius:3px;background:var(--sb-card)}
+#sb-root.sb-era-ancient .sb-player-main>.sb-cap{border-bottom:1px solid var(--sb-line);padding:18px 0;margin:0 0 13px;font-size:24px!important;letter-spacing:.15em}
+#sb-root.sb-era-ancient .sb-music-caret{font-size:13px}
+#sb-root.sb-era-ancient .sb-track-head{gap:17px;margin:24px 0 20px}
+#sb-root.sb-era-ancient .sb-track-head .sb-bigcover{width:83px;height:103px;flex:0 0 83px;padding:5px;border:1px solid var(--sb-line);border-radius:0;background:var(--sb-soft);overflow:hidden;animation:none}
+#sb-root.sb-era-ancient .sb-bigcover img{width:100%;height:100%;border-radius:0;object-fit:cover}
+#sb-root.sb-era-ancient .sb-track-meta{min-width:0}
+#sb-root.sb-era-ancient .sb-mt{font-size:23px;line-height:1.5}
+#sb-root.sb-era-ancient .sb-ma{font-size:11px}
+#sb-root.sb-era-ancient .sb-lyr{text-align:center;margin:20px 0}
+#sb-root.sb-era-ancient .sb-lyric-line{text-align:center}
+#sb-root.sb-era-ancient .sb-mplay{border:1px solid var(--sb-accent);background:none;color:var(--sb-accent)}
+#sb-root.sb-era-ancient .sb-music-extras{padding:16px 14px;border:1px solid var(--sb-line);border-radius:3px;margin-top:12px;background:var(--sb-card)}
+#sb-root.sb-era-ancient .sb-queue{border:0;box-shadow:none;border-radius:0;background:none;padding:0}
+#sb-root.sb-era-ancient .sb-mrow2{border-radius:0}
+#sb-root.sb-era-ancient .sb-msearch input,#sb-root.sb-era-ancient .sb-msearch button{border-radius:3px}
+/* History stays a simple stack: one vessel, name, date and short summary. */
+#sb-root.sb-era-ancient .sb-coaster{border-radius:9px;border-color:color-mix(in srgb,var(--sb-accent) 36%,var(--sb-line))}
+#sb-root .sb-coaster .tea-mini-svg{width:62px;height:76px;flex:none}
+#sb-root .sb-wine-card>.tea-mini-svg{width:80px;height:105px;margin:auto}
+#sb-root .sb-wine-overview>.tea-mini-svg{width:95px;height:125px}
+#sb-root.sb-era-ancient .sb-coaster em{font-style:normal;font-size:10px}
+#sb-root.sb-era-ancient .sb-coaster-dots{font-style:normal}
+#sb-root.sb-era-ancient .sb-wine-dialog{border-radius:3px}
+@media(max-width:355px){#sb-root.sb-era-ancient .sb-cocktail{margin-inline:14px;padding-inline:17px}#sb-root.sb-era-ancient .sb-calendar-panel{padding:0}#sb-root.sb-era-ancient .sb-music{margin-inline:14px}#sb-root.sb-era-ancient .sb-mt{font-size:20px}}
+/* Override the older compact player's important cover sizing without affecting modern playback. */
+#sb-root.sb-era-ancient .sb-music{padding:0}
+#sb-root.sb-era-ancient .sb-player-main>.sb-music-toggle{width:100%;margin:0;padding:18px 0;background:transparent;justify-content:space-between}
+#sb-root.sb-era-ancient .sb-player-main>.sb-cap:before{display:none}
+#sb-root.sb-era-ancient .sb-track-head .sb-bigcover{width:83px!important;height:103px!important;border-radius:0!important}
+#sb-root.sb-era-ancient .sb-track-head .sb-track-meta .sb-mt{font-size:23px!important}
+#sb-root.sb-era-ancient .sb-music .sb-lyr,#sb-root.sb-era-ancient .sb-music .sb-lyr .sb-lyric-line{text-align:center}
+#sb-root.sb-era-ancient .sb-music .sb-lyr .sb-lyric-line.cur{padding-left:0}
+#sb-root.sb-era-ancient .sb-music .sb-lyr .sb-lyric-line.cur:before{display:none}
+#sb-root.sb-era-ancient .sb-mctl .sb-mplay{background:transparent!important;color:var(--sb-accent)!important}
+#sb-root.sb-era-ancient .sb-music .sb-queue{margin:0;padding:0;border:0;border-radius:0;background:none}
+#sb-root.sb-era-ancient .sb-music .sb-plists{margin-inline:0;padding:12px 0 0;border-top:0}
+#sb-root.sb-era-ancient .sb-music .sb-msearch input,#sb-root.sb-era-ancient .sb-music .sb-msearch button{border-radius:3px}
+#sb-root.sb-era-ancient .sb-coaster-heading h3{font-size:16px}

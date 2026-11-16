@@ -1,5 +1,6 @@
 import {mergeStoryCalendar,calendarProtocol,calendarPromptSnapshot} from './calendar-state.mjs';
 // Safe, portable state only: no DOM, external variable writes, or executable model output.
+export const TEA_CUP_TYPES = ['white','lotus','stem','glass','gaiwan','tenmoku','bamboo','bluewhite'];
 export const CUP_TYPES = ['martini','coupe','flute','wine','highball','rocks'];
 const plain = value => value && typeof value === 'object' && !Array.isArray(value);
 const text = value => typeof value === 'string' ? value.trim().slice(0,1200) : null;
@@ -8,7 +9,7 @@ const date = value => { if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(
 // Validate the display text; creative drink names need not end in a classic drink family.
 export function drinkName(value) {
  const name=text(value);if(!name||name.length<2||name.length>24||/[A-Za-z\n\r{}<>]/.test(name))return null;
- if(/^(?:中文)?酒名$|^酒品名?$|^饮品名?$|尚待|未命名/.test(name))return null;
+ if(/^(?:简短)?(?:中文)?[酒茶]名$|^酒品名?$|^饮品名?$|尚待|未命名/.test(name))return null;
  return name;
 }
 // Recipe-based fallback only for missing or malformed names, never for naming style.
@@ -28,7 +29,7 @@ export function fallbackDrinkName(drink={}) {
  const name=(head+family).slice(0,12);
  return drinkName(name)||'吧台招牌特调';
 }
-export function emptyCocktail(mode='default') { return {version:1,mode,scene:{},emotion:{},gestures:{belongings:[],reminders:[]},murmur:{thoughts:[]},drink:{},calendar:{date:null,events:[]},modules:[]}; }
+export function emptyCocktail(mode='default') { return {version:1,mode,scene:{},emotion:{},gestures:{belongings:[],reminders:[]},murmur:{thoughts:[]},drink:{},tea:{},calendar:{date:null,events:[]},modules:[]}; }
 export function parseCocktail(value,previous) {
  try {
   if(typeof value==='string'){if(value.length>80000)return null;value=JSON.parse(value.trim().replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,''))}
@@ -54,6 +55,16 @@ export function parseCocktail(value,previous) {
    if(plain(d.tastes)){result.drink.tastes??={};for(const key of ['first','middle','finish'])if(Object.hasOwn(d.tastes,key))result.drink.tastes[key]=text(d.tastes[key]);}
    // A rejected or missing name never leaves the glass blank: rename from this round's recipe when it changed.
    if(!named&&(!result.drink.name||Object.hasOwn(d,'base')||Object.hasOwn(d,'mixers')))result.drink.name=fallbackDrinkName(result.drink);
+  }
+  // Tea is an independent recipe. Theme switches must never rename wine or convert ABV.
+  result.tea??={};
+  if(plain(value.tea)){
+   const t=value.tea;
+   for(const key of ['name','base','introduction'])if(Object.hasOwn(t,key))result.tea[key]=key==='name'?drinkName(t[key]):text(t[key]);
+   if(TEA_CUP_TYPES.includes(t.cupType))result.tea.cupType=t.cupType;
+   if(Array.isArray(t.colors)&&t.colors.length===2&&t.colors.every(c=>/^#[0-9a-f]{6}$/i.test(c)))result.tea.colors=t.colors;
+   if(Array.isArray(t.mixers))result.tea.mixers=list(t.mixers);
+   if(plain(t.tastes)){result.tea.tastes??={};for(const key of ['first','middle','finish'])if(Object.hasOwn(t.tastes,key))result.tea.tastes[key]=text(t.tastes[key]);}
   }
   if(plain(value.calendar)){const calendar=mergeStoryCalendar(value.calendar,result.calendar);if(!calendar)return null;result.calendar=calendar;}
   const revision=Number.isSafeInteger(value.layoutRevision)&&value.layoutRevision>=0?value.layoutRevision:result.layoutRevision||0;
@@ -93,14 +104,26 @@ export function cocktailModules(state) {
  ];
 }
 const FORMAT='在原本的 <!--SB … SB--> 状态段中，额外写一行「酒杯: {JSON}」。JSON 必须单行、version 为 1，不生成 HTML/JS。';
-export function cocktailProtocol(mode='default',snapshot=null,{replan=false,replanRevision=null,recentNames=[],calendar=true}={}) {
+export function cocktailProtocol(mode='default',snapshot=null,{replan=false,replanRevision=null,recentNames=[],calendar=true,era='modern'}={}) {
  const schema=mode==='adaptive'?`mode="adaptive"。${replan?'这是重新规划：旧模块只是参考，不是必须沿用的模板；先从角色自带状态栏重建分组。':'已有模块时沿用稳定 id、标题和分组；首次则从角色自带状态栏规划。'} 优先阅读提供的状态栏资料：板块与字段结构先参考用户粘贴的版本，再参考世界书中的状态栏规则、原卡示例/开场白与正则展示模板；当前数值以最近真实剧情和实际状态栏为准。粘贴模板的示例数值、示例人物与示例时间不自动当成当前事实。按这些依据，列全原卡正在使用的状态字段，保留含义、数值单位、对象、隐藏/公开权限及特殊项目，再按内容归类进气泡和子分类。标题可以用酒吧主题，字段名要看得懂，不能只换好听的名字丢掉原字段。只有原卡没有的且有剧情依据的项目才补充；不要直接照搬默认四类凑模板。每组用酒吧主题短名，但保持原含义；不默认套用经营金钱字段。modules=[{id:"稳定英文ID",title:"酒吧主题名称",garnish:"mint/strawberry/ice/lemon/cherry/orange/rosemary/pick",sections:[{title:"子分类",items:[{label:"名称",value:"文字值"}]}]}]。不识别或执行未知脚本，不宣称接管外部变量更新，不删除原状态栏。`:
  `mode="default"。直接使用吧台自己的结构，不分析角色卡状态栏结构：scene={storyDate,storyTime,weather,location,action}；emotion={visibleMood,innerMood,changes,want,bottomWords:["杯底的话","背面"]}；gestures={clothing,gesture,belongings:["物件"],reminders:[{id:"稳定ID",text:"备忘/约定",date:"YYYY-MM-DD或null",done:false}]}；murmur={thoughts:["1至3条碎碎念"]}。`;
- return `【酒杯状态面板】${FORMAT}\n${schema}${Number.isSafeInteger(replanRevision)?`\n本次规划请求版本为 ${replanRevision}，返回的酒杯 JSON 必须带 layoutRevision:${replanRevision}；不要沿用旧版本号。`: ''}\n两种模式都包含 drink={name:"中文酒名",cupType:"martini/coupe/flute/wine/highball/rocks之一",colors:["#六位色","#六位色"],base:"基酒",mixers:["辅料"],abv:估算酒精度数字,tastes:{first:"前味",middle:"中味",finish:"后味"},introduction:"一两句只写这一杯滋味的荐饮"}。\n${calendar?calendarProtocol():'本轮关闭日历：不输出 calendar；其他状态照常写。'}
+ let protocol=`【酒杯状态面板】${FORMAT}\n${schema}${Number.isSafeInteger(replanRevision)?`\n本次规划请求版本为 ${replanRevision}，返回的酒杯 JSON 必须带 layoutRevision:${replanRevision}；不要沿用旧版本号。`: ''}\n两种模式都包含 drink={name:"中文酒名",cupType:"martini/coupe/flute/wine/highball/rocks之一",colors:["#六位色","#六位色"],base:"基酒",mixers:["辅料"],abv:估算酒精度数字,tastes:{first:"前味",middle:"中味",finish:"后味"},introduction:"一两句只写这一杯滋味的荐饮"}。\n${calendar?calendarProtocol():'本轮关闭日历：不输出 calendar；其他状态照常写。'}
 【酒签的写法】只挑本场真正尝得到的一点，为这一杯取一个简短、有辨识度的中文酒名，通常2至8字。可以从已出现的物件、话里的双关、香气、色泽或入口后的余味取意；读起来像酒吧酒单上会点的一杯，有留白，也有可感知的滋味。不要固定拼接“原料＋基酒＋酒型”，不强制酒型结尾，也不必带“酒”字。经典酒名仍可自然使用，但不要每轮套同一构词格式。命名与配方分开：基酒、辅料、酒型等信息各写回对应字段，不要全塞进名字。禁止照抄“中文酒名”“酒名”等字段说明，不直接拿人名、人物配对、情绪总结或空泛散文标题作酒名。不要照抄示例酒名，也不要把上一杯换一种水果就当新名字；近期名字只作避重参考，不是必须模仿的调性。
 introduction 写一两句荐饮，写这一杯入口、香气或余味中最特别的地方，长短随这一杯自然变化，不写剧情梗概或人物评语，不反复使用“温和松弛、温柔克制、耐心安抚”等套话。tastes 的前中后味分别写可尝到的变化，避免三个位置重复同一种形容词。酒签只写酒：正文里的身体、体液、声响和动作留在正文；酒签不因此在正文增添配菜、饮酒行为或新物件。杯型、颜色、配方和估算酒精度需彼此合理，不为求新编造已发生的剧情。
 【气泡里的文字】各栏各有用途，不把同一句情绪改写四遍。此刻：用本场能确认的时间、地点、天气和正在发生的小事，简洁具体，不借现实日期补空白。滋味：visibleMood 写看得见的神情或语气；innerMood 写符合角色的当下感受；changes 只写真正有变化的地方；want 写眼下具体想做或想得到的事。杯底的话 bottomWords 是角色此刻没说出口的话，可以犹豫、嘴硬、留半句，随角色口吻变化，不用旁白给人物下结论。袖口与口袋保留真实穿着、物件和细小动作，不给每件物品硬加象征意义。碎碎念 thoughts 写1至3条确实有内容的短念头，允许短促、跳跃或自我纠正；不要固定句式，不把心声原样再抄一遍，不为了填满编新事，无可写时留空。自适应模式沿用原卡字段的含义、数值、单位和权限，文字类字段也按以上原则写活；不将所有字段强行改成酒的比喻。每次只更新本轮有依据的内容，不为求新捏造变化，不照抄上一份措辞，不预告后事。
-月历按上述独立规则维护，日历标签不再用普通剧情节点凑数。\n除日历以外，每轮给出当前模式的状态快照；日历只按增量规则写本轮变化，未变化不复写。其他状态无依据的字段用null或空数组。约定可与备忘同步，日历保留日期与状态；完成后不再放未完成清单；不新增偶然事件、独立纸条或长期习惯。心声不能作为玩家已知事实泄露给正文。不要生成 usage/token 数，程序会写。${recentNames.length?'\n近期已用酒名（仅作避重参考，不是候选名单）：'+JSON.stringify([...new Set(recentNames)].slice(-10))+'。本次优先选择尚未使用、又符合当前配方的酒名；不为凑不同名字而编造剧情。':''}${snapshot?'\n上一份有效记录（仅作连续性参考，按本轮剧情更新）：'+JSON.stringify(calendarPromptSnapshot(snapshot,{calendar})):''}`;
+月历按上述独立规则维护，日历标签不再用普通剧情节点凑数。\n除日历以外，每轮给出当前模式的状态快照；日历只按增量规则写本轮变化，未变化不复写。其他状态无依据的字段用null或空数组。约定可与备忘同步，日历保留日期与状态；完成后不再放未完成清单；不新增偶然事件、独立纸条或长期习惯。心声不能作为玩家已知事实泄露给正文。不要生成 usage/token 数，程序会写。`;
+ if(era==='ancient'){
+  const start=protocol.indexOf('两种模式都包含 drink='),end=protocol.indexOf('。\n',start);
+  protocol=protocol.slice(0,start)+'两种模式都包含 tea={name:"简短中文茶名",cupType:"white/lotus/stem/glass/gaiwan/tenmoku/bamboo/bluewhite之一",colors:["#六位茶汤色","#六位茶汤色"],base:"茶底",mixers:["确有的配物，无则空数组"],tastes:{first:"初尝",middle:"过喉",finish:"回甘"},introduction:"一两句只写这盏茶的滋味"}；本轮只更新 tea，不输出 drink，不输出酒精度、水温或虚构价格'+protocol.slice(end);
+  protocol=protocol.replaceAll('酒吧主题','茶案主题').replaceAll('【酒签的写法】','【茶签的写法】').replaceAll('【酒杯状态面板】','【茶盏状态面板】')
+   .replaceAll('中文酒名','中文茶名').replaceAll('酒名','茶名').replaceAll('酒签','茶签').replaceAll('基酒','茶底').replaceAll('辅料','配物')
+   .replaceAll('酒型','茶类').replaceAll('酒吧酒单','茶铺茶单').replaceAll('经典酒','经典茶').replaceAll('酒的比喻','茶的比喻')
+   .replace('杯型、颜色、配方和估算酒精度需彼此合理','盏型、茶汤颜色和配方需彼此合理').replace('茶签只写酒','茶签只写茶');
+  protocol+='\n茶盏只是状态的视觉呈现，不因此在正文增加喝茶、茶具或新物件。原有 drink 酒签保持原样，不把酒料当成茶料。';
+ }
+ const active=era==='ancient'?'tea':'drink',reference=snapshot?{...snapshot}:null;
+ if(reference)delete reference[active==='tea'?'drink':'tea'];
+ return protocol+(recentNames.length?'\n近期已用'+(era==='ancient'?'茶':'酒')+'名（仅作避重参考）：'+JSON.stringify([...new Set(recentNames)].filter(Boolean).slice(-10))+'。本次优先选择尚未使用、又符合当前配方的名字，不为凑不同名字而编造剧情。':'')+(reference?'\n上一份有效记录（仅作连续性参考，按本轮剧情更新）：'+JSON.stringify(calendarPromptSnapshot(reference,{calendar})):'');
 }
 export function outputUsage(message) {
  const selected=message?.swipe_info?.[message?.swipe_id??0];

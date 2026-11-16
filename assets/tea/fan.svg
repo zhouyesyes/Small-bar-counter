@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="折扇">
+  <defs><linearGradient id="fan-paper" x1="30" y1="10" x2="34" y2="49" gradientUnits="userSpaceOnUse"><stop stop-color="#e7ddc7"/><stop offset="1" stop-color="#cdbf9f"/></linearGradient></defs>
+  <g transform="rotate(-9 32 33)" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M7 27Q31-3 57 27L33 52Z" fill="url(#fan-paper)" stroke="#aa9271" stroke-width="1.6"/>
+    <path d="M8 27Q32 5 56 27" stroke="#f4ecda" stroke-width="1.2" opacity=".7"/>
+    <path d="M33 51 10 27M33 51 19 17M33 51 31 12M33 51 44 17M33 51 54 27" stroke="#a58d65" stroke-width="1.25"/>
+    <path d="M14 28Q31 17 49 27" stroke="#9b8070" stroke-width="1.4" opacity=".7"/>
+    <path d="M20 29Q24 24 28 29M35 25Q40 23 43 28" stroke="#91a18d" stroke-width="1.5"/>
+    <path d="m31 49 3 9 3-2-4-8" fill="#a48b64" stroke="#a48b64" stroke-width="1"/>
+    <circle cx="33" cy="50" r="2" fill="#e6d5af" stroke="#9b7e58" stroke-width="1"/>
+  </g>
+</svg>
