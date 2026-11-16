@@ -1,3 +1,4 @@
+import {replyContent,phoneSideStatus} from './reply-content.mjs';
 import {displayMusicTitle} from './music-title.mjs';
 import {createFloatingLyrics} from './floating-lyrics.mjs';
 import { isPickHidden, musicSelectionContext } from './music-selection.mjs';
@@ -20,7 +21,7 @@ import { catSvg } from './cat.mjs';
 import { cropImage } from './crop.mjs';
 import { createPlayer, searchSongs, bestSong, findSong, coverUrl, coverList, resolveCover } from './music.mjs';
 import { weatherTone, parsePhoneReply, parseBlock, pickKey } from './core.mjs';
-import { PHONE_RULES, LETTER_RULES, PHONE_STATUS, MANUAL, RELATION, onlinePersonaBlock } from './prompt.mjs';
+import { PHONE_RULES, LETTER_RULES, MANUAL, RELATION, onlinePersonaBlock } from './prompt.mjs';
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const nl = s => esc(s).replace(/\n/g, '<br>');
@@ -1089,7 +1090,7 @@ export function createUI(host) {
  </div></div>`;
     }
     function setHtml() {
-        const s = host.settings(), c = host.charCfg();
+        const s = host.settings(), c = host.charCfg(), content = replyContent(c,s);
         const modeName = '固定一张';
         const eraName = { auto: '自动 · ' + ({ modern: '现代', minguo: '民国', ancient: '古风' }[host.guessedEra()]), modern: '现代', minguo: '民国', ancient: '古风' }[c.era || 'auto'];
         const apiName = s.api === 'own' ? (s.ownApi?.model || '自己填的') : '跟正文';
@@ -1098,14 +1099,12 @@ export function createUI(host) {
  <div class="sb-sh">资料与样子</div><div class="sb-sgrp">${row('TA的资料', host.him().name, 'set-him')}${row('我的资料', host.me().name, 'set-me')}${row('抽屉的头图', modeName, 'set-cover')}${phoneIOS.active()?row('手机壁纸', '锁屏与桌面', 'set-wallpaper'):''}
   <label class="sb-srow"><span>美化时代<small>决定是小手机、民国信匣还是古风书匣</small></span><select data-cset="era">${[['auto', eraName.startsWith('自动') ? eraName : '自动'], ['modern', '现代'], ['minguo', '民国'], ['ancient', '古风']].map(([k, n]) => `<option value="${k}" ${(c.era || 'auto') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
   <label class="sb-srow"><span>明暗模式</span><select data-set="phoneTheme">${[['auto','跟随吧台'],['light','浅'],['dark','深']].map(([k,n])=>`<option value="${k}" ${(s.phoneTheme||'auto')===k?'selected':''}>${n}</option>`).join('')}</select></label></div>
- <div class="sb-sh">正文后TA写什么</div><div class="sb-sgrp">
-  <label class="sb-srow"><span>正文之后正常写<small>关掉后不写其他状态；每轮选曲由下面开关独立控制，手动生成照常可用</small></span><input type="checkbox" class="sb-tg" data-cset-off="noAutoStatus" ${c.noAutoStatus ? '' : 'checked'}></label>
-  <label class="sb-srow"><span>每轮自动选曲<small>独立于其他状态，每次正文回复选一首配乐</small></span><input type="checkbox" class="sb-tg" data-cset="autoMusicPick" ${c.autoMusicPick!==false?'checked':''}></label>
-  ${c.noAutoStatus ? '' : toggle('只写此刻和选曲（省一点）', 'saveMode', s.saveMode, s.saveMode ? '开着：正文后只写此刻（吧台状态栏）和本轮选曲；朋友圈、日记、X、微博这些小手机内容不写；小手机回消息也不顺带更新' : '关着：此刻和选曲每轮都写；朋友圈、日记、X、微博这些按剧情偶尔写')}
-  ${original && !c.noAutoStatus ? `<label class="sb-srow"><span>吧台状态栏的分类<small>吧台默认：固定四类；角色适配：照角色卡自带的状态栏来分</small></span><select data-cset="cocktailMode"><option value="default" ${c.cocktailMode!=='adaptive'?'selected':''}>吧台默认</option><option value="adaptive" ${c.cocktailMode==='adaptive'?'selected':''}>角色适配</option></select></label>` : ''}
-  ${toggle('手机活动按时间带进剧情', 'phoneTimelineEnabled', s.phoneTimelineEnabled ?? Number(s.storyPhoneN ?? 2) > 0, '手机新消息与动态固定在下一条剧情消息之前，后续不再反复追加；私聊和动态按各自可见范围处理。')}
+ <div class="sb-sh">正文后写什么 · 各自独立</div><div class="sb-sgrp">
+  ${[['autoStatus','状态栏','时间、地点、心声和酒杯状态',content.status],['autoCalendar','日历','新月份整理；平常只补新增或变化，不重复整月记录',content.calendar],['autoMusicPick','歌曲','每轮选一首配乐，最近五次不重复',content.music],['autoPhone','小手机偶尔更新','按剧情偶尔发动态、写日记或回消息，不要求每轮都有',content.phone]].map(([key,name,hint,on])=>`<label class="sb-srow"><span>${name}<small>${hint}</small></span><input type="checkbox" class="sb-tg" data-cset="${key}" ${on?'checked':''}></label>`).join('')}
+  ${original && content.status ? `<label class="sb-srow"><span>状态栏分类<small>吧台默认：固定四类；角色适配：照角色卡的状态栏来分</small></span><select data-cset="cocktailMode"><option value="default" ${c.cocktailMode!=='adaptive'?'selected':''}>吧台默认</option><option value="adaptive" ${c.cocktailMode==='adaptive'?'selected':''}>角色适配</option></select></label>` : ''}
   ${row('提示词', s.promptNow || s.promptPhone || s.prompt ? '改过' : '默认', 'set-prompt')}
  </div>
+ <div class="sb-sh">手机记录与剧情</div><div class="sb-sgrp">${toggle('手机活动按时间带进剧情', 'phoneTimelineEnabled', s.phoneTimelineEnabled ?? Number(s.storyPhoneN ?? 2) > 0, '把你在手机上产生的新消息和动态带入下一轮剧情，只带一次；与上面的小手机自动更新独立，私聊和动态仍区分视角。')}</div>
  <div class="sb-sh">${Wd().wechat}里回消息</div><div class="sb-sgrp">${row('用哪个 API', apiName, 'set-api')}${row('TA什么时候回', s.phoneWhen === 'next' ? '下一轮正文顺带回' : '马上回', 'set-when')}${s.phoneWhen === 'next' ? '' : row('回消息时带哪些资料', host.replyMode() === 'full' ? '整套' : '自己挑', 'set-reply')}${row('线上人设', c.online?.source === 'world' ? (c.online.title || '世界书条目') : c.online?.source === 'text' && c.online.text ? '自己写的' : '没指定', 'set-online')}</div>
  <div class="sb-sh">其他</div><div class="sb-sgrp">
   ${toggle('小猫入口', 'cat', s.cat !== false, '抽屉关着时，屏幕边上那只点了能打开小吧台的小猫')}
@@ -1170,12 +1169,12 @@ export function createUI(host) {
 </div>`;
     }
     function setPromptHtml() {
-        const p = host.promptParts(), d = host.defaultPromptParts(), save = host.settings().saveMode;
+        const p = host.promptParts(), d = host.defaultPromptParts(), content = replyContent(host.charCfg(),host.settings());
         return `${head('提示词', '<button class="sb-phx" data-act="prompt-reset">默认</button>')}<div class="sb-list">
  <div class="sb-hint">分两段加进正文的提示词里，改了马上生效；点右上「默认」两段都换回来。</div>
- <div class="sb-sh">此刻 · 每轮都写</div><div class="sb-hint">吧台状态栏（时间、在哪、心声……）和本轮选曲。选曲的详细规则程序会自动补上。</div>
+ <div class="sb-sh">此刻 · ${content.status ? '已开启' : '已关闭，不随正文发送'}</div><div class="sb-hint">吧台状态栏（时间、在哪、心声……），由「状态栏」开关控制；歌曲与日历各自独立。</div>
  <textarea class="sb-prompt" data-prompt="now">${esc(p.now || d.now)}</textarea>
- <div class="sb-sh">小手机 · ${save ? '现在开着省一点，这段不会发' : '按剧情偶尔写'}</div><div class="sb-hint">朋友圈、日记、X、微博、微信……开了「只写此刻和选曲（省一点）」时整段不发。</div>
+ <div class="sb-sh">小手机 · ${content.phone ? '按剧情偶尔写' : '已关闭，不随正文发送'}</div><div class="sb-hint">朋友圈、日记、X、微博、微信……由「小手机偶尔更新」开关控制。</div>
  <textarea class="sb-prompt" data-prompt="phone">${esc(p.phone || d.phone)}</textarea></div>`;
     }
     function setApiHtml() {
@@ -1666,7 +1665,7 @@ export function createUI(host) {
             host.wechat().forEach(m => { if (m.pending) host.patchWechat(m.id, { pending: false, rejected: true }, true); });
             host.saveMeta(); host.toast('info', '消息已发出，但被对方拒收了'); render(); return;
         }
-        if (!redo && host.settings().phoneWhen === 'next' && !host.charCfg().noAutoStatus) { // 关了自动更新就没有「下一轮顺带回」，改成马上回
+        if (!redo && host.settings().phoneWhen === 'next') { // 用户明确排队的消息不受偶尔更新开关影响
             host.wechat().forEach(m => { if (m.pending) host.patchWechat(m.id, { pending: false, waiting: true }, true); });
             host.saveMeta(); host.refreshInject();
             host.toast('info', 'TA会在下一轮正文里顺带回你');
@@ -1677,9 +1676,9 @@ export function createUI(host) {
         v.busy = true; v.stick = true; render();
         try {
             const msgs = await phoneMessages();
-            const text = await host.ask(msgs, quietOf(msgs, (host.era() === 'modern' ? '现在只写你在手机上回的消息，一行一条。' : '现在只写你回的信，一行一句。') + (host.settings().saveMode || host.charCfg().noAutoStatus ? '' : '\n' + PHONE_STATUS)));
+            const text = await host.ask(msgs, quietOf(msgs, (host.era() === 'modern' ? '现在只写你在手机上回的消息，一行一条。' : '现在只写你回的信，一行一句。') + (phoneSideStatus(host.charCfg(),host.settings()) ? '\n' + phoneSideStatus(host.charCfg(),host.settings()) : '')));
             const cut = host.extractBlock(String(text || ''));
-            if (cut.raw && !host.settings().saveMode && !host.charCfg().noAutoStatus) host.addBlock(cut.raw); // 顺带的状态段：此刻、动态、日记都跟着更新
+            if (cut.raw && replyContent(host.charCfg(),host.settings()).phone) host.addBlock(cut.raw); // 顺带的状态段：此刻、动态、日记都跟着更新
             const list = parsePhoneReply(cut.text);
             if (!list.length) throw new Error('TA没回出东西');
             for (const m of list) {
@@ -1738,7 +1737,7 @@ export function createUI(host) {
         const list = host.wechat().filter(x => x.type !== 'note').slice(-Math.max(1, N));
         const sys = await buildSys(
             host.era() === 'modern' ? `现在你们在手机上聊天，对方在你手机里叫「${me.name}」。` : `现在你们在书信往来，对方署名「${me.name}」。`,
-            (host.era() === 'modern' ? PHONE_RULES : LETTER_RULES) + (host.settings().saveMode || host.charCfg().noAutoStatus ? '' : '\n' + PHONE_STATUS),
+            (host.era() === 'modern' ? PHONE_RULES : LETTER_RULES) + (phoneSideStatus(host.charCfg(),host.settings()) ? '\n' + phoneSideStatus(host.charCfg(),host.settings()) : ''),
             list.slice(-6).map(m => m.text || ''), { online: true });
         const msgs = [{ role: 'system', content: sys }];
         for (const m of list) {

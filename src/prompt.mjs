@@ -111,17 +111,17 @@ export const PHONE_RULES = `你在用手机和对方聊天。像真人发消息�
 // - 此刻（每轮都有）：吧台状态 + 选曲
 // - 小手机（省一点时整段不加）：朋友圈、日记、X、微博……以及手机里最近的事、留言
 // - 下一轮正文顺带回的微信：她明确选了这个方式，省一点时也照样带上
-export function buildInjection({ prompt, promptNow, promptPhone, coverTags, state, wechatTail, myComments, waiting, wxNote, phoneNote, saveMode, autoPick = true, channel = '手机上的聊天' }) {
+export function buildInjection({ prompt, promptNow, promptPhone, coverTags, state, wechatTail, myComments, waiting, wxNote, phoneNote, saveMode, autoStatus = true, autoPhone = !saveMode, autoPick = true, channel = '手机上的聊天' }) {
     const parts = prompt != null && promptNow == null ? promptParts({ prompt }) : { now: promptNow || NOW_PROMPT, phone: promptPhone || PHONE_PROMPT };
     const bg = coverTags?.length ? `背景: 从这几个里挑一个最合适此刻的：${coverTags.join('、')}` : '';
-    let text = parts.now.replace('{{背景}}', bg) + (autoPick?'\n'+PICK_RULE:'\n本轮不自动选曲，不写「选曲:」行。');
+    let text = (autoStatus ? parts.now.replace('{{背景}}', bg).split('\n').filter(line=>!/^\s*选曲\s*[:：]/.test(line)).join('\n') : '【小吧台 · 独立内容】只在正文末尾的 <!--SB … SB--> 中写本轮启用的项目，不生成未启用的状态栏。') + (autoPick?'\n'+PICK_RULE:'\n本轮不自动选曲，不写「选曲:」行。');
     const recent = (state?.picks || []).slice(-8).map(p => `《${p.title}》${p.artist ? p.artist : ''}`);
-    if (recent.length) text += `\n这个聊天里已经选过的歌（尽量换一首，除非剧情就该是这首）：${recent.join('、')}`;
+    if (autoPick && recent.length) text += `\n这个聊天里已经选过的歌（尽量换一首，除非剧情就该是这首）：${recent.join('、')}`;
     const n = state?.now || {};
     const cur = [n.time && '时间 ' + n.time, n.weather && '天气 ' + n.weather, n.where && '在 ' + n.where, n.wear && '穿着 ' + n.wear].filter(Boolean).join('，');
-    if (cur) text += `\n上一轮的状态：${cur}`;
+    if (autoStatus && cur) text += `\n上一轮的状态：${cur}`;
     if (wxNote) text += `\n${wxNote}`;
-    if (saveMode) text += '\n（省一点：状态段只写上面「此刻」的内容和选曲，不写朋友圈、动态、日记、X、微博、热搜这些小手机内容。）';
+    if (!autoPhone) text += '\n本轮不自动生成朋友圈、动态、日记、X、微博、热搜这些小手机内容。';
     else {
         text += '\n\n' + parts.phone.replace('{{背景}}', bg);
         if (wechatTail) text += `\n\n你们最近${channel}（{{char}} 记得这些）：\n${wechatTail}`;
@@ -132,8 +132,8 @@ export function buildInjection({ prompt, promptNow, promptPhone, coverTags, stat
     return text;
 }
 // 放在注入最后：模型最后读到的是这一轮一定要有的项，避免选曲、酒杯被长长的规则冲掉
-export function mustWrite({ cocktail = false, saveMode = false, autoPick = true, missingPick = false } = {}) {
-    return `\n\n【本轮状态段必须有】时间、在哪、心声${autoPick?'、选曲':''}${cocktail ? '、酒杯' : ''}${saveMode ? '；小手机内容这一轮不写' : '；小手机内容按剧情可有可无'}。${autoPick?`\n${missingPick?'上一轮回复漏写了选曲，本轮务必补齐。':''}每次正文回复的最后一段 <!--SB … SB--> 内必须实际写一行「选曲: 正式歌名｜演唱者｜本轮配乐理由」。本轮歌曲不得与最近五次选曲重复；选择另一首后仍须完整写这行，不得省略，不要写空值，不要用「音乐:」代替；理由按本轮更新；只在一段状态段中写一次这行，不要另外拆成第二个状态段。这行属于本轮正文后的状态段。`:''}`;
+export function mustWrite({ cocktail = false, saveMode = false, autoStatus = true, autoPhone = !saveMode, autoPick = true, missingPick = false } = {}) {
+    return `\n\n【本轮状态段必须有】${[autoStatus?'时间、在哪、心声':'',autoPick?'选曲':'',cocktail?'酒杯':''].filter(Boolean).join('、')||'没有固定必写项目；仅写确有变化的已启用内容'}${!autoPhone ? '；不自动更新小手机内容（你明确要求的待回复消息除外）' : '；小手机内容按剧情可有可无'}。${autoPick?`\n${missingPick?'上一轮回复漏写了选曲，本轮务必补齐。':''}每次正文回复的最后一段 <!--SB … SB--> 内必须实际写一行「选曲: 正式歌名｜演唱者｜本轮配乐理由」。本轮歌曲不得与最近五次选曲重复；选择另一首后仍须完整写这行，不得省略，不要写空值，不要用「音乐:」代替；理由按本轮更新；只在一段状态段中写一次这行，不要另外拆成第二个状态段。这行属于本轮正文后的状态段。`:''}`;
 }
 
 // 她指定的线上人设：紧挨着小手机规矩放，离生成最近

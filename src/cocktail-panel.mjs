@@ -1,3 +1,4 @@
+import {replyContent} from './reply-content.mjs';
 import {storyMonth,isCalendarMark,calendarCountdown,calendarReaderEvents} from './calendar-state.mjs';
 import { PASTED_REFERENCE_LIMIT } from './status-sources.mjs';
 import { cocktailFromState, cocktailModules, fallbackDrinkName } from './cocktail-state.mjs';
@@ -16,7 +17,7 @@ export function createCocktailPanel(root,host,{render,generate}) {
  function eventDay(e){return e.day||Number(e.date?.slice(-2))}
  function eventsOn(key,day){return calendarReaderEvents(state.calendar).filter(e=>eventMonth(e)===key&&eventDay(e)===day)}
  function eventHtml(e){
-  const pending=['计划','已约定'].includes(e.status)||e.kind==='有约定',distance=calendarCountdown(state.calendar,e),status=e.status||e.kind;
+  const pending=['计划','已约定'].includes(e.status)||!e.status&&e.kind==='有约定',distance=calendarCountdown(state.calendar,e),status=e.status||e.kind;
   return `<article class="calendar-event"><small>${esc([e.scope==='world'?'世界':e.scope==='major'?'这一带':'与你有关',e.category,status,e.basis==='世界补充'?'世界补充':''].filter(Boolean).join(' · '))}${pending&&distance.startsWith('已过')?' · 到期未确认':''}</small><h4>${esc(e.name)}</h4>${e.time||e.location?`<div class="cal-event-meta">${esc([e.time,e.location].filter(Boolean).join(' · '))}</div>`:''}<p>${esc(e.text||'尚无更具体的记录。').replace(/\n/g,'<br>')}</p>${e.concurrent?`<p class="cal-concurrent"><em>同时</em> ${esc(e.concurrent)}</p>`:''}</article>`;
  }
  function originalsHtml(record){
@@ -40,7 +41,7 @@ export function createCocktailPanel(root,host,{render,generate}) {
  function referenceHtml(){
   if(mode()!=='adaptive')return '';
   const config=host.charCfg?.()||{},value=view.referenceDraft??config.cocktailReference??'';
-  return `<details class="cup-reference" ${view.referenceOpen?'open':''}><summary>粘贴状态栏参考${config.cocktailPlanPending?' · 待下轮聊天规划':''}</summary><textarea data-cup-reference maxlength="${PASTED_REFERENCE_LIMIT}" aria-label="状态栏参考内容" placeholder="粘贴世界书条目、状态栏板块或 HTML 模板（最多 12000 字）…">${esc(value)}</textarea><div class="reference-actions"><button type="button" data-cup-reference-next ${config.noAutoStatus||host.cocktailBusy?.()?'disabled':''} title="保存到当前聊天，等正常聊天时由聊天模型规划">交给下轮聊天规划</button><button type="button" data-cup-reference-now ${host.cocktailBusy?.()?'disabled':''} title="使用小吧台当前选定的 API">立即识别</button></div></details>`;
+  return `<details class="cup-reference" ${view.referenceOpen?'open':''}><summary>粘贴状态栏参考${config.cocktailPlanPending?' · 待下轮聊天规划':''}</summary><textarea data-cup-reference maxlength="${PASTED_REFERENCE_LIMIT}" aria-label="状态栏参考内容" placeholder="粘贴世界书条目、状态栏板块或 HTML 模板（最多 12000 字）…">${esc(value)}</textarea><div class="reference-actions"><button type="button" data-cup-reference-next ${!replyContent(config,host.settings?.()).status||host.cocktailBusy?.()?'disabled':''} title="保存到当前聊天，等正常聊天时由聊天模型规划">交给下轮聊天规划</button><button type="button" data-cup-reference-now ${host.cocktailBusy?.()?'disabled':''} title="使用小吧台当前选定的 API">立即识别</button></div></details>`;
  }
  function html(){
   state=activeState();modules=cocktailModules(state);view.page=clamp(view.page,0,Math.max(0,Math.ceil(modules.length/6)-1));

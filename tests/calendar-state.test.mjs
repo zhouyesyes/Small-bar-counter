@@ -83,3 +83,23 @@ test('reader originals retain late custom-month dates when the new month is shor
  c=mergeStoryCalendar({month:{key:'短月',label:'短月',days:20,currentDay:1},events:[]},c);
  assert.equal(c.history[0].day,39);c=mergeStoryCalendar({events:[]},c);assert.equal(c.history[0].day,39);
 });
+
+test('calendar deltas preserve omitted records and fields; empty updates never erase the month',()=>{
+ let c=mergeStoryCalendar(patch('2026-11-20',[event('2026-11-20','旧信',{id:'letter',time:'午后',location:'书店',concurrent:'港口停航'}),event('2026-11-21','另一个约定',{id:'promise',kind:'有约定'})]));
+ c=mergeStoryCalendar({events:[{id:'letter',text:'核对了最后一封信。'}]},c);
+ assert.equal(c.events.length,2);assert.equal(c.events[0].name,'旧信');assert.equal(c.events[0].location,'书店');assert.equal(c.events[0].time,'午后');assert.equal(c.events[0].text,'核对了最后一封信。');
+ c=mergeStoryCalendar({date:'2026-11-22',events:[]},c);assert.equal(c.events.length,2);
+ c=mergeStoryCalendar({events:[{id:'promise',status:'已发生'}]},c);assert.equal(c.events.find(e=>e.id==='promise').kind,'已发生');
+ c=mergeStoryCalendar({events:[{id:'promise',date:'2026-12-04',status:'计划'}]},c);assert.equal(c.events.find(e=>e.id==='promise').monthKey,'2026-12');assert.equal(c.events.find(e=>e.id==='promise').day,4);
+ const rows=[{id:'a',raw:raw({date:'2026-11-20',events:[event('2026-11-20','旧信',{id:'letter'})]})},{id:'b',raw:'酒杯: '+JSON.stringify({version:1,mode:'default',drink:{name:'晚灯'}})}];
+ assert.equal(buildState(rows).cocktails.default.calendar.events.length,1);
+});
+
+test('AI calendar reference has a fixed character budget without trimming reader data',async()=>{
+ const {calendarPromptSnapshot,CALENDAR_REFERENCE_LIMIT}=await import('../src/calendar-state.mjs');
+ const events=Array.from({length:180},(_,i)=>event('2026-11-20','记事'+i,{id:'e'+i,monthKey:'2026-11',day:20,text:'完整细节。'.repeat(200),status:i===0?'已约定':'已发生'}));
+ const calendar={date:'2026-11-20',events,history:events,knownDates:events,archive:{months:Array.from({length:100},(_,i)=>({key:'m'+i,text:'月报。'.repeat(500)})),volumes:Array.from({length:100},(_,i)=>({keys:['a','b','c','d'],label:'第'+i+'册',text:'合订。'.repeat(1000)}))}};
+ const reference=calendarPromptSnapshot({calendar}).calendar;
+ assert(JSON.stringify(reference).length<=CALENDAR_REFERENCE_LIMIT);assert(reference.events.length<=32);assert.equal(reference.events[0].id,'e0');assert(reference.omittedEvents>0);assert(!reference.history);
+ assert.equal(calendar.events.length,180);assert.equal(calendar.archive.volumes.length,100);assert.equal(calendar.events[0].text,'完整细节。'.repeat(200));
+});

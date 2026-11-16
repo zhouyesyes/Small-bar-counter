@@ -17,6 +17,17 @@ await page.evaluate(()=>{context.chat.push({is_user:false,mes:'这一轮没有�
 await page.locator('#sb-openbtn').click();await page.locator('[data-kind=pick]').waitFor();assert.match(await page.locator('.sb-pick-missing').innerText(),/本轮未收到选曲/);assert.match(await page.locator('.sb-mpick small').innerText(),/上次选曲/);
 await page.evaluate(()=>modelResult='<!--SB\n选曲: 告白气球｜周杰伦｜补选本轮\nSB-->');await page.locator('[data-kind=pick]').click();await page.waitForFunction(()=>!!context.chatMetadata.small_bar.musicPickForReply);assert.equal(await page.locator('.sb-pick-missing').count(),0);assert.match(await page.evaluate(()=>asks[0].systemPrompt),/最近五次选曲 · 本轮避开/);assert.equal(await page.evaluate(()=>asks.length),1,'supplement only calls the model after the explicit button press');
 await page.evaluate(()=>{context.extensionSettings.small_bar.replyMode='full';context.generateQuietPrompt=async options=>{asks.push(options);emit('GENERATION_STARTED','quiet');window.sidePrompt=prompts.small_bar;return '<!--SB\n选曲: 夜曲｜周杰伦｜整套补选\nSB-->'};context.chat.push({is_user:false,mes:'新一轮又漏选',send_date:'full-missing',extra:{}});emit('MESSAGE_RECEIVED',context.chat.length-1)});await page.locator('[data-kind=pick]').waitFor();await page.locator('[data-kind=pick]').click();await page.waitForFunction(()=>context.chatMetadata.small_bar.musicPickForReply?.includes('full-missing'));assert.equal(await page.evaluate(()=>sidePrompt),'');assert.equal(await page.evaluate(()=>asks.length),2,'full-context supplementation also preserves its state block');
+// Each of the four independently selected content channels reaches the actual host prompt.
+for(let bits=0;bits<16;bits++){
+ await page.evaluate(bits=>{Object.assign(context.chatMetadata.small_bar.cfg,{autoStatus:!!(bits&1),autoCalendar:!!(bits&2),autoMusicPick:!!(bits&4),autoPhone:!!(bits&8)});emit('GENERATION_STARTED')},bits);
+ const prompt=await page.evaluate(()=>prompts.small_bar);
+ assert.equal(prompt.includes('【小吧台 · 此刻】'),!!(bits&1),'status '+bits);
+ assert.equal(prompt.includes('【剧情月历 · 增量更新】'),!!(bits&2),'calendar '+bits);
+ assert.equal(prompt.includes('避开本聊天最近五次选曲中的歌曲'),!!(bits&4),'song '+bits);
+ assert.equal(prompt.includes('【小吧台 · 小手机】'),!!(bits&8),'phone '+bits);
+ if(!bits)assert.equal(prompt,'');
+}
+await page.evaluate(()=>{for(const k of ['autoStatus','autoCalendar','autoMusicPick','autoPhone'])delete context.chatMetadata.small_bar.cfg[k]});
 await page.evaluate(()=>{context.chatMetadata.small_bar.cfg.noAutoStatus=true;emit('GENERATION_STARTED')});assert.match(await page.evaluate(()=>prompts.small_bar),/正文后只附这一段/);assert.match(await page.evaluate(()=>prompts.small_bar),/选曲: 正式歌名/);assert.doesNotMatch(await page.evaluate(()=>prompts.small_bar),/酒杯状态面板/);assert.match(await page.evaluate(()=>prompts.small_bar),/最近五次选曲 · 本轮避开/);
 await page.evaluate(()=>emit('GENERATION_STARTED','quiet'));assert.equal(await page.evaluate(()=>prompts.small_bar),'','quiet side calls do not receive normal-story song requirements');await page.evaluate(()=>emit('GENERATION_STARTED','normal'));assert.match(await page.evaluate(()=>prompts.small_bar),/选曲: 正式歌名/);
 await page.evaluate(()=>{context.chatMetadata.small_bar.cfg.autoMusicPick=false;emit('GENERATION_STARTED')});assert.equal(await page.evaluate(()=>prompts.small_bar),'','both independent controls can still be disabled');

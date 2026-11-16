@@ -1,3 +1,5 @@
+import {replyContent} from './reply-content.mjs';
+import {calendarOnlyProtocol} from './calendar-state.mjs';
 import {musicSelectionContext} from './music-selection.mjs';
 import { collectPhoneEvents, primeTimeline, anchorPhoneEvents, decoratePhoneHistory, PHONE_PERSPECTIVE } from './phone-timeline.mjs';
 import { collectStatusSources, formatStatusSources, pastedReference } from './status-sources.mjs';
@@ -537,18 +539,18 @@ function refreshInject() {
     if(sideGenerationCount){c.setExtensionPrompt(INJECT_KEY,'',1,0);return;}
     if (!s.enabled || !hasChar()) { c.setExtensionPrompt(INJECT_KEY, '', 1, 0); return; }
     primePhoneTimeline();
-    // 这张卡关了「回复时自动更新状态」（多角色、群像卡）：正文后不再让TA写状态段
-    const autoPick=charCfg().autoMusicPick!==false,pickStatus=replyPickStatus();
-    if (charCfg().noAutoStatus) {
-        const text=autoPick?PICK_RULE+'\n正文后只附这一段，不添加其他状态项目：\n<!--SB\n选曲: 正式歌名｜演唱者｜本轮配乐理由\nSB-->\n'+musicSelectionContext(meta(),state().pick,state().recentPicks)+(pickStatus?.missing?'\n上一轮漏写了选曲，本轮请务必写出选曲行。':''):'';
-        c.setExtensionPrompt(INJECT_KEY,text,1,0,false,0);return;
-    }
+    // Four per-chat content choices are independent; legacy settings supply defaults only.
+    const content=replyContent(charCfg(),s),autoPick=content.music,pickStatus=replyPickStatus();
     const cover = charCfg().cover;
     const tags = cover?.mode === 'pick' ? (cover.images || []).map(x => x.tag).filter(Boolean) : [];
     // 「下一轮正文顺带回」：她发了还没回的手机消息
     const list = wechat().filter(m => m.type !== 'note'); // 连正文里TA顺带回的一起看：TA回过了就不再催
     let k = list.length; while (k > 0 && list[k - 1].from === 'me') k--;
     const waiting = list.slice(k).some(m => m.waiting && !m.pending && !m.rejected);
+    if (!content.status && !content.calendar && !content.phone && !waiting) {
+        const text=autoPick?PICK_RULE+'\n正文后只附这一段，不添加其他状态项目：\n<!--SB\n选曲: 正式歌名｜演唱者｜本轮配乐理由\nSB-->\n'+musicSelectionContext(meta(),state().pick,state().recentPicks)+(pickStatus?.missing?'\n上一轮漏写了选曲，本轮请务必写出选曲行。':''):'';
+        c.setExtensionPrompt(INJECT_KEY,text,1,0,false,0);return;
+    }
     // 微信的拉黑和好友申请，让TA知道
     const m0 = meta(), st0 = state();
     if (!st0.blockedMe && m0.myReq && !m0.myReq.done) m0.myReq.done = true; // TA通过了（或者没拉黑了），这份申请就算完了
@@ -558,22 +560,23 @@ function refreshInject() {
         m0.wxBlock?.him ? '（{{user}} 在微信上把{{char}}拉黑了：你发的微信她收不到。）' : '',
     ].filter(Boolean).join('\n');
     const parts = promptParts(s);
-    let text = buildInjection({ promptNow: parts.now, promptPhone: parts.phone, coverTags: tags, state: state(), autoPick, wxNote: memoNote(st0.memo), phoneNote: phoneWx, saveMode: s.saveMode, channel: era() === 'modern' ? '在手机上的聊天' : '的书信往来' });
+    let text = buildInjection({ promptNow: parts.now, promptPhone: parts.phone, coverTags: tags, state: state(), autoPick, autoStatus:content.status, autoPhone:content.phone, wxNote: memoNote(st0.memo), phoneNote: phoneWx, saveMode: s.saveMode, channel: era() === 'modern' ? '在手机上的聊天' : '的书信往来' });
     text += '\n\n' + PHONE_PERSPECTIVE;
     if (waiting) text += '\n有微信等待本轮回复：只依据聊天历史中已有的手机记录，在状态段里用「微信:」回复，一行一条；没有消息内容时不要猜测。';
-    if (s.barStyle === 'default') {
+    if (s.barStyle === 'default' && content.status) {
         const mode=charCfg().cocktailMode==='adaptive'?'adaptive':'default';
-        const snapshot=structuredClone(cocktailFromState(state(),mode));
-        if(mode==='default')snapshot.gestures.reminders=snapshot.gestures.reminders.filter(r=>!r.done&&!meta().cocktailDone?.[r.id||r.text]);
+        const snapshot={...cocktailFromState(state(),mode)};
+        if(mode==='default')snapshot.gestures={...snapshot.gestures,reminders:snapshot.gestures.reminders.filter(r=>!r.done&&!meta().cocktailDone?.[r.id||r.text])};
         const pending=mode==='adaptive'&&!!charCfg().cocktailPlanPending;
-        text+='\n\n'+cocktailProtocol(mode,snapshot,{recentNames:(state().cocktailLog||[]).filter(r=>r.mode===mode).slice(-10).map(r=>r.drink.name),replan:pending,replanRevision:pending?charCfg().cocktailPlanRevision:null});
+        text+='\n\n'+cocktailProtocol(mode,snapshot,{calendar:content.calendar,recentNames:(state().cocktailLog||[]).filter(r=>r.mode===mode).slice(-10).map(r=>r.drink.name),replan:pending,replanRevision:pending?charCfg().cocktailPlanRevision:null});
         if(mode==='adaptive'&&(pending||!snapshot.modules.length)){
             const reference=pastedReference(charCfg().cocktailReference||'');
             if(reference)text+='\n\n'+formatStatusSources(collectStatusSources({pasted:reference}));
         }
     }
+    if(content.calendar && !(s.barStyle==='default' && content.status)){const mode=charCfg().cocktailMode==='adaptive'?'adaptive':'default';text+='\n\n'+calendarOnlyProtocol(cocktailFromState(state(),mode),mode);}
     const musicFeedback=autoPick?musicSelectionContext(meta(),state().pick,state().recentPicks):'';if(musicFeedback)text+='\n\n'+musicFeedback;
-    text += mustWrite({ cocktail: s.barStyle === 'default', saveMode: s.saveMode, autoPick, missingPick:pickStatus?.missing });
+    text += mustWrite({ cocktail: s.barStyle === 'default' && content.status, saveMode: s.saveMode, autoStatus:content.status, autoPhone:content.phone, autoPick, missingPick:pickStatus?.missing });
     // 1 = 放在聊天里（IN_CHAT），深度 0 = 最后面，0 = 系统身份
     c.setExtensionPrompt(INJECT_KEY, text, 1, 0, false, 0);
 }
@@ -632,7 +635,7 @@ const host = {
     saveCocktailReference: (value,{queue=false}={}) => {
         const reference=pastedReference(value);if(reference===null){host.toast('warning','参考内容最多 12000 字，请分段整理后再保存');return false;}
         const config=charCfg();config.cocktailReference=reference;config.cocktailMode='adaptive';
-        if(queue&&config.noAutoStatus){saveMeta();host.toast('warning','参考已保存；这张卡关闭了自动更新，请先开启，或点立即识别');return false;}
+        if(queue&&!replyContent(config,settings()).status){saveMeta();host.toast('warning','参考已保存；这张卡关闭了自动更新，请先开启，或点立即识别');return false;}
         config.cocktailPlanPending=queue;
         if(queue)config.cocktailPlanRevision=Math.max(config.cocktailPlanRevision||0,state().cocktails?.adaptive?.layoutRevision||0)+1;
         saveMeta();refreshInject();return true;

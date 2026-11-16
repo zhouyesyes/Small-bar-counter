@@ -29,8 +29,18 @@ const{chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
  if(await p.locator('#sb-root [data-set=barStyle],#sb-root [data-set=barTheme],#sb-root [data-act=splash-settings]').count())throw Error('duplicate phone appearance controls remain');
  await p.locator('#sb-root [data-set=phoneTheme]').selectOption('dark');
  if(!await p.evaluate(()=>s.theme==='light'&&s.phoneTheme==='dark'&&document.querySelector('#sb-root').dataset.mode==='dark'&&document.documentElement.dataset.sbMode==='light'))throw Error('phone mode changed global appearance');
- const toggle=p.locator('#sb-root [data-cset-off=noAutoStatus]'),on=await toggle.evaluate(n=>getComputedStyle(n).backgroundColor);if(!await toggle.isChecked())throw Error('status writing should default on');await toggle.uncheck();if(!await p.evaluate(()=>phoneConfig.noAutoStatus===true))throw Error('inverted toggle did not save');const off=on;
+ if(await p.locator('[data-cset-off=noAutoStatus],[data-set=saveMode]').count())throw Error('old master/economy controls remain');
+ for(const key of ['autoStatus','autoCalendar','autoMusicPick','autoPhone'])if(await p.locator('[data-cset='+key+']').count()!==1)throw Error('missing independent content switch '+key);
+ const calendarBefore=await p.locator('[data-cset=autoCalendar]').isChecked();
+ const toggle=p.locator('#sb-root [data-cset=autoStatus]'),on=await toggle.evaluate(n=>getComputedStyle(n).backgroundColor);if(!await toggle.isChecked())throw Error('status writing should default on');await toggle.uncheck();if(!await p.evaluate(()=>phoneConfig.autoStatus===false))throw Error('independent status toggle did not save');const off=on;
  if(await toggle.evaluate(n=>getComputedStyle(n).backgroundColor)===off)throw Error('enabled toggle has no distinct color');
+ if(await p.locator('[data-cset=autoCalendar]').isChecked()!==calendarBefore||!await p.locator('[data-cset=autoMusicPick]').isChecked())throw Error('status switch changed another content channel');
+ const oldViewport=p.viewportSize();await p.setViewportSize({width:390,height:844});
+ for(const key of ['autoStatus','autoCalendar','autoMusicPick','autoPhone'])if(!await p.locator('[data-cset='+key+']').evaluate(n=>{const r=n.closest('label').getBoundingClientRect();return r.left>=-1&&r.right<=innerWidth+1}))throw Error('content switch row overflows mobile width '+key);
+ if(process.env.CONTENT_PREVIEW)await p.screenshot({path:process.env.CONTENT_PREVIEW});await p.setViewportSize(oldViewport);
+
+ await p.locator('[data-cset=autoCalendar]').check();await p.locator('[data-cset=autoCalendar]').uncheck();if(!await p.evaluate(()=>phoneConfig.autoCalendar===false&&phoneConfig.autoStatus===false))throw Error('calendar switch is not independent');
+
  if(await p.locator('#sb-root [data-set=phoneMode],#sb-root .sb-slist .sb-glass-controls').count())throw Error('floating mode or chat glass controls still in phone settings');
  if(!await p.locator('#sb-root [data-cset=era]').evaluate(n=>n.closest('.sb-sgrp').previousElementSibling.textContent==='资料与样子'&&n.closest('label').textContent.includes('美化时代')))throw Error('era belongs under appearance');
  await p.evaluate(()=>phoneConfig.cover={mode:'fixed',fixed:'/assets/opening/dark-cover.jpg'});
