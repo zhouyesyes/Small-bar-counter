@@ -1,4 +1,4 @@
-import {mergeStoryCalendar,calendarProtocol} from './calendar-state.mjs';
+import {mergeStoryCalendar,calendarProtocol,calendarPromptSnapshot} from './calendar-state.mjs';
 // Safe, portable state only: no DOM, external variable writes, or executable model output.
 export const CUP_TYPES = ['martini','coupe','flute','wine','highball','rocks'];
 const plain = value => value && typeof value === 'object' && !Array.isArray(value);
@@ -100,7 +100,7 @@ export function cocktailProtocol(mode='default',snapshot=null,{replan=false,repl
 【酒签的写法】只挑本场真正尝得到的一点，为这一杯取一个简短、有辨识度的中文酒名，通常2至8字。可以从已出现的物件、话里的双关、香气、色泽或入口后的余味取意；读起来像酒吧酒单上会点的一杯，有留白，也有可感知的滋味。不要固定拼接“原料＋基酒＋酒型”，不强制酒型结尾，也不必带“酒”字。经典酒名仍可自然使用，但不要每轮套同一构词格式。命名与配方分开：基酒、辅料、酒型等信息各写回对应字段，不要全塞进名字。禁止照抄“中文酒名”“酒名”等字段说明，不直接拿人名、人物配对、情绪总结或空泛散文标题作酒名。不要照抄示例酒名，也不要把上一杯换一种水果就当新名字；近期名字只作避重参考，不是必须模仿的调性。
 introduction 写一两句荐饮，写这一杯入口、香气或余味中最特别的地方，长短随这一杯自然变化，不写剧情梗概或人物评语，不反复使用“温和松弛、温柔克制、耐心安抚”等套话。tastes 的前中后味分别写可尝到的变化，避免三个位置重复同一种形容词。酒签只写酒：正文里的身体、体液、声响和动作留在正文；酒签不因此在正文增添配菜、饮酒行为或新物件。杯型、颜色、配方和估算酒精度需彼此合理，不为求新编造已发生的剧情。
 【气泡里的文字】各栏各有用途，不把同一句情绪改写四遍。此刻：用本场能确认的时间、地点、天气和正在发生的小事，简洁具体，不借现实日期补空白。滋味：visibleMood 写看得见的神情或语气；innerMood 写符合角色的当下感受；changes 只写真正有变化的地方；want 写眼下具体想做或想得到的事。杯底的话 bottomWords 是角色此刻没说出口的话，可以犹豫、嘴硬、留半句，随角色口吻变化，不用旁白给人物下结论。袖口与口袋保留真实穿着、物件和细小动作，不给每件物品硬加象征意义。碎碎念 thoughts 写1至3条确实有内容的短念头，允许短促、跳跃或自我纠正；不要固定句式，不把心声原样再抄一遍，不为了填满编新事，无可写时留空。自适应模式沿用原卡字段的含义、数值、单位和权限，文字类字段也按以上原则写活；不将所有字段强行改成酒的比喻。每次只更新本轮有依据的内容，不为求新捏造变化，不照抄上一份措辞，不预告后事。
-月历按上述独立规则维护，日历标签不再用普通剧情节点凑数。\n每轮给出当前模式的完整快照；无依据的字段用null或空数组。约定可与备忘同步，日历保留日期与状态；完成后不再放未完成清单；不新增偶然事件、独立纸条或长期习惯。心声不能作为玩家已知事实泄露给正文。不要生成 usage/token 数，程序会写。${recentNames.length?'\n近期已用酒名（仅作避重参考，不是候选名单）：'+JSON.stringify([...new Set(recentNames)].slice(-10))+'。本次优先选择尚未使用、又符合当前配方的酒名；不为凑不同名字而编造剧情。':''}${snapshot?'\n上一份有效记录（仅作连续性参考，按本轮剧情更新）：'+JSON.stringify(snapshot):''}`;
+月历按上述独立规则维护，日历标签不再用普通剧情节点凑数。\n每轮给出当前模式的完整快照；无依据的字段用null或空数组。约定可与备忘同步，日历保留日期与状态；完成后不再放未完成清单；不新增偶然事件、独立纸条或长期习惯。心声不能作为玩家已知事实泄露给正文。不要生成 usage/token 数，程序会写。${recentNames.length?'\n近期已用酒名（仅作避重参考，不是候选名单）：'+JSON.stringify([...new Set(recentNames)].slice(-10))+'。本次优先选择尚未使用、又符合当前配方的酒名；不为凑不同名字而编造剧情。':''}${snapshot?'\n上一份有效记录（仅作连续性参考，按本轮剧情更新）：'+JSON.stringify(calendarPromptSnapshot(snapshot)):''}`;
 }
 export function outputUsage(message) {
  const selected=message?.swipe_info?.[message?.swipe_id??0];

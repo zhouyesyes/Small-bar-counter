@@ -25,7 +25,7 @@ function normalizeEvent(raw,month){
  if(!plain(raw))return null;
  const date=calendarDate(raw.date),name=clean(raw.name,80);if(!name||/^(?:剧情)?当前(?:节点|阶段)$/.test(name))return null;
  const key=clean(raw.monthKey,80)||(date?.slice(0,7))||month?.key;
- const day=date?Number(date.slice(-2)):Number.isInteger(raw.day)&&raw.day>=1&&raw.day<=(month?.days||60)?raw.day:null;
+ const day=date?Number(date.slice(-2)):Number.isInteger(raw.day)&&raw.day>=1&&raw.day<=(key===month?.key?(month.days||60):60)?raw.day:null;
  if(!key||!day)return null;
  const kind=['已发生','有约定','固定日期'].includes(raw.kind)?raw.kind:'已发生';
  const category=categories.includes(raw.category)?raw.category:kind==='固定日期'?'纪念日':kind==='有约定'?'行程':'事件';
@@ -75,8 +75,20 @@ export function mergeStoryCalendar(raw,previous={date:null,events:[]}){
  while(archive.months.length>=4){const batch=archive.months.splice(0,4);archive.volumes.push({keys:batch.map(r=>r.key),label:batch[0].label+' — '+batch[3].label,text:batch.map(r=>r.label+'：'+r.text.slice(0,560)).join('\n\n').slice(0,2600),automatic:true});}
  for(const update of Array.isArray(raw.periodSummaries)?raw.periodSummaries:[]){const index=archive.volumes.findIndex(r=>Array.isArray(update?.keys)&&r.keys.join('|')===update.keys.join('|'));if(index>=0&&clean(update.text,2600))archive.volumes[index]={...archive.volumes[index],text:clean(update.text,2600),automatic:false};}
  const closedKeys=new Set([...archive.months.map(r=>r.key),...pastKeys()]);
+ // Reader-only originals are rebuilt from selected replies, never accepted from model output.
+ const history=new Map((previous.history||[]).map(e=>normalizeEvent(e,month)).filter(Boolean).map(e=>[e.id,e]));
+ for(const e of events)if(closedKeys.has(e.monthKey))history.set(e.id,{...e});
  events=events.filter(e=>!closedKeys.has(e.monthKey)||pending(e));
- return {date,worldDate:Object.hasOwn(raw,'worldDate')?clean(raw.worldDate,160):(date===previous.date?previous.worldDate||'':''),month:month?.custom?month:null,events,knownDates:[...known.values()].map(e=>({...e,text:e.text.slice(0,120),concurrent:''})),archive};
+ return {date,worldDate:Object.hasOwn(raw,'worldDate')?clean(raw.worldDate,160):(date===previous.date?previous.worldDate||'':''),month:month?.custom?month:null,events,history:[...history.values()],knownDates:[...known.values()].map(e=>({...e,text:e.text.slice(0,120),concurrent:''})),archive};
+}
+// Active entries override archived versions of the same appointment after updates.
+export function calendarReaderEvents(calendar={}){
+ return [...new Map([...(calendar.history||[]),...(calendar.events||[])].map(e=>[e.id||stableId([e.monthKey,e.day,e.name,e.time].join('|')),e])).values()];
+}
+export function calendarPromptSnapshot(snapshot){
+ if(!snapshot?.calendar)return snapshot;
+ const {history,...calendar}=snapshot.calendar;
+ return {...snapshot,calendar};
 }
 export function calendarCountdown(calendar,event){
  if(calendar.date&&event.date){const days=Math.round((Date.parse(event.date+'T12:00:00Z')-Date.parse(calendar.date+'T12:00:00Z'))/86400000);return days===0?'今日':days===1?'明日':days>1?`还有${days}天`:`已过${-days}天`;}
@@ -88,4 +100,4 @@ export function calendarProtocol(){return `【剧情月历】日历单独记录�
 新剧情月份首次出现时主动整理本月月历：优先列出五个真实适用的节日、节气、生日或纪念日，再加入已经成立的个人行程。生日、相识/恋爱纪念日必须有设定依据，不猜具体日期；已知按年重复的日期按本世界历法推算本年的日期，没有确认重复规律的不自动推算；节日不足时，仅可按虚构世界已有文化补充公共习俗并标记“世界补充”，现实世界不造新节日。无依据且不适合补设时允许不足五项。当前剧情阶段、普通约会、短期任务不是节日，不用它们凑五项。
 每次回复若当天有具体进展，就补充当天记录；同一事件沿用稳定 id，累计已知进展，不用换名字制造重复条目。每天不要只有“见面”“大事”几个字：根据已发生内容或明确约定，具体写谁在何时何处做什么、为何值得记住、结果或尚待处理的事情。text 通常两至四句，各字段不重复；没有依据的时间地点留空，不为写长编造细节。同时发生的事也必须有剧情或公共背景依据，不能泄露他人私下行动。未来行程写计划或已约定，未到日期不写成已发生；过期但未确认完成的约定仍是未确认，取消后明确标记。
 格子底下只标节日、节气、生日和纪念日，普通行程和当日进度在点开后展示。日期推移时保留仍有效的约定和重要已知日期，不凭空宣布完成。特殊日期的倒计时由程序按故事日期计算，不要拿现实时间计算。
-跨入新月时总结刚结束且有记录的月份，写关键事件、关系或生活变化、已完成与未兑现的约定；不总结尚未发生的计划。程序先按旧记录生成回顾，后续可用 summaries 改写成自然文字。每累计四个已结束且有记录的月份，用 periodSummaries 归纳共同变化、重要转折和仍未完结的事，不照抄四份月报。跳过的空白月份不补剧情。程序会将旧细目压成月报、四份月报压成一册；无需在每轮事件里重抄历史，不输出 archive 或 knownDates；程序会保留它们。当前月和未解决约定继续保留。`;}
+跨入新月时总结刚结束且有记录的月份，写关键事件、关系或生活变化、已完成与未兑现的约定；不总结尚未发生的计划。程序先按旧记录生成回顾，后续可用 summaries 改写成自然文字。每累计四个已结束且有记录的月份，用 periodSummaries 归纳共同变化、重要转折和仍未完结的事，不照抄四份月报。跳过的空白月份不补剧情。程序会将旧细目压成月报、四份月报压成一册；无需在每轮事件里重抄历史，不输出 archive、knownDates 或 history；程序会保留它们，history 是仅供用户查阅的原始细目，不纳入这份连续性参考。当前月和未解决约定继续保留。`;}

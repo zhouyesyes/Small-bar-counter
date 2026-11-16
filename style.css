@@ -1807,3 +1807,7 @@ html.sb-cs :is(#send_but,#mes_stop)>svg.sb-wine{width:18px;height:24px;overflow:
 
 .sb-chat-look-sub{margin:4px 0 8px;font-size:.92em;font-weight:500;opacity:.75;letter-spacing:.06em}
 .sb-chat-look-fold .sb-glass-controls + .sb-chat-look-sub{border-top:1px solid color-mix(in srgb,currentColor 12%,transparent);padding-top:12px}
+
+#sb-root .cal-originals{margin-top:12px;border-top:1px dashed var(--sb-line)}
+#sb-root .cal-originals>div{padding:10px 0;border-top:1px solid var(--sb-line)}
+#sb-root .cal-originals h5{margin:0 0 7px;color:var(--sb-dim);font-size:12px}

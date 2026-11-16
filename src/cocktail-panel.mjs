@@ -1,4 +1,4 @@
-import {storyMonth,isCalendarMark,calendarCountdown} from './calendar-state.mjs';
+import {storyMonth,isCalendarMark,calendarCountdown,calendarReaderEvents} from './calendar-state.mjs';
 import { PASTED_REFERENCE_LIMIT } from './status-sources.mjs';
 import { cocktailFromState, cocktailModules, fallbackDrinkName } from './cocktail-state.mjs';
 import { glassSvg, glassGeometry, GARNISHES } from './cocktail-art.mjs';
@@ -14,10 +14,14 @@ export function createCocktailPanel(root,host,{render,generate}) {
  const activeState=()=>host.cocktailState?.()||cocktailFromState(host.state(),mode());
  function eventMonth(e){return e.monthKey||e.date?.slice(0,7)}
  function eventDay(e){return e.day||Number(e.date?.slice(-2))}
- function eventsOn(key,day){return state.calendar.events.filter(e=>eventMonth(e)===key&&eventDay(e)===day)}
+ function eventsOn(key,day){return calendarReaderEvents(state.calendar).filter(e=>eventMonth(e)===key&&eventDay(e)===day)}
  function eventHtml(e){
   const pending=['计划','已约定'].includes(e.status)||e.kind==='有约定',distance=calendarCountdown(state.calendar,e),status=e.status||e.kind;
   return `<article class="calendar-event"><small>${esc([e.scope==='world'?'世界':e.scope==='major'?'这一带':'与你有关',e.category,status,e.basis==='世界补充'?'世界补充':''].filter(Boolean).join(' · '))}${pending&&distance.startsWith('已过')?' · 到期未确认':''}</small><h4>${esc(e.name)}</h4>${e.time||e.location?`<div class="cal-event-meta">${esc([e.time,e.location].filter(Boolean).join(' · '))}</div>`:''}<p>${esc(e.text||'尚无更具体的记录。').replace(/\n/g,'<br>')}</p>${e.concurrent?`<p class="cal-concurrent"><em>同时</em> ${esc(e.concurrent)}</p>`:''}</article>`;
+ }
+ function originalsHtml(record){
+  const keys=record.keys||[record.key],events=calendarReaderEvents(state.calendar).filter(e=>keys.includes(eventMonth(e))).sort((a,b)=>keys.indexOf(eventMonth(a))-keys.indexOf(eventMonth(b))||eventDay(a)-eventDay(b));
+  return events.length?`<details class="cal-originals"><summary>查看逐日原始记录 · ${events.length} 条</summary>${events.map(e=>`<div><h5>${esc(e.displayDate||e.date||eventMonth(e)+' · '+eventDay(e)+'日')}</h5>${eventHtml(e)}</div>`).join('')}</details>`:'';
  }
  function calendarHtml(){
   const current=storyMonth(state.calendar);
@@ -26,11 +30,11 @@ export function createCocktailPanel(root,host,{render,generate}) {
   const valid=!!shown&&Number.isInteger(shown.days),numeric=valid&&!shown.custom,[year,month]=(numeric?shown.key:'').split('-').map(Number);
   const names=['January','February','March','April','May','June','July','August','September','October','November','December'];
   let days='';
-  if(valid){days='<span></span>'.repeat(shown.firstWeekday??0);for(let day=1;day<=shown.days;day++){const date=numeric?`${shown.key}-${pad(day)}`:`${shown.key}::${day}`,events=eventsOn(shown.key,day),marked=events.filter(isCalendarMark);days+=`<button type="button" class="day${marked.length?' important':''}${shown.key===current?.key&&day===current.currentDay?' today':''}" data-cup-date="${esc(date)}" data-cup-day="${day}" data-cup-month-key="${esc(shown.key)}" aria-label="${esc(shown.label)}${day}日${events.length?'，'+events.length+'件事':''}" aria-expanded="false"><span class="num">${day}</span>${marked.length?`<small>${esc(marked[0].name)}${marked.length>1?' +'+(marked.length-1):''}</small>`:''}</button>`;}}
+  if(valid){days='<span></span>'.repeat(shown.firstWeekday??0);for(let day=1;day<=shown.days;day++){const date=numeric?`${shown.key}-${pad(day)}`:`${shown.key}::${day}`,events=eventsOn(shown.key,day),marked=events.filter(isCalendarMark);days+=`<button type="button" class="day${events.length?' important':''}${shown.key===current?.key&&day===current.currentDay?' today':''}" data-cup-date="${esc(date)}" data-cup-day="${day}" data-cup-month-key="${esc(shown.key)}" aria-label="${esc(shown.label)}${day}日${events.length?'，'+events.length+'件事':''}" aria-expanded="false"><span class="num">${day}</span>${marked.length?`<small>${esc(marked[0].name)}${marked.length>1?' +'+(marked.length-1):''}</small>`:''}</button>`;}}
   const entries=state.calendar.events.filter(e=>e.status!=='已取消'&&(isCalendarMark(e)&&(!shown||eventMonth(e)===shown.key)||e.kind==='有约定'||['计划','已约定'].includes(e.status)&&!isCalendarMark(e)));
   const agenda=entries.length?`<div class="cal-agenda"><h4>节日与约定</h4>${entries.map(e=>`<button type="button" data-cup-entry="${esc(e.id||e.date+'|'+e.name)}"><span><small>${esc(e.displayDate||e.date||eventDay(e)+'日')}${e.time?' · '+esc(e.time):''}</small><b>${esc(e.name)}</b></span><em>${esc(calendarCountdown(state.calendar,e))}</em></button>`).join('')}</div>`:'';
   const archive=state.calendar.archive||{},recaps=[...(archive.volumes||[]).map(r=>({...r,label:r.label+' · 四个月回顾'})),...(archive.months||[]).map(r=>({...r,label:r.label+' · 月末回顾'}))];
-  const history=recaps.length?`<details class="cal-recaps"><summary>往月留痕 · ${recaps.length} 册</summary>${recaps.slice().reverse().map(r=>`<details><summary>${esc(r.label)}</summary><p>${esc(r.text).replace(/\n/g,'<br>')}</p>${r.automatic?'<small>据当时记事整理。</small>':''}</details>`).join('')}</details>`:'';
+  const history=recaps.length?`<details class="cal-recaps"><summary>往月留痕 · ${recaps.length} 册</summary>${recaps.slice().reverse().map(r=>`<details><summary>${esc(r.label)}</summary><p>${esc(r.text).replace(/\n/g,'<br>')}</p>${r.automatic?'<small>据当时记事整理。</small>':''}${originalsHtml(r)}</details>`).join('')}</details>`:'';
   return `<details class="calendar" ${view.calendar?'open':''}><summary><div class="binding" aria-hidden="true"><i></i><i></i></div><div class="month-cover"><span class="month-no">${numeric?pad(month):'—'}</span><div><div class="cal-kicker">THE MONTHLY TAB</div><div class="month-word">${numeric?names[month-1]:esc(shown?.label||'Calendar')}</div><div class="month-zh">本月酒单 · 翻开日历</div></div><span class="month-star" aria-hidden="true">✧</span></div></summary><svg class="cal-pencil" viewBox="0 0 350 12" aria-hidden="true"><path d="M3 7 Q80 2 172 6 T347 4 M13 10 Q130 7 323 9"/></svg><div class="cal-body">${state.calendar.worldDate?`<p class="cal-world-date">${esc(state.calendar.worldDate)}</p>`:''}${valid?`<div class="cal-controls"><span>${esc(shown.label)} · 剧情月份</span><span class="cal-nav">${numeric?'<button type="button" data-cup-month="-1" aria-label="上个月">‹</button>':''}<button type="button" data-cup-month="0">剧情当月</button>${numeric?'<button type="button" data-cup-month="1" aria-label="下个月">›</button>':''}</span></div>${shown.firstWeekday!==null?`<div class="week">${'一二三四五六日'.split('').map(d=>`<span>${d}</span>`).join('')}</div>`:''}<div class="days${shown.firstWeekday===null?' no-week':''}">${days}</div>`:'<p class="empty">剧情日期尚未确定或缺少月长，先保留已知日期与文字记录。</p>'}${agenda}${history}</div></details>`;
  }
  function referenceHtml(){

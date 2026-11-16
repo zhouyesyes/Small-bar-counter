@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {mergeStoryCalendar,storyMonth,calendarCountdown,isCalendarMark,calendarProtocol} from '../src/calendar-state.mjs';
+import {mergeStoryCalendar,storyMonth,calendarCountdown,isCalendarMark,calendarProtocol,calendarReaderEvents} from '../src/calendar-state.mjs';
 import {buildState} from '../src/core.mjs';
 import {cocktailProtocol} from '../src/cocktail-state.mjs';
 const event=(date,name='当日记事',extra={})=>({date,name,kind:'已发生',text:'一起在书店核对旧信，留下次日再谈的约定。',...extra});
@@ -58,4 +58,28 @@ test('generic current plot stages are not assigned to a calendar date',()=>{
 test('long fallback event identities remain stable and equal-named dates in different months stay distinct',()=>{
  const e=event('2026-11-20','很长的事件名称'.repeat(10),{time:'很长的世界观时辰'.repeat(10)});let c=mergeStoryCalendar(patch('2026-11-20',[e]));const id=c.events[0].id;c=mergeStoryCalendar(patch('2026-11-20',[e]),c);assert.equal(c.events.length,1);assert.equal(c.events[0].id,id);
  c=mergeStoryCalendar(patch('2026-11-20',[event('2026-11-21','灯节',{category:'节日',kind:'固定日期'}),event('2026-12-21','灯节',{category:'节日',kind:'固定日期'})]),c);assert.equal(c.knownDates.length,2);
+});
+
+test('reader originals survive monthly and four-month compression but never enter the model snapshot',()=>{
+ let c;const detail='原始细目独有内容。'.repeat(150);
+ for(let m=1;m<=5;m++)c=mergeStoryCalendar(patch(`2026-0${m}-01`,[event(`2026-0${m}-01`,'第'+m+'月记录',{id:'m'+m,time:'午后',location:'旧书店',concurrent:'码头停航',text:detail})]),c);
+ assert.equal(c.history.length,4);assert.equal(c.history[0].text,detail);assert.equal(c.history[0].concurrent,'码头停航');assert.equal(calendarReaderEvents(c).length,5);
+ assert.equal(c.archive.volumes.length,1);
+ c=mergeStoryCalendar(patch('2026-05-02',[],{periodSummaries:[{keys:['2026-01','2026-02','2026-03','2026-04'],text:'四个月的短总结。'}]}),c);
+ assert.equal(c.history[0].text,detail);
+ const prompt=cocktailProtocol('default',{calendar:c});const snapshot=JSON.parse(prompt.split('上一份有效记录（仅作连续性参考，按本轮剧情更新）：')[1]);
+ assert(!Object.hasOwn(snapshot.calendar,'history'));assert.equal(snapshot.calendar.events.length,1);assert.equal(snapshot.calendar.archive.volumes[0].text,'四个月的短总结。');assert.equal(c.history.length,4);
+});
+test('archived appointments update in reader history and deleted branches rebuild without later originals',()=>{
+ let c=mergeStoryCalendar(patch('2026-11-20',[event('2026-11-21','归还信件',{id:'promise',kind:'有约定'})]));
+ c=mergeStoryCalendar(patch('2026-12-01'),c);c=mergeStoryCalendar(patch('2026-12-02',[event('2026-11-21','归还信件',{id:'promise',status:'已发生',text:'已经亲手归还。'})]),c);
+ assert.equal(calendarReaderEvents(c).filter(e=>e.id==='promise').length,1);assert.equal(c.history[0].text,'已经亲手归还。');assert.equal(c.history[0].status,'已发生');
+ const rows=[{id:'nov',raw:raw(patch('2026-11-20',[event('2026-11-20')]))},{id:'dec',raw:raw(patch('2026-12-01'))}];
+ assert.equal(buildState(rows).cocktails.default.calendar.history.length,1);assert.equal(buildState(rows.slice(0,1)).cocktails.default.calendar.history.length,0);
+});
+
+test('reader originals retain late custom-month dates when the new month is shorter',()=>{
+ let c=mergeStoryCalendar({month:{key:'长月',label:'长月',days:40,currentDay:39},events:[{id:'old',monthKey:'长月',day:39,name:'长月旧事',text:'原始记事',kind:'已发生'}]});
+ c=mergeStoryCalendar({month:{key:'短月',label:'短月',days:20,currentDay:1},events:[]},c);
+ assert.equal(c.history[0].day,39);c=mergeStoryCalendar({events:[]},c);assert.equal(c.history[0].day,39);
 });
