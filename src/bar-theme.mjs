@@ -87,7 +87,7 @@ export function applyBarTheme(settings, ctx, adapter) {
     let style = document.getElementById('sb-bar-theme');
     if (!settings.barTheme) {
         restoreHelperDialogs();
-        html.classList.remove('sb-bar'); style?.remove(); last = ''; unmountPages(); document.getElementById('sb-bar-fonts')?.remove(); delete html.dataset.sbMode;
+        html.classList.remove('sb-bar'); style?.remove(); last = ''; unmountPages(); if(!settings.enabled)document.getElementById('sb-bar-fonts')?.remove(); delete html.dataset.sbMode;
         observer?.disconnect(); observer = null; media?.removeEventListener('change', media.sb); media = null;
         return;
     }

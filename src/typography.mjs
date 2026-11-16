@@ -10,6 +10,8 @@ export const fonts = {
 export const typeSizes = { page:46, identity:20, record:17, section:15, subheading:13, body:12, control:12, menu:11, meta:10 };
 export const typographyCss = `
 :root{${Object.entries(fonts).map(([name,value])=>`--sb-type-${name}:${value};`).join('')}${Object.entries(typeSizes).map(([name,value])=>`--sb-type-size-${name}:calc(${value}px * var(--fontScale,1));`).join('')}}
+/* Native-page typography must not change an independently styled counter. */
+#sb-root.sb-default-bar{${Object.entries(fonts).map(([name,value])=>`--sb-type-${name}:${value};`).join('')}${Object.entries(typeSizes).map(([name,value])=>`--sb-type-size-${name}:calc(${value}px * var(--fontScale,1));`).join('')}}
 /* Only our widgets and the explicitly enabled bar theme participate. Icon fonts stay native. */
 #sb-root{--sb-font:var(--sb-type-body)!important;--sb-serif:var(--sb-type-body)!important;font-family:var(--sb-type-body)!important;font-size:var(--sb-type-size-body);}
 html.sb-bar{--sb-f-serif:var(--sb-type-body);--sb-f-script:var(--sb-type-script);--sb-f-italic:var(--sb-type-italic);}
@@ -102,6 +104,10 @@ html.sb-bar #user_avatar_block .avatar_upload::before{font-family:var(--sb-type-
 `;
 export function installTypography() {
     if (typeof document === 'undefined') return;
+    if(!document.getElementById('sb-bar-fonts')){
+        const link=Object.assign(document.createElement('link'),{id:'sb-bar-fonts',rel:'stylesheet',href:'https://fonts.googleapis.com/css2?family=Pinyon+Script&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+SC:wght@400;600&display=swap'});
+        (document.head||document.documentElement).appendChild(link);
+    }
     const existing = document.getElementById('sb-typography');
     if (existing) return existing;
     const style = document.createElement('style'); style.id = 'sb-typography'; style.textContent = typographyCss;

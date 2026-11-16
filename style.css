@@ -1525,28 +1525,28 @@ html.sb-bar #chat .sb-chat-cover[role=button],html.sb-bar #chat .sb-chat-avatar{
 /* TT 2.4 / tablet: a persistent companion column beside the native chat shell.
    Keep host nodes in place so native drawers, chat events and extensions survive. */
 @media (min-width:768px) {
-    html.sb-bar.sb-panel-docked { --sb-panel-width:clamp(280px,28vw,340px); }
-    html.sb-bar.sb-panel-docked #sb-root .sb-drawer {
+    html.sb-panel-docked { --sb-panel-width:clamp(280px,28vw,340px); }
+    html.sb-panel-docked #sb-root .sb-drawer {
         width:var(--sb-panel-width);max-width:var(--sb-panel-width);
         padding-top:env(safe-area-inset-top);animation:none;
     }
-    html.sb-bar.sb-panel-docked #sb-root .sb-shade,
-    html.sb-bar.sb-panel-docked #sb-root .sb-drawer .sb-x,
-    html.sb-bar.sb-panel-docked #sb-root .sb-minibar { display:none; }
-    html.sb-bar.sb-panel-docked #sb-root .sb-drawer .sb-body { min-height:0;overscroll-behavior:contain; }
-    html.sb-bar.sb-panel-docked #sb-root .sb-drawer .sb-cover { aspect-ratio:2.5; }
-    html.sb-bar.sb-panel-docked #sheld {
+    html.sb-panel-docked #sb-root .sb-shade,
+    html.sb-panel-docked #sb-root .sb-drawer .sb-x,
+    html.sb-panel-docked #sb-root .sb-minibar { display:none; }
+    html.sb-panel-docked #sb-root .sb-drawer .sb-body { min-height:0;overscroll-behavior:contain; }
+    html.sb-panel-docked #sb-root .sb-drawer .sb-cover { aspect-ratio:2.5; }
+    html.sb-panel-docked #sheld {
         left:var(--sb-panel-width)!important;right:0!important;
         width:calc(100% - var(--sb-panel-width))!important;
         max-width:none!important;min-width:0!important;margin-inline:0!important;
         transform:none!important;
     }
-    html.sb-bar.sb-panel-docked :is(#top-bar,#top-settings-holder) {
+    html.sb-panel-docked :is(#top-bar,#top-settings-holder) {
         left:var(--sb-panel-width)!important;right:0!important;
         width:calc(100% - var(--sb-panel-width))!important;
         max-width:none!important;margin-inline:0!important;transform:none!important;
     }
-    html.sb-bar.sb-panel-docked #sb-root .sb-tabs button { min-height:44px; }
+    html.sb-panel-docked #sb-root .sb-tabs button { min-height:44px; }
 }
 
 /* Shared expanded world entry editor. Closed folio bookmarks keep their layout. */
@@ -1577,7 +1577,7 @@ html.sb-bar .sb-entry-advanced {border-top:1px solid var(--sb-bar-line);padding:
 html.sb-bar .sb-entry-advanced > summary {cursor:pointer;color:var(--sb-bar-accent);margin-bottom:12px;}
 /* Native TT drawers should use the available chat area on tablets. */
 @media(min-width:768px) {
-    html.sb-bar.sb-panel-docked :is(#WorldInfo,#rm_api_block).drawer-content {
+    html.sb-panel-docked :is(#WorldInfo,#rm_api_block).drawer-content {
         left:var(--sb-panel-width)!important;right:0!important;
         width:calc(100vw - var(--sb-panel-width))!important;max-width:none!important;
     }
@@ -1592,7 +1592,7 @@ html.sb-bar[data-sb-mode=dark] .sb-entry-layout select[name=entryStateSelector] 
 /* All native page drawers use the full area beside the tablet companion.
    TT sets width, height and centering transforms (sometimes inline): reset each. */
 @media(min-width:768px) {
-    html.sb-bar.sb-panel-docked .drawer-content.sb-host-page-drawer {
+    html.sb-panel-docked .drawer-content.sb-host-page-drawer {
         position:fixed!important;
         top:var(--topBarBlockSize,48px)!important;bottom:0!important;
         left:var(--sb-panel-width)!important;right:0!important;
@@ -1615,7 +1615,7 @@ html.sb-bar[data-sb-mode=dark] .sb-entry-layout select[name=entryStateSelector] 
 
 /* A visible grip remains inside the drawer edge, including portrait tablet views. */
 #sb-root .sb-drawer-resize:before{content:'';position:absolute;top:48%;left:3px;width:10px;height:46px;border-radius:8px;background:color-mix(in srgb,var(--sb-bg) 86%,transparent);border:1px solid color-mix(in srgb,var(--sb-fg) 26%,transparent);box-shadow:0 1px 5px #0001}
-html.sb-bar.sb-panel-docked #sb-root .sb-shade{display:none}
+html.sb-panel-docked #sb-root .sb-shade{display:none}
 
 /* Native prompt (preset) editor: TT centres it on the whole viewport with a translucent
    tint, so the docked bar covered its left half and the prompt list showed through.
@@ -1634,7 +1634,7 @@ html.sb-bar #completion_prompt_manager_popup :is(.text_pole,select,textarea,inpu
 html.sb-bar #completion_prompt_manager_popup .menu_button {background:transparent;border:1px solid var(--sb-bar-line);color:var(--sb-bar-text);box-shadow:none;filter:none;}
 html.sb-bar[data-sb-mode=dark] #completion_prompt_manager_popup {color-scheme:dark;}
 @media(min-width:768px) {
-    html.sb-bar.sb-panel-docked #completion_prompt_manager_popup {
+    html.sb-panel-docked #completion_prompt_manager_popup {
         position:fixed!important;
         top:var(--topBarBlockSize,48px)!important;bottom:0!important;
         left:var(--sb-panel-width)!important;right:0!important;
@@ -1643,7 +1643,7 @@ html.sb-bar[data-sb-mode=dark] #completion_prompt_manager_popup {color-scheme:da
         margin:0!important;transform:none!important;translate:none!important;
         border-radius:0!important;overflow-y:auto;
     }
-    html.sb-bar.sb-panel-docked #completion_prompt_manager_popup .completion_prompt_manager_popup_entry_form_control {min-width:0;}
+    html.sb-panel-docked #completion_prompt_manager_popup .completion_prompt_manager_popup_entry_form_control {min-width:0;}
 }
 
 /* AI's pick for this reply: one tap plays it from this chat's own playlist. */

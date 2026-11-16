@@ -1,3 +1,4 @@
+import {counterStyle,ensureCounterAppearance} from './counter-appearance.mjs';
 import {replyContent} from './reply-content.mjs';
 import {calendarOnlyProtocol} from './calendar-state.mjs';
 import {musicSelectionContext} from './music-selection.mjs';
@@ -39,6 +40,7 @@ function settings() {
     const s = (c.extensionSettings[NS] ??= {});
     s.enabled ??= true; s.barTheme ??= false; s.cat ??= true; s.theme ??= 'auto'; s.api ??= 'main'; s.wxMemory ??= 50; s.storyPhoneN ??= 2; s.catTop ??= 46;
     if (!['folio', 'default'].includes(s.barStyle)) s.barStyle = 'folio';
+    ensureCounterAppearance(s);
     seedFolioColors(s);
     s.chars ??= {}; s.me ??= {};
     configureImageStore(s,saveSettings);
@@ -563,7 +565,7 @@ function refreshInject() {
     let text = buildInjection({ promptNow: parts.now, promptPhone: parts.phone, coverTags: tags, state: state(), autoPick, autoStatus:content.status, autoPhone:content.phone, wxNote: memoNote(st0.memo), phoneNote: phoneWx, saveMode: s.saveMode, channel: era() === 'modern' ? '在手机上的聊天' : '的书信往来' });
     text += '\n\n' + PHONE_PERSPECTIVE;
     if (waiting) text += '\n有微信等待本轮回复：只依据聊天历史中已有的手机记录，在状态段里用「微信:」回复，一行一条；没有消息内容时不要猜测。';
-    if (s.barStyle === 'default' && content.status) {
+    if (counterStyle(s) === 'default' && content.status) {
         const mode=charCfg().cocktailMode==='adaptive'?'adaptive':'default';
         const snapshot={...cocktailFromState(state(),mode)};
         if(mode==='default')snapshot.gestures={...snapshot.gestures,reminders:snapshot.gestures.reminders.filter(r=>!r.done&&!meta().cocktailDone?.[r.id||r.text])};
@@ -574,9 +576,9 @@ function refreshInject() {
             if(reference)text+='\n\n'+formatStatusSources(collectStatusSources({pasted:reference}));
         }
     }
-    if(content.calendar && !(s.barStyle==='default' && content.status)){const mode=charCfg().cocktailMode==='adaptive'?'adaptive':'default';text+='\n\n'+calendarOnlyProtocol(cocktailFromState(state(),mode),mode);}
+    if(content.calendar && !(counterStyle(s)==='default' && content.status)){const mode=charCfg().cocktailMode==='adaptive'?'adaptive':'default';text+='\n\n'+calendarOnlyProtocol(cocktailFromState(state(),mode),mode);}
     const musicFeedback=autoPick?musicSelectionContext(meta(),state().pick,state().recentPicks):'';if(musicFeedback)text+='\n\n'+musicFeedback;
-    text += mustWrite({ cocktail: s.barStyle === 'default' && content.status, saveMode: s.saveMode, autoStatus:content.status, autoPhone:content.phone, autoPick, missingPick:pickStatus?.missing });
+    text += mustWrite({ cocktail: counterStyle(s) === 'default' && content.status, saveMode: s.saveMode, autoStatus:content.status, autoPhone:content.phone, autoPick, missingPick:pickStatus?.missing });
     // 1 = 放在聊天里（IN_CHAT），深度 0 = 最后面，0 = 系统身份
     c.setExtensionPrompt(INJECT_KEY, text, 1, 0, false, 0);
 }
@@ -599,7 +601,7 @@ function replyPickStatus(){
 }
 function latestCocktailUsage(){const message=lastReply();if(!message)return null;const native=outputUsage(message);if(native)return native;const cached=usageCache.get(message);return cached?.key===replyUsageKey(message)?cached.value:null;}
 async function updateCocktailUsage(){
-    if(settings().barStyle!=='default')return;
+    if(counterStyle(settings())!=='default')return;
     const message=lastReply();if(!message)return;const key=replyUsageKey(message),cached=usageCache.get(message);
     const exact=outputUsage(message);if(exact){usageCache.set(message,{key,value:exact});return;}
     if(cached?.key===key)return;
@@ -613,9 +615,10 @@ async function updateCocktailUsage(){
 // ---------- 接起来 ----------
 const host = {
     settings, setSettings: f => {
-        const s = settings(), before = [s.barTheme, s.theme, s.barStyle];
+        const s = settings(), before = [s.barTheme, s.theme, s.barStyle], counterBefore=[s.counterStyle,s.counterDock];
         f(s); saveSettings(); refreshInject();
         if (before[0] !== s.barTheme || before[1] !== s.theme || before[2] !== s.barStyle) { applyAppearance(); ui.render(); }
+        else if(counterBefore[0]!==s.counterStyle||counterBefore[1]!==s.counterDock)ui.render();
     },
     openingProfile: (mode=artworkMode(settings())) => { const h = personalProfile(settings()), art = landingArtwork(h, mode,assistantAvatar()); return { avatar: img(art.avatar), cover: img(art.cover), name: h.signature ?? 'yesyes', sign: h.quote ?? 'a quiet seat, kept for you', table: h.table ?? 'by the window', order: h.order ?? 'the usual', date: h.date || new Intl.DateTimeFormat('sv-SE').format(new Date()).replaceAll('-', '.') }; },
     setHomeProfile: patch => { const shared = {}; if ('name' in patch) shared.signature = patch.name; if ('sign' in patch) shared.quote = patch.sign; for(const key of ['table','order','date'])if(key in patch)shared[key]=patch[key]; updatePersonalProfile(shared); },
@@ -729,7 +732,7 @@ function settingsPanel() {
     el.id = 'sb-ext';
     el.innerHTML = `<div class="inline-drawer"><div class="inline-drawer-toggle inline-drawer-header"><b>小吧台</b><div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div></div>
 <div class="inline-drawer-content"><label class="checkbox_label"><input type="checkbox" id="sb-enabled"> 小猫抽屉</label>
-<label class="checkbox_label" title="酒馆的颜色跟小吧台的配色走，顶栏换成小物件；要用别的大改美化时关掉它"><input type="checkbox" id="sb-bartheme"> 吧台美化</label>
+<label class="checkbox_label" title="酒馆的颜色跟小吧台的配色走，顶栏换成小物件；要用别的大改美化时关掉它"><input type="checkbox" id="sb-bartheme"> 酒馆页面美化</label>
 <div class="flex-container" style="gap:6px;margin-top:6px"><div class="menu_button" id="sb-openbtn">打开抽屉</div><div class="menu_button" id="sb-cleanbtn">扫描清理</div><div class="menu_button" id="sb-lookbtn">开场与配色</div></div>
 <small id="sb-cleanres" style="opacity:.7"></small><div class="sb-ext-look">${chatLookFoldsHtml(settings())}</div></div></div>`;
     box.appendChild(el);

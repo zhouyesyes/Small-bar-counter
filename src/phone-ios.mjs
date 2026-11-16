@@ -1,3 +1,4 @@
+import {counterStyle} from './counter-appearance.mjs';
 import {phoneControl as control,phoneIconUrl} from './phone-ios-icons.mjs';
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const clamp=n=>Math.max(0,Math.min(1,Number(n)||0));
@@ -19,7 +20,7 @@ export function phoneStoryScene(state={},cup={}) {
 
 export function createPhoneIOS({host,player,coverImg,render}) {
  let root,unlocked=false,lighting=false,swipe=null,nextView=null,lastView=null,origin=null;
- const active=(era=host.era?.())=>era==='modern'&&host.settings().barStyle==='default';
+ const active=(era=host.era?.())=>era==='modern'&&counterStyle(host.settings())==='default';
  const scene=()=>phoneStoryScene(host.state?.()||{},host.cocktailState?.()||{});
  function wallpaper(){
   const images=host.charCfg?.().phoneWallpapers||{};

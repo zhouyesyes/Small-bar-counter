@@ -1,9 +1,10 @@
+import {counterStyle} from './counter-appearance.mjs';
 // Explicit per-chat choices override the former master switch and global economy mode.
 // Reading old settings never changes them or turns previously disabled content on.
 export function replyContent(config={},settings={}) {
  const legacy=!config.noAutoStatus;
  return {status:typeof config.autoStatus==='boolean'?config.autoStatus:legacy,
-  calendar:typeof config.autoCalendar==='boolean'?config.autoCalendar:legacy&&settings.barStyle==='default',
+  calendar:typeof config.autoCalendar==='boolean'?config.autoCalendar:legacy&&counterStyle(settings)==='default',
   music:config.autoMusicPick!==false,
   phone:typeof config.autoPhone==='boolean'?config.autoPhone:legacy&&!settings.saveMode};
 }
